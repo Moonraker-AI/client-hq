@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moonraker x Life Threads Therapy: Growth Proposal</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root, [data-theme="light"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00b86c;
+  --color-primary-light: #B4EEE0;
+  --color-primary-subtle: #DDF8F2;
+  --color-bg: #F7FDFB;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-heading: #1E2A5E;
+  --color-body: #333F70;
+  --color-muted: #6B7599;
+  --color-navy: #141C3A;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+}
+[data-theme="dark"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00f598;
+  --color-primary-light: #1A4A38;
+  --color-primary-subtle: #0D2E22;
+  --color-bg: #080F0B;
+  --color-surface: #0E1A14;
+  --color-border: #1E3530;
+  --color-heading: #E8F5EF;
+  --color-body: #C8D8D0;
+  --color-muted: #5A7A6E;
+  --color-navy: #0A1630;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #FF6B6B;
+  --color-info: #60A5FA;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.7; -webkit-font-smoothing: antialiased; transition: background .3s ease, color .3s ease; }
+h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.15; }
+h1 { font-size: 2.75rem; letter-spacing: -0.02em; }
+h2 { font-size: 2rem; margin-bottom: .75rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.35rem; }
+h4 { font-size: 1.15rem; }
+p { margin-bottom: 1rem; }
+a { color: var(--color-primary); text-decoration: none; transition: color .2s; }
+a:hover { color: var(--color-primary-hover); }
+strong { font-weight: 600; color: var(--color-heading); }
+
+.progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--color-primary); width: 0%; z-index: 999; transition: width .1s linear; box-shadow: 0 0 8px rgba(0,212,126,.4); }
+
+.section-nav { position: fixed; right: 2rem; top: 50%; transform: translateY(-50%); z-index: 100; display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 1140px) { .section-nav { display: none; } }
+.section-nav a { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 8px; border-radius: 8px; font-size: .75rem; font-weight: 500; color: var(--color-muted); text-decoration: none; transition: all .25s ease; white-space: nowrap; }
+.section-nav a:hover { color: var(--color-heading); background: var(--color-surface); }
+.section-nav a.active { color: var(--color-primary); background: var(--color-primary-subtle); }
+.section-nav .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-border); flex-shrink: 0; transition: all .25s ease; }
+.section-nav a.active .nav-dot { background: var(--color-primary); width: 8px; height: 8px; box-shadow: 0 0 6px rgba(0,212,126,.5); }
+
+.container { max-width: 1060px; margin: 0 auto; padding: 0 3rem; }
+@media (max-width: 768px) { .container { padding: 0 1.5rem; } }
+section { padding: 4.5rem 0; }
+.divider { height: 1px; background: var(--color-border); border: none; margin: 0; }
+
+.theme-toggle { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 200; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; transition: all .25s ease; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.theme-toggle:hover { border-color: var(--color-primary); box-shadow: 0 2px 12px rgba(0,212,126,.15); }
+
+.header { background: var(--color-navy); padding: 2rem 0; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; top: -60%; right: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(0,212,126,.08) 0%, transparent 70%); pointer-events: none; }
+.header-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.header img { height: 36px; }
+.header-meta { text-align: right; }
+.header-meta p { margin: 0; font-size: .8125rem; color: rgba(232,245,239,.45); }
+.header-meta .name { color: #E8F5EF; font-weight: 600; font-size: .9375rem; }
+
+.hero { padding: 5.5rem 0 4rem; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; top: -100px; right: -80px; width: 500px; height: 500px; background: radial-gradient(circle at 30% 40%, rgba(0,212,126,.06) 0%, transparent 60%); pointer-events: none; }
+.hero-layout { display: grid; grid-template-columns: 1fr 280px; gap: 3rem; align-items: center; }
+@media (max-width: 768px) { .hero-layout { grid-template-columns: 1fr; } .hero-visual { display: none; } }
+.hero-content { position: relative; z-index: 1; }
+.hero h1 { margin-bottom: 1rem; }
+.hero .subtitle { font-size: 1.0625rem; color: var(--color-muted); max-width: 520px; line-height: 1.7; }
+.badge { display: inline-block; background: var(--color-primary-subtle); color: var(--color-primary); font-weight: 600; font-size: .75rem; padding: .4rem 1rem; border-radius: 100px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 1rem; }
+.hero-visual svg { width: 100%; height: auto; }
+
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 2rem; margin-bottom: 1.5rem; transition: box-shadow .3s ease, transform .3s ease; }
+.card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.05); transform: translateY(-2px); }
+.exec-summary .lead { font-size: 1.0625rem; line-height: 1.8; }
+
+.scorecard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 2.5rem 0; }
+@media (max-width: 640px) { .scorecard-grid { grid-template-columns: repeat(2, 1fr); } }
+.score-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.5rem 1rem 1.25rem; text-align: center; position: relative; overflow: hidden; transition: transform .3s, box-shadow .3s; }
+.score-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+.score-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+.score-card.score-low::after { background: var(--color-danger); }
+.score-card.score-med::after { background: var(--color-warning); }
+.ring-wrap { position: relative; width: 88px; height: 88px; margin: 0 auto 12px; }
+.ring-bg, .ring-fg { fill: none; stroke-width: 5; stroke-linecap: round; }
+.ring-bg { stroke: var(--color-border); }
+.ring-fg { transition: stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1); transform: rotate(-90deg); transform-origin: center; }
+.score-val { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.375rem; }
+.score-val span { font-size: .75rem; opacity: .4; font-weight: 400; }
+.score-low .ring-fg { stroke: var(--color-danger); }
+.score-low .score-val { color: var(--color-danger); }
+.score-med .ring-fg { stroke: var(--color-warning); }
+.score-med .score-val { color: var(--color-warning); }
+.score-label { font-size: .6875rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 2px; }
+.score-pillar { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .9375rem; color: var(--color-heading); }
+
+.collapsible { margin-bottom: .75rem; }
+.collapsible-toggle { width: 100%; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1rem; color: var(--color-heading); text-align: left; transition: all .2s ease; }
+.collapsible-toggle:hover { border-color: var(--color-primary); box-shadow: 0 2px 10px rgba(0,212,126,.06); }
+.collapsible-toggle .arrow { transition: transform .3s ease; color: var(--color-primary); font-size: 1rem; }
+.collapsible.open .collapsible-toggle .arrow { transform: rotate(180deg); }
+.collapsible.open .collapsible-toggle { border-radius: 12px 12px 0 0; }
+.collapsible-content { max-height: 0; overflow: hidden; transition: max-height .4s ease; background: var(--color-surface); border: 0 solid var(--color-border); border-width: 0 1px; border-radius: 0 0 12px 12px; }
+.collapsible.open .collapsible-content { max-height: 3000px; border-width: 0 1px 1px 1px; }
+.collapsible-content-inner { padding: 1.25rem; }
+.finding { display: flex; gap: .75rem; margin-bottom: .875rem; align-items: flex-start; }
+.finding-icon { font-size: 1.125rem; flex-shrink: 0; margin-top: .1rem; }
+.finding p { margin: 0; font-size: .9375rem; line-height: 1.7; }
+.finding .highlight { font-weight: 600; color: var(--color-heading); }
+
+.timeline { position: relative; padding-left: 2rem; margin: 2rem 0; }
+.timeline::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, var(--color-primary), var(--color-primary-light)); }
+.timeline-item { position: relative; margin-bottom: 2rem; padding-bottom: .5rem; }
+.timeline-item::before { content: ''; position: absolute; left: -2rem; top: 6px; width: 14px; height: 14px; background: var(--color-primary); border-radius: 50%; border: 3px solid var(--color-bg); }
+.timeline-item h4 { margin-bottom: .35rem; }
+.timeline-item p { margin-bottom: .25rem; font-size: .9375rem; }
+.timeline-phase { display: inline-block; font-size: .6875rem; font-weight: 600; color: var(--color-primary); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .25rem; }
+
+.investment-card { background: var(--color-surface); border: 2px solid var(--color-primary); border-radius: 18px; padding: 2.5rem; text-align: center; position: relative; overflow: hidden; }
+.investment-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--color-primary), #00f598, var(--color-primary)); background-size: 200% 100%; animation: shimmer 3s ease infinite; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.investment-price { font-size: 3.25rem; font-weight: 700; color: var(--color-heading); margin: .75rem 0 .25rem; font-family: 'Outfit', sans-serif; }
+.investment-period { color: var(--color-muted); font-size: .9375rem; margin-bottom: 1.5rem; }
+.investment-features { text-align: left; max-width: 480px; margin: 0 auto 2rem; }
+.investment-features li { list-style: none; padding: .5rem 0; border-bottom: 1px solid var(--color-border); display: flex; align-items: center; gap: .6rem; font-size: .9375rem; }
+.investment-features li:last-child { border-bottom: none; }
+.check { color: var(--color-primary); font-weight: 700; font-size: 1.125rem; }
+
+.cta-btn { display: inline-block; background: var(--color-primary); color: #fff; font-weight: 600; font-size: 1rem; padding: .875rem 2rem; border-radius: 10px; transition: all .25s ease; text-decoration: none; }
+.cta-btn:hover { background: var(--color-primary-hover); color: #fff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,212,126,.3); }
+.cta-btn-outline { display: inline-block; background: transparent; color: var(--color-primary); font-weight: 600; font-size: .9375rem; padding: .7rem 1.75rem; border-radius: 10px; border: 2px solid var(--color-primary); transition: all .2s ease; text-decoration: none; }
+.cta-btn-outline:hover { background: var(--color-primary-subtle); color: var(--color-primary); }
+.cta-group { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 2.5rem; }
+
+.roi-callout { background: var(--color-primary-subtle); border-left: 4px solid var(--color-primary); border-radius: 0 12px 12px 0; padding: 1.5rem 2rem; margin: 2rem 0; }
+.roi-callout h4 { color: var(--color-heading); margin-bottom: .5rem; font-size: 1rem; }
+.guarantee-box { background: linear-gradient(135deg, var(--color-navy), #1a2f5a); border-radius: 16px; padding: 2.5rem; color: #E8F5EF; margin: 2rem 0; position: relative; overflow: hidden; }
+.guarantee-box::before { content: ''; position: absolute; top: -30%; right: -5%; width: 260px; height: 260px; background: radial-gradient(circle, rgba(0,212,126,.12) 0%, transparent 70%); pointer-events: none; }
+.guarantee-box h3 { color: var(--color-primary); margin-bottom: .75rem; }
+.guarantee-box p { color: rgba(232,245,239,.8); margin-bottom: .5rem; }
+.assets-note { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1.75rem; display: flex; gap: 1rem; align-items: flex-start; margin: 2rem 0; }
+.assets-note .icon { font-size: 1.25rem; flex-shrink: 0; }
+.assets-note p { margin: 0; font-size: .9375rem; }
+
+.confidential { text-align: center; padding: 2rem 0; color: var(--color-muted); font-size: .8125rem; letter-spacing: .04em; }
+.footer { background: var(--color-navy); padding: 3rem 0; text-align: center; color: rgba(232,245,239,.4); font-size: .8125rem; }
+.footer img { height: 28px; margin-bottom: .75rem; opacity: .6; }
+.footer a { color: var(--color-primary); }
+
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+@media print {
+  .section-nav, .theme-toggle, .progress-bar { display: none !important; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+  .collapsible-content { max-height: none !important; border-width: 0 1px 1px 1px !important; }
+  .collapsible-toggle .arrow { display: none; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+<button class="theme-toggle" title="Toggle dark mode" id="themeBtn" aria-label="Toggle dark mode">&#x1F319;</button>
+
+<nav class="section-nav" id="sectionNav">
+  <a href="#hero"><span class="nav-dot"></span>Overview</a>
+  <a href="#summary"><span class="nav-dot"></span>What We Heard</a>
+  <a href="#assessment"><span class="nav-dot"></span>Assessment</a>
+  <a href="#strategy"><span class="nav-dot"></span>Strategy</a>
+  <a href="#timeline"><span class="nav-dot"></span>Roadmap</a>
+  <a href="#investment"><span class="nav-dot"></span>Investment</a>
+  <a href="#next"><span class="nav-dot"></span>Next Steps</a>
+</nav>
+
+<header class="header">
+  <div class="container header-inner">
+    <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker">
+    <div class="header-meta">
+      <p class="name">Prepared for Bree Anthony, MA, LMFT</p>
+      <p>Life Threads Therapy &middot; West Los Angeles, CA</p>
+      <p>March 24, 2026 &middot; Confidential</p>
+    </div>
+  </div>
+</header>
+
+<section class="hero" id="hero">
+  <div class="container">
+    <div class="hero-layout">
+      <div class="hero-content">
+        <span class="badge">CORE Marketing Campaign</span>
+        <h1>Your Practice, Visible<br>Where It Matters Most</h1>
+        <p class="subtitle">A CORE-based digital strategy to establish Life Threads Therapy as the trusted, AI-cited resource for anxiety therapy, EMDR, and couples counseling in West Los Angeles.</p>
+      </div>
+      <div class="hero-visual">
+        <svg viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="140" cy="140" r="120" stroke="var(--color-primary)" stroke-width=".5" opacity=".2"/>
+          <circle cx="140" cy="140" r="90" stroke="var(--color-primary)" stroke-width=".5" opacity=".15"/>
+          <circle cx="140" cy="140" r="60" stroke="var(--color-primary)" stroke-width=".5" opacity=".1"/>
+          <circle cx="140" cy="60" r="8" fill="var(--color-primary)" opacity=".7"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="360 140 140" dur="20s" repeatCount="indefinite"/></circle>
+          <circle cx="230" cy="140" r="6" fill="var(--color-info)" opacity=".5"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="-360 140 140" dur="28s" repeatCount="indefinite"/></circle>
+          <circle cx="140" cy="200" r="5" fill="var(--color-warning)" opacity=".4"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="360 140 140" dur="15s" repeatCount="indefinite"/></circle>
+          <text x="140" y="132" text-anchor="middle" font-family="Outfit" font-weight="700" font-size="28" fill="var(--color-heading)">CORE</text>
+          <text x="140" y="156" text-anchor="middle" font-family="Inter" font-weight="400" font-size="11" fill="var(--color-muted)" letter-spacing=".08em">MARKETING SYSTEM</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section class="exec-summary reveal" id="summary">
+  <div class="container">
+    <h2>Bree, Here's What We Heard</h2>
+    <div class="card" style="margin-top:1.5rem;">
+      <p class="lead">First, the good news: your website has a solid foundation. The copy is emotional and specific, the "Book a Free 20-Minute Consultation" CTA is exactly right, and your pricing page builds immediate trust. That foundation matters, and your family put real thought into it.</p>
+      <p class="lead">But here's where it gets real. You told us you're on <em>"page 40 of Google"</em> and that paid search has been <em>"a circus"</em> that's <em>"so competitive and so expensive."</em> Drew's been running the ads and only landed 2 clients from paid search. And those clients were couples for Lindsay, who came from inpatient and is starting from scratch with essentially zero caseload. Brian put it plainly: <em>"She's going to leave if we don't get her feeling good about the direction of travel pretty soon."</em></p>
+      <p class="lead">Meanwhile, you're watching competitors with worse websites outrank you because they've figured out the SEO game. Drew spotted one running black hat tactics with blog posts about real estate and opera houses that have nothing to do with therapy. It's frustrating to know your clinical work is excellent but nobody can find you online.</p>
+      <p class="lead">What excited everyone on the call was hearing that there's a completely different path. Not renting traffic through Google Ads, where the leads vanish the moment you stop paying, but building something you own. Grounding your entity to reality so that when someone in West LA asks ChatGPT or Gemini for the best anxiety therapist near them, Life Threads Therapy is the answer. That's what this proposal is about.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section class="reveal" id="assessment">
+  <div class="container">
+    <h2>Your Current Digital Health</h2>
+    <p style="margin-bottom:1rem;">Every gap below is an opportunity. We've scored your presence across the four pillars of the CORE framework, the same system Google and AI platforms use (whether they know it or not) to decide who gets recommended.</p>
+    <div class="scorecard-grid">
+      <div class="score-card score-low"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="176"/></svg><div class="score-val">3<span>/10</span></div></div><div class="score-label">Pillar 1</div><div class="score-pillar">Credibility</div></div>
+      <div class="score-card score-med"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="176"/></svg><div class="score-val">3<span>/10</span></div></div><div class="score-label">Pillar 2</div><div class="score-pillar">Optimization</div></div>
+      <div class="score-card score-med"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="151"/></svg><div class="score-val">4<span>/10</span></div></div><div class="score-label">Pillar 3</div><div class="score-pillar">Reputation</div></div>
+      <div class="score-card score-med"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="101"/></svg><div class="score-val">6<span>/10</span></div></div><div class="score-label">Pillar 4</div><div class="score-pillar">Engagement</div></div>
+    </div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>Credibility: Can You Prove You Exist?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+      <div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">Two different phone numbers across platforms.</span> Your website and Psychology Today each show a different number. To AI, this looks like two different businesses. The PT tracking number is splitting your entity authority in half.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">Social profiles are brand new with minimal content.</span> You have TikTok, Instagram, and Facebook, but no YouTube channel, no Quora Space, no LinkedIn Business page, and no Pinterest. AI and Google look for an interconnected web of social profiles to verify your entity is real. That web barely exists.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">NPI address mismatch.</span> Your NPI registry (1972236461) still shows 12424 Wilshire Blvd (likely your previous practice at Insight Therapy), not your current address at 2001 S Barrington Ave. This tells AI you might still be at the old location.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">No directory listings beyond the basics.</span> You're on Psychology Today, Zocdoc, and Headway, but missing from Bing Places, Apple Maps, Yelp, Yellow Pages, and dozens of other directories that AI cross-references.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Google Business Profile is verified with 5.0 rating.</span> Six reviews, all five stars. This is a strong foundation for Maps visibility.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Google Workspace is active.</span> You're already on a paid Workspace account, which signals to Google that a legitimate business operates at this domain. Many practices don't have this.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Pepperdine education and LMFT #154730 verified.</span> License is active and verifiable via Psychology Today, though not yet displayed on your website with verification links.</p></div></div>
+    </div></div></div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>Optimization: Can AI Understand What You Do?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+      <div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">Zero schema markup on the entire site.</span> Schema is AI's native language. Without LocalBusiness, Person, FAQPage, and Service structured data, AI has to guess what your practice does. Your competitors who show up above you likely have this in place.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">No dedicated pages for your top specialties.</span> Your #1 specialty on Psychology Today is anxiety. #2 is trauma and PTSD. Neither has its own page. When someone in West LA asks ChatGPT "who's the best anxiety therapist near me," you're not in the conversation.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">FAQ page contradicts your GBP.</span> Your FAQ page says you're "in the process of securing a physical office space." But your GBP lists 2001 S Barrington Ave. This conflicting information directly undermines entity trust.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">Service pages are generic, not specialty-specific.</span> You have Individual Therapy, Couples, Kids & Teens, and EMDR pages, but no pages for anxiety, trauma/PTSD, OCD, depression, or relationship issues. Your competitors like TLA Therapy have 15+ dedicated specialty pages.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Clean Squarespace site with good navigation.</span> The site is well-designed, mobile-friendly, and has a clear page structure. This is a strong foundation to build on.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Transparent pricing page builds trust.</span> Your $200 flat rate with clear insurance reimbursement info is better than most competitors. This is a conversion advantage.</p></div></div>
+    </div></div></div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>Reputation: Can You Prove You're Good?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">4 professional endorsements on Psychology Today.</span> From Jennymae Martin (LPCC), Margaret McCallum (LMFT), Alena Cabrero (LMFT), and Maral Malekian (LMFT). This is rare and incredibly valuable. None of your local competitors have peer endorsements like this.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Perfect 5.0 Google rating.</span> Six reviews, all five stars. Quality over quantity, and this is a strong signal.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">Endorsements are trapped on Psychology Today.</span> These four endorsements need to be on your website, your GBP, your YouTube channel, and your social profiles. Right now AI can only find them in one place.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">No YouTube channel.</span> YouTube is the #1 cited website in AI answers. None of your competitors in West LA have one either. First mover advantage is massive here.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">No Quora Space.</span> Quora's high domain authority and deep AI integration makes it a powerful platform for visibility. Nobody in your competitive set has one.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">No press coverage or media footprint.</span> No press releases, guest articles, or podcast appearances found. This is a gap we close immediately with a syndicated press release across 500+ news sites.</p></div></div>
+    </div></div></div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>Engagement: Is There a Path to Booking?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Strong, specific CTA.</span> "Book a Free 20 min Consultation with a Therapist" is one of the best CTAs we've seen. Specific, low-barrier, and action-oriented.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Jane App booking flow is clean.</span> The path from CTA to booked consultation is straightforward with no unnecessary friction.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">100% consult-to-close rate.</span> Small sample, but a 100% conversion rate means your clinical impression is powerful. The problem isn't closing. It's getting found.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">No trust elements in the hero section.</span> Adding Psychology Today, Pepperdine, and other association logos below the CTA creates immediate credibility before visitors scroll.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">Service pages need specialty-specific CTAs.</span> Each page should have a CTA tailored to the visitor's concern, not just the generic practice CTA.</p></div></div>
+    </div></div></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section class="reveal" id="strategy">
+  <div class="container">
+    <h2>The CORE Strategy for Your Practice</h2>
+    <p style="margin-bottom:2rem;">Every element below is interconnected. The website feeds the GBP. The GBP connects to the socials. The endorsements cross-reference between platforms. AI sees the full picture and decides: <em>Life Threads Therapy is the real deal.</em></p>
+    <div class="card"><h3 style="margin-bottom:1rem;">Credibility: Prove You're Real</h3><p><strong>Ground your entity to reality.</strong> We'll clean up the phone number inconsistency across Psychology Today and your website immediately. We'll update your NPI registry to reflect your current Barrington Ave address. Your existing social profiles (IG, Facebook, TikTok) will be branded, interconnected, and linked from your GBP. We'll build out the missing profiles that AI specifically looks for: YouTube channel with keyword-targeted playlists, Quora Space, LinkedIn Business page, Pinterest, and X. Directory listings across Bing Places, Apple Maps, Yelp, Yellow Pages, and dozens more will establish consistent NAP data everywhere. DNS records (DKIM/DMARC) will be configured through your existing Workspace account to prove domain ownership.</p></div>
+    <div class="card"><h3 style="margin-bottom:1rem;">Optimization: Make AI Understand You</h3><p><strong>Build out 5 target pages plus bio pages.</strong> Based on your specialties and the West LA market, we recommend dedicated pages for: <strong>Anxiety Therapy in West LA</strong> (primary), <strong>EMDR Therapy</strong>, <strong>Trauma and PTSD Therapy</strong>, <strong>Couples Therapy in West LA</strong>, and <strong>OCD Therapy</strong>. Each page gets comprehensive schema markup (MedicalBusiness, Person, Service, FAQPage), service-specific FAQs pulled from "People Also Ask," and H1 headings structured for maximum AI clarity. Both Bree and Lindsay get fully optimized bio pages with verifiable credentials, license links, NPI, Pepperdine education, and endorsement details. The FAQ page gets updated to reflect your current in-person office status and optimized with FAQPage schema.</p></div>
+    <div class="card"><h3 style="margin-bottom:1rem;">Reputation: Amplify the Signal</h3><p><strong>Take your endorsements everywhere.</strong> Your 4 Psychology Today endorsements from Jennymae Martin, Margaret McCallum, Alena Cabrero, and Maral Malekian get replicated on your bio page with full attribution: headshot, name, credentials, and links to each endorser's profiles. We'll distribute content across your YouTube channel, Quora Space, LinkedIn, Facebook, and GBP posts twice monthly. A syndicated press release across 500+ news sites establishes a media footprint and creates high-authority backlinks. We'll optimize your GBP with services, products, photos, and a regular posting cadence.</p></div>
+    <div class="card"><h3 style="margin-bottom:1rem;">Engagement: Polish What's Already Working</h3><p><strong>Your conversion engine is strong. We make it stronger.</strong> Your "Book a Free 20-Min Consultation" CTA stays. We'll add trust-building elements to the hero section: Psychology Today badge, Pepperdine logo, Headway and Zocdoc badges. Each specialty page gets a tailored hero section that speaks directly to the person searching for that specific issue. Lindsay's bio page gets positioned to capture the overflow from Bree's full caseload, with clear specialization differentiation. Every touchpoint optimized to maintain that 100% consult-to-close rate with higher volume.</p></div>
+    <div class="roi-callout"><h4>Renting Traffic vs. Owning It</h4><p style="margin-bottom:0;">Drew described paid search as "a circus" that's "so competitive and so expensive." That's because Google Ads is renting traffic. The moment you stop paying, the leads stop. What we build is the opposite: infrastructure you own. When your entity is grounded, your schema is in place, and AI trusts you, those leads come for free. And they compound. The practices that win long-term use ads as a short-term bridge while building the organic and AI infrastructure that generates leads permanently. That's exactly what CORE is designed to do.</p></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section class="reveal" id="timeline">
+  <div class="container">
+    <h2>Your Campaign Roadmap</h2>
+    <p style="margin-bottom:2rem;">Here's what happens after you sign. Week by week, no mystery. For the 3-month option, months 1-3 build the entire foundation. For the 12-month campaign, months 4-12 amplify and compound.</p>
+    <div class="timeline">
+      <div class="timeline-item"><span class="timeline-phase">Week 1</span><h4>Onboarding and Intake</h4><p>Pay invoice, complete intake forms, onboarding call with Scott Pope. Establish performance guarantee targets (12-month only), confirm 5 target pages, review ideal client profiles for Bree and Lindsay, grant website and property access. Fix the FAQ page office location contradiction immediately.</p></div>
+      <div class="timeline-item"><span class="timeline-phase">Weeks 2 to 3</span><h4>Deep Audit and Foundation</h4><p>Comprehensive site audit with our Surge platform. Fix phone number inconsistency across all platforms. Update NPI registry address. Create marketing email account through Workspace. Build and brand all missing social profiles (YouTube, Quora, LinkedIn Business, Pinterest, X). Interconnect all profiles. Configure 15+ directory listings plus all 5 major data aggregators. Begin NAP alignment.</p></div>
+      <div class="timeline-item"><span class="timeline-phase">Weeks 3 to 6</span><h4>Website Optimization and Page Build-Out</h4><p>Build 5 target pages (Anxiety Therapy, EMDR Therapy, Trauma/PTSD, Couples Therapy, OCD Therapy) + optimized bio pages for Bree and Lindsay + updated general FAQ page. Implement schema markup across all pages. Each page gets service-specific FAQs from "People Also Ask." Install instant.page for speed boost.</p></div>
+      <div class="timeline-item"><span class="timeline-phase">Weeks 4 to 6</span><h4>GBP and Local Optimization</h4><p>Align GBP services/products with new site pages. Add all social links to GBP. Upload fresh photos. Configure GBP attributes and categories. Begin biweekly posting cadence. Activate LiveDrive and NEO image distribution.</p></div>
+      <div class="timeline-item"><span class="timeline-phase">Weeks 6 to 8</span><h4>Press Release and Off-Page</h4><p>Syndicated press release across 500+ national and local news sites. Entity Veracity Hub activation with Rising Tide social strategy. YouTube channel content (endorsement videos, practice walkthrough). Quora Space content seeding. Begin ongoing social distribution across 4 platforms.</p></div>
+      <div class="timeline-item"><span class="timeline-phase">Weeks 8 to 12</span><h4>Amplify and Measure</h4><p>Continued content distribution and social posting. Endorsement amplification across all platforms. AI visibility monitoring (Gemini, ChatGPT, Perplexity). Maps ranking tracking via GeoGrid. Search Console monitoring. Monthly performance reports.</p></div>
+      <div class="timeline-item"><span class="timeline-phase">Months 4 to 12 (Annual Only)</span><h4>Compound and Scale</h4><p>This is where the magic happens. Ongoing LiveDrive, NEO image distribution, social content, GBP posting, and AI monitoring. As entity trust compounds, visibility in AI answers grows. Performance guarantee tracking against booked consultation benchmarks. Strategy refinements based on data. Potential to add pages for additional specialties or locations (Pasadena, Santa Monica) as the practice grows.</p></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section class="reveal" id="investment">
+  <div class="container">
+    <h2>Your Investment</h2>
+    <p style="margin-bottom:2rem;">Scott presented both options on our call. Choose the path that fits your situation.</p>
+
+    <div class="investment-card" style="margin-top:2rem;">
+      <span class="badge">Recommended: 12-Month CORE Campaign</span>
+      <div class="investment-price">$20,000</div>
+      <div class="investment-period">Full year &middot; Includes Performance Guarantee &middot; Payable monthly ($1,667/mo), quarterly, or upfront</div>
+      <ul class="investment-features">
+        <li><span class="check">&#10003;</span> Everything in the 3-month option, plus:</li>
+        <li><span class="check">&#10003;</span> 2x ROI Performance Guarantee (we work free until you hit it)</li>
+        <li><span class="check">&#10003;</span> 12 months of ongoing LiveDrive, NEO, and social distribution</li>
+        <li><span class="check">&#10003;</span> Compounding AI visibility through months 4-12 (the sweet spot)</li>
+        <li><span class="check">&#10003;</span> Ability to add location pages (Pasadena, Santa Monica) as you scale</li>
+        <li><span class="check">&#10003;</span> Monthly reporting with GeoGrid, GSC, and AI visibility tracking</li>
+        <li><span class="check">&#10003;</span> Additional target pages as needed ($300/page)</li>
+      </ul>
+      <a href="https://invoice.stripe.com/i/acct_1GyMnvBQh6FUgIfx/live_YWNjdF8xR3lNbnZCUWg2RlVnSWZ4LF9VQ2dSeVBsM3BjeFJ6QmVIb2JKdjJBTURsUzBZREpMLDE2NDg0NjE4Nw0200RCX2FM6t?s=ap" class="cta-btn" target="_blank">View 12-Month Invoice and Get Started &#8594;</a>
+    </div>
+
+    <div class="guarantee-box"><h3>The Performance Guarantee</h3><p>We guarantee you'll double your $20,000 investment in new client revenue within year one, or we continue running services for free until you do. We build this together during onboarding: your client lifetime value, consultation conversion rate (currently 100%), show rate, and current lead velocity. We reverse-engineer a booked consultation benchmark, then we're accountable to it. No other agency in this space offers this.</p><p style="margin-bottom:0;">Brian, you mentioned the economics of scaling a group practice. At $200/session with clients staying 3+ years, the lifetime value per client is significant. The guarantee only requires a handful of new long-term clients to hit the 2x target.</p></div>
+
+    <div class="roi-callout" style="margin-top:2rem;"><h4>The Math That Matters</h4><p style="margin-bottom:0;">Bree has 15 clients who've been with her for ~3 years at $200/session. That's a client lifetime value well over $10,000. Even conservatively at $8,000 CLV, the $20K guarantee target of $40K in new revenue requires just 5 new long-term clients over 12 months. That's less than one new client every 2.5 months. And with a 100% consult-to-close rate, every consultation that walks through the door is a client. We just need to get them to the door.</p></div>
+
+    <div style="text-align:center;margin:3rem 0 1rem;color:var(--color-muted);font-size:.875rem;letter-spacing:.06em;text-transform:uppercase;">or</div>
+
+    <div class="investment-card" style="margin-top:1rem;border-color:var(--color-border);">
+      <span class="badge" style="background:var(--color-surface);border:1px solid var(--color-border);color:var(--color-muted);">3-Month Growth Engagement</span>
+      <div class="investment-price">$5,000</div>
+      <div class="investment-period">One-time &middot; Full foundational build + 3 months of active strategy &middot; Payable monthly ($1,667/mo)</div>
+      <ul class="investment-features">
+        <li><span class="check">&#10003;</span> Complete CORE audit via Surge platform</li>
+        <li><span class="check">&#10003;</span> 5 fully optimized specialty pages + bio pages for Bree and Lindsay + FAQ page</li>
+        <li><span class="check">&#10003;</span> Full schema markup implementation across all pages</li>
+        <li><span class="check">&#10003;</span> Google Business Profile optimization and biweekly posting</li>
+        <li><span class="check">&#10003;</span> Social profile build-out and branding (up to 9 platforms)</li>
+        <li><span class="check">&#10003;</span> Directory listing activation (15+ directories + 5 data aggregators)</li>
+        <li><span class="check">&#10003;</span> Syndicated press release (500+ news sites)</li>
+        <li><span class="check">&#10003;</span> YouTube channel setup + endorsement videos</li>
+        <li><span class="check">&#10003;</span> Quora Space creation and content seeding</li>
+        <li><span class="check">&#10003;</span> LiveDrive + NEO + Entity Veracity Hub activation</li>
+        <li><span class="check">&#10003;</span> AI visibility monitoring (Gemini, ChatGPT, Perplexity)</li>
+        <li><span class="check">&#10003;</span> Monthly reporting and performance review</li>
+      </ul>
+      <a href="https://invoice.stripe.com/i/acct_1GyMnvBQh6FUgIfx/live_YWNjdF8xR3lNbnZCUWg2RlVnSWZ4LF9VQ2dROWlKbkh4RHJTWnZhN2tvWDNOTnRHNFF1c0p2LDE2NDg0NjE2OQ020098fsSJDr?s=ap" class="cta-btn-outline" target="_blank">View 3-Month Invoice &#8594;</a>
+    </div>
+
+    <div class="roi-callout" style="margin-top:2rem;"><h4>A Note on Payment</h4><p style="margin-bottom:0;">Both options can be paid monthly via bank transfer (no processing fees) or credit card. No interest on monthly payments. Bree asked about this on the call, and the answer is simple: $1,667/month for either option, with the 12-month getting you the performance guarantee and the compounding months 4-12 where the real growth happens.</p></div>
+
+    <div class="assets-note"><span class="icon">&#128737;&#65039;</span><div><p><strong>Your assets are always yours.</strong> Everything we build (pages, content, social profiles, directory listings, schema markup) remains your property. If our engagement ends, nothing is removed. You keep it all.</p></div></div>
+    <div class="cta-group">
+      <a href="https://invoice.stripe.com/i/acct_1GyMnvBQh6FUgIfx/live_YWNjdF8xR3lNbnZCUWg2RlVnSWZ4LF9VQ2dSeVBsM3BjeFJ6QmVIb2JKdjJBTURsUzBZREpMLDE2NDg0NjE4Nw0200RCX2FM6t?s=ap" class="cta-btn" target="_blank">View 12-Month Invoice and Get Started &#8594;</a>
+      <a href="https://msg.moonraker.ai/widget/bookings/scott-pope-calendar" class="cta-btn-outline" target="_blank">Book a Call with Scott</a>
+    </div>
+  </div>
+</section>
+
+<div class="confidential"><div class="container">This proposal is confidential and prepared exclusively for Bree Anthony, MA, LMFT and the Life Threads Therapy team.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai</div></div>
+<footer class="footer"><div class="container"><img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker"><br><a href="https://moonraker.ai">moonraker.ai</a></div></footer>
+
+<script>
+(function() {
+  var themeBtn = document.getElementById('themeBtn');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function() {
+      var h = document.documentElement;
+      if (h.getAttribute('data-theme') === 'light') {
+        h.setAttribute('data-theme', 'dark');
+        themeBtn.innerHTML = '&#9728;&#65039;';
+      } else {
+        h.setAttribute('data-theme', 'light');
+        themeBtn.innerHTML = '&#x1F319;';
+      }
+    });
+  }
+
+  var progressBar = document.getElementById('progressBar');
+  function updateProgress() {
+    var scrollTop = window.scrollY;
+    var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    progressBar.style.width = (docHeight > 0 ? (scrollTop / docHeight) * 100 : 0) + '%';
+  }
+
+  var sections = document.querySelectorAll('section[id]');
+  var navLinks = document.querySelectorAll('.section-nav a');
+  function updateNav() {
+    var current = '';
+    sections.forEach(function(s) { if (window.scrollY >= s.offsetTop - 200) current = s.id; });
+    navLinks.forEach(function(l) { l.classList.toggle('active', l.getAttribute('href') === '#' + current); });
+  }
+
+  var ringsAnimated = false;
+  function animateRings() {
+    if (ringsAnimated) return;
+    var grid = document.querySelector('.scorecard-grid');
+    if (!grid) return;
+    if (grid.getBoundingClientRect().top < window.innerHeight * 0.8) {
+      ringsAnimated = true;
+      document.querySelectorAll('.ring-fg').forEach(function(c) { c.style.strokeDashoffset = c.getAttribute('data-target'); });
+    }
+  }
+
+  var reveals = document.querySelectorAll('.reveal');
+  function checkReveal() {
+    reveals.forEach(function(el) { if (el.getBoundingClientRect().top < window.innerHeight * 0.88) el.classList.add('visible'); });
+  }
+
+  function onScroll() { updateProgress(); updateNav(); animateRings(); checkReveal(); }
+  window.addEventListener('scroll', onScroll);
+  onScroll();
+
+  document.querySelectorAll('.collapsible-toggle').forEach(function(t) {
+    t.addEventListener('click', function() { this.parentElement.classList.toggle('open'); });
+  });
+})();
+</script>
+</body>
+</html>
