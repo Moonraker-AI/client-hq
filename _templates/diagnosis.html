@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Moonraker x {{PRACTICE_NAME}}: Digital Presence Diagnosis</title>
+<title>Moonraker x Sky Therapies: Digital Presence Diagnosis</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
@@ -90,6 +91,7 @@ section { padding: 4.5rem 0; }
 .hero h1 { margin-bottom: 1rem; }
 .hero .subtitle { font-size: 1.0625rem; color: var(--color-muted); max-width: 520px; line-height: 1.7; }
 .badge { display: inline-block; background: var(--color-primary-subtle); color: var(--color-primary); font-weight: 600; font-size: .75rem; padding: .4rem 1rem; border-radius: 100px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 1rem; }
+.hero-visual svg { width: 100%; height: auto; }
 
 .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 2rem; margin-bottom: 1.5rem; transition: box-shadow .3s ease, transform .3s ease; }
 .card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.05); transform: translateY(-2px); }
@@ -132,11 +134,6 @@ section { padding: 4.5rem 0; }
 .finding p { margin: 0; font-size: .9375rem; line-height: 1.7; }
 .finding .highlight { font-weight: 600; color: var(--color-heading); }
 
-/* ============================================================
-   AUDIT-SPECIFIC STYLES
-   ============================================================ */
-
-/* Opportunity cards */
 .opportunity-grid { display: grid; gap: 1rem; margin: 2rem 0; }
 .opportunity-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.5rem 1.75rem; display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center; transition: box-shadow .3s ease, transform .3s ease; }
 .opportunity-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.05); transform: translateY(-2px); }
@@ -147,12 +144,8 @@ section { padding: 4.5rem 0; }
 .effort-badge.quick-win { background: rgba(0,212,126,.1); color: var(--color-success); }
 .effort-badge.medium { background: rgba(245,158,11,.1); color: var(--color-warning); }
 .effort-badge.strategic { background: rgba(59,130,246,.1); color: var(--color-info); }
-@media (max-width: 640px) {
-  .opportunity-card { grid-template-columns: auto 1fr; }
-  .effort-badge { grid-column: 2; justify-self: start; }
-}
+@media (max-width: 640px) { .opportunity-card { grid-template-columns: auto 1fr; } .effort-badge { grid-column: 2; justify-self: start; } }
 
-/* Competitor comparison table */
 .competitor-table-wrap { overflow-x: auto; margin: 2rem 0; border-radius: 14px; border: 1px solid var(--color-border); }
 .competitor-table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
 .competitor-table th { background: var(--color-navy); color: #E8F5EF; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .8125rem; letter-spacing: .04em; text-transform: uppercase; padding: .875rem 1.25rem; text-align: left; white-space: nowrap; }
@@ -161,12 +154,10 @@ section { padding: 4.5rem 0; }
 .competitor-table tr:last-child td { border-bottom: none; }
 .competitor-table td.you-col { background: var(--color-primary-subtle); font-weight: 500; }
 .competitor-table .metric-label { font-weight: 600; color: var(--color-heading); white-space: nowrap; }
-.table-icon { display: inline-block; margin-right: .25rem; }
-.table-check { color: var(--color-success); }
-.table-cross { color: var(--color-danger); }
-.table-partial { color: var(--color-warning); }
+.table-check { color: var(--color-success); font-weight: 700; }
+.table-cross { color: var(--color-danger); font-weight: 700; }
+.table-partial { color: var(--color-warning); font-weight: 700; }
 
-/* AI visibility section */
 .ai-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin: 2rem 0; }
 .ai-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.5rem; position: relative; overflow: hidden; }
 .ai-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
@@ -180,7 +171,6 @@ section { padding: 4.5rem 0; }
 .ai-status.partial { background: rgba(245,158,11,.1); color: var(--color-warning); }
 .ai-status.missing { background: rgba(239,68,68,.1); color: var(--color-danger); }
 
-/* Brand Beacon status */
 .beacon-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 2rem 0; }
 .beacon-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.25rem 1.5rem; text-align: center; }
 .beacon-card h4 { font-size: .9375rem; margin-bottom: .75rem; }
@@ -189,14 +179,12 @@ section { padding: 4.5rem 0; }
 .beacon-status.needs-update { color: var(--color-warning); }
 .beacon-status.missing { color: var(--color-danger); }
 
-/* Quick wins callout */
 .quick-wins { background: var(--color-primary-subtle); border-left: 4px solid var(--color-primary); border-radius: 0 12px 12px 0; padding: 1.5rem 2rem; margin: 2rem 0; }
 .quick-wins h4 { color: var(--color-heading); margin-bottom: .75rem; font-size: 1rem; }
 .quick-wins ul { list-style: none; padding: 0; margin: 0; }
 .quick-wins li { padding: .35rem 0; font-size: .9375rem; display: flex; align-items: flex-start; gap: .5rem; }
 .quick-wins li::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--color-primary); border-radius: 50%; flex-shrink: 0; margin-top: .55rem; }
 
-/* Audit nav links */
 .audit-nav { display: flex; flex-wrap: wrap; gap: 1rem; margin: 2rem 0; }
 .audit-nav-link { display: flex; align-items: center; gap: .75rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem 1.5rem; flex: 1; min-width: 200px; transition: all .25s ease; text-decoration: none; color: var(--color-body); }
 .audit-nav-link:hover { border-color: var(--color-primary); box-shadow: 0 4px 16px rgba(0,212,126,.1); transform: translateY(-2px); color: var(--color-body); }
@@ -204,7 +192,11 @@ section { padding: 4.5rem 0; }
 .audit-nav-link h4 { margin-bottom: .15rem; font-size: .9375rem; }
 .audit-nav-link p { margin: 0; font-size: .8125rem; color: var(--color-muted); }
 
-.hero-visual svg { width: 100%; height: auto; }
+.variance-box { background: linear-gradient(135deg, var(--color-navy), #1a2f5a); border-radius: 16px; padding: 2.5rem; color: #E8F5EF; margin: 2rem 0; position: relative; overflow: hidden; text-align: center; }
+.variance-box::before { content: ''; position: absolute; top: -30%; right: -5%; width: 260px; height: 260px; background: radial-gradient(circle, rgba(0,212,126,.12) 0%, transparent 70%); pointer-events: none; }
+.variance-score { font-size: 4rem; font-weight: 700; font-family: 'Outfit', sans-serif; color: var(--color-warning); margin: .5rem 0; }
+.variance-label { font-size: 1rem; color: rgba(232,245,239,.6); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+.variance-desc { color: rgba(232,245,239,.8); max-width: 600px; margin: 1rem auto 0; font-size: .9375rem; }
 
 .cta-btn { display: inline-block; background: var(--color-primary); color: #fff; font-weight: 600; font-size: 1rem; padding: .875rem 2rem; border-radius: 10px; transition: all .25s ease; text-decoration: none; }
 .cta-btn:hover { background: var(--color-primary-hover); color: #fff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,212,126,.3); }
@@ -228,6 +220,7 @@ section { padding: 4.5rem 0; }
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 </style>
+<script>document.addEventListener('DOMContentLoaded',function(){try{var t=localStorage.getItem('moonraker-theme');if(t==='dark'){var b=document.getElementById('themeBtn');if(b)b.innerHTML='\u2600\uFE0F'}}catch(e){}})</script>
 </head>
 <body>
 
@@ -245,33 +238,24 @@ section { padding: 4.5rem 0; }
   <a href="#next"><span class="nav-dot"></span>Next Steps</a>
 </nav>
 
-<!-- ============================================================
-     SECTION 1: HEADER
-     Variables: CLIENT_NAME_CREDENTIALS, PRACTICE_NAME, LOCATION, DATE
-     ============================================================ -->
 <header class="header">
   <div class="container header-inner">
     <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker">
     <div class="header-meta">
-      <p class="name">Prepared for {{CLIENT_NAME_CREDENTIALS}}</p>
-      <p>{{PRACTICE_NAME}} &middot; {{LOCATION}}</p>
-      <p>{{DATE}} &middot; Confidential</p>
+      <p class="name">Prepared for Anna Skomorovskaia, MSW, BASc, RSW, RD</p>
+      <p>Sky Therapies &middot; Toronto, Ontario</p>
+      <p>March 24, 2026 &middot; Confidential</p>
     </div>
   </div>
 </header>
 
-<!-- ============================================================
-     SECTION 2: HERO
-     Variables: AUDIT_TYPE_BADGE, HERO_HEADLINE, HERO_SUBTITLE
-     Badge options: "Digital Presence Diagnosis" | "Quarterly Campaign Review" | "Campaign Recovery Assessment"
-     ============================================================ -->
 <section class="hero" id="hero">
   <div class="container">
     <div class="hero-layout">
       <div class="hero-content">
-        <span class="badge">{{AUDIT_TYPE_BADGE}}</span>
-        <h1>{{HERO_HEADLINE}}</h1>
-        <p class="subtitle">{{HERO_SUBTITLE}}</p>
+        <span class="badge">Digital Presence Diagnosis</span>
+        <h1>Your AI Visibility is Stronger Than You Think</h1>
+        <p class="subtitle">Sky Therapies already dominates in conversational AI. This report maps the structural gaps preventing Google from recognizing that same strength, and the specific actions that will close them.</p>
       </div>
       <div class="hero-visual">
         <svg viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -291,26 +275,30 @@ section { padding: 4.5rem 0; }
 
 <hr class="divider">
 
-<!-- ============================================================
-     SECTION 3: EXECUTIVE SUMMARY
-     Variables: CLIENT_FIRST_NAME, EXEC_SUMMARY_PARAGRAPHS, QUICK_WINS_ITEMS
-     
-     Summary: 2-3 paragraphs. Lead with genuine positives, then state the 
-     primary opportunity, then summarize focus areas.
-     
-     Quick wins: 3-5 specific actions implementable in 1-2 weeks.
-     Format each as <li>ACTION_TEXT</li>
-     ============================================================ -->
 <section class="exec-summary reveal" id="summary">
   <div class="container">
     <h2>Executive Summary</h2>
     <div class="card" style="margin-top:1.5rem;">
-{{EXEC_SUMMARY_PARAGRAPHS}}
+      <p class="lead">Sky Therapies holds a remarkable position: a <strong>CRES score of 100/100</strong> (Dominant Echo) in both Claude and Perplexity, ranking #1 in each. For a single-location psychotherapy practice, this is an exceptional citation posture. Your content authenticity is perfect (5/5), your internal linking is solid (93 links with strong service page topology), and your site content is fresh and genuine.</p>
+      <p class="lead">The core challenge is a <strong>bifurcated visibility profile.</strong> Conversational AI platforms that have already adopted entity-aware indexing (Claude, Perplexity, Bing) see and cite Sky Therapies accurately. But Google does not yet recognize the practice as a distinct entity. The Knowledge Graph score is 0/100, and no Google AI Overview is generated for your own brand name. This is the single highest-leverage gap: everything else flows from entity recognition.</p>
+      <p class="lead">The good news: the gaps are structural, not content-based. Your clinical differentiation (RSW + Registered Dietitian, mind-body-gut framework, First Responder specialization) is genuine and rare. It just needs to be surfaced in machine-readable formats that Google can parse. The action plan that accompanies this diagnosis provides a week-by-week roadmap to close these gaps.</p>
     </div>
+
+    <div class="variance-box">
+      <div class="variance-label">Variance Score</div>
+      <div class="variance-score">37<span style="font-size:1.5rem;opacity:.5">/100</span></div>
+      <div class="variance-label" style="margin-top:.25rem;">Moderate Variance</div>
+      <p class="variance-desc">A well-positioned practice with meaningful citation presence but structural and entity-recognition gaps limiting discoverability in Google's AI surfaces. Target after implementation: 20-25/100.</p>
+    </div>
+
     <div class="quick-wins">
       <h4>&#9889; Quick Wins (Implementable in 1-2 Weeks)</h4>
       <ul>
-{{QUICK_WINS_ITEMS}}
+        <li>Create and deploy brand.jsonld entity identity file to unlock Google Knowledge Graph recognition</li>
+        <li>Add AggregateRating schema to close the visible star-rating gap vs. Psychology Today</li>
+        <li>Source or attribute the three outcome statistics (80%, 98%, 67%) currently weakening your evidence profile</li>
+        <li>Move H1 from site chrome into main content block to improve AI extraction surface</li>
+        <li>Fix the "Deression therapy" alt text typo</li>
       </ul>
     </div>
   </div>
@@ -318,107 +306,174 @@ section { padding: 4.5rem 0; }
 
 <hr class="divider">
 
-<!-- ============================================================
-     SECTION 4: CORE ASSESSMENT
-     Variables: Same as proposal template scorecard + findings
-               SCORE_C, SCORE_O, SCORE_R, SCORE_E (numbers 1-10)
-               SCORE_C_CLASS, SCORE_O_CLASS, SCORE_R_CLASS, SCORE_E_CLASS
-               (use "score-low" for 1-4, "score-med" for 5-7, "score-high" for 8-10)
-               SCORE_C_OFFSET, SCORE_O_OFFSET, SCORE_R_OFFSET, SCORE_E_OFFSET
-               CREDIBILITY_FINDINGS, OPTIMIZATION_FINDINGS, REPUTATION_FINDINGS, ENGAGEMENT_FINDINGS
-     ============================================================ -->
 <section class="reveal" id="assessment">
   <div class="container">
     <h2>CORE Assessment</h2>
-    <p style="margin-bottom:1rem;">We've scored your digital presence across the four pillars of the CORE framework. Each pillar represents a critical dimension that Google and AI platforms evaluate when deciding who to recommend.</p>
+    <p style="margin-bottom:1rem;">We scored your digital presence across the four pillars of the CORE framework. Each pillar represents a critical dimension that Google and AI platforms evaluate when deciding who to recommend.</p>
     <div class="scorecard-grid">
-      <div class="score-card {{SCORE_C_CLASS}}"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="{{SCORE_C_OFFSET}}"/></svg><div class="score-val">{{SCORE_C}}<span>/10</span></div></div><div class="score-label">Pillar 1</div><div class="score-pillar">Credibility</div></div>
-      <div class="score-card {{SCORE_O_CLASS}}"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="{{SCORE_O_OFFSET}}"/></svg><div class="score-val">{{SCORE_O}}<span>/10</span></div></div><div class="score-label">Pillar 2</div><div class="score-pillar">Optimization</div></div>
-      <div class="score-card {{SCORE_R_CLASS}}"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="{{SCORE_R_OFFSET}}"/></svg><div class="score-val">{{SCORE_R}}<span>/10</span></div></div><div class="score-label">Pillar 3</div><div class="score-pillar">Reputation</div></div>
-      <div class="score-card {{SCORE_E_CLASS}}"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="{{SCORE_E_OFFSET}}"/></svg><div class="score-val">{{SCORE_E}}<span>/10</span></div></div><div class="score-label">Pillar 4</div><div class="score-pillar">Engagement</div></div>
+      <div class="score-card score-low"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="176"/></svg><div class="score-val">3<span>/10</span></div></div><div class="score-label">Pillar 1</div><div class="score-pillar">Credibility</div></div>
+      <div class="score-card score-low"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="151"/></svg><div class="score-val">4<span>/10</span></div></div><div class="score-label">Pillar 2</div><div class="score-pillar">Optimization</div></div>
+      <div class="score-card score-low"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="176"/></svg><div class="score-val">3<span>/10</span></div></div><div class="score-label">Pillar 3</div><div class="score-pillar">Reputation</div></div>
+      <div class="score-card score-med"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="101"/></svg><div class="score-val">6<span>/10</span></div></div><div class="score-label">Pillar 4</div><div class="score-pillar">Engagement</div></div>
     </div>
 
     <div class="collapsible"><button class="collapsible-toggle"><span>Credibility: Can You Prove You Exist?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
-{{CREDIBILITY_FINDINGS}}
+      <div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">Google does not recognize Sky Therapies as an entity.</span> Knowledge Graph score is 0/100. Google Cloud NLP did not detect the brand as a named entity. This is the root cause of the Google AI Overview absence for your own brand name. No entity = no AI Overview.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">GBP data integrity issue detected.</span> The Google Business Profile measurement surfaced a listing for "Sky's the Limit Fund" (a California non-profit) at your location rather than Sky Therapies. This must be resolved before any local signal work can take effect.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">brand.jsonld entity identity file is missing.</span> The llms.txt file is present and thorough (7 sections, 31 linked resources), but the machine-readable entity identity file that AI systems use for corroboration is absent from /.well-known/brand.jsonld.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Founder credentials are genuinely distinctive.</span> Anna Skomorovskaia holds both RSW and RD designations, a dual credential that is rare in the Ontario therapy landscape. Person schema is present. Content authenticity scores a perfect 5/5 with original founder voice, byline, and date metadata.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Directory presence is functional.</span> Sky Therapies appears on Yelp, eMentalHealth, eSante Mentale, Psychology Today (#2 and #7 in SERP), Facebook, and MapQuest. NAP consistency needs verification but the foundation is in place.</p></div></div>
     </div></div></div>
 
     <div class="collapsible"><button class="collapsible-toggle"><span>Optimization: Can AI Understand What You Do?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
-{{OPTIMIZATION_FINDINGS}}
+      <div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">H1 heading is in site chrome, not in main content.</span> The main content area uses H4 and H6 headings almost exclusively, with only a single H2 ("Step by step"). AI extraction systems look inside the main content block for heading hierarchy. AI Extraction Readiness scores 55/100 as a result.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">Schema stack is strong but incomplete.</span> 8 schema types detected (MedicalOrganization, LocalBusiness, MedicalBusiness, Person, etc.) scoring 0.72/1.0. Missing: FAQPage, VideoObject, and AggregateRating, which are the three most impactful additions available.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">FAQ content exists but lacks markup.</span> 3 FAQ-pattern questions detected (Why Choose Us, How Does It Work, What To Expect) but no FAQPage schema wraps them. Score: 0.25/1.0 vs. benchmark of 0.60.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">Topical depth is spread thin.</span> The page covers 11+ specialties and 6 therapy modalities in only 1,541 words. Each topic gets a brief mention rather than meaningful depth. Score: 62/100 vs. benchmark of 75.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Internal linking structure is solid.</span> 93 internal links with strong service page topology connecting the homepage to EMDR, Somatic, PRT, DBR, and Brainspotting pages. Score: 0.72/1.0, exceeding the 0.70 benchmark.</p></div></div>
     </div></div></div>
 
     <div class="collapsible"><button class="collapsible-toggle"><span>Reputation: Can You Prove You're Good?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
-{{REPUTATION_FINDINGS}}
+      <div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">No AggregateRating schema on the page.</span> Reviews exist on Google Maps and Yelp but are invisible in search results. Psychology Today profiles rank #2 and #7 for "Sky Therapies" and prominently display star ratings. This is a visible competitive disadvantage.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">Three outcome statistics are unsourced.</span> The page displays "80%," "98%," and "67%" as headline claims with no study, methodology, or sample size attributed. AI systems classify these as Unsupported Assertions. First-Party Evidence scores 1/5.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">The dual-credential Bridging angle is not surfacing in AI responses.</span> Despite being a genuine differentiator, no AI engine is synthesizing the RSW + RD framework. Engines describe the practice in generic psychotherapy terms (trauma, anxiety, EMDR) without the mind-body-gut narrative.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Content authenticity is a primary strength.</span> Score: 5/5, exceeding the 4/5 benchmark. All positive signals present: founder byline, Person schema, content depth, original phrasing in the opening narrative, and date metadata. This is genuine and differentiating.</p></div></div>
     </div></div></div>
 
     <div class="collapsible"><button class="collapsible-toggle"><span>Engagement: Is There a Path to Booking?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
-{{ENGAGEMENT_FINDINGS}}
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Search intent alignment is strong.</span> Brand query alignment scores 0.85/1.0. Page title, meta description, and content all match branded search intent well. Navigation is clean with zero fragment links.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Clear CTA with low-friction entry point.</span> The free 20-minute phone consultation is mentioned in the meta description and is consistent across the site. This is a strong Engagement signal for AI systems that evaluate booking pathways.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Content is fresh.</span> Last modified March 19, 2026. Freshness band: Fresh. For a branded service page, this signals an actively maintained digital presence.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">Performance could benefit from measurement.</span> Estimated at 72/100 based on 44 images, 1 video embed, and one detected overlay. No Core Web Vitals data was available to refine this estimate.</p></div></div>
     </div></div></div>
   </div>
 </section>
 
 <hr class="divider">
 
-<!-- ============================================================
-     SECTION 5: KEY OPPORTUNITIES
-     Variables: OPPORTUNITIES_INTRO, OPPORTUNITY_ITEMS
-     
-     Opportunity card format (repeat for each, typically 5-8):
-       <div class="opportunity-card">
-         <div class="opportunity-rank">NUMBER</div>
-         <div><h4>OPPORTUNITY_TITLE</h4><p>OPPORTUNITY_DESCRIPTION</p></div>
-         <span class="effort-badge EFFORT_CLASS">EFFORT_LABEL</span>
-       </div>
-     
-     EFFORT_CLASS options: "quick-win" | "medium" | "strategic"
-     EFFORT_LABEL options: "Quick Win" | "Medium Effort" | "Strategic"
-     ============================================================ -->
 <section class="reveal" id="opportunities">
   <div class="container">
     <h2>Key Opportunities</h2>
-    <p style="margin-bottom:1rem;">{{OPPORTUNITIES_INTRO}}</p>
+    <p style="margin-bottom:1rem;">Ranked by estimated impact on your AI visibility and search performance. Each action ties directly to a measured gap from the Surge audit.</p>
     <div class="opportunity-grid">
-{{OPPORTUNITY_ITEMS}}
+      <div class="opportunity-card">
+        <div class="opportunity-rank">1</div>
+        <div><h4>Establish Entity Identity (brand.jsonld + GBP Fix)</h4><p>Google does not recognize Sky Therapies as a named entity (KG 0/100). Creating a brand.jsonld file and resolving the GBP data conflict is the single highest-leverage fix, unlocking Google AI Overview generation for your own brand name.</p></div>
+        <span class="effort-badge quick-win">Quick Win</span>
+      </div>
+      <div class="opportunity-card">
+        <div class="opportunity-rank">2</div>
+        <div><h4>Add AggregateRating Schema</h4><p>Star ratings exist on Google Maps and Yelp but are invisible in search results. Psychology Today ranks #2 and #7 with visible ratings. Adding AggregateRating schema closes this visible competitive gap immediately.</p></div>
+        <span class="effort-badge quick-win">Quick Win</span>
+      </div>
+      <div class="opportunity-card">
+        <div class="opportunity-rank">3</div>
+        <div><h4>Source the Three Outcome Statistics</h4><p>The 80%, 98%, and 67% figures on the page register as Unsupported Assertions. Adding methodology or study citations would shift First-Party Evidence from 1/5 to 3-4/5 and strengthen AI confidence in brand differentiation claims.</p></div>
+        <span class="effort-badge quick-win">Quick Win</span>
+      </div>
+      <div class="opportunity-card">
+        <div class="opportunity-rank">4</div>
+        <div><h4>Restructure Heading Hierarchy</h4><p>Move H1 into main content and add H2/H3 structure for service categories. This directly improves AI Extraction Readiness from 55/100 toward 65-70/100 and gives engines a clear content map to parse.</p></div>
+        <span class="effort-badge medium">Medium Effort</span>
+      </div>
+      <div class="opportunity-card">
+        <div class="opportunity-rank">5</div>
+        <div><h4>Surface the RSW + RD Bridging Angle</h4><p>The dual-credential mind-body-gut framework is your highest information-gain differentiator, but no AI engine is synthesizing it. Structuring this in H2/H3 headings and FAQ responses will unlock Bridging dataset presence.</p></div>
+        <span class="effort-badge medium">Medium Effort</span>
+      </div>
+      <div class="opportunity-card">
+        <div class="opportunity-rank">6</div>
+        <div><h4>Produce Keyword-Targeted YouTube Video</h4><p>Two brand videos exist at 129 and 12 views. Competitor "Sky Life" dominates the namespace with 58K views. A single 2-3 minute explainer targeting "Trauma Therapy Toronto" with an optimized title would shift video coverage meaningfully.</p></div>
+        <span class="effort-badge medium">Medium Effort</span>
+      </div>
+      <div class="opportunity-card">
+        <div class="opportunity-rank">7</div>
+        <div><h4>Build FAQ Content + Schema (10 Questions)</h4><p>FAQ-pattern content exists but lacks structure and markup. Implementing 10 structured FAQ questions with FAQPage schema improves extraction in Claude, Perplexity, and Bing regardless of Google rich result eligibility.</p></div>
+        <span class="effort-badge medium">Medium Effort</span>
+      </div>
+      <div class="opportunity-card">
+        <div class="opportunity-rank">8</div>
+        <div><h4>Launch Audio Presence (Podcast / Audio Clip)</h4><p>Audio/Podcast channel scores 0/100, a confirmed zero. A single 60-90 second audio explainer uploaded to Spotify for Podcasters would move this metric from nothing to measurable presence.</p></div>
+        <span class="effort-badge strategic">Strategic</span>
+      </div>
     </div>
   </div>
 </section>
 
 <hr class="divider">
 
-<!-- ============================================================
-     SECTION 6: COMPETITOR LANDSCAPE
-     Variables: COMPETITORS_INTRO, COMPETITOR_TABLE_ROWS
-     
-     Table has columns: Metric | You | Competitor 1 | Competitor 2 | Competitor 3
-     
-     Row format:
-       <tr>
-         <td class="metric-label">METRIC_NAME</td>
-         <td class="you-col">YOUR_VALUE</td>
-         <td>COMP1_VALUE</td>
-         <td>COMP2_VALUE</td>
-         <td>COMP3_VALUE</td>
-       </tr>
-     
-     Use icons for yes/no/partial:
-       <span class="table-icon table-check">&#10003;</span> Yes
-       <span class="table-icon table-cross">&#10007;</span> No
-       <span class="table-icon table-partial">&#9679;</span> Partial
-     ============================================================ -->
 <section class="reveal" id="competitors">
   <div class="container">
     <h2>Competitive Landscape</h2>
-    <p style="margin-bottom:1rem;">{{COMPETITORS_INTRO}}</p>
+    <p style="margin-bottom:1rem;">For your branded query, the competitive landscape is unusual: third-party directory profiles (Psychology Today, eMentalHealth) rank higher than expected for your own brand name, suggesting their domain authority is borrowing signal from "Sky Therapies." This is not a content problem, it is an entity recognition problem.</p>
     <div class="competitor-table-wrap">
       <table class="competitor-table">
         <thead>
           <tr>
-            <th>Metric</th>
-            <th class="you-col">{{PRACTICE_SHORT_NAME}}</th>
-{{COMPETITOR_HEADERS}}
+            <th>Signal</th>
+            <th class="you-col">Sky Therapies</th>
+            <th>Psychology Today</th>
+            <th>eMentalHealth</th>
+            <th>Yelp</th>
           </tr>
         </thead>
         <tbody>
-{{COMPETITOR_TABLE_ROWS}}
+          <tr>
+            <td class="metric-label">SERP Position</td>
+            <td class="you-col"><span class="table-check">&#10003;</span> #1</td>
+            <td>#2 and #7</td>
+            <td>#5</td>
+            <td>#8 (Bing)</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Visible Star Ratings</td>
+            <td class="you-col"><span class="table-cross">&#10007;</span> None</td>
+            <td><span class="table-check">&#10003;</span> Yes</td>
+            <td><span class="table-cross">&#10007;</span> No</td>
+            <td><span class="table-check">&#10003;</span> Yes</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Knowledge Graph</td>
+            <td class="you-col"><span class="table-cross">&#10007;</span> 0/100</td>
+            <td><span class="table-check">&#10003;</span> Recognized</td>
+            <td><span class="table-check">&#10003;</span> Recognized</td>
+            <td><span class="table-check">&#10003;</span> Recognized</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Schema Depth</td>
+            <td class="you-col"><span class="table-partial">&#9679;</span> 8 types</td>
+            <td>Structured profiles</td>
+            <td>Directory schema</td>
+            <td>Directory schema</td>
+          </tr>
+          <tr>
+            <td class="metric-label">AI Citation (Claude)</td>
+            <td class="you-col"><span class="table-check">&#10003;</span> Rank #1</td>
+            <td>Not cited</td>
+            <td>Not cited</td>
+            <td>Not cited</td>
+          </tr>
+          <tr>
+            <td class="metric-label">AI Citation (Perplexity)</td>
+            <td class="you-col"><span class="table-check">&#10003;</span> Rank #1</td>
+            <td>Not cited</td>
+            <td>Not cited</td>
+            <td>Not cited</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Content Authenticity</td>
+            <td class="you-col"><span class="table-check">&#10003;</span> 5/5</td>
+            <td>3/5 (template)</td>
+            <td>2/5 (directory)</td>
+            <td>2/5 (directory)</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Unique Differentiator</td>
+            <td class="you-col"><span class="table-check">&#10003;</span> RSW + RD</td>
+            <td>None (generic)</td>
+            <td>None (generic)</td>
+            <td>None (generic)</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -427,77 +482,88 @@ section { padding: 4.5rem 0; }
 
 <hr class="divider">
 
-<!-- ============================================================
-     SECTION 7: AI VISIBILITY SNAPSHOT
-     Variables: AI_VISIBILITY_INTRO, AI_VISIBILITY_CARDS
-     
-     Card format (repeat for each AI platform, typically 3-4):
-       <div class="ai-card AI_STATUS_CLASS">
-         <h4>PLATFORM_NAME <span class="ai-status STATUS_CLASS">STATUS_TEXT</span></h4>
-         <p>DESCRIPTION</p>
-       </div>
-     
-     AI_STATUS_CLASS: "ai-visible" | "ai-partial" | "ai-missing"
-     STATUS_CLASS: "visible" | "partial" | "missing"
-     STATUS_TEXT: "Cited" | "Partial" | "Not Found"
-     ============================================================ -->
 <section class="reveal" id="ai-visibility">
   <div class="container">
     <h2>AI Visibility Snapshot</h2>
-    <p style="margin-bottom:1rem;">{{AI_VISIBILITY_INTRO}}</p>
+    <p style="margin-bottom:1rem;">Sky Therapies was tested across 8 AI engines and search surfaces. The results reveal a clear pattern: conversational AI platforms cite the brand prominently, while Google's AI surface is completely absent due to entity non-recognition.</p>
     <div class="ai-grid">
-{{AI_VISIBILITY_CARDS}}
+      <div class="ai-card ai-visible">
+        <h4>Claude <span class="ai-status visible">Rank #1</span></h4>
+        <p>Cited 4 times. Practice overview, credentials, services, and location all synthesized coherently. Correlative dataset dominant. CRES: 100/100.</p>
+      </div>
+      <div class="ai-card ai-visible">
+        <h4>Perplexity <span class="ai-status visible">Rank #1</span></h4>
+        <p>Cited 4 times. Synthesizes trauma, PTSD, anxiety, online Ontario scope, and service modalities. Strong Correlative + Parallel dataset engagement.</p>
+      </div>
+      <div class="ai-card ai-partial">
+        <h4>Bing / Copilot <span class="ai-status partial">Cited 1x</span></h4>
+        <p>Brand URL ranks #1 organically, but the AI layer leans on directories (Yelp, eMentalHealth, MapQuest) for structured answers. Amplifying dataset dominant.</p>
+      </div>
+      <div class="ai-card ai-missing">
+        <h4>Google AI Overview <span class="ai-status missing">Not Generated</span></h4>
+        <p>No AI Overview generated for "Sky Therapies" at all. This is not a citation miss but a complete surface absence. Root cause: entity non-recognition (KG 0/100).</p>
+      </div>
+      <div class="ai-card ai-partial">
+        <h4>YouTube <span class="ai-status partial">Partial</span></h4>
+        <p>Two brand videos present (129 and 12 views). Competitor "Sky Life" dominates with 58K views. Brand presence exists but has negligible reach.</p>
+      </div>
+      <div class="ai-card ai-missing">
+        <h4>Reddit <span class="ai-status missing">Not Found</span></h4>
+        <p>Zero relevant threads discussing Sky Therapies. Mental health communities on Reddit are highly active but the brand is absent from this surface entirely.</p>
+      </div>
+      <div class="ai-card ai-missing">
+        <h4>Audio / Podcast <span class="ai-status missing">0/100</span></h4>
+        <p>Confirmed zero audio presence. No podcast episodes, audio explainers, or voice content detected. This is the lowest-scoring modality channel.</p>
+      </div>
+      <div class="ai-card ai-partial">
+        <h4>Meta AI <span class="ai-status partial">Estimated</span></h4>
+        <p>Facebook page ranks #4 in SERP with brand mention. Meta AI likely has access to this data. Brand presence is possible but unconfirmed.</p>
+      </div>
     </div>
   </div>
 </section>
 
 <hr class="divider">
 
-<!-- ============================================================
-     SECTION 8: BRAND BEACON STATUS
-     Variables: BRAND_BEACON_INTRO, BRAND_BEACON_CARDS
-     
-     Card format (repeat for each file, typically 3):
-       <div class="beacon-card">
-         <h4>FILE_NAME</h4>
-         <div class="beacon-status STATUS_CLASS">ICON STATUS_TEXT</div>
-       </div>
-     
-     STATUS_CLASS: "present" | "needs-update" | "missing"
-     ============================================================ -->
 <section class="reveal" id="beacon">
   <div class="container">
     <h2>Brand Beacon Assessment</h2>
-    <p style="margin-bottom:1rem;">{{BRAND_BEACON_INTRO}}</p>
+    <p style="margin-bottom:1rem;">Brand Beacon files are machine-readable identity documents that help AI systems understand and verify your practice. They act as your business's official identity card for the internet. Here is the current status of each file.</p>
     <div class="beacon-grid">
-{{BRAND_BEACON_CARDS}}
+      <div class="beacon-card">
+        <h4>llms.txt</h4>
+        <div class="beacon-status present">&#9989; Present (100%)</div>
+        <p style="margin-top:.5rem;font-size:.8125rem;color:var(--color-muted);">7 sections, 31 linked resources. Thorough and well-structured.</p>
+      </div>
+      <div class="beacon-card">
+        <h4>brand.jsonld</h4>
+        <div class="beacon-status missing">&#10060; Missing</div>
+        <p style="margin-top:.5rem;font-size:.8125rem;color:var(--color-muted);">Machine-readable entity identity file. Critical for Knowledge Graph recognition.</p>
+      </div>
+      <div class="beacon-card">
+        <h4>dataset.jsonld</h4>
+        <div class="beacon-status needs-update">&#9888;&#65039; Not Assessed</div>
+        <p style="margin-top:.5rem;font-size:.8125rem;color:var(--color-muted);">Status to be evaluated after brand.jsonld is deployed.</p>
+      </div>
     </div>
   </div>
 </section>
 
 <hr class="divider">
 
-<!-- ============================================================
-     SECTION 9: NEXT STEPS
-     Variables: NEXT_STEPS_INTRO, ACTION_PLAN_URL (optional), PROGRESS_URL (optional)
-     
-     Audit nav links connect to the companion pages:
-     - Action Plan: /[client-slug]/action-plan
-     - Progress Tracker: /[client-slug]/progress
-     ============================================================ -->
 <section class="reveal" id="next">
   <div class="container">
     <h2>What Happens Next</h2>
-    <p style="margin-bottom:1.5rem;">{{NEXT_STEPS_INTRO}}</p>
+    <p style="margin-bottom:1.5rem;">This diagnosis maps where Sky Therapies stands today. The companion documents below contain the detailed, step-by-step implementation plan and an interactive progress tracker to keep everything on track.</p>
     <div class="audit-nav">
-      <a href="{{ACTION_PLAN_URL}}" class="audit-nav-link">
+      <a href="/sky-therapies/action-plan" class="audit-nav-link">
         <span class="nav-icon">&#128203;</span>
         <div>
           <h4>View Action Plan</h4>
           <p>Phased roadmap with priorities and timelines</p>
         </div>
       </a>
-      <a href="{{PROGRESS_URL}}" class="audit-nav-link">
+      <a href="/sky-therapies/progress" class="audit-nav-link">
         <span class="nav-icon">&#9989;</span>
         <div>
           <h4>Track Progress</h4>
@@ -512,11 +578,7 @@ section { padding: 4.5rem 0; }
   </div>
 </section>
 
-<!-- ============================================================
-     FOOTER
-     Variables: CLIENT_NAME_CREDENTIALS (reused from header)
-     ============================================================ -->
-<div class="confidential"><div class="container">This report is confidential and prepared exclusively for {{CLIENT_NAME_CREDENTIALS}}.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai</div></div>
+<div class="confidential"><div class="container">This report is confidential and prepared exclusively for Anna Skomorovskaia, MSW, BASc, RSW, RD.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai</div></div>
 <footer class="footer"><div class="container"><img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker"><br><a href="https://moonraker.ai">moonraker.ai</a></div></footer>
 
 <script>
@@ -528,9 +590,11 @@ section { padding: 4.5rem 0; }
       if (h.getAttribute('data-theme') === 'light') {
         h.setAttribute('data-theme', 'dark');
         themeBtn.innerHTML = '&#9728;&#65039;';
+        try{localStorage.setItem('moonraker-theme','dark')}catch(e){}
       } else {
         h.setAttribute('data-theme', 'light');
         themeBtn.innerHTML = '&#x1F319;';
+        try{localStorage.setItem('moonraker-theme','light')}catch(e){}
       }
     });
   }
