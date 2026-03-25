@@ -177,7 +177,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 .radio-option.selected { border-color: var(--color-primary); background: var(--color-primary-subtle); }
 .social-row { display: flex; align-items: center; gap: 1rem; padding: .75rem 0; border-bottom: 1px solid var(--color-border); }
 .social-row:last-child { border-bottom: none; }
-.social-platform { font-weight: 600; font-size: .875rem; color: var(--color-heading); min-width: 100px; }
+.social-platform { font-weight: 600; font-size: .875rem; color: var(--color-heading); min-width: 180px; width: 180px; flex-shrink: 0; }
 .social-row input { flex: 1; font-family: 'Inter', sans-serif; font-size: .875rem; padding: .5rem .75rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-heading); }
 .social-row input:focus { outline: none; border-color: var(--color-primary); }
 .social-row select { font-family: 'Inter', sans-serif; font-size: .8125rem; padding: .4rem .6rem; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); color: var(--color-heading); min-width: 130px; }
@@ -557,6 +557,12 @@ strong { font-weight: 600; color: var(--color-heading); }
       </div>
 
       <div class="form-section">
+        <h3>Platforms to Skip</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;">Some clients prefer to omit certain platforms for personal reasons. Let us know if there are any you would like us to skip.</p>
+        <div class="form-group"><label>Platforms to Omit (optional)</label><input type="text" id="sp_omit" placeholder="e.g. TikTok, X"><div class="help-text">We will not create profiles on these platforms</div></div>
+      </div>
+
+      <div class="form-section">
         <h3>Directories &amp; Listings</h3>
         <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:1rem;">Directory profiles are a key part of your credibility and visibility. Enter the URL for any listings you already have. Leave blank if you are not on a platform yet.</p>
 
@@ -584,11 +590,11 @@ strong { font-weight: 600; color: var(--color-heading); }
 
         <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Specialty &amp; Community Directories</h4>
         <div class="social-row"><span class="social-platform">EMDRIA</span><input type="url" id="dir_emdria" placeholder="https://emdria.org/find-an-emdr-therapist/..."></div>
-        <div class="social-row"><span class="social-platform">AAMFT Therapist Locator</span><input type="url" id="dir_aamft" placeholder="https://aamft.org/..."></div>
+        <div class="social-row"><span class="social-platform">IFS Institute</span><input type="url" id="dir_ifs" placeholder="https://ifs-institute.com/..."></div>
+        <div class="social-row"><span class="social-platform">AAMFT Locator</span><input type="url" id="dir_aamft" placeholder="https://aamft.org/..."></div>
         <div class="social-row"><span class="social-platform">Therapy for Black Girls</span><input type="url" id="dir_tfbg" placeholder="https://therapyforblackgirls.com/..."></div>
         <div class="social-row"><span class="social-platform">Latinx Therapy</span><input type="url" id="dir_latinx" placeholder="https://latinxtherapy.com/..."></div>
         <div class="social-row"><span class="social-platform">Asian MH Collective</span><input type="url" id="dir_amhc" placeholder="https://asianmhc.org/..."></div>
-        <div class="social-row"><span class="social-platform">IFS Institute</span><input type="url" id="dir_ifs" placeholder="https://ifs-institute.com/..."></div>
 
         <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Canadian Directories</h4>
         <div class="social-row"><span class="social-platform">eMentalHealth</span><input type="url" id="dir_ementalhealth" placeholder="https://ementalhealth.ca/..."></div>
@@ -597,12 +603,6 @@ strong { font-weight: 600; color: var(--color-heading); }
         <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Other Directories</h4>
         <p style="color:var(--color-muted);font-size:.8125rem;margin-bottom:.75rem;">Any directories not listed above? Add them here, one per line with the directory name and your profile URL.</p>
         <div class="form-group"><textarea id="dir_other" style="min-height:80px;" placeholder="e.g. AASECT Directory, https://aasect.org/referral-directory/...&#10;National Register, https://findapsychologist.org/...&#10;SE Directory, https://directory.traumahealing.org/..."></textarea></div>
-      </div>
-
-      <div class="form-section">
-        <h3>Platforms to Skip</h3>
-        <p style="color:var(--color-muted);font-size:.875rem;">Some clients prefer to omit certain platforms for personal reasons. Let us know if there are any you would like us to skip.</p>
-        <div class="form-group"><label>Platforms to Omit (optional)</label><input type="text" id="sp_omit" placeholder="e.g. TikTok, X"><div class="help-text">We will not create profiles on these platforms</div></div>
       </div>
 
       <button class="btn btn-primary" onclick="saveSocialProfiles()">Save &amp; Continue &#8594;</button>
