@@ -557,9 +557,46 @@ strong { font-weight: 600; color: var(--color-heading); }
       </div>
 
       <div class="form-section">
-        <h3>Directories</h3>
+        <h3>Directories &amp; Listings</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:1rem;">Directory profiles are a key part of your credibility and visibility. Enter the URL for any listings you already have. Leave blank if you are not on a platform yet.</p>
+
+        <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Google &amp; Major Directories</h4>
+        <div class="social-row"><span class="social-platform">Google Business Profile</span><input type="url" id="sp_gbp" placeholder="https://google.com/maps/place/..."></div>
         <div class="social-row"><span class="social-platform">Psychology Today</span><input type="url" id="sp_psychtoday" placeholder="https://psychologytoday.com/us/therapists/..."></div>
-        <div class="social-row"><span class="social-platform">GBP URL</span><input type="url" id="sp_gbp" placeholder="https://google.com/maps/place/..."></div>
+        <div class="social-row"><span class="social-platform">Yelp</span><input type="url" id="dir_yelp" placeholder="https://yelp.com/biz/..."></div>
+
+        <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Therapy Directories</h4>
+        <div class="social-row"><span class="social-platform">GoodTherapy</span><input type="url" id="dir_goodtherapy" placeholder="https://goodtherapy.org/therapists/profile/..."></div>
+        <div class="social-row"><span class="social-platform">TherapyDen</span><input type="url" id="dir_therapyden" placeholder="https://therapyden.com/therapist/..."></div>
+        <div class="social-row"><span class="social-platform">Zencare</span><input type="url" id="dir_zencare" placeholder="https://zencare.co/therapist/..."></div>
+        <div class="social-row"><span class="social-platform">Theravive</span><input type="url" id="dir_theravive" placeholder="https://theravive.com/..."></div>
+        <div class="social-row"><span class="social-platform">Monarch</span><input type="url" id="dir_monarch" placeholder="https://monarchmh.com/..."></div>
+        <div class="social-row"><span class="social-platform">Open Path</span><input type="url" id="dir_openpath" placeholder="https://openpathcollective.org/..."></div>
+        <div class="social-row"><span class="social-platform">Inclusive Therapists</span><input type="url" id="dir_inclusive" placeholder="https://inclusivetherapists.com/..."></div>
+        <div class="social-row"><span class="social-platform">Network Therapy</span><input type="url" id="dir_networktherapy" placeholder="https://networktherapy.com/..."></div>
+
+        <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Insurance &amp; Marketplace Platforms</h4>
+        <div class="social-row"><span class="social-platform">Headway</span><input type="url" id="dir_headway" placeholder="https://headway.co/providers/..."></div>
+        <div class="social-row"><span class="social-platform">Alma</span><input type="url" id="dir_alma" placeholder="https://helloalma.com/providers/..."></div>
+        <div class="social-row"><span class="social-platform">Zocdoc</span><input type="url" id="dir_zocdoc" placeholder="https://zocdoc.com/doctor/..."></div>
+        <div class="social-row"><span class="social-platform">Grow Therapy</span><input type="url" id="dir_growtherapy" placeholder="https://growtherapy.com/provider/..."></div>
+        <div class="social-row"><span class="social-platform">SonderMind</span><input type="url" id="dir_sondermind" placeholder="https://sondermind.com/providers/..."></div>
+
+        <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Specialty &amp; Community Directories</h4>
+        <div class="social-row"><span class="social-platform">EMDRIA</span><input type="url" id="dir_emdria" placeholder="https://emdria.org/find-an-emdr-therapist/..."></div>
+        <div class="social-row"><span class="social-platform">AAMFT Therapist Locator</span><input type="url" id="dir_aamft" placeholder="https://aamft.org/..."></div>
+        <div class="social-row"><span class="social-platform">Therapy for Black Girls</span><input type="url" id="dir_tfbg" placeholder="https://therapyforblackgirls.com/..."></div>
+        <div class="social-row"><span class="social-platform">Latinx Therapy</span><input type="url" id="dir_latinx" placeholder="https://latinxtherapy.com/..."></div>
+        <div class="social-row"><span class="social-platform">Asian MH Collective</span><input type="url" id="dir_amhc" placeholder="https://asianmhc.org/..."></div>
+        <div class="social-row"><span class="social-platform">IFS Institute</span><input type="url" id="dir_ifs" placeholder="https://ifs-institute.com/..."></div>
+
+        <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Canadian Directories</h4>
+        <div class="social-row"><span class="social-platform">eMentalHealth</span><input type="url" id="dir_ementalhealth" placeholder="https://ementalhealth.ca/..."></div>
+        <div class="social-row"><span class="social-platform">First Session</span><input type="url" id="dir_firstsession" placeholder="https://firstsession.com/..."></div>
+
+        <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Other Directories</h4>
+        <p style="color:var(--color-muted);font-size:.8125rem;margin-bottom:.75rem;">Any directories not listed above? Add them here, one per line with the directory name and your profile URL.</p>
+        <div class="form-group"><textarea id="dir_other" style="min-height:80px;" placeholder="e.g. AASECT Directory, https://aasect.org/referral-directory/...&#10;National Register, https://findapsychologist.org/...&#10;SE Directory, https://directory.traumahealing.org/..."></textarea></div>
       </div>
 
       <div class="form-section">
@@ -1102,6 +1139,17 @@ strong { font-weight: 600; color: var(--color-heading); }
       if (el && socialMap[id]) el.value = socialMap[id];
     });
 
+    // Prefill directory URLs from practice_details.additional_services
+    if (practiceData && practiceData.additional_services) {
+      try {
+        var dirs = JSON.parse(practiceData.additional_services);
+        Object.keys(dirs).forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.value = dirs[id];
+        });
+      } catch(e) { console.log('Could not parse directory data'); }
+    }
+
     // Step 8: Drive folder link
     if (contact.drive_folder_url) {
       var driveLink = document.getElementById('driveFolderLink');
@@ -1240,8 +1288,35 @@ strong { font-weight: 600; color: var(--color-heading); }
       gbp_url: document.getElementById('sp_gbp').value.trim() || null
     };
 
+    // Collect all directory URLs into a JSON string
+    var dirIds = ['dir_yelp','dir_goodtherapy','dir_therapyden','dir_zencare','dir_theravive','dir_monarch','dir_openpath','dir_inclusive','dir_networktherapy','dir_headway','dir_alma','dir_zocdoc','dir_growtherapy','dir_sondermind','dir_emdria','dir_aamft','dir_tfbg','dir_latinx','dir_amhc','dir_ifs','dir_ementalhealth','dir_firstsession'];
+    var directories = {};
+    dirIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && el.value.trim()) directories[id] = el.value.trim();
+    });
+    var otherDirs = document.getElementById('dir_other').value.trim();
+    if (otherDirs) directories['dir_other'] = otherDirs;
+    var omit = document.getElementById('sp_omit').value.trim();
+
+    // Save socials + GBP + PT to contacts
     sbPatch('contacts', 'id=eq.' + contact.id, socialData).then(function() {
       Object.assign(contact, socialData);
+
+      // Save directories to practice_details
+      var pdUpdate = { additional_services: JSON.stringify(directories) };
+      if (omit) pdUpdate.content_to_omit = omit;
+      var pdMethod = practiceData ? 'PATCH' : 'POST';
+      var pdUrl = practiceData
+        ? SB_URL + '/rest/v1/practice_details?contact_id=eq.' + contact.id
+        : SB_URL + '/rest/v1/practice_details';
+      var h = sbHeaders(); h['Prefer'] = 'return=representation';
+      var pdBody = pdMethod === 'POST' ? Object.assign({ contact_id: contact.id }, pdUpdate) : pdUpdate;
+
+      return fetch(pdUrl, { method: pdMethod, headers: h, body: JSON.stringify(pdBody) })
+        .then(function(r) { return r.json(); })
+        .then(function(res) { practiceData = Array.isArray(res) ? res[0] : res; });
+    }).then(function() {
       document.getElementById('sp_saved').classList.add('visible');
       completeStep('social_profiles');
       setTimeout(function() { document.getElementById('sp_saved').classList.remove('visible'); }, 3000);
