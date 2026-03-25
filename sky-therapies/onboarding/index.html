@@ -460,27 +460,28 @@ strong { font-weight: 600; color: var(--color-heading); }
         <div class="form-group"><label>Clinical Approach Keywords</label><input type="text" id="bio_clinical_approach" placeholder="e.g. trauma-informed, attachment-based, holistic, mind-body"><div class="help-text">How you describe your therapeutic style, separated with commas</div></div>
       </div>
 
+      <div class="form-section" style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:1.5rem;margin-bottom:2rem;">
+        <h4 style="margin:0 0 .75rem;">How We Verify Your Credentials</h4>
+        <p style="font-size:.875rem;color:var(--color-body);margin-bottom:.5rem;">AI systems and search engines need verifiable evidence. Here is what works best, in order of strength:</p>
+        <p style="font-size:.875rem;margin-bottom:.35rem;"><strong style="color:var(--color-success);">Best:</strong> A link to your public profile on the issuing organization's website (e.g. your EMDRIA profile page, your state license board lookup, your NPI Registry entry). This is the strongest proof because it comes directly from the source.</p>
+        <p style="font-size:.875rem;margin-bottom:.35rem;"><strong style="color:var(--color-warning);">Good:</strong> A unique image of your actual diploma, license certificate, or certification document. Universities and programs may not have public directories, so a photo of the document itself is the next best thing.</p>
+        <p style="font-size:.875rem;margin-bottom:0;"><strong style="color:var(--color-info);">Helpful:</strong> A link to the landing page of a program or training (e.g. a CE course). Even if it does not prove your attendance, it shows AI that the program is real and you are referencing legitimate training.</p>
+      </div>
+
       <div class="form-section">
         <h3>Education &amp; Licenses</h3>
-        <div class="form-group"><label>Education (Institution, Degree, Year)</label><textarea id="bio_education" placeholder="e.g. University of Michigan, MSW, 2015&#10;Columbia University, BA Psychology, 2012"><div class="help-text">One per line</div></textarea></div>
-        <div class="form-group"><label>License Details (State, Type, Number, Verification URL)</label><textarea id="bio_licenses" placeholder="e.g. NY, LCSW, 123456, https://verify.op.nysed.gov/...&#10;PA, LCSW, 789012, https://www.pals.pa.gov/..."><div class="help-text">One per line. Include the URL where the license can be verified online</div></textarea></div>
-        <div class="form-group"><label>Board Certifications</label><textarea id="bio_certifications" placeholder="e.g. EMDRIA Certified EMDR Therapist, https://emdria.org/verify/...&#10;Gottman Level 3 Trained"><div class="help-text">One per line. Include verification URLs when available</div></textarea></div>
+        <div class="form-group"><label>Education (Institution, Degree, Year)</label><textarea id="bio_education" placeholder="e.g. University of Michigan, MSW, 2015&#10;Columbia University, BA Psychology, 2012"></textarea><div class="help-text">One per line</div></div>
+        <div class="form-group"><label>License Details (State, Type, Number, Verification URL)</label><textarea id="bio_licenses" placeholder="e.g. NY, LCSW, 123456, https://verify.op.nysed.gov/...&#10;PA, LCSW, 789012, https://www.pals.pa.gov/..."></textarea><div class="help-text">One per line. Include the URL where the license can be verified online</div></div>
+        <div class="form-group"><label>Board Certifications</label><textarea id="bio_certifications" placeholder="e.g. EMDRIA Certified EMDR Therapist, https://emdria.org/verify/...&#10;Gottman Level 3 Trained"></textarea><div class="help-text">One per line. Include verification URLs when available</div></div>
       </div>
 
       <div class="form-section">
         <h3>Professional Affiliations</h3>
-        <div class="form-group"><label>Associations / Organizations</label><textarea id="bio_associations" placeholder="e.g. American Psychological Association (APA)&#10;EMDRIA&#10;National Register of Health Service Psychologists"><div class="help-text">One per line</div></textarea></div>
+        <div class="form-group"><label>Associations / Organizations</label><textarea id="bio_associations" placeholder="e.g. American Psychological Association (APA)&#10;EMDRIA&#10;National Register of Health Service Psychologists"></textarea><div class="help-text">One per line</div></div>
         <div class="form-group"><label>Awards &amp; Recognitions</label><input type="text" id="bio_awards" placeholder="Any awards, recognitions, or media features"></div>
       </div>
 
-      <div class="form-section">
-        <h3>Images</h3>
-        <p style="color:var(--color-muted);font-size:.875rem;">Please upload your headshot and any license/diploma/certification images to your Google Drive folder. We will use these on your bio page.</p>
-        <div id="bioImagesDrive"></div>
-        <div class="embed-note" style="margin-top:1rem;">
-          <strong>What to upload:</strong> Professional headshot, images of your license(s), diploma(s), and certifications. These images build trust with potential clients and help AI systems verify your credentials.
-        </div>
-      </div>
+
 
       <button class="btn btn-primary" onclick="saveBioMaterials()">Save &amp; Continue &#8594;</button>
       <div class="save-note" id="bio_saved">&#10003; Bio materials saved</div>
@@ -560,28 +561,40 @@ strong { font-weight: 600; color: var(--color-heading); }
       </div>
     </div>
 
-    <!-- STEP 8: Check-Ins & Drive -->
+    <!-- STEP 8: Google Drive -->
     <div class="step-panel" data-step="checkins_and_drive">
       <span class="step-badge">Step 8 of 8</span>
-      <h1>Check-In Calls &amp; Drive Access</h1>
-      <p style="color:var(--color-muted)">We schedule check-in calls at the 2-month and 3-month marks to review progress and adjust strategy. You also have a shared Google Drive folder for uploading creative assets.</p>
+      <h1>Your Google Drive Folder</h1>
+      <p style="color:var(--color-muted)">Your shared Google Drive folder is where you can upload creative assets, documents, and images for your campaign. We check this folder regularly.</p>
 
-      <div class="form-section">
-        <h3>Book Your Check-In Calls</h3>
-        <p style="color:var(--color-muted);font-size:.875rem;">Use the calendar below to book your 2-month and 3-month check-in calls with Scott. We recommend booking both now while you are here.</p>
-        <div class="embed-container">
-          <iframe src="https://msg.moonraker.ai/widget/booking/ouIbhSjJ3q2VTR8U0g8z" style="height:600px;" scrolling="no"></iframe>
+      <div id="driveFolderSection">
+        <div class="drive-card" style="margin-bottom:2rem;">
+          <div class="drive-icon">&#128194;</div>
+          <h4>Open Your Shared Folder</h4>
+          <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:1rem;">This folder is shared between you and our team. Anything you upload here will be available for us to use in your campaign.</p>
+          <p id="driveFolderLink" style="margin:0;font-size:1rem;">Your Drive folder link will appear here once created.</p>
         </div>
       </div>
 
       <div class="form-section">
-        <h3>Your Google Drive Folder</h3>
-        <div id="driveFolderSection">
-          <div class="drive-card">
-            <div class="drive-icon">&#128194;</div>
-            <h4>Shared Drive Folder</h4>
-            <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:.75rem;">Upload headshots, logos, creative assets, and any documents you would like us to use in your campaign.</p>
-            <p id="driveFolderLink" style="margin:0;">Your Drive folder link will appear here once created.</p>
+        <h3>What to Upload</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;">The more materials you provide, the stronger your campaign will be. Here is what helps most:</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0;">
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1.25rem;">
+            <strong style="display:block;margin-bottom:.35rem;">&#128247; Headshots &amp; Photos</strong>
+            <p style="font-size:.8125rem;color:var(--color-muted);margin:0;">Professional headshot for your bio page, team photos, office photos. Real images build trust with clients and AI systems.</p>
+          </div>
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1.25rem;">
+            <strong style="display:block;margin-bottom:.35rem;">&#127891; Diplomas &amp; Licenses</strong>
+            <p style="font-size:.8125rem;color:var(--color-muted);margin:0;">Photos of diplomas, license certificates, and certifications. These serve as visual verification on your bio page.</p>
+          </div>
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1.25rem;">
+            <strong style="display:block;margin-bottom:.35rem;">&#127912; Logos &amp; Branding</strong>
+            <p style="font-size:.8125rem;color:var(--color-muted);margin:0;">Practice logo, brand colors, any existing design assets you would like us to incorporate.</p>
+          </div>
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1.25rem;">
+            <strong style="display:block;margin-bottom:.35rem;">&#128196; Documents</strong>
+            <p style="font-size:.8125rem;color:var(--color-muted);margin:0;">Endorsement letters, media features, published articles, or any other materials that showcase your expertise.</p>
           </div>
         </div>
       </div>
@@ -623,7 +636,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     { key: 'bio_materials', label: 'Bio Materials', num: 5 },
     { key: 'connect_accounts', label: 'Connect Accounts', num: 6 },
     { key: 'social_profiles', label: 'Social Profiles', num: 7 },
-    { key: 'checkins_and_drive', label: 'Check-Ins & Drive', num: 8 }
+    { key: 'checkins_and_drive', label: 'Google Drive', num: 8 }
   ];
 
   var contact = null;
@@ -1079,11 +1092,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       document.getElementById('driveFolderLink').innerHTML = '<a href="' + contact.drive_folder_url + '" target="_blank" style="font-size:1rem;">Open Your Drive Folder &#8599;</a>';
     }
 
-    // Bio images Drive link
-    var bioImgDiv = document.getElementById('bioImagesDrive');
-    if (bioImgDiv && contact.drive_folder_url) {
-      bioImgDiv.innerHTML = '<div class="drive-card"><div class="drive-icon">&#128247;</div><h4>Upload Images to Drive</h4><p style="color:var(--color-muted);font-size:.875rem;margin-bottom:.75rem;">Upload your headshot, license images, and diploma photos here.</p><a href="' + contact.drive_folder_url + '" target="_blank">Open Drive Folder &#8599;</a></div>';
-    }
+
   }
 
   // ============================================================
