@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem("moonraker-theme");if(st){document.documentElement.setAttribute("data-theme",st)}}catch(e){}</script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -478,9 +479,11 @@ section { padding: 4.5rem 0; }
       if (h.getAttribute('data-theme') === 'light') {
         h.setAttribute('data-theme', 'dark');
         themeBtn.innerHTML = '&#9728;&#65039;';
+        try{localStorage.setItem('moonraker-theme','dark')}catch(e){}
       } else {
         h.setAttribute('data-theme', 'light');
         themeBtn.innerHTML = '&#x1F319;';
+        try{localStorage.setItem('moonraker-theme','light')}catch(e){}
       }
     });
   }
@@ -527,3 +530,4 @@ section { padding: 4.5rem 0; }
 </script>
 </body>
 </html>
+
