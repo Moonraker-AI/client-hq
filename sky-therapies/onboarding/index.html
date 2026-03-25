@@ -134,7 +134,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 .sig-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
 @media (max-width: 600px) { .sig-row { grid-template-columns: 1fr; } }
 .sig-field label { display: block; font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); margin-bottom: .35rem; }
-.sig-field input { width: 100%; font-family: 'Inter', sans-serif; font-size: .9375rem; padding: .6rem .85rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg); color: var(--color-heading); transition: border-color .2s; }
+.sig-field input { width: 100%; font-family: 'Inter', sans-serif; font-size: .9375rem; padding: .6rem .85rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-heading); transition: border-color .2s; }
 .sig-field input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(0,212,126,.12); }
 .sig-field input[readonly] { background: var(--color-surface-alt); color: var(--color-muted); }
 .sig-consent { display: flex; align-items: flex-start; gap: .75rem; margin: 1.25rem 0; font-size: .875rem; }
@@ -164,7 +164,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 @media (max-width: 640px) { .form-row, .form-row.three-col { grid-template-columns: 1fr; } }
 .form-group { margin-bottom: 1rem; }
 .form-group label { display: block; font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); margin-bottom: .35rem; }
-.form-group input, .form-group select, .form-group textarea { width: 100%; font-family: 'Inter', sans-serif; font-size: .9375rem; padding: .6rem .85rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg); color: var(--color-heading); transition: border-color .2s; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; font-family: 'Inter', sans-serif; font-size: .9375rem; padding: .6rem .85rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-heading); transition: border-color .2s; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(0,212,126,.12); }
 .form-group textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
 .form-group select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7599' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .75rem center; padding-right: 2.5rem; }
@@ -178,9 +178,9 @@ strong { font-weight: 600; color: var(--color-heading); }
 .social-row { display: flex; align-items: center; gap: 1rem; padding: .75rem 0; border-bottom: 1px solid var(--color-border); }
 .social-row:last-child { border-bottom: none; }
 .social-platform { font-weight: 600; font-size: .875rem; color: var(--color-heading); min-width: 100px; }
-.social-row input { flex: 1; font-family: 'Inter', sans-serif; font-size: .875rem; padding: .5rem .75rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg); color: var(--color-heading); }
+.social-row input { flex: 1; font-family: 'Inter', sans-serif; font-size: .875rem; padding: .5rem .75rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-heading); }
 .social-row input:focus { outline: none; border-color: var(--color-primary); }
-.social-row select { font-family: 'Inter', sans-serif; font-size: .8125rem; padding: .4rem .6rem; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-bg); color: var(--color-heading); min-width: 130px; }
+.social-row select { font-family: 'Inter', sans-serif; font-size: .8125rem; padding: .4rem .6rem; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); color: var(--color-heading); min-width: 130px; }
 .drive-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 2rem; text-align: center; margin: 1.5rem 0; }
 .drive-card .drive-icon { font-size: 3rem; margin-bottom: .75rem; }
 .drive-card h4 { margin-bottom: .5rem; }
@@ -378,7 +378,6 @@ strong { font-weight: 600; color: var(--color-heading); }
         <div class="form-group"><label>Specialties</label><input type="text" id="pd_specialties" placeholder="e.g. Anxiety, Trauma, PTSD, Couples"><div class="help-text">Separate with commas</div></div>
         <div class="form-group"><label>Modalities / Treatment Approaches</label><input type="text" id="pd_modalities" placeholder="e.g. EMDR, CBT, Gottman, Somatic Experiencing"><div class="help-text">Separate with commas</div></div>
         <div class="form-group"><label>Populations Treated</label><input type="text" id="pd_populations" placeholder="e.g. Adults, Teens, Couples, First Responders"><div class="help-text">Separate with commas</div></div>
-        <div class="form-group"><label>Primary Issues Treated</label><textarea id="pd_issues_treated" placeholder="e.g. Trauma, PTSD, anxiety, depression, eating disorders, relationship issues..."></textarea></div>
       </div>
 
       <div class="form-section">
@@ -423,7 +422,7 @@ strong { font-weight: 600; color: var(--color-heading); }
             <select id="pd_content_approval"><option value="">Select...</option><option value="review_all">Review everything before publishing</option><option value="trust_team">Trust the team to publish</option></select>
           </div>
         </div>
-        <div class="form-group"><label>Links to Existing Writing / Brand Voice Samples</label><input type="text" id="pd_brand_voice_sources" placeholder="Link to blog posts, articles, or other writing that reflects your voice"></div>
+        <div class="form-group"><label>Links to Existing Writing / Brand Voice Samples</label><textarea id="pd_brand_voice_sources" placeholder="Link to blog posts, articles, or other writing that reflects your voice. One per line." style="min-height:80px;"></textarea></div>
         <div class="form-group"><label>Other Marketing Currently Running</label><input type="text" id="pd_current_marketing" placeholder="e.g. Google Ads, Psychology Today, Instagram"></div>
       </div>
 
@@ -1011,7 +1010,6 @@ strong { font-weight: 600; color: var(--color-heading); }
         pd_specialties: arrayToCsv(pd.specialties),
         pd_modalities: arrayToCsv(pd.modalities),
         pd_populations: arrayToCsv(pd.populations),
-        pd_issues_treated: pd.issues_treated,
         pd_session_cost: pd.session_cost,
         pd_session_frequency: pd.session_frequency,
         pd_insurance: pd.insurance_or_private_pay,
@@ -1127,7 +1125,6 @@ strong { font-weight: 600; color: var(--color-heading); }
       specialties: csvToArray(document.getElementById('pd_specialties').value),
       modalities: csvToArray(document.getElementById('pd_modalities').value),
       populations: csvToArray(document.getElementById('pd_populations').value),
-      issues_treated: document.getElementById('pd_issues_treated').value.trim(),
       session_cost: document.getElementById('pd_session_cost').value.trim(),
       session_frequency: document.getElementById('pd_session_frequency').value.trim(),
       insurance_or_private_pay: document.getElementById('pd_insurance').value,
