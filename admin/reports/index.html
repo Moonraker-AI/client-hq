@@ -25,6 +25,9 @@
   --color-warning: #F59E0B;
   --color-danger: #EF4444;
   --color-info: #3B82F6;
+  --sidebar-bg: #FAFDFB;
+  --sidebar-border: #E8F0EC;
+  --sidebar-hover: #EEF8F3;
 }
 [data-theme="dark"] {
   --color-primary: #00D47E;
@@ -42,6 +45,9 @@
   --color-warning: #F59E0B;
   --color-danger: #FF6B6B;
   --color-info: #60A5FA;
+  --sidebar-bg: #0A120E;
+  --sidebar-border: #162820;
+  --sidebar-hover: #12201A;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -182,28 +188,98 @@ strong { font-weight: 600; color: var(--color-heading); }
 /* Last compiled info */
 .compiled-info { display: flex; align-items: center; gap: .5rem; font-size: .8rem; color: var(--color-muted); }
 .compiled-info .time { color: var(--color-body); }
+
+/* ---- SIDEBAR ---- */
+.sidebar { width: 240px; background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); position: fixed; top: 0; left: 0; bottom: 0; z-index: 200; display: flex; flex-direction: column; transition: width .25s ease, transform .25s ease; }
+.sidebar-header { padding: 1.25rem 1.25rem .75rem; display: flex; align-items: center; gap: .75rem; }
+.sidebar-header img { height: 22px; opacity: .7; }
+.sidebar-header span { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .85rem; color: var(--color-heading); }
+.sidebar-nav { flex: 1; padding: .5rem .75rem; display: flex; flex-direction: column; gap: 2px; }
+.sidebar-nav a { display: flex; align-items: center; gap: .65rem; padding: .55rem .75rem; border-radius: 8px; font-size: .82rem; font-weight: 500; color: var(--color-muted); text-decoration: none; transition: all .15s; }
+.sidebar-nav a:hover { background: var(--sidebar-hover); color: var(--color-heading); }
+.sidebar-nav a.active { background: var(--color-primary-subtle); color: var(--color-primary); font-weight: 600; }
+.sidebar-nav .nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+.sidebar-nav .nav-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.sidebar-nav a.active .nav-icon { opacity: 1; }
+.nav-section { font-size: .65rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-muted); padding: .75rem .75rem .25rem; opacity: .6; }
+.sidebar-footer { padding: .75rem 1rem; border-top: 1px solid var(--sidebar-border); }
+
+/* Collapsible */
+.sidebar.collapsed { width: 56px; }
+.sidebar.collapsed .sidebar-header span, .sidebar.collapsed .sidebar-nav .nav-label, .sidebar.collapsed .nav-section { opacity: 0; pointer-events: none; white-space: nowrap; overflow: hidden; width: 0; }
+.sidebar.collapsed .sidebar-header { padding: 1.25rem .85rem .75rem; justify-content: center; }
+.sidebar.collapsed .sidebar-nav a { justify-content: center; padding: .55rem .5rem; }
+.sidebar.collapsed .sidebar-footer { display: flex; flex-direction: column; align-items: center; gap: .4rem; }
+.sidebar.collapsed .sidebar-footer .collapse-label { display: none; }
+.sidebar.collapsed:hover { width: 240px; box-shadow: 4px 0 20px rgba(0,0,0,.1); z-index: 250; }
+.sidebar.collapsed:hover .sidebar-header span, .sidebar.collapsed:hover .sidebar-nav .nav-label, .sidebar.collapsed:hover .nav-section { opacity: 1; pointer-events: auto; width: auto; }
+.sidebar.collapsed:hover .sidebar-header { padding: 1.25rem 1.25rem .75rem; justify-content: flex-start; }
+.sidebar.collapsed:hover .sidebar-nav a { justify-content: flex-start; padding: .55rem .75rem; }
+.sidebar.collapsed:hover .sidebar-footer .collapse-label { display: inline; }
+.collapse-btn { display: flex; align-items: center; gap: .5rem; background: none; border: none; color: var(--color-muted); font-size: .78rem; cursor: pointer; padding: .35rem .5rem; border-radius: 6px; font-family: inherit; transition: all .15s; width: 100%; }
+.collapse-btn:hover { color: var(--color-heading); background: var(--sidebar-hover); }
+.collapse-btn svg { flex-shrink: 0; transition: transform .25s; }
+.sidebar.collapsed .collapse-btn svg { transform: rotate(180deg); }
+
+/* Layout */
+.main { flex: 1; margin-left: 240px; min-width: 0; transition: margin-left .25s ease; }
+.sidebar.collapsed ~ .main { margin-left: 56px; }
+.topbar { position: sticky; top: 0; z-index: 100; background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 0 2rem; height: 56px; display: flex; align-items: center; gap: 1rem; }
+.topbar-right { display: flex; align-items: center; gap: .5rem; margin-left: auto; }
+.mobile-toggle { display: none; background: none; border: none; color: var(--color-heading); font-size: 1.25rem; cursor: pointer; padding: .25rem; }
+
+
+@media (max-width: 860px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,.15); }
+  .sidebar.collapsed { width: 240px; transform: translateX(-100%); }
+  .sidebar.collapsed.open { transform: translateX(0); }
+  .sidebar.collapsed ~ .main { margin-left: 0; }
+  .sidebar.collapsed .sidebar-header span, .sidebar.collapsed .sidebar-nav .nav-label, .sidebar.collapsed .nav-section { opacity: 1; pointer-events: auto; width: auto; }
+  .sidebar.collapsed .sidebar-header { padding: 1.25rem 1.25rem .75rem; justify-content: flex-start; }
+  .sidebar.collapsed .sidebar-nav a { justify-content: flex-start; padding: .55rem .75rem; }
+  .main { margin-left: 0; }
+  .mobile-toggle { display: block; }
+}
+
 </style>
 </head>
 <body>
 
-<!-- Header -->
-<div class="header">
-  <div class="container header-inner">
-    <div class="header-left">
-      <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker">
-      <div class="divider"></div>
-      <h1>Report Scheduler</h1>
-    </div>
-    <div class="header-right">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker">
+    <span>Client HQ</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="/admin"><span class="nav-icon"><svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg></span><span class="nav-label">Dashboard</span></a>
+    <a href="/admin/clients"><span class="nav-icon"><svg viewBox="0 0 16 16"><circle cx="8" cy="4.5" r="2.5"/><path d="M2.5 15c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5"/></svg></span><span class="nav-label">Clients</span></a>
+    <div class="nav-section">Workflows</div>
+    <a href="/admin/onboarding"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M8 1v10M4.5 7.5L8 11l3.5-3.5"/><path d="M2.5 13.5h11"/></svg></span><span class="nav-label">Onboarding</span></a>
+    <a href="/admin/audits"><span class="nav-icon"><svg viewBox="0 0 16 16"><circle cx="6.5" cy="6.5" r="4"/><path d="M14.5 14.5l-4-4"/></svg></span><span class="nav-label">Audits</span></a>
+    <a href="/admin/deliverables"><span class="nav-icon"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5.5 8l2 2 3.5-3.5"/></svg></span><span class="nav-label">Deliverables</span></a>
+    <a href="/admin/reports" class="active"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M2 14V6l3.5-2v10"/><path d="M6.25 14V4.5l3.5-2v11.5"/><path d="M10.5 14V3l3.5-2v13"/></svg></span><span class="nav-label">Reports</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="collapse-btn" id="collapseBtn" aria-label="Collapse sidebar"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M10 3L5 8l5 5"/></svg><span class="collapse-label">Collapse</span></button>
+    <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">&#9776;</button>
+    <div style="font-family:'Outfit',sans-serif;font-weight:600;font-size:.95rem;color:var(--color-heading);">Report Scheduler</div>
+    <div class="topbar-right">
       <button class="btn btn-secondary btn-sm" id="refreshBtn" onclick="loadData()">&#x21bb; Refresh</button>
-      <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
+      <span style="font-size:.78rem;color:var(--color-muted);" id="lastRefresh"></span>
     </div>
   </div>
-</div>
+  <div class="content" style="padding: 2rem; max-width: 1400px;">
 
 <!-- Stats Summary -->
-<div class="container">
-  <div class="stats-bar">
+<div class="stats-bar">
     <div class="stat">
       <div class="stat-value" id="statTotal">-</div>
       <div class="stat-label">Total Clients</div>
@@ -221,10 +297,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       <div class="stat-label">Compiled This Month</div>
     </div>
   </div>
-</div>
 
-<!-- Client List -->
-<div class="container" style="padding-bottom: 4rem;">
   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem;">
     <h2 style="font-size: 1.35rem; margin-bottom: 0;">Client Configurations</h2>
   </div>
@@ -685,5 +758,8 @@ strong { font-weight: 600; color: var(--color-heading); }
   loadData();
 })();
 </script>
+  </div>
+</div>
 </body>
 </html>
+
