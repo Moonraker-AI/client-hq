@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Onboarding - Moonraker Admin</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root, [data-theme="light"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00b86c;
+  --color-primary-light: #B4EEE0;
+  --color-primary-subtle: #DDF8F2;
+  --color-bg: #F7FDFB;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-heading: #1E2A5E;
+  --color-body: #333F70;
+  --color-muted: #6B7599;
+  --color-navy: #141C3A;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+  --sidebar-bg: #FAFDFB;
+  --sidebar-border: #E8F0EC;
+  --sidebar-hover: #EEF8F3;
+}
+[data-theme="dark"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00f598;
+  --color-primary-light: #1A4A38;
+  --color-primary-subtle: #0D2E22;
+  --color-bg: #080F0B;
+  --color-surface: #0E1A14;
+  --color-border: #1E3530;
+  --color-heading: #E8F5EF;
+  --color-body: #C8D8D0;
+  --color-muted: #5A7A6E;
+  --color-navy: #0A1630;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #FF6B6B;
+  --color-info: #60A5FA;
+  --sidebar-bg: #0A120E;
+  --sidebar-border: #162820;
+  --sidebar-hover: #12201A;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.6; -webkit-font-smoothing: antialiased; transition: background .3s, color .3s; overflow-x: hidden; }
+h1,h2,h3,h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.2; }
+a { color: var(--color-primary); text-decoration: none; }
+a:hover { color: var(--color-primary-hover); }
+
+.admin-layout { display: flex; min-height: 100vh; }
+.sidebar { width: 240px; background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); position: fixed; top: 0; left: 0; bottom: 0; z-index: 200; display: flex; flex-direction: column; transition: transform .25s ease; }
+.sidebar-header { padding: 1.25rem 1.25rem .75rem; display: flex; align-items: center; gap: .75rem; }
+.sidebar-header img { height: 22px; opacity: .7; }
+.sidebar-header span { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .85rem; color: var(--color-heading); }
+.sidebar-nav { flex: 1; padding: .5rem .75rem; display: flex; flex-direction: column; gap: 2px; }
+.sidebar-nav a { display: flex; align-items: center; gap: .65rem; padding: .55rem .75rem; border-radius: 8px; font-size: .82rem; font-weight: 500; color: var(--color-muted); text-decoration: none; transition: all .15s; }
+.sidebar-nav a:hover { background: var(--sidebar-hover); color: var(--color-heading); }
+.sidebar-nav a.active { background: var(--color-primary-subtle); color: var(--color-primary); font-weight: 600; }
+.sidebar-nav .nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: .95rem; flex-shrink: 0; opacity: .7; }
+.sidebar-nav a.active .nav-icon { opacity: 1; }
+.nav-section { font-size: .65rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-muted); padding: .75rem .75rem .25rem; opacity: .6; }
+.sidebar-footer { padding: .75rem 1rem; border-top: 1px solid var(--sidebar-border); }
+
+.main { flex: 1; margin-left: 240px; min-width: 0; }
+.topbar { position: sticky; top: 0; z-index: 100; background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 0 2rem; height: 56px; display: flex; align-items: center; gap: 1rem; }
+.topbar-right { display: flex; align-items: center; gap: .5rem; margin-left: auto; }
+.content { padding: 2rem; max-width: 1400px; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .85rem; border-radius: 8px; font-size: .82rem; font-weight: 500; border: none; cursor: pointer; transition: all .2s; font-family: inherit; }
+.btn-ghost { background: none; color: var(--color-muted); padding: .35rem .5rem; }
+.btn-ghost:hover { color: var(--color-heading); background: var(--sidebar-hover); }
+
+/* Tags */
+.tag { display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .5rem; border-radius: 6px; font-size: .72rem; font-weight: 500; white-space: nowrap; }
+.tag-active { background: rgba(0,212,126,.1); color: var(--color-success); }
+.tag-onboarding { background: rgba(59,130,246,.08); color: var(--color-info); }
+.tag-prospect { background: rgba(245,158,11,.08); color: var(--color-warning); }
+.tag-lead { background: rgba(107,117,153,.08); color: var(--color-muted); }
+
+/* Stat Cards */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.stat-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem; transition: border-color .2s; }
+.stat-card:hover { border-color: rgba(0,212,126,.25); }
+.stat-card .stat-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); margin-bottom: .35rem; }
+.stat-card .stat-value { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 700; color: var(--color-heading); line-height: 1; }
+.stat-card .stat-sub { font-size: .75rem; color: var(--color-muted); margin-top: .35rem; }
+
+/* Section */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .25rem; }
+.section-header h2 { font-size: 1.35rem; margin: 0; }
+.section-desc { font-size: .84rem; color: var(--color-muted); margin-bottom: 1.5rem; }
+
+/* Filter tabs */
+.filter-bar { display: flex; align-items: center; gap: .25rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--color-border); }
+.filter-tab { padding: .55rem 1rem; font-size: .82rem; font-weight: 500; color: var(--color-muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; font-family: inherit; transition: all .15s; }
+.filter-tab:hover { color: var(--color-heading); }
+.filter-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.filter-tab .count { font-size: .7rem; padding: .05rem .4rem; border-radius: 4px; background: var(--color-bg); margin-left: .3rem; }
+.filter-tab.active .count { background: var(--color-primary-subtle); }
+
+/* Onboarding Cards */
+.ob-cards { display: grid; gap: 1rem; }
+.ob-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem; cursor: pointer; transition: border-color .2s, box-shadow .2s; }
+.ob-card:hover { border-color: rgba(0,212,126,.3); box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+.ob-card-header { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; }
+.ob-card-avatar { width: 40px; height: 40px; border-radius: 10px; background: var(--color-primary-subtle); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: .85rem; font-family: 'Outfit', sans-serif; flex-shrink: 0; }
+.ob-card-info { flex: 1; min-width: 0; }
+.ob-card-name { font-weight: 600; font-size: .92rem; color: var(--color-heading); }
+.ob-card-email { font-size: .75rem; color: var(--color-muted); }
+.ob-card-pct { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--color-heading); }
+
+/* Step Grid */
+.step-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: .4rem; }
+.step-cell { display: flex; flex-direction: column; align-items: center; gap: .25rem; padding: .5rem .25rem; border-radius: 8px; transition: background .15s; }
+.step-cell:hover { background: var(--sidebar-hover); }
+.step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 600; flex-shrink: 0; }
+.step-dot.complete { background: rgba(0,212,126,.15); color: var(--color-success); }
+.step-dot.in_progress { background: rgba(59,130,246,.12); color: var(--color-info); }
+.step-dot.pending { background: var(--color-bg); color: var(--color-muted); border: 1px solid var(--color-border); }
+.step-label { font-size: .62rem; color: var(--color-muted); text-align: center; line-height: 1.2; }
+.step-cell.complete .step-label { color: var(--color-success); }
+.step-cell.in_progress .step-label { color: var(--color-info); }
+
+/* Progress bar */
+.progress-bar { display: flex; align-items: center; gap: .5rem; margin-bottom: .75rem; }
+.progress-bar .bar { flex: 1; height: 6px; background: var(--color-bg); border-radius: 3px; overflow: hidden; }
+.progress-bar .bar-fill { height: 100%; border-radius: 3px; transition: width .5s ease; }
+.progress-bar .bar-fill.green { background: var(--color-success); }
+.progress-bar .bar-fill.blue { background: var(--color-info); }
+
+/* Matrix view */
+.matrix-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.matrix-table th { text-align: center; padding: .4rem .3rem; font-size: .62rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--color-muted); border-bottom: 1px solid var(--color-border); }
+.matrix-table th:first-child { text-align: left; min-width: 180px; }
+.matrix-table td { padding: .5rem .3rem; text-align: center; border-bottom: 1px solid var(--color-border); }
+.matrix-table td:first-child { text-align: left; }
+.matrix-table tbody tr { cursor: pointer; transition: background .1s; }
+.matrix-table tbody tr:hover { background: var(--sidebar-hover); }
+.matrix-dot { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .6rem; }
+.matrix-dot.complete { background: rgba(0,212,126,.15); color: var(--color-success); }
+.matrix-dot.in_progress { background: rgba(59,130,246,.12); color: var(--color-info); }
+.matrix-dot.pending { background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-muted); }
+.matrix-client { display: flex; align-items: center; gap: .5rem; }
+.matrix-avatar { width: 28px; height: 28px; border-radius: 7px; background: var(--color-primary-subtle); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: .68rem; flex-shrink: 0; }
+.matrix-name { font-weight: 500; font-size: .82rem; color: var(--color-heading); }
+.matrix-sub { font-size: .7rem; color: var(--color-muted); }
+
+/* View toggle */
+.view-toggle { display: flex; gap: 2px; background: var(--color-bg); border-radius: 8px; padding: 2px; }
+.view-btn { padding: .35rem .7rem; border-radius: 6px; font-size: .78rem; font-weight: 500; border: none; cursor: pointer; font-family: inherit; color: var(--color-muted); background: none; transition: all .15s; }
+.view-btn.active { background: var(--color-surface); color: var(--color-heading); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+/* Empty & spinner */
+.empty-state { text-align: center; padding: 3rem; color: var(--color-muted); }
+.spinner { width: 20px; height: 20px; border: 2px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin .6s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Theme */
+.theme-toggle { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .9rem; transition: all .2s; }
+.theme-toggle:hover { border-color: var(--color-primary); }
+
+/* Mobile */
+.mobile-toggle { display: none; background: none; border: none; color: var(--color-heading); font-size: 1.25rem; cursor: pointer; padding: .25rem; }
+@media (max-width: 860px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,.15); }
+  .main { margin-left: 0; }
+  .mobile-toggle { display: block; }
+  .step-grid { grid-template-columns: repeat(4, 1fr); }
+  .matrix-table .hide-mobile { display: none; }
+}
+@media (max-width: 560px) {
+  .content { padding: 1rem; }
+  .topbar { padding: 0 1rem; }
+  .step-grid { grid-template-columns: repeat(4, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker">
+    <span>Client HQ</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="/admin"><span class="nav-icon">&#9632;</span> Dashboard</a>
+    <a href="/admin/clients"><span class="nav-icon">&#9823;</span> Clients</a>
+    <div class="nav-section">Workflows</div>
+    <a href="/admin/onboarding" class="active"><span class="nav-icon">&#9654;</span> Onboarding</a>
+    <a href="/admin/audits"><span class="nav-icon">&#9881;</span> Audits</a>
+    <a href="/admin/deliverables"><span class="nav-icon">&#9744;</span> Deliverables</a>
+    <a href="/admin/reports"><span class="nav-icon">&#9636;</span> Reports</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">&#9776;</button>
+    <div style="font-family:'Outfit',sans-serif;font-weight:600;font-size:.95rem;color:var(--color-heading);">Onboarding Tracker</div>
+    <div class="topbar-right">
+      <span style="font-size:.78rem;color:var(--color-muted);" id="lastRefresh"></span>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="section-header">
+      <h2>Client Onboarding</h2>
+      <div class="view-toggle" id="viewToggle">
+        <button class="view-btn active" data-view="cards">Cards</button>
+        <button class="view-btn" data-view="matrix">Matrix</button>
+      </div>
+    </div>
+    <p class="section-desc">Track onboarding progress across all clients. Click any client to open their full profile.</p>
+
+    <div class="stat-grid" id="statGrid"></div>
+
+    <div class="filter-bar" id="filterBar">
+      <button class="filter-tab active" data-filter="all">All</button>
+      <button class="filter-tab" data-filter="onboarding">Onboarding</button>
+      <button class="filter-tab" data-filter="active">Active</button>
+      <button class="filter-tab" data-filter="needs_attention">Needs Attention</button>
+    </div>
+
+    <!-- Cards View -->
+    <div id="cardsView" class="ob-cards"></div>
+
+    <!-- Matrix View -->
+    <div id="matrixView" style="display:none;"></div>
+
+    <!-- Loading -->
+    <div id="loadingState" style="text-align:center;padding:4rem;">
+      <div class="spinner" style="width:24px;height:24px;"></div>
+      <p style="margin-top:.75rem;font-size:.85rem;color:var(--color-muted);">Loading onboarding data...</p>
+    </div>
+
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <p>No clients match this filter.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var SB = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
+  var SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
+
+  var STEP_ORDER = ['confirm_info','sign_agreement','book_intro_call','connect_accounts','practice_details','bio_materials','social_profiles','checkins_and_drive'];
+  var STEP_LABELS = {
+    confirm_info: 'Confirm Info', sign_agreement: 'Sign Agreement', book_intro_call: 'Book Call',
+    connect_accounts: 'Connect', practice_details: 'Practice', bio_materials: 'Bio',
+    social_profiles: 'Socials', checkins_and_drive: 'Drive'
+  };
+  var STEP_ICONS = { complete: '\u2713', in_progress: '\u25B6', pending: '\u25CB' };
+
+  var state = { contacts: [], onboarding: {}, filter: 'all', view: 'cards' };
+
+  function sb(path) {
+    return fetch(SB + '/rest/v1/' + path, {
+      headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
+    }).then(function(r) { return r.json(); });
+  }
+
+  function loadData() {
+    Promise.all([
+      sb('contacts?select=id,slug,status,practice_name,email,first_name,last_name,onboarding_completed,agreement_signed,campaign_start&order=practice_name'),
+      sb('onboarding_steps?select=contact_id,step_key,status,sort_order&order=contact_id,sort_order')
+    ]).then(function(res) {
+      state.contacts = res[0] || [];
+      state.onboarding = {};
+      (res[1] || []).forEach(function(s) {
+        if (!state.onboarding[s.contact_id]) state.onboarding[s.contact_id] = [];
+        state.onboarding[s.contact_id].push(s);
+      });
+
+      document.getElementById('loadingState').style.display = 'none';
+      renderStats();
+      renderFilters();
+      render();
+      document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    });
+  }
+
+  function getClientData() {
+    return state.contacts.map(function(c) {
+      var steps = state.onboarding[c.id] || [];
+      var complete = steps.filter(function(s) { return s.status === 'complete'; }).length;
+      var inProgress = steps.filter(function(s) { return s.status === 'in_progress'; }).length;
+      var total = steps.length;
+      var pct = total > 0 ? Math.round(complete / total * 100) : 0;
+      var needsAttention = total > 0 && complete < total && c.status === 'onboarding';
+      return { contact: c, steps: steps, complete: complete, inProgress: inProgress, total: total, pct: pct, needsAttention: needsAttention };
+    });
+  }
+
+  function getFiltered() {
+    var all = getClientData();
+    // Only show clients that have onboarding steps
+    var withSteps = all.filter(function(d) { return d.total > 0; });
+
+    if (state.filter === 'all') return withSteps;
+    if (state.filter === 'onboarding') return withSteps.filter(function(d) { return d.contact.status === 'onboarding'; });
+    if (state.filter === 'active') return withSteps.filter(function(d) { return d.contact.status === 'active'; });
+    if (state.filter === 'needs_attention') return withSteps.filter(function(d) { return d.needsAttention; });
+    return withSteps;
+  }
+
+  function renderStats() {
+    var all = getClientData();
+    var withSteps = all.filter(function(d) { return d.total > 0; });
+    var obClients = withSteps.filter(function(d) { return d.contact.status === 'onboarding'; });
+    var fullyComplete = withSteps.filter(function(d) { return d.pct === 100; });
+    var needsAtt = withSteps.filter(function(d) { return d.needsAttention; });
+
+    var totalSteps = 0, totalComplete = 0;
+    withSteps.forEach(function(d) { totalSteps += d.total; totalComplete += d.complete; });
+    var avgPct = totalSteps > 0 ? Math.round(totalComplete / totalSteps * 100) : 0;
+
+    document.getElementById('statGrid').innerHTML =
+      '<div class="stat-card"><div class="stat-label">In Onboarding</div><div class="stat-value">' + obClients.length + '</div><div class="stat-sub">of ' + withSteps.length + ' with steps</div></div>' +
+      '<div class="stat-card"><div class="stat-label">Fully Complete</div><div class="stat-value" style="color:var(--color-success);">' + fullyComplete.length + '</div><div class="stat-sub">' + (withSteps.length > 0 ? Math.round(fullyComplete.length / withSteps.length * 100) : 0) + '% of clients</div></div>' +
+      '<div class="stat-card"><div class="stat-label">Avg Completion</div><div class="stat-value">' + avgPct + '%</div><div class="stat-sub">' + totalComplete + ' of ' + totalSteps + ' steps</div></div>' +
+      '<div class="stat-card"><div class="stat-label">Needs Attention</div><div class="stat-value" style="color:' + (needsAtt.length > 0 ? 'var(--color-warning)' : 'var(--color-heading)') + ';">' + needsAtt.length + '</div><div class="stat-sub">' + (needsAtt.length > 0 ? 'Incomplete steps' : 'All on track') + '</div></div>';
+  }
+
+  function renderFilters() {
+    var all = getClientData();
+    var withSteps = all.filter(function(d) { return d.total > 0; });
+    var counts = {
+      all: withSteps.length,
+      onboarding: withSteps.filter(function(d) { return d.contact.status === 'onboarding'; }).length,
+      active: withSteps.filter(function(d) { return d.contact.status === 'active'; }).length,
+      needs_attention: withSteps.filter(function(d) { return d.needsAttention; }).length
+    };
+
+    document.querySelectorAll('#filterBar .filter-tab').forEach(function(tab) {
+      var f = tab.dataset.filter;
+      var existing = tab.querySelector('.count');
+      if (existing) existing.textContent = counts[f] || 0;
+      else {
+        var span = document.createElement('span');
+        span.className = 'count';
+        span.textContent = counts[f] || 0;
+        tab.appendChild(span);
+      }
+    });
+  }
+
+  function render() {
+    if (state.view === 'cards') {
+      document.getElementById('cardsView').style.display = 'grid';
+      document.getElementById('matrixView').style.display = 'none';
+      renderCards();
+    } else {
+      document.getElementById('cardsView').style.display = 'none';
+      document.getElementById('matrixView').style.display = 'block';
+      renderMatrix();
+    }
+  }
+
+  function renderCards() {
+    var data = getFiltered();
+    var container = document.getElementById('cardsView');
+    var empty = document.getElementById('emptyState');
+
+    if (data.length === 0) {
+      container.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    // Sort: incomplete first (by pct asc), then complete
+    data.sort(function(a, b) {
+      if (a.pct === 100 && b.pct !== 100) return 1;
+      if (a.pct !== 100 && b.pct === 100) return -1;
+      return a.pct - b.pct;
+    });
+
+    var html = '';
+    data.forEach(function(d) {
+      var c = d.contact;
+      var initials = ((c.first_name || '')[0] || '') + ((c.last_name || '')[0] || '') || c.slug[0].toUpperCase();
+      var statusTag = '<span class="tag tag-' + c.status + '">' + c.status + '</span>';
+      var completePct = d.total > 0 ? Math.round(d.complete / d.total * 100) : 0;
+      var ipPct = d.total > 0 ? Math.round((d.complete + d.inProgress) / d.total * 100) : 0;
+
+      html += '<div class="ob-card" onclick="window.location.href=\'/admin/clients?slug=' + c.slug + '\'">';
+      html += '<div class="ob-card-header">';
+      html += '<div class="ob-card-avatar">' + esc(initials.toUpperCase()) + '</div>';
+      html += '<div class="ob-card-info"><div class="ob-card-name">' + esc(c.practice_name || c.slug) + '</div>';
+      html += '<div class="ob-card-email">' + esc(c.email || '') + ' ' + statusTag + '</div></div>';
+      html += '<div class="ob-card-pct">' + d.pct + '%</div>';
+      html += '</div>';
+
+      // Stacked progress bar
+      html += '<div class="progress-bar">';
+      html += '<div class="bar" style="position:relative;">';
+      if (ipPct > 0) html += '<div class="bar-fill blue" style="width:' + ipPct + '%;position:absolute;top:0;left:0;height:100%;"></div>';
+      if (completePct > 0) html += '<div class="bar-fill green" style="width:' + completePct + '%;position:absolute;top:0;left:0;height:100%;"></div>';
+      html += '</div>';
+      html += '<span style="font-size:.72rem;color:var(--color-muted);white-space:nowrap;">' + d.complete + '/' + d.total + '</span>';
+      html += '</div>';
+
+      // Step grid
+      html += '<div class="step-grid">';
+      var stepMap = {};
+      d.steps.forEach(function(s) { stepMap[s.step_key] = s.status; });
+      STEP_ORDER.forEach(function(key) {
+        var st = stepMap[key] || 'pending';
+        var icon = STEP_ICONS[st] || STEP_ICONS.pending;
+        html += '<div class="step-cell ' + st + '">';
+        html += '<div class="step-dot ' + st + '">' + icon + '</div>';
+        html += '<div class="step-label">' + (STEP_LABELS[key] || key) + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+      html += '</div>';
+    });
+
+    container.innerHTML = html;
+  }
+
+  function renderMatrix() {
+    var data = getFiltered();
+    var container = document.getElementById('matrixView');
+    var empty = document.getElementById('emptyState');
+
+    if (data.length === 0) {
+      container.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    data.sort(function(a, b) {
+      if (a.pct === 100 && b.pct !== 100) return 1;
+      if (a.pct !== 100 && b.pct === 100) return -1;
+      return a.pct - b.pct;
+    });
+
+    var html = '<table class="matrix-table"><thead><tr><th>Client</th>';
+    STEP_ORDER.forEach(function(key, i) {
+      var cls = i >= 4 ? ' class="hide-mobile"' : '';
+      html += '<th' + cls + '>' + (STEP_LABELS[key] || key) + '</th>';
+    });
+    html += '<th>Progress</th></tr></thead><tbody>';
+
+    data.forEach(function(d) {
+      var c = d.contact;
+      var initials = ((c.first_name || '')[0] || '') + ((c.last_name || '')[0] || '') || c.slug[0].toUpperCase();
+      var stepMap = {};
+      d.steps.forEach(function(s) { stepMap[s.step_key] = s.status; });
+
+      html += '<tr onclick="window.location.href=\'/admin/clients?slug=' + c.slug + '\'">';
+      html += '<td><div class="matrix-client"><div class="matrix-avatar">' + esc(initials.toUpperCase()) + '</div><div><div class="matrix-name">' + esc(c.practice_name || c.slug) + '</div><div class="matrix-sub">' + esc(c.email || '') + '</div></div></div></td>';
+
+      STEP_ORDER.forEach(function(key, i) {
+        var st = stepMap[key] || 'pending';
+        var icon = STEP_ICONS[st] || STEP_ICONS.pending;
+        var cls = i >= 4 ? ' class="hide-mobile"' : '';
+        html += '<td' + cls + '><span class="matrix-dot ' + st + '">' + icon + '</span></td>';
+      });
+
+      html += '<td><span style="font-family:Outfit,sans-serif;font-weight:700;font-size:.85rem;color:var(--color-heading);">' + d.pct + '%</span></td>';
+      html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+
+  // Filter tabs
+  document.getElementById('filterBar').addEventListener('click', function(e) {
+    var tab = e.target.closest('.filter-tab');
+    if (!tab) return;
+    document.querySelectorAll('#filterBar .filter-tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    state.filter = tab.dataset.filter;
+    render();
+  });
+
+  // View toggle
+  document.getElementById('viewToggle').addEventListener('click', function(e) {
+    var btn = e.target.closest('.view-btn');
+    if (!btn) return;
+    document.querySelectorAll('.view-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    state.view = btn.dataset.view;
+    render();
+  });
+
+  // Mobile sidebar
+  document.getElementById('mobileToggle').addEventListener('click', function() {
+    document.getElementById('sidebar').classList.toggle('open');
+  });
+
+  // Theme
+  var themeBtn = document.getElementById('themeBtn');
+  var cur = document.documentElement.getAttribute('data-theme');
+  themeBtn.innerHTML = cur === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
+  themeBtn.addEventListener('click', function() {
+    var h = document.documentElement;
+    if (h.getAttribute('data-theme') === 'light') {
+      h.setAttribute('data-theme', 'dark');
+      themeBtn.innerHTML = '&#9728;&#65039;';
+      try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
+    } else {
+      h.setAttribute('data-theme', 'light');
+      themeBtn.innerHTML = '&#x1F319;';
+      try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
+    }
+  });
+
+  function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  loadData();
+})();
+</script>
+</body>
+</html>
