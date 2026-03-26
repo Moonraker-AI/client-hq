@@ -197,6 +197,55 @@ strong { font-weight: 600; color: var(--color-heading); }
   .content { padding: 1rem; }
   .topbar { padding: 0 1rem; }
 }
+
+/* ---- COLLAPSIBLE SIDEBAR ---- */
+.sidebar { transition: width .25s ease, transform .25s ease; }
+.sidebar.collapsed { width: 56px; }
+.sidebar.collapsed .sidebar-header span,
+.sidebar.collapsed .sidebar-nav .nav-label,
+.sidebar.collapsed .nav-section { opacity: 0; pointer-events: none; white-space: nowrap; overflow: hidden; width: 0; }
+.sidebar.collapsed .sidebar-header { padding: 1.25rem .85rem .75rem; justify-content: center; }
+.sidebar.collapsed .sidebar-nav a { justify-content: center; padding: .55rem .5rem; }
+.sidebar.collapsed .sidebar-nav a .nav-icon { margin: 0; }
+.sidebar.collapsed .sidebar-footer { display: flex; flex-direction: column; align-items: center; gap: .4rem; }
+.sidebar.collapsed .sidebar-footer .collapse-label { display: none; }
+
+/* Hover expand when collapsed */
+.sidebar.collapsed:hover { width: 240px; box-shadow: 4px 0 20px rgba(0,0,0,.1); z-index: 250; }
+.sidebar.collapsed:hover .sidebar-header span,
+.sidebar.collapsed:hover .sidebar-nav .nav-label,
+.sidebar.collapsed:hover .nav-section { opacity: 1; pointer-events: auto; width: auto; }
+.sidebar.collapsed:hover .sidebar-header { padding: 1.25rem 1.25rem .75rem; justify-content: flex-start; }
+.sidebar.collapsed:hover .sidebar-nav a { justify-content: flex-start; padding: .55rem .75rem; }
+.sidebar.collapsed:hover .sidebar-footer .collapse-label { display: inline; }
+
+.main { transition: margin-left .25s ease; }
+.sidebar.collapsed ~ .main { margin-left: 56px; }
+.sidebar.collapsed:hover ~ .main { margin-left: 56px; }
+
+/* Collapse button */
+.collapse-btn { display: flex; align-items: center; gap: .5rem; background: none; border: none; color: var(--color-muted); font-size: .78rem; cursor: pointer; padding: .35rem .5rem; border-radius: 6px; font-family: inherit; transition: all .15s; width: 100%; }
+.collapse-btn:hover { color: var(--color-heading); background: var(--sidebar-hover); }
+.collapse-btn svg { flex-shrink: 0; transition: transform .25s; }
+.sidebar.collapsed .collapse-btn svg { transform: rotate(180deg); }
+.sidebar.collapsed:hover .collapse-btn svg { transform: rotate(180deg); }
+
+/* SVG nav icons */
+.nav-icon { display: flex; align-items: center; justify-content: center; }
+.nav-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Mobile override: ignore collapsed state */
+@media (max-width: 860px) {
+  .sidebar.collapsed { width: 240px; transform: translateX(-100%); }
+  .sidebar.collapsed.open { transform: translateX(0); }
+  .sidebar.collapsed ~ .main { margin-left: 0; }
+  .sidebar.collapsed .sidebar-header span,
+  .sidebar.collapsed .sidebar-nav .nav-label,
+  .sidebar.collapsed .nav-section { opacity: 1; pointer-events: auto; width: auto; }
+  .sidebar.collapsed .sidebar-header { padding: 1.25rem 1.25rem .75rem; justify-content: flex-start; }
+  .sidebar.collapsed .sidebar-nav a { justify-content: flex-start; padding: .55rem .75rem; }
+}
+
 </style>
 </head>
 <body>
@@ -209,16 +258,16 @@ strong { font-weight: 600; color: var(--color-heading); }
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section">Overview</div>
-    <a href="/admin" class="active"><span class="nav-icon">&#9632;</span> Dashboard</a>
-    <a href="/admin/clients"><span class="nav-icon">&#9823;</span> Clients</a>
-
+    <a href="/admin" class="active"><span class="nav-icon"><svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg></span><span class="nav-label">Dashboard</span></a>
+    <a href="/admin/clients"><span class="nav-icon"><svg viewBox="0 0 16 16"><circle cx="8" cy="4.5" r="2.5"/><path d="M2.5 15c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5"/></svg></span><span class="nav-label">Clients</span></a>
     <div class="nav-section">Workflows</div>
-    <a href="/admin/onboarding"><span class="nav-icon">&#9654;</span> Onboarding</a>
-    <a href="/admin/audits"><span class="nav-icon">&#9881;</span> Audits</a>
-    <a href="/admin/deliverables"><span class="nav-icon">&#9744;</span> Deliverables</a>
-    <a href="/admin/reports"><span class="nav-icon">&#9636;</span> Reports</a>
+    <a href="/admin/onboarding"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M8 1v10M4.5 7.5L8 11l3.5-3.5"/><path d="M2.5 13.5h11"/></svg></span><span class="nav-label">Onboarding</span></a>
+    <a href="/admin/audits"><span class="nav-icon"><svg viewBox="0 0 16 16"><circle cx="6.5" cy="6.5" r="4"/><path d="M14.5 14.5l-4-4"/></svg></span><span class="nav-label">Audits</span></a>
+    <a href="/admin/deliverables"><span class="nav-icon"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5.5 8l2 2 3.5-3.5"/></svg></span><span class="nav-label">Deliverables</span></a>
+    <a href="/admin/reports"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M2 14V6l3.5-2v10"/><path d="M6.25 14V4.5l3.5-2v11.5"/><path d="M10.5 14V3l3.5-2v13"/></svg></span><span class="nav-label">Reports</span></a>
   </nav>
   <div class="sidebar-footer">
+    <button class="collapse-btn" id="collapseBtn" aria-label="Collapse sidebar"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M10 3L5 8l5 5"/></svg><span class="collapse-label">Collapse</span></button>
     <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
   </div>
 </aside>
@@ -546,32 +595,6 @@ strong { font-weight: 600; color: var(--color-heading); }
   };
 
   // ============================================================
-  // MOBILE SIDEBAR
-  // ============================================================
-  document.getElementById('mobileToggle').addEventListener('click', function() {
-    document.getElementById('sidebar').classList.toggle('open');
-  });
-
-  // ============================================================
-  // THEME
-  // ============================================================
-  var themeBtn = document.getElementById('themeBtn');
-  var cur = document.documentElement.getAttribute('data-theme');
-  themeBtn.innerHTML = cur === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
-  themeBtn.addEventListener('click', function() {
-    var h = document.documentElement;
-    if (h.getAttribute('data-theme') === 'light') {
-      h.setAttribute('data-theme', 'dark');
-      themeBtn.innerHTML = '&#9728;&#65039;';
-      try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
-    } else {
-      h.setAttribute('data-theme', 'light');
-      themeBtn.innerHTML = '&#x1F319;';
-      try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
-    }
-  });
-
-  // ============================================================
   // HELPERS
   // ============================================================
   function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -584,3 +607,4 @@ strong { font-weight: 600; color: var(--color-heading); }
 </script>
 </body>
 </html>
+
