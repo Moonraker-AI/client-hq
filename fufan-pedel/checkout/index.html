@@ -282,6 +282,7 @@ strong{font-weight:600;color:var(--color-heading)}
     if (params.length > 0) url += '?' + params.join('&');
 
     // Redirect to Stripe
+    try { localStorage.setItem('moonraker-checkout-slug', CLIENT_SLUG); } catch(e) {}
     window.location.href = url;
   };
 
