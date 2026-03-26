@@ -129,10 +129,60 @@ a:hover { color: var(--color-primary-hover); }
   .content { padding: 1rem; }
   .topbar { padding: 0 1rem; }
 }
+
+/* ---- COLLAPSIBLE SIDEBAR ---- */
+.sidebar { transition: width .25s ease, transform .25s ease; }
+.sidebar.collapsed { width: 56px; }
+.sidebar.collapsed .sidebar-header span,
+.sidebar.collapsed .sidebar-nav .nav-label,
+.sidebar.collapsed .nav-section { opacity: 0; pointer-events: none; white-space: nowrap; overflow: hidden; width: 0; }
+.sidebar.collapsed .sidebar-header { padding: 1.25rem .85rem .75rem; justify-content: center; }
+.sidebar.collapsed .sidebar-nav a { justify-content: center; padding: .55rem .5rem; }
+.sidebar.collapsed .sidebar-nav a .nav-icon { margin: 0; }
+.sidebar.collapsed .sidebar-footer { display: flex; flex-direction: column; align-items: center; gap: .4rem; }
+.sidebar.collapsed .sidebar-footer .collapse-label { display: none; }
+
+/* Hover expand when collapsed */
+.sidebar.collapsed:hover { width: 240px; box-shadow: 4px 0 20px rgba(0,0,0,.1); z-index: 250; }
+.sidebar.collapsed:hover .sidebar-header span,
+.sidebar.collapsed:hover .sidebar-nav .nav-label,
+.sidebar.collapsed:hover .nav-section { opacity: 1; pointer-events: auto; width: auto; }
+.sidebar.collapsed:hover .sidebar-header { padding: 1.25rem 1.25rem .75rem; justify-content: flex-start; }
+.sidebar.collapsed:hover .sidebar-nav a { justify-content: flex-start; padding: .55rem .75rem; }
+.sidebar.collapsed:hover .sidebar-footer .collapse-label { display: inline; }
+
+.main { transition: margin-left .25s ease; }
+.sidebar.collapsed ~ .main { margin-left: 56px; }
+.sidebar.collapsed:hover ~ .main { margin-left: 56px; }
+
+/* Collapse button */
+.collapse-btn { display: flex; align-items: center; gap: .5rem; background: none; border: none; color: var(--color-muted); font-size: .78rem; cursor: pointer; padding: .35rem .5rem; border-radius: 6px; font-family: inherit; transition: all .15s; width: 100%; }
+.collapse-btn:hover { color: var(--color-heading); background: var(--sidebar-hover); }
+.collapse-btn svg { flex-shrink: 0; transition: transform .25s; }
+.sidebar.collapsed .collapse-btn svg { transform: rotate(180deg); }
+.sidebar.collapsed:hover .collapse-btn svg { transform: rotate(180deg); }
+
+/* SVG nav icons */
+.nav-icon { display: flex; align-items: center; justify-content: center; }
+.nav-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Mobile override: ignore collapsed state */
+@media (max-width: 860px) {
+  .sidebar.collapsed { width: 240px; transform: translateX(-100%); }
+  .sidebar.collapsed.open { transform: translateX(0); }
+  .sidebar.collapsed ~ .main { margin-left: 0; }
+  .sidebar.collapsed .sidebar-header span,
+  .sidebar.collapsed .sidebar-nav .nav-label,
+  .sidebar.collapsed .nav-section { opacity: 1; pointer-events: auto; width: auto; }
+  .sidebar.collapsed .sidebar-header { padding: 1.25rem 1.25rem .75rem; justify-content: flex-start; }
+  .sidebar.collapsed .sidebar-nav a { justify-content: flex-start; padding: .55rem .75rem; }
+}
+
 </style>
 </head>
 <body>
 
+<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker">
@@ -140,15 +190,16 @@ a:hover { color: var(--color-primary-hover); }
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section">Overview</div>
-    <a href="/admin"><span class="nav-icon">&#9632;</span> Dashboard</a>
-    <a href="/admin/clients"><span class="nav-icon">&#9823;</span> Clients</a>
+    <a href="/admin"><span class="nav-icon"><svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg></span><span class="nav-label">Dashboard</span></a>
+    <a href="/admin/clients"><span class="nav-icon"><svg viewBox="0 0 16 16"><circle cx="8" cy="4.5" r="2.5"/><path d="M2.5 15c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5"/></svg></span><span class="nav-label">Clients</span></a>
     <div class="nav-section">Workflows</div>
-    <a href="/admin/onboarding"><span class="nav-icon">&#9654;</span> Onboarding</a>
-    <a href="/admin/audits" class="active"><span class="nav-icon">&#9881;</span> Audits</a>
-    <a href="/admin/deliverables"><span class="nav-icon">&#9744;</span> Deliverables</a>
-    <a href="/admin/reports"><span class="nav-icon">&#9636;</span> Reports</a>
+    <a href="/admin/onboarding"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M8 1v10M4.5 7.5L8 11l3.5-3.5"/><path d="M2.5 13.5h11"/></svg></span><span class="nav-label">Onboarding</span></a>
+    <a href="/admin/audits" class="active"><span class="nav-icon"><svg viewBox="0 0 16 16"><circle cx="6.5" cy="6.5" r="4"/><path d="M14.5 14.5l-4-4"/></svg></span><span class="nav-label">Audits</span></a>
+    <a href="/admin/deliverables"><span class="nav-icon"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5.5 8l2 2 3.5-3.5"/></svg></span><span class="nav-label">Deliverables</span></a>
+    <a href="/admin/reports"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M2 14V6l3.5-2v10"/><path d="M6.25 14V4.5l3.5-2v11.5"/><path d="M10.5 14V3l3.5-2v13"/></svg></span><span class="nav-label">Reports</span></a>
   </nav>
   <div class="sidebar-footer">
+    <button class="collapse-btn" id="collapseBtn" aria-label="Collapse sidebar"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M10 3L5 8l5 5"/></svg><span class="collapse-label">Collapse</span></button>
     <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
   </div>
 </aside>
@@ -201,7 +252,7 @@ a:hover { color: var(--color-primary-hover); }
     Promise.all([
       sb('contacts?select=id,slug,status,practice_name,email,first_name,last_name,website_url&order=practice_name'),
       sb('checklist_items?select=client_slug,status,owner,priority,category,title&order=client_slug,sort_order'),
-      sb('audit_scores?select=client_slug,variance_score,credibility_score,optimization_score,reputation_score,engagement_score,audit_date&order=audit_date.desc')
+      sb('audit_scores?select=client_slug,variance_score,score_credibility,score_optimization,score_reputation,score_engagement,audit_date&order=audit_date.desc')
     ]).then(function(res) {
       state.contacts = res[0] || [];
 
@@ -297,10 +348,10 @@ a:hover { color: var(--color-primary-hover); }
       if (scores) {
         html += '<div class="audit-card-scores">';
         var pillars = [
-          { key: 'credibility_score', label: 'C' },
-          { key: 'optimization_score', label: 'O' },
-          { key: 'reputation_score', label: 'R' },
-          { key: 'engagement_score', label: 'E' }
+          { key: 'score_credibility', label: 'C' },
+          { key: 'score_optimization', label: 'O' },
+          { key: 'score_reputation', label: 'R' },
+          { key: 'score_engagement', label: 'E' }
         ];
         pillars.forEach(function(p) {
           var val = scores[p.key];
@@ -358,12 +409,30 @@ a:hover { color: var(--color-primary-hover); }
     catch(e) { return d; }
   }
 
-  // Mobile sidebar
+  function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+
+  // ============================================================
+  // SIDEBAR COLLAPSE
+  // ============================================================
+  var sidebar = document.getElementById('sidebar');
+  var collapseBtn = document.getElementById('collapseBtn');
+  try { if (localStorage.getItem('moonraker-sidebar') === 'collapsed') sidebar.classList.add('collapsed'); } catch(e) {}
+  collapseBtn.addEventListener('click', function() {
+    sidebar.classList.toggle('collapsed');
+    try { localStorage.setItem('moonraker-sidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'open'); } catch(e) {}
+  });
+
+  // ============================================================
+  // MOBILE SIDEBAR
+  // ============================================================
   document.getElementById('mobileToggle').addEventListener('click', function() {
     document.getElementById('sidebar').classList.toggle('open');
   });
 
-  // Theme
+  // ============================================================
+  // THEME
+  // ============================================================
   var themeBtn = document.getElementById('themeBtn');
   var cur = document.documentElement.getAttribute('data-theme');
   themeBtn.innerHTML = cur === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
@@ -380,10 +449,9 @@ a:hover { color: var(--color-primary-hover); }
     }
   });
 
-  function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
   loadData();
 })();
 </script>
 </body>
 </html>
+
