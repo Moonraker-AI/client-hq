@@ -315,51 +315,61 @@ strong { font-weight: 600; color: var(--color-heading); }
 }
 
 /* ---- COLLAPSIBLE SIDEBAR ---- */
-.sidebar { transition: width .25s ease, transform .25s ease; }
-.sidebar.collapsed { width: 56px; }
-.sidebar.collapsed .sidebar-header span,
-.sidebar.collapsed .sidebar-nav .nav-label,
-.sidebar.collapsed .nav-section { opacity: 0; pointer-events: none; white-space: nowrap; overflow: hidden; width: 0; }
-.sidebar.collapsed .sidebar-header { padding: 1.25rem .85rem .75rem; justify-content: center; }
-.sidebar.collapsed .sidebar-nav a { justify-content: center; padding: .55rem .5rem; }
-.sidebar.collapsed .sidebar-nav a .nav-icon { margin: 0; }
-.sidebar.collapsed .sidebar-footer { display: flex; flex-direction: column; align-items: center; gap: .4rem; }
-.sidebar.collapsed .sidebar-footer .collapse-label { display: none; }
+.sidebar { transition: width .25s ease, transform .25s ease; overflow: hidden; }
+.sidebar-nav a { position: relative; }
+.sidebar-nav .nav-icon { width: 20px; min-width: 20px; display: flex; align-items: center; justify-content: center; }
+.sidebar-nav .sidebar-nav .nav-label { white-space: nowrap; transition: opacity .15s ease .05s; }
 
-/* Hover expand when collapsed */
+/* Collapsed state */
+.sidebar.collapsed { width: 56px; }
+.sidebar.collapsed .sidebar-header span { opacity: 0; width: 0; overflow: hidden; transition: opacity .1s; }
+.sidebar.collapsed .sidebar-header { padding: 1.25rem 0 .75rem; justify-content: center; }
+.sidebar.collapsed .sidebar-nav { padding: .5rem .4rem; }
+.sidebar.collapsed .sidebar-nav a { padding: .55rem 0; justify-content: center; border-radius: 8px; }
+.sidebar.collapsed .sidebar-nav .nav-label { opacity: 0; width: 0; overflow: hidden; position: absolute; pointer-events: none; transition: opacity .05s; }
+.sidebar.collapsed .nav-section { opacity: 0; height: 0; padding: 0; margin: 0; overflow: hidden; transition: opacity .1s; }
+.sidebar.collapsed .sidebar-footer { padding: .5rem .4rem; display: flex; flex-direction: column; align-items: center; gap: .35rem; }
+
+/* Hover expand */
 .sidebar.collapsed:hover { width: 240px; box-shadow: 4px 0 20px rgba(0,0,0,.1); z-index: 250; }
-.sidebar.collapsed:hover .sidebar-header span,
-.sidebar.collapsed:hover .sidebar-nav .nav-label,
-.sidebar.collapsed:hover .nav-section { opacity: 1; pointer-events: auto; width: auto; }
+.sidebar.collapsed:hover .sidebar-header span { opacity: 1; width: auto; }
 .sidebar.collapsed:hover .sidebar-header { padding: 1.25rem 1.25rem .75rem; justify-content: flex-start; }
-.sidebar.collapsed:hover .sidebar-nav a { justify-content: flex-start; padding: .55rem .75rem; }
-.sidebar.collapsed:hover .sidebar-footer .collapse-label { display: inline; }
+.sidebar.collapsed:hover .sidebar-nav { padding: .5rem .75rem; }
+.sidebar.collapsed:hover .sidebar-nav a { padding: .55rem .75rem; justify-content: flex-start; }
+.sidebar.collapsed:hover .sidebar-nav .nav-label { opacity: 1; width: auto; position: static; pointer-events: auto; }
+.sidebar.collapsed:hover .nav-section { opacity: .6; height: auto; padding: .75rem .75rem .25rem; }
+.sidebar.collapsed:hover .sidebar-footer { padding: .75rem 1rem; align-items: stretch; }
 
 .main { transition: margin-left .25s ease; }
 .sidebar.collapsed ~ .main { margin-left: 56px; }
-.sidebar.collapsed:hover ~ .main { margin-left: 56px; }
 
-/* Collapse button */
-.collapse-btn { display: flex; align-items: center; gap: .5rem; background: none; border: none; color: var(--color-muted); font-size: .78rem; cursor: pointer; padding: .35rem .5rem; border-radius: 6px; font-family: inherit; transition: all .15s; width: 100%; }
-.collapse-btn:hover { color: var(--color-heading); background: var(--sidebar-hover); }
-.collapse-btn svg { flex-shrink: 0; transition: transform .25s; }
+/* Collapse toggle button */
+.collapse-btn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 50%; color: var(--color-muted); cursor: pointer; transition: all .2s; flex-shrink: 0; padding: 0; }
+.collapse-btn:hover { color: var(--color-heading); border-color: var(--color-primary); background: var(--color-primary-subtle); }
+.collapse-btn svg { transition: transform .25s; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .sidebar.collapsed .collapse-btn svg { transform: rotate(180deg); }
 .sidebar.collapsed:hover .collapse-btn svg { transform: rotate(180deg); }
 
-/* SVG nav icons */
-.nav-icon { display: flex; align-items: center; justify-content: center; }
-.nav-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+/* Footer layout */
+.sidebar-footer { display: flex; align-items: center; justify-content: space-between; }
+.sidebar.collapsed .sidebar-footer { justify-content: center; }
+.sidebar.collapsed:hover .sidebar-footer { justify-content: space-between; }
 
-/* Mobile override: ignore collapsed state */
+/* Theme toggle stays in place */
+.theme-toggle { flex-shrink: 0; }
+
+/* Mobile: ignore collapsed */
 @media (max-width: 860px) {
   .sidebar.collapsed { width: 240px; transform: translateX(-100%); }
   .sidebar.collapsed.open { transform: translateX(0); }
   .sidebar.collapsed ~ .main { margin-left: 0; }
-  .sidebar.collapsed .sidebar-header span,
-  .sidebar.collapsed .sidebar-nav .nav-label,
-  .sidebar.collapsed .nav-section { opacity: 1; pointer-events: auto; width: auto; }
+  .sidebar.collapsed .sidebar-header span { opacity: 1; width: auto; }
   .sidebar.collapsed .sidebar-header { padding: 1.25rem 1.25rem .75rem; justify-content: flex-start; }
-  .sidebar.collapsed .sidebar-nav a { justify-content: flex-start; padding: .55rem .75rem; }
+  .sidebar.collapsed .sidebar-nav { padding: .5rem .75rem; }
+  .sidebar.collapsed .sidebar-nav a { padding: .55rem .75rem; justify-content: flex-start; }
+  .sidebar.collapsed .sidebar-nav .nav-label { opacity: 1; width: auto; position: static; pointer-events: auto; }
+  .sidebar.collapsed .nav-section { opacity: .6; height: auto; padding: .75rem .75rem .25rem; }
+  .sidebar.collapsed .sidebar-footer { padding: .75rem 1rem; align-items: center; justify-content: space-between; }
 }
 
 </style>
@@ -383,7 +393,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     <a href="/admin/reports"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M2 14V6l3.5-2v10"/><path d="M6.25 14V4.5l3.5-2v11.5"/><path d="M10.5 14V3l3.5-2v13"/></svg></span><span class="nav-label">Reports</span></a>
   </nav>
   <div class="sidebar-footer">
-    <button class="collapse-btn" id="collapseBtn" aria-label="Collapse sidebar"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M10 3L5 8l5 5"/></svg><span class="collapse-label">Collapse</span></button>
+    <button class="collapse-btn" id="collapseBtn" aria-label="Collapse sidebar"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M10 3L5 8l5 5"/></svg></button>
     <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
   </div>
 </aside>
@@ -1319,43 +1329,36 @@ strong { font-weight: 600; color: var(--color-heading); }
   // INIT
   // ============================================================
 
+
   // ============================================================
   // SIDEBAR COLLAPSE
   // ============================================================
   var sidebar = document.getElementById('sidebar');
   var collapseBtn = document.getElementById('collapseBtn');
   try { if (localStorage.getItem('moonraker-sidebar') === 'collapsed') sidebar.classList.add('collapsed'); } catch(e) {}
-  collapseBtn.addEventListener('click', function() {
+  if (collapseBtn) collapseBtn.addEventListener('click', function() {
     sidebar.classList.toggle('collapsed');
     try { localStorage.setItem('moonraker-sidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'open'); } catch(e) {}
   });
-
-  // ============================================================
-  // MOBILE SIDEBAR
-  // ============================================================
-  document.getElementById('mobileToggle').addEventListener('click', function() {
-    document.getElementById('sidebar').classList.toggle('open');
-  });
-
-  // ============================================================
-  // THEME
-  // ============================================================
+  // Mobile sidebar
+  var mobileToggle = document.getElementById('mobileToggle');
+  if (mobileToggle) mobileToggle.addEventListener('click', function() { sidebar.classList.toggle('open'); });
+  // Theme
   var themeBtn = document.getElementById('themeBtn');
-  var cur = document.documentElement.getAttribute('data-theme');
-  themeBtn.innerHTML = cur === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
-  themeBtn.addEventListener('click', function() {
-    var h = document.documentElement;
-    if (h.getAttribute('data-theme') === 'light') {
-      h.setAttribute('data-theme', 'dark');
-      themeBtn.innerHTML = '&#9728;&#65039;';
-      try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
-    } else {
-      h.setAttribute('data-theme', 'light');
-      themeBtn.innerHTML = '&#x1F319;';
-      try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
-    }
-  });
-
+  var _curTheme = document.documentElement.getAttribute('data-theme');
+  if (themeBtn) {
+    themeBtn.innerHTML = _curTheme === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
+    themeBtn.addEventListener('click', function() {
+      var h = document.documentElement;
+      if (h.getAttribute('data-theme') === 'light') {
+        h.setAttribute('data-theme', 'dark'); themeBtn.innerHTML = '&#9728;&#65039;';
+        try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
+      } else {
+        h.setAttribute('data-theme', 'light'); themeBtn.innerHTML = '&#x1F319;';
+        try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
+      }
+    });
+  }
   loadData();
 })();
 </script>
