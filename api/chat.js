@@ -1,10 +1,5 @@
 // /api/chat.js - Streaming Anthropic API proxy for Client HQ
 
-var PRIMARY_MODEL = 'claude-opus-4-6';
-var FALLBACK_MODEL = 'claude-sonnet-4-20250514';
-var MAX_RETRIES = 3;
-var RETRY_DELAYS = [1000, 2000, 4000];
-
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -32,63 +27,76 @@ module.exports = async function handler(req, res) {
     }
 
     var systemPrompt = buildSystemPrompt(context);
-    var model = PRIMARY_MODEL;
+
+    // Retry logic: try Opus up to 3 times with backoff, then fall back to Sonnet
+    var models = [
+      { id: 'claude-opus-4-6', label: 'Opus 4.6', retries: 3 },
+      { id: 'claude-sonnet-4-6', label: 'Sonnet 4.6', retries: 2 }
+    ];
+
     var anthropicRes = null;
-    var lastStatus = 0;
+    var usedModel = null;
 
-    for (var attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      if (attempt === MAX_RETRIES) {
-        model = FALLBACK_MODEL;
-        console.log('Falling back to Sonnet after ' + MAX_RETRIES + ' Opus retries');
+    for (var m = 0; m < models.length; m++) {
+      var model = models[m];
+      for (var attempt = 0; attempt < model.retries; attempt++) {
+        if (attempt > 0) {
+          await new Promise(function(resolve) { setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)); });
+        }
+
+        var tryRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: model.id,
+            max_tokens: 8192,
+            stream: true,
+            system: systemPrompt,
+            messages: messages
+          })
+        });
+
+        if (tryRes.ok) {
+          anthropicRes = tryRes;
+          usedModel = model.label;
+          break;
+        }
+
+        if (tryRes.status === 529 || tryRes.status === 429) {
+          console.log('Attempt ' + (attempt + 1) + '/' + model.retries + ' with ' + model.label + ' got ' + tryRes.status + ', retrying...');
+          continue;
+        }
+
+        var errText = await tryRes.text();
+        console.error('Anthropic API error:', tryRes.status, errText);
+        return res.status(tryRes.status).json({
+          error: 'Anthropic API error',
+          status: tryRes.status,
+          detail: errText
+        });
       }
 
-      anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: model,
-          max_tokens: 8192,
-          stream: true,
-          system: systemPrompt,
-          messages: messages
-        })
-      });
-
-      lastStatus = anthropicRes.status;
-
-      if (anthropicRes.ok) break;
-
-      if (lastStatus === 529 && attempt < MAX_RETRIES) {
-        console.log('Opus 529 on attempt ' + (attempt + 1) + ', retrying in ' + RETRY_DELAYS[attempt] + 'ms...');
-        await new Promise(function(r) { setTimeout(r, RETRY_DELAYS[attempt]); });
-        continue;
-      }
-
-      if (lastStatus !== 529) {
-        var errText = await anthropicRes.text();
-        console.error('Anthropic API error:', lastStatus, errText);
-        return res.status(lastStatus).json({ error: 'Anthropic API error', status: lastStatus, detail: errText });
-      }
+      if (anthropicRes) break;
+      console.log(model.label + ' exhausted ' + model.retries + ' retries, trying next model...');
     }
 
-    if (!anthropicRes || !anthropicRes.ok) {
+    if (!anthropicRes) {
       return res.status(529).json({
-        error: 'API overloaded',
-        detail: 'Both Opus and Sonnet are at capacity. Please try again in a moment.'
+        error: 'All models overloaded after retries. Please try again in a moment.'
       });
     }
+
+    console.log('Streaming response with ' + usedModel);
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
-    if (model === FALLBACK_MODEL) {
-      res.setHeader('X-Model-Used', 'sonnet-fallback');
-    }
+    res.setHeader('X-Model-Used', usedModel);
 
     var reader = anthropicRes.body.getReader();
     try {
