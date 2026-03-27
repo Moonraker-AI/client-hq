@@ -28,59 +28,82 @@ module.exports = async function handler(req, res) {
 
     var systemPrompt = buildSystemPrompt(context);
 
-    // Retry logic for 529 (overloaded) errors
-    var maxRetries = 3;
+    // Try Opus first with retries, then fall back to Sonnet
+    var models = [
+      { id: 'claude-opus-4-6', label: 'Opus 4.6', retries: 2 },
+      { id: 'claude-sonnet-4-6', label: 'Sonnet 4.6', retries: 1 }
+    ];
+
     var anthropicRes = null;
+    var usedModel = null;
 
-    for (var attempt = 0; attempt <= maxRetries; attempt++) {
-      anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-opus-4-6',
-          max_tokens: 8192,
-          stream: true,
-          system: systemPrompt,
-          messages: messages
-        })
-      });
+    for (var m = 0; m < models.length; m++) {
+      var model = models[m];
 
-      if (anthropicRes.status !== 529) break;
+      for (var attempt = 0; attempt <= model.retries; attempt++) {
+        anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: model.id,
+            max_tokens: 8192,
+            stream: true,
+            system: systemPrompt,
+            messages: messages
+          })
+        });
 
-      // 529 = overloaded, wait and retry
-      if (attempt < maxRetries) {
-        var delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
-        console.log('Anthropic 529 (attempt ' + (attempt + 1) + '/' + maxRetries + '), retrying in ' + Math.round(delay) + 'ms');
-        await new Promise(function(r) { setTimeout(r, delay); });
+        if (anthropicRes.status !== 529) {
+          usedModel = model;
+          break;
+        }
+
+        // 529 = overloaded, wait and retry
+        if (attempt < model.retries) {
+          var delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
+          console.log(model.label + ' 529 (attempt ' + (attempt + 1) + '/' + model.retries + '), retrying in ' + Math.round(delay) + 'ms');
+          await new Promise(function(r) { setTimeout(r, delay); });
+        }
+      }
+
+      if (anthropicRes && anthropicRes.status !== 529) {
+        usedModel = model;
+        break;
+      }
+
+      // If this model exhausted retries with 529, try next model
+      if (m < models.length - 1) {
+        console.log(model.label + ' exhausted retries, falling back to ' + models[m + 1].label);
       }
     }
 
-    if (!anthropicRes.ok) {
-      var errText = await anthropicRes.text();
-      console.error('Anthropic API error:', anthropicRes.status, errText);
+    if (!anthropicRes || !anthropicRes.ok) {
+      var errText = anthropicRes ? await anthropicRes.text() : 'No response';
+      var status = anthropicRes ? anthropicRes.status : 500;
+      console.error('Anthropic API error:', status, errText);
 
-      // User-friendly error messages
       var userMsg = 'API error';
-      if (anthropicRes.status === 529) userMsg = 'Claude is experiencing high demand. Please try again in a moment.';
-      else if (anthropicRes.status === 401) userMsg = 'API key is invalid. Check ANTHROPIC_API_KEY in Vercel settings.';
-      else if (anthropicRes.status === 429) userMsg = 'Rate limit reached. Please wait a moment.';
+      if (status === 529) userMsg = 'All models are experiencing high demand. Please try again in a moment.';
+      else if (status === 401) userMsg = 'API key is invalid. Check ANTHROPIC_API_KEY in Vercel settings.';
+      else if (status === 429) userMsg = 'Rate limit reached. Please wait a moment.';
 
-      return res.status(anthropicRes.status).json({
-        error: userMsg,
-        status: anthropicRes.status,
-        detail: errText
-      });
+      return res.status(status).json({ error: userMsg, status: status, detail: errText });
     }
 
-    // Stream the SSE response directly
+    // Stream the SSE response, injecting model info as first event
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
+
+    // Send a custom event with the model used (so the UI can show it)
+    if (usedModel && usedModel.id !== 'claude-opus-4-6') {
+      res.write('event: model_info\ndata: {"model":"' + usedModel.id + '","label":"' + usedModel.label + '"}\n\n');
+    }
 
     var reader = anthropicRes.body.getReader();
     try {
@@ -123,7 +146,6 @@ function buildSystemPrompt(ctx) {
   prompt += '## Action System\n\n';
   prompt += 'When the user asks you to change, update, create, or delete data, propose the action using a fenced code block with the language tag `action`. Each action block becomes a confirmable card in the UI.\n\n';
   prompt += 'Available actions:\n\n';
-
   prompt += '### update_record\n```action\n{"action":"update_record","table":"TABLE_NAME","filters":{"column":"value"},"data":{"column":"new_value"}}\n```\n\n';
   prompt += '### create_record\n```action\n{"action":"create_record","table":"TABLE_NAME","data":{"column":"value","column2":"value2"}}\n```\n\n';
   prompt += '### delete_record\n```action\n{"action":"delete_record","table":"TABLE_NAME","filters":{"id":"RECORD_ID"}}\n```\n\n';
