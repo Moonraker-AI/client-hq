@@ -258,8 +258,8 @@
       .mr-chat-btn { bottom: 1rem; right: 1rem; width: 46px; height: 46px; }
     }
 
-    /* Hide when chat is open */
-    .mr-chat-panel.open ~ .mr-chat-btn { display: none; }
+    /* Button hidden via JS when panel is open */
+    .mr-chat-btn.hidden { display: none !important; }
   `;
   document.head.appendChild(style);
 
@@ -379,11 +379,13 @@
     panelOpen = open;
     if (open) {
       panel.classList.add('open');
+      btn.classList.add('hidden');
       updateContextDisplay();
       renderMessages();
       setTimeout(function() { inputEl.focus(); }, 300);
     } else {
       panel.classList.remove('open');
+      setTimeout(function() { btn.classList.remove('hidden'); }, 250);
     }
     try { sessionStorage.setItem(OPEN_KEY, open ? '1' : '0'); } catch(e) {}
   }
@@ -677,6 +679,10 @@
 
         for (var i = 0; i < lines.length; i++) {
           var line = lines[i];
+          if (line.startsWith('event: model_info')) {
+            // Next data line has model fallback info
+            continue;
+          }
           if (line.startsWith('data: ')) {
             var data = line.slice(6);
             if (data === '[DONE]') {
@@ -684,8 +690,15 @@
               return;
             }
             try {
-              var event = JSON.parse(data);
-              handleSSEEvent(event);
+              var parsed = JSON.parse(data);
+              // Check if this is model_info data
+              if (parsed.model && parsed.label && !parsed.type) {
+                var sub = document.querySelector('.mr-chat-header-sub');
+                if (sub) sub.textContent = parsed.label + ' (fallback)';
+                addSystemMessage('Using ' + parsed.label + ' due to high Opus demand.');
+                continue;
+              }
+              handleSSEEvent(parsed);
             } catch(e) {
               // Skip unparseable events
             }
@@ -794,3 +807,4 @@
   };
 
 })();
+
