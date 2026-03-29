@@ -489,10 +489,11 @@ a:hover { color: var(--color-primary-hover); }
       STEP_ORDER.forEach(function(key) {
         var st = stepMap[key] || 'pending';
         var icon = STEP_ICONS[st] || STEP_ICONS.pending;
-        html += '<div class="step-cell ' + st + '">';
+        var stepNum = STEP_ORDER.indexOf(key) + 1;
+        html += '<a href="/' + esc(c.slug) + '/onboarding#step-' + stepNum + '" target="_blank" class="step-cell ' + st + '" style="text-decoration:none;color:inherit;" title="Open ' + (STEP_LABELS[key] || key) + '">';
         html += '<div class="step-dot ' + st + '">' + icon + '</div>';
         html += '<div class="step-label">' + (STEP_LABELS[key] || key) + '</div>';
-        html += '</div>';
+        html += '</a>';
       });
       html += '</div>';
       html += '</div>';
@@ -607,5 +608,6 @@ a:hover { color: var(--color-primary-hover); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
 
