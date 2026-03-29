@@ -597,14 +597,15 @@ a:hover { color: var(--color-primary-hover); }
         html += '<div class="del-client"><div class="del-client-avatar">' + esc(initials) + '</div><span class="del-client-name" onclick="window.location.href=\'/admin/clients?slug=' + esc(c.slug || '') + '\'">' + esc(c.practice_name || c.slug || '?') + '</span></div>';
         var urg = getUrgency(d, contactMap);
         html += '<div style="display:flex;align-items:center;gap:.35rem;">';
-        if (urg.level !== 'none') html += '<span class="urgency-dot ' + urg.level + '"></span>';
         html += '<select class="del-status-select st-' + (d.status || 'not_started') + '" onchange="setDelStatus(\'' + d.id + '\', this.value, event)">';
         html += '<option value="not_started"' + (d.status === 'not_started' ? ' selected' : '') + '>Not Started</option>';
         html += '<option value="in_progress"' + (d.status === 'in_progress' ? ' selected' : '') + '>In Progress</option>';
         html += '<option value="internal_review"' + (d.status === 'internal_review' ? ' selected' : '') + '>Internal Review</option>';
         html += '<option value="waiting_on_client"' + (d.status === 'waiting_on_client' ? ' selected' : '') + '>Waiting on Client</option>';
         html += '<option value="delivered"' + (d.status === 'delivered' ? ' selected' : '') + '>Delivered</option>';
-        html += '</select></div>';
+        html += '</select>';
+        if (urg.level !== 'none') html += '<span class="urgency-dot ' + urg.level + '"></span>';
+        html += '</div>';
         html += '<div class="del-date hide-mobile">' + (d.delivered_at ? formatDate(d.delivered_at) : d.created_at ? formatDate(d.created_at) : '-') + '</div>';
         html += '<div class="del-links hide-mobile">';
         if (d.page_url) html += '<a href="' + esc(d.page_url) + '" target="_blank" class="del-link" title="View">&#128279;</a>';
@@ -620,7 +621,21 @@ a:hover { color: var(--color-primary-hover); }
       html += '<div class="phase-group"><div class="phase-header"><span class="phase-icon">&#9660;</span><span class="phase-title">Other</span><span class="phase-count">' + grouped._other.length + '</span></div><div class="phase-body">';
       grouped._other.forEach(function(d) {
         var c = contactMap[d.contact_id] || {};
-        html += '<div class="del-row"><div class="del-title">' + esc(d.title || d.deliverable_type) + '</div><div>' + esc(c.practice_name || '?') + '</div><div><span class="tag tag-' + (d.status || 'not_started') + '">' + esc(d.status || 'not started') + '</span></div><div class="hide-mobile">-</div><div class="hide-mobile"></div></div>';
+        var oUrg = getUrgency(d, contactMap);
+        html += '<div class="del-row">';
+        html += '<div><div class="del-title">' + esc(d.title || d.deliverable_type) + '</div></div>';
+        html += '<div>' + esc(c.practice_name || '?') + '</div>';
+        html += '<div style="display:flex;align-items:center;gap:.35rem;">';
+        html += '<select class="del-status-select st-' + (d.status || 'not_started') + '" onchange="setDelStatus(\'' + d.id + '\', this.value, event)">';
+        html += '<option value="not_started"' + (d.status === 'not_started' ? ' selected' : '') + '>Not Started</option>';
+        html += '<option value="in_progress"' + (d.status === 'in_progress' ? ' selected' : '') + '>In Progress</option>';
+        html += '<option value="internal_review"' + (d.status === 'internal_review' ? ' selected' : '') + '>Internal Review</option>';
+        html += '<option value="waiting_on_client"' + (d.status === 'waiting_on_client' ? ' selected' : '') + '>Waiting on Client</option>';
+        html += '<option value="delivered"' + (d.status === 'delivered' ? ' selected' : '') + '>Delivered</option>';
+        html += '</select>';
+        if (oUrg.level !== 'none') html += '<span class="urgency-dot ' + oUrg.level + '"></span>';
+        html += '</div>';
+        html += '<div class="hide-mobile">-</div><div class="hide-mobile"></div></div>';
       });
       html += '</div></div>';
     }
@@ -792,6 +807,7 @@ a:hover { color: var(--color-primary-hover); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
 
 
