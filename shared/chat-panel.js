@@ -58,7 +58,7 @@
       background: var(--color-primary-subtle, #0D2E22);
       display: flex; align-items: center; justify-content: center;
     }
-    .mr-chat-header-icon svg { width: 18px; height: 18px; fill: var(--color-primary, #00D47E); }
+    .mr-chat-header-icon img { width: 22px; height: 22px; object-fit: contain; }
     .mr-chat-header-info { flex: 1; min-width: 0; }
     .mr-chat-header-title {
       font-family: 'Outfit', sans-serif; font-weight: 600;
@@ -273,7 +273,7 @@
       background: var(--color-primary-subtle, #0D2E22);
       display: flex; align-items: center; justify-content: center;
     }
-    .mr-chat-welcome-icon svg { width: 24px; height: 24px; fill: var(--color-primary, #00D47E); }
+    .mr-chat-welcome-icon img { width: 32px; height: 32px; object-fit: contain; }
     .mr-chat-welcome h3 {
       font-family: 'Outfit', sans-serif; font-size: 1rem;
       color: var(--color-heading, #E8F5EF); margin: 0;
@@ -343,7 +343,7 @@
   panel.innerHTML = `
     <div class="mr-chat-header">
       <div class="mr-chat-header-icon">
-        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/><path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>
+        <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker">
       </div>
       <div class="mr-chat-header-info">
         <div class="mr-chat-header-title">Moonraker AI</div>
@@ -472,7 +472,7 @@
     var suggestions = getSuggestions(ctx);
 
     var html = '<div class="mr-chat-welcome">';
-    html += '<div class="mr-chat-welcome-icon"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/><path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg></div>';
+    html += '<div class="mr-chat-welcome-icon"><img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker"></div>';
     html += '<h3>Moonraker AI</h3>';
     html += '<p>I can help you manage clients, update deliverables, build audits, and more. What would you like to do?</p>';
     html += '<div class="mr-chat-suggestions">';
@@ -985,6 +985,7 @@
   };
 
 })();
+
 
 
 
