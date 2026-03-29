@@ -111,7 +111,7 @@ a:hover { color: var(--color-primary-hover); }
 .del-status-select.st-internal_review { background: rgba(139,92,246,.1); color: #8B5CF6; }
 .del-status-select.st-waiting_on_client { background: rgba(245,158,11,.1); color: #D97706; }
 .del-status-select.st-delivered { background: rgba(0,212,126,.1); color: #00b86c; }
-.urgency-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: .35rem; flex-shrink: 0; }
+.urgency-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-left: .5rem; flex-shrink: 0; }
 .urgency-dot.high { background: var(--color-danger); }
 .urgency-dot.medium { background: var(--color-warning); }
 .urgency-dot.low { background: var(--color-primary); }
@@ -594,7 +594,7 @@ a:hover { color: var(--color-primary-hover); }
 
         html += '<div class="del-row">';
         html += '<div><div class="del-title">' + esc(d.title || typeLabel) + '</div><div class="del-type">' + esc(typeLabel) + (d.notes ? ' - ' + esc(d.notes.substring(0, 50)) : '') + '</div></div>';
-        html += '<div class="del-client"><div class="del-client-avatar">' + esc(initials) + '</div><span class="del-client-name" onclick="window.location.href=\'/admin/clients?slug=' + esc(c.slug || '') + '\'">' + esc(c.practice_name || c.slug || '?') + '</span></div>';
+        html += '<div class="del-client"><div class="del-client-avatar">' + esc(initials) + '</div><span class="del-client-name" onclick="window.location.href=\'/admin/clients?slug=' + esc(c.slug || '') + '&tab=deliverables\'">' + esc(c.practice_name || c.slug || '?') + '</span></div>';
         var urg = getUrgency(d, contactMap);
         html += '<div style="display:flex;align-items:center;gap:.35rem;">';
         html += '<select class="del-status-select st-' + (d.status || 'not_started') + '" onchange="setDelStatus(\'' + d.id + '\', this.value, event)">';
