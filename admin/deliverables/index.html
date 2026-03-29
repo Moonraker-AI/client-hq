@@ -479,20 +479,31 @@ a:hover { color: var(--color-primary-hover); }
     if (evt) evt.stopPropagation();
     var del = state.deliverables.find(function(dd) { return dd.id === delId; });
     if (!del || del.status === newStatus) return;
+    var oldStatus = del.status;
     var data = { status: newStatus };
     if (newStatus === 'delivered') data.delivered_at = new Date().toISOString();
-    else data.delivered_at = null;
+    if (oldStatus === 'delivered' && newStatus !== 'delivered') data.delivered_at = null;
+
+    // Optimistic update
+    del.status = newStatus;
+    if (data.delivered_at !== undefined) del.delivered_at = data.delivered_at;
+    renderStats();
+    render();
+
     fetch('/api/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'update_record', table: 'deliverables', filters: { id: delId }, data: data })
     }).then(function(r) { return r.json(); }).then(function(res) {
-      if (res.success) {
-        del.status = newStatus;
-        del.delivered_at = data.delivered_at;
+      if (!res.success) {
+        del.status = oldStatus;
         renderStats();
         render();
       }
+    }).catch(function() {
+      del.status = oldStatus;
+      renderStats();
+      render();
     });
   }
 
