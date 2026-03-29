@@ -269,6 +269,12 @@ strong { font-weight: 600; color: var(--color-heading); }
 .field-value.editable { cursor: pointer; padding: .15rem .35rem; margin: -.15rem -.35rem; border-radius: 4px; transition: background .15s; border: 1px solid transparent; min-height: 1.4em; }
 .field-value.editable:hover { background: var(--color-bg); border-color: var(--color-border); }
 .field-value.editable.empty { color: var(--color-muted); font-style: italic; }
+.field-edit-select {
+  width: 100%; padding: .3rem .45rem; border-radius: 6px;
+  border: 1px solid var(--color-primary); background: var(--color-surface);
+  color: var(--color-body); font-family: inherit; font-size: .84rem;
+  outline: none; box-shadow: 0 0 0 2px rgba(0,212,126,.15); cursor: pointer;
+}
 .field-edit-input {
   width: 100%; padding: .3rem .45rem; border-radius: 6px;
   border: 1px solid var(--color-primary); background: var(--color-surface);
@@ -1169,6 +1175,9 @@ strong { font-weight: 600; color: var(--color-heading); }
     var gap = Math.max(0, monthsIn - phaseEnd);
     var staleMulti = d.status === 'not_started' ? 0.6 : d.status === 'waiting_on_client' ? 0.5 : 0.3;
     var score = baseWeight * (1 + gap * staleMulti);
+    // Status bonus: blocked/review items sort higher within same tier
+    var statusBonus = {waiting_on_client: 3, internal_review: 2, in_progress: 1, not_started: 0}[d.status] || 0;
+    score += statusBonus;
     var level = score >= 10 ? 'high' : score >= 5 ? 'medium' : 'low';
     return { score: Math.round(score * 10) / 10, level: level };
   }
@@ -1512,6 +1521,14 @@ strong { font-weight: 600; color: var(--color-heading); }
   function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
   // Editable field row: table, col, value, label, opts
+  var FIELD_OPTIONS = {
+    practice_type: [{v:'solo',l:'Solo Practice'},{v:'group',l:'Group Practice'},{v:'clinic',l:'Clinic'},{v:'hospital',l:'Hospital/System'}],
+    insurance_or_private_pay: [{v:'private_pay',l:'Private Pay Only'},{v:'insurance',l:'Insurance'},{v:'both',l:'Both'},{v:'sliding_scale',l:'Sliding Scale'}],
+    content_approval: [{v:'auto',l:'Auto-publish'},{v:'review',l:'Review Before Publishing'},{v:'review_first_then_auto',l:'Review First, Then Auto'}],
+    website_platform: [{v:'wordpress',l:'WordPress'},{v:'squarespace',l:'Squarespace'},{v:'wix',l:'Wix'},{v:'showit',l:'Showit'},{v:'therapysites',l:'TherapySites'},{v:'other',l:'Other'}],
+    website_builder: [{v:'elementor',l:'Elementor'},{v:'bricks',l:'Bricks'},{v:'divi',l:'Divi'},{v:'avada',l:'Avada'},{v:'gutenberg',l:'Gutenberg'},{v:'none',l:'None'},{v:'other',l:'Other'}]
+  };
+
   function editField(table, col, label, value, opts) {
     opts = opts || {};
     var displayVal = value;
@@ -1520,20 +1537,28 @@ strong { font-weight: 600; color: var(--color-heading); }
     }
     if (opts.isArray && Array.isArray(value)) displayVal = value.join(', ');
 
+    // For dropdown fields, show the label instead of raw value
+    var fieldOpts = FIELD_OPTIONS[col];
+    if (fieldOpts && value) {
+      var match = fieldOpts.find(function(o) { return o.v === value; });
+      if (match) displayVal = match.l;
+    }
+
     var isEmpty = !value && value !== 0;
     var displayText = isEmpty ? 'Click to add' : esc(String(displayVal));
     var emptyClass = isEmpty ? ' empty' : '';
+    var hasOpts = fieldOpts ? 'true' : 'false';
 
     var id = 'ef-' + table + '-' + col;
     return '<div class="field"><div class="field-label">' + esc(label) + '<span class="field-save-indicator" id="' + id + '-saved">Saved</span></div>' +
       '<div class="field-value editable' + emptyClass + '" ' +
-      'onclick="startEdit(\'' + table + '\', \'' + col + '\', ' + (opts.isDate ? 'true' : 'false') + ', ' + (opts.isArray ? 'true' : 'false') + ')" ' +
+      'onclick="startEdit(\'' + table + '\', \'' + col + '\', ' + (opts.isDate ? 'true' : 'false') + ', ' + (opts.isArray ? 'true' : 'false') + ', ' + hasOpts + ')" ' +
       'id="' + id + '">' + displayText + '</div></div>';
   }
 
-  window.startEdit = function startEdit(table, col, isDate, isArray) {
+  window.startEdit = function startEdit(table, col, isDate, isArray, hasOptions) {
     var el = document.getElementById('ef-' + table + '-' + col);
-    if (!el || el.querySelector('input,textarea')) return;
+    if (!el || el.querySelector('input,textarea,select')) return;
 
     // Get current raw value from state
     var rawVal = '';
@@ -1541,15 +1566,29 @@ strong { font-weight: 600; color: var(--color-heading); }
     else if (table === 'practice_details' && state.practice) rawVal = state.practice[col] || '';
 
     if (isArray && Array.isArray(rawVal)) rawVal = rawVal.join(', ');
-    if (isDate && rawVal) rawVal = rawVal.substring(0, 10); // YYYY-MM-DD
+    if (isDate && rawVal) rawVal = rawVal.substring(0, 10);
 
-    var inputType = isDate ? 'date' : 'text';
-    el.innerHTML = '<input type="' + inputType + '" class="field-edit-input" value="' + esc(String(rawVal)) + '" />';
-    var inp = el.querySelector('input');
-    inp.focus();
+    var fieldOpts = hasOptions ? FIELD_OPTIONS[col] : null;
+    var inp;
+
+    if (fieldOpts) {
+      var selHtml = '<select class="field-edit-select"><option value="">-- Select --</option>';
+      fieldOpts.forEach(function(o) {
+        selHtml += '<option value="' + o.v + '"' + (rawVal === o.v ? ' selected' : '') + '>' + o.l + '</option>';
+      });
+      selHtml += '</select>';
+      el.innerHTML = selHtml;
+      inp = el.querySelector('select');
+      inp.focus();
+    } else {
+      var inputType = isDate ? 'date' : 'text';
+      el.innerHTML = '<input type="' + inputType + '" class="field-edit-input" value="' + esc(String(rawVal)) + '" />';
+      inp = el.querySelector('input');
+      inp.focus();
+    }
 
     function save() {
-      var newVal = inp.value.trim();
+      var newVal = fieldOpts ? inp.value : inp.value.trim();
       if (isArray) newVal = newVal.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
       if (isDate && !newVal) newVal = null;
 
@@ -1587,6 +1626,9 @@ strong { font-weight: 600; color: var(--color-heading); }
       if (e.key === 'Enter') { e.preventDefault(); save(); }
       if (e.key === 'Escape') { renderOverview(state.contact, state.practice); }
     });
+    if (fieldOpts) {
+      inp.addEventListener('change', save);
+    }
   }
 
   window.startEditNotes = function startEditNotes() {
@@ -1702,6 +1744,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
 
 
