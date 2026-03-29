@@ -295,6 +295,8 @@ a:hover { color: var(--color-primary-hover); }
 
     var complete = allTasks.filter(function(t) { return t.status === 'complete'; }).length;
     var ip = allTasks.filter(function(t) { return t.status === 'in-progress'; }).length;
+    var ir = allTasks.filter(function(t) { return t.status === 'internal-review'; }).length;
+    var wc = allTasks.filter(function(t) { return t.status === 'waiting-on-client'; }).length;
     var ns = allTasks.filter(function(t) { return t.status === 'not-started'; }).length;
     var clientCount = Object.keys(state.tasks).length;
     var pct = allTasks.length > 0 ? Math.round(complete / allTasks.length * 100) : 0;
@@ -304,12 +306,13 @@ a:hover { color: var(--color-primary-hover); }
     allTasks.forEach(function(t) { if (t.owner && owners.hasOwnProperty(t.owner)) owners[t.owner]++; });
 
     document.getElementById('statGrid').innerHTML =
-      '<div class="stat-card"><div class="stat-label">Audited Clients</div><div class="stat-value">' + clientCount + '</div><div class="stat-sub">with active tasks</div></div>' +
-      '<div class="stat-card"><div class="stat-label">Total Tasks</div><div class="stat-value">' + allTasks.length + '</div><div class="stat-sub">' + pct + '% complete</div></div>' +
+      '<div class="stat-card"><div class="stat-label">Total Tasks</div><div class="stat-value">' + allTasks.length + '</div><div class="stat-sub">' + clientCount + ' clients, ' + pct + '% complete</div></div>' +
       '<div class="stat-card"><div class="stat-label">Complete</div><div class="stat-value" style="color:var(--color-success);">' + complete + '</div></div>' +
-      '<div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-value" style="color:var(--color-info);">' + ip + '</div></div>' +
+      '<div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-value" style="color:#3B82F6;">' + ip + '</div></div>' +
+      '<div class="stat-card"><div class="stat-label">Internal Review</div><div class="stat-value" style="color:#8B5CF6;">' + ir + '</div></div>' +
+      '<div class="stat-card"><div class="stat-label">Waiting on Client</div><div class="stat-value" style="color:#D97706;">' + wc + '</div></div>' +
       '<div class="stat-card"><div class="stat-label">Not Started</div><div class="stat-value">' + ns + '</div></div>' +
-      '<div class="stat-card"><div class="stat-label">Moonraker Tasks</div><div class="stat-value">' + owners.Moonraker + '</div><div class="stat-sub">' + owners.Client + ' client, ' + owners.Collaboration + ' collab</div></div>';
+      '<div class="stat-card"><div class="stat-label">Moonraker</div><div class="stat-value">' + owners.Moonraker + '</div><div class="stat-sub">' + owners.Client + ' client, ' + owners.Collaboration + ' collab</div></div>';
   }
 
   function renderCards() {
@@ -459,6 +462,7 @@ a:hover { color: var(--color-primary-hover); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
 
 
