@@ -399,6 +399,15 @@ strong { font-weight: 600; color: var(--color-heading); }
 
       render();
       document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+      // Wire up chat panel context
+      if (window.MoonrakerChat) {
+        var summary = { total: state.contacts.length };
+        ['active','onboarding','prospect','lead'].forEach(function(s) {
+          summary[s] = state.contacts.filter(function(c) { return c.status === s; }).length;
+        });
+        window.MoonrakerChat.setContext({ clientData: { contacts: state.contacts, summary: summary } });
+      }
     });
   }
 
@@ -641,4 +650,5 @@ strong { font-weight: 600; color: var(--color-heading); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
