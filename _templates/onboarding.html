@@ -1391,6 +1391,14 @@ strong { font-weight: 600; color: var(--color-heading); }
           if (stepData[STEPS[i].key] !== 'complete') { startStep = i; break; }
         }
         goToStep(startStep);
+
+        // Hash-based deep link: /{slug}/onboarding#confirm_info
+        if (window.location.hash) {
+          var hashKey = window.location.hash.substring(1);
+          for (var hi = 0; hi < STEPS.length; hi++) {
+            if (STEPS[hi].key === hashKey) { goToStep(hi); break; }
+          }
+        }
       })
       .catch(function(err) {
         console.error('Init error:', err);
@@ -1422,3 +1430,4 @@ strong { font-weight: 600; color: var(--color-heading); }
 </script>
 </body>
 </html>
+
