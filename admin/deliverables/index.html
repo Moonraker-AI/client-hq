@@ -408,6 +408,16 @@ a:hover { color: var(--color-primary-hover); }
       renderPhaseFilters();
       render();
       document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+      // Wire up chat panel context
+      if (window.MoonrakerChat) {
+        window.MoonrakerChat.setContext({
+          clientData: {
+            contacts: state.contacts,
+            deliverables: state.deliverables.map(function(d) { return { id: d.id, contact_id: d.contact_id, deliverable_type: d.deliverable_type, title: d.title, status: d.status }; })
+          }
+        });
+      }
     });
   }
 
@@ -698,4 +708,5 @@ a:hover { color: var(--color-primary-hover); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
