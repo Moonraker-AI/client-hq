@@ -99,6 +99,13 @@ a:hover { color: var(--color-primary-hover); }
 /* Deliverable row */
 .del-row { display: grid; grid-template-columns: 2fr 1.2fr 1fr .8fr .8fr; gap: .5rem; align-items: center; padding: .6rem .75rem; border-bottom: 1px solid var(--color-border); font-size: .82rem; transition: background .1s; }
 .del-row:hover { background: var(--sidebar-hover); }
+.del-status-btn { cursor: pointer; transition: transform .1s; user-select: none; display: inline-block; }
+.del-status-btn:hover { transform: scale(1.05); }
+.urgency-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: .35rem; flex-shrink: 0; }
+.urgency-dot.high { background: var(--color-danger); }
+.urgency-dot.medium { background: var(--color-warning); }
+.urgency-dot.low { background: var(--color-primary); }
+.urgency-dot.none { background: transparent; }
 .del-row.header { font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); border-bottom: 1px solid var(--color-border); padding: .4rem .75rem; }
 .del-row.header:hover { background: none; }
 .del-title { font-weight: 500; color: var(--color-heading); }
@@ -432,6 +439,54 @@ a:hover { color: var(--color-primary-hover); }
     return dels;
   }
 
+  var DEL_PHASE = {
+    gsc_setup:1,ga4_setup:1,gtm_setup:1,gbp_setup:1,instant_page:1,
+    surge_entity:2,surge_page:2,surge_sitewide:2,target_page:2,bio_page:2,faq_page:2,location_page:2,schema:2,
+    press_release:3,citations:3,gbp_optimization:3,social_profiles:3,entity_veracity_hub:3,
+    social_posts:4,neo_images:4,neo_distribution:4,livedrive:4,youtube_video:4,endorsement:4,
+    audit_diagnosis:1,audit_action_plan:1,audit_progress:1,report:4,proposal:0,onboarding:0
+  };
+
+  function getUrgency(d, contactMap) {
+    if (d.status === 'delivered') return { score: 0, level: 'none' };
+    var phase = DEL_PHASE[d.deliverable_type];
+    if (phase === undefined || phase === 0) return { score: 0, level: 'none' };
+    var baseWeight = {1:10, 2:8, 3:6, 4:3}[phase] || 3;
+    var c = contactMap ? contactMap[d.contact_id] : null;
+    var monthsIn = 0;
+    if (c && c.campaign_start) {
+      monthsIn = Math.max(0, (Date.now() - new Date(c.campaign_start)) / (1000*60*60*24*30));
+    }
+    var phaseEnd = {1:2, 2:3, 3:3, 4:4}[phase] || 3;
+    var gap = Math.max(0, monthsIn - phaseEnd);
+    var staleMulti = d.status === 'not_started' ? 0.6 : 0.3;
+    var score = baseWeight * (1 + gap * staleMulti);
+    var level = score >= 10 ? 'high' : score >= 5 ? 'medium' : 'low';
+    return { score: Math.round(score * 10) / 10, level: level };
+  }
+
+  function cycleDelStatus(delId, evt) {
+    if (evt) evt.stopPropagation();
+    var del = state.deliverables.find(function(dd) { return dd.id === delId; });
+    if (!del) return;
+    var next = del.status === 'not_started' ? 'in_progress' : del.status === 'in_progress' ? 'delivered' : 'not_started';
+    var data = { status: next };
+    if (next === 'delivered') data.delivered_at = new Date().toISOString();
+    else data.delivered_at = null;
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'deliverables', filters: { id: delId }, data: data })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success) {
+        del.status = next;
+        del.delivered_at = data.delivered_at;
+        renderStats();
+        render();
+      }
+    });
+  }
+
   function renderStats() {
     var all = state.deliverables;
     var delivered = all.filter(function(d) { return d.status === 'delivered'; }).length;
@@ -520,7 +575,10 @@ a:hover { color: var(--color-primary-hover); }
         html += '<div class="del-row">';
         html += '<div><div class="del-title">' + esc(d.title || typeLabel) + '</div><div class="del-type">' + esc(typeLabel) + (d.notes ? ' - ' + esc(d.notes.substring(0, 50)) : '') + '</div></div>';
         html += '<div class="del-client"><div class="del-client-avatar">' + esc(initials) + '</div><span class="del-client-name" onclick="window.location.href=\'/admin/clients?slug=' + esc(c.slug || '') + '\'">' + esc(c.practice_name || c.slug || '?') + '</span></div>';
-        html += '<div><span class="tag ' + statusClass + '">' + esc(statusLabel) + '</span></div>';
+        var urg = getUrgency(d, contactMap);
+        html += '<div><span class="del-status-btn" onclick="cycleDelStatus(\'' + d.id + '\', event)" title="Click to cycle status">';
+        if (urg.level !== 'none') html += '<span class="urgency-dot ' + urg.level + '"></span>';
+        html += '<span class="tag ' + statusClass + '">' + esc(statusLabel) + '</span></span></div>';
         html += '<div class="del-date hide-mobile">' + (d.delivered_at ? formatDate(d.delivered_at) : d.created_at ? formatDate(d.created_at) : '-') + '</div>';
         html += '<div class="del-links hide-mobile">';
         if (d.page_url) html += '<a href="' + esc(d.page_url) + '" target="_blank" class="del-link" title="View">&#128279;</a>';
@@ -708,5 +766,6 @@ a:hover { color: var(--color-primary-hover); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
 
