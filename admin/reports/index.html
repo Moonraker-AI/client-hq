@@ -651,19 +651,27 @@ strong { font-weight: 600; color: var(--color-heading); }
 
       // Generate insights
       var insights = [];
-      if (prevTotal > 0) {
-        var pct = Math.round(((totalChanges - prevTotal) / prevTotal) * 100);
-        if (pct > 0) insights.push('Activity up ' + pct + '% vs previous period (' + totalChanges + ' vs ' + prevTotal + ').');
-        else if (pct < 0) insights.push('Activity down ' + Math.abs(pct) + '% vs previous period (' + totalChanges + ' vs ' + prevTotal + ').');
-        else insights.push('Activity steady at ' + totalChanges + ' changes.');
-      } else if (totalChanges > 0) {
-        insights.push(totalChanges + ' change' + (totalChanges !== 1 ? 's' : '') + ' this period (no previous data to compare).');
+      // Pipeline summary
+      var pipelineTotal = leads.length + proposals.length + signups.length;
+      if (pipelineTotal > 0) {
+        var pp = [];
+        if (signups.length > 0) pp.push(signups.length + ' signed');
+        if (proposals.length > 0) pp.push(proposals.length + ' proposal' + (proposals.length !== 1 ? 's' : ''));
+        if (leads.length > 0) pp.push(leads.length + ' new lead' + (leads.length !== 1 ? 's' : ''));
+        insights.push('Pipeline: ' + pp.join(', ') + '.');
       }
-      if (delCompleted > 0) { var d = delCompleted + ' deliverable' + (delCompleted !== 1 ? 's' : '') + ' done.'; if (prevDel > 0) d += ' Prev: ' + prevDel + '.'; insights.push(d); }
-      if (tasksCompleted > 0) { var t = tasksCompleted + ' audit task' + (tasksCompleted !== 1 ? 's' : '') + ' completed.'; if (prevTasks > 0) t += ' Prev: ' + prevTasks + '.'; insights.push(t); }
-      if (leads.length > 0) insights.push(leads.length + ' new lead' + (leads.length !== 1 ? 's' : '') + ' added.');
-      if (proposals.length > 0) insights.push(proposals.length + ' proposal' + (proposals.length !== 1 ? 's' : '') + ' sent.');
-      if (signups.length > 0) insights.push(signups.length + ' new client' + (signups.length !== 1 ? 's' : '') + ' signed up!');
+      // Work output
+      var workItems = delCompleted + tasksCompleted;
+      var prevWork = prevDel + prevTasks;
+      if (workItems > 0 && prevWork > 0) {
+        var pct = Math.round(((workItems - prevWork) / prevWork) * 100);
+        if (pct > 0) insights.push('Work output up ' + pct + '% vs last period (' + workItems + ' items vs ' + prevWork + ').');
+        else if (pct < 0) insights.push('Work output down ' + Math.abs(pct) + '% vs last period (' + workItems + ' vs ' + prevWork + ').');
+      } else if (workItems > 0) {
+        insights.push(workItems + ' item' + (workItems !== 1 ? 's' : '') + ' completed this period.');
+      }
+      if (delCompleted > 0) { var dd = delCompleted + ' deliverable' + (delCompleted !== 1 ? 's' : '') + ' done.'; if (prevDel > 0) dd += ' Prev: ' + prevDel + '.'; insights.push(dd); }
+      if (tasksCompleted > 0) { var tt = tasksCompleted + ' audit task' + (tasksCompleted !== 1 ? 's' : '') + ' completed.'; if (prevTasks > 0) tt += ' Prev: ' + prevTasks + '.'; insights.push(tt); }
       if (insights.length === 0) insights.push('Quiet period.');
 
       var html = '';
