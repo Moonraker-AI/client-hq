@@ -292,7 +292,8 @@ function buildDigestEmail(data) {
         h += '<tr>';
         h += '<td style="padding:5px 0;font-size:13px;color:#6B7599;width:50px;vertical-align:top;">' + dateStr + '</td>';
         h += '<td style="padding:5px 4px;vertical-align:top;"><span style="background:' + badgeBg + ';color:' + badgeColor + ';font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;display:inline-block;">' + label + '</span></td>';
-        h += '<td style="padding:5px 0;font-size:13px;color:#333F70;">' + esc(e.field_name) + ': ' + esc(e.old_value || '-') + ' &#8594; ' + esc(e.new_value || '-') + '</td>';
+        var entryLabel = e.record_label ? '<strong>' + esc(e.record_label) + '</strong> - ' : '';
+        h += '<td style="padding:5px 0;font-size:13px;color:#333F70;">' + entryLabel + esc(e.field_name) + ': ' + esc(e.old_value || '-') + ' &#8594; ' + esc(e.new_value || '-') + '</td>';
         h += '</tr>';
       });
       h += '</table>';
