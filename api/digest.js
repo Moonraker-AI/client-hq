@@ -185,47 +185,60 @@ function buildDigestEmail(data) {
   });
   h += '</div>';
 
-  // Stats
-  h += '<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">';
-  var statItems = [
-    { val: data.stats.totalChanges, label: 'Total Changes', prev: data.prevStats.totalChanges },
+  // Row 1: Sales pipeline (colored)
+  function emailArrow(curr, prev) {
+    if (prev > 0 && curr > prev) return ' <span style="color:#00D47E;font-size:11px;">&#9650;</span>';
+    if (prev > 0 && curr < prev) return ' <span style="color:#EF4444;font-size:11px;">&#9660;</span>';
+    return '';
+  }
+  h += '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;"><tr>';
+  var salesRow = [
+    { val: data.leads.length, label: 'New Leads', bg: 'rgba(245,158,11,.08)', nc: '#D97706', bc: 'rgba(245,158,11,.25)' },
+    { val: data.proposals.length, label: 'Proposals Sent', bg: 'rgba(59,130,246,.08)', nc: '#3B82F6', bc: 'rgba(59,130,246,.25)' },
+    { val: data.signups.length, label: 'Clients Signed', bg: 'rgba(0,212,126,.08)', nc: '#00b86c', bc: 'rgba(0,212,126,.25)' },
+  ];
+  salesRow.forEach(function(s, i) {
+    if (i > 0) h += '<td width="12"></td>';
+    h += '<td style="background:' + s.bg + ';border:1px solid ' + s.bc + ';border-radius:10px;padding:12px 16px;text-align:center;">';
+    h += '<div style="font-size:24px;font-weight:700;color:' + s.nc + ';">' + s.val + '</div>';
+    h += '<div style="font-size:10px;color:#6B7599;text-transform:uppercase;letter-spacing:.5px;">' + s.label + '</div></td>';
+  });
+  h += '</tr></table>';
+  // Row 2: Activity (neutral)
+  h += '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;"><tr>';
+  var actRow = [
     { val: data.stats.delCompleted, label: 'Deliverables Done', prev: data.prevStats.delCompleted },
     { val: data.stats.tasksCompleted, label: 'Audit Tasks Done', prev: data.prevStats.tasksCompleted },
     { val: data.stats.clientsActive, label: 'Clients Active', prev: data.prevStats.clientsActive },
   ];
-  statItems.forEach(function(s) {
-    var arrow = '';
-    if (s.prev > 0) {
-      if (s.val > s.prev) arrow = ' <span style="color:#00D47E;font-size:11px;">&#9650;</span>';
-      else if (s.val < s.prev) arrow = ' <span style="color:#EF4444;font-size:11px;">&#9660;</span>';
-    }
-    h += '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:12px 16px;text-align:center;flex:1;min-width:120px;">';
-    h += '<div style="font-size:24px;font-weight:700;color:#1E2A5E;">' + s.val + arrow + '</div>';
-    h += '<div style="font-size:10px;color:#6B7599;text-transform:uppercase;letter-spacing:.5px;">' + s.label + '</div>';
-    h += '</div>';
+  actRow.forEach(function(s, i) {
+    if (i > 0) h += '<td width="12"></td>';
+    h += '<td style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:12px 16px;text-align:center;">';
+    h += '<div style="font-size:24px;font-weight:700;color:#1E2A5E;">' + s.val + emailArrow(s.val, s.prev) + '</div>';
+    h += '<div style="font-size:10px;color:#6B7599;text-transform:uppercase;letter-spacing:.5px;">' + s.label + '</div></td>';
   });
-  h += '</div>';
+  h += '</tr></table>';
 
   // Pipeline - three tiers
   if (data.signups.length > 0 || data.proposals.length > 0 || data.leads.length > 0) {
     h += '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:16px;margin-bottom:16px;">';
     h += '<h3 style="font-size:15px;color:#1E2A5E;margin:0 0 12px;">Pipeline</h3>';
     if (data.signups.length > 0) {
-      h += '<div style="font-size:11px;font-weight:600;color:#00b86c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Clients Signed (' + data.signups.length + ')</div>';
+      h += '<div style="font-size:11px;font-weight:600;color:#1E2A5E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Clients Signed (' + data.signups.length + ')</div>';
       data.signups.forEach(function(c) {
         h += '<div style="padding:3px 0;font-size:13px;color:#333F70;"><span style="background:rgba(0,212,126,.1);color:#00b86c;font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;margin-right:6px;">SIGNED</span>' + esc(c.practice_name || c.slug) + '</div>';
       });
       h += '<div style="height:10px;"></div>';
     }
     if (data.proposals.length > 0) {
-      h += '<div style="font-size:11px;font-weight:600;color:#3B82F6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Proposals Sent (' + data.proposals.length + ')</div>';
+      h += '<div style="font-size:11px;font-weight:600;color:#1E2A5E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Proposals Sent (' + data.proposals.length + ')</div>';
       data.proposals.forEach(function(c) {
         h += '<div style="padding:3px 0;font-size:13px;color:#333F70;"><span style="background:rgba(59,130,246,.1);color:#3B82F6;font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;margin-right:6px;">PROPOSAL</span>' + esc(c.practice_name || c.slug) + '</div>';
       });
       if (data.leads.length > 0) h += '<div style="height:10px;"></div>';
     }
     if (data.leads.length > 0) {
-      h += '<div style="font-size:11px;font-weight:600;color:#D97706;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">New Leads (' + data.leads.length + ')</div>';
+      h += '<div style="font-size:11px;font-weight:600;color:#1E2A5E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">New Leads (' + data.leads.length + ')</div>';
       data.leads.forEach(function(c) {
         h += '<div style="padding:3px 0;font-size:13px;color:#333F70;"><span style="background:rgba(245,158,11,.1);color:#D97706;font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;margin-right:6px;">LEAD</span>' + esc(c.practice_name || c.slug) + '</div>';
       });
