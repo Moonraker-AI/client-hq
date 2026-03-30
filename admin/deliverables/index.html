@@ -520,11 +520,11 @@ a:hover { color: var(--color-primary-hover); }
 
     document.getElementById('statGrid').innerHTML =
       '<div class="stat-card"><div class="stat-label">Total Deliverables</div><div class="stat-value">' + all.length + '</div><div class="stat-sub">' + Object.keys(clients).length + ' clients</div></div>' +
-      '<div class="stat-card"><div class="stat-label">Delivered</div><div class="stat-value" style="color:var(--color-success);">' + delivered + '</div><div class="stat-sub">' + pct + '% complete</div></div>' +
+      '<div class="stat-card"><div class="stat-label">Not Started</div><div class="stat-value">' + ns + '</div></div>' +
       '<div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-value" style="color:#3B82F6;">' + ip + '</div></div>' +
       '<div class="stat-card"><div class="stat-label">Internal Review</div><div class="stat-value" style="color:#8B5CF6;">' + ir + '</div></div>' +
       '<div class="stat-card"><div class="stat-label">Waiting on Client</div><div class="stat-value" style="color:#D97706;">' + wc + '</div></div>' +
-      '<div class="stat-card"><div class="stat-label">Not Started</div><div class="stat-value">' + ns + '</div></div>';
+      '<div class="stat-card"><div class="stat-label">Delivered</div><div class="stat-value" style="color:var(--color-success);">' + delivered + '</div><div class="stat-sub">' + pct + '% complete</div></div>';
   }
 
   function renderPhaseFilters() {
@@ -809,6 +809,7 @@ a:hover { color: var(--color-primary-hover); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
 
 
