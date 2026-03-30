@@ -228,12 +228,13 @@ Rules for actions:
 - practice_details: id, contact_id, practice_type, num_therapists, specialties[], modalities[], populations[], issues_treated, licensed_states[], insurance_or_private_pay, differentiators, campaign_goals[], campaign_objectives, target_keywords[], offers_consultation, ideal_client
 - onboarding_steps: id, contact_id, step_key, status (pending/in_progress/complete), sort_order
 - deliverables: id, contact_id, deliverable_type, title, status (not_started/in_progress/internal_review/waiting_on_client/delivered), page_url, drive_url, notes, delivered_at, approved_at
-- checklist_items: id, client_slug, task_id, priority, category, scope, title, description, owner (Moonraker/Client/Collaboration), status (not_started/in_progress/internal_review/waiting_on_client/complete), notes, sort_order, phase, audit_period
+- checklist_items: id, client_slug, task_id, priority, category, scope, title, description, owner (Moonraker/Client/Collaboration), status (not_started/in_progress/internal_review/waiting_on_client/complete), completed_at, notes, sort_order, phase, audit_period
 - audit_scores: id, client_slug, audit_period, variance_score, score_credibility, score_optimization, score_reputation, score_engagement + 30 individual metrics
 - report_snapshots: id, client_slug, report_month, report_status (draft/published), campaign_month, gsc_clicks, gsc_impressions, ga4_sessions, ga4_users, gbp_calls, gbp_website_clicks + JSONB detail columns
 - report_configs: id, client_slug, gsc_property, ga4_property, lbm_location_id, lbm_report_id, tracked_queries[], active, report_day
 - bio_materials: id, contact_id, full_name, credentials, license_type, professional_bio
 - social_profiles: id, contact_id, platform, url
+- activity_log: id, contact_id, client_slug, table_name, record_id, field_name, old_value, new_value, changed_by, created_at — records every status/owner change for weekly digests
 
 ## The CORE Marketing System
 
