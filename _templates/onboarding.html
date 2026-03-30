@@ -395,7 +395,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       </div>
     </div>
 
-    <!-- STEP 6: Connect Accounts (Leadsie) -->
+    <!-- STEP 4: Connect Accounts (Leadsie) -->
     <div class="step-panel" data-step="connect_accounts">
       <span class="step-badge">Step 4 of 8</span>
       <h1>Connect Your Accounts</h1>
@@ -432,7 +432,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       </div>
     </div>
 
-    <!-- STEP 4: Connect Accounts -->
+    <!-- STEP 5: Practice Details -->
     <div class="step-panel" data-step="practice_details">
       <span class="step-badge">Step 5 of 8</span>
       <h1>Practice &amp; Clinical Details</h1>
@@ -563,7 +563,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       </div>
     </div>
 
-    <!-- STEP 5: Practice Details -->
+    <!-- STEP 7: Social Profiles -->
     <div class="step-panel" data-step="social_profiles">
       <span class="step-badge">Step 7 of 8</span>
       <h1>Social Profiles</h1>
@@ -848,14 +848,12 @@ strong { font-weight: 600; color: var(--color-heading); }
       console.error('Failed to save step:', err);
     });
 
-    // Update UI for embed steps
+    // Update UI for embed steps - show completion banner (keep content visible)
     if (stepKey === 'book_intro_call') {
       document.getElementById('callAlreadyBooked').style.display = 'block';
-      document.getElementById('calendarEmbed').style.display = 'none';
     }
     if (stepKey === 'connect_accounts') {
       document.getElementById('accessAlreadyDone').style.display = 'block';
-      document.getElementById('leadsieEmbed').style.display = 'none';
     }
   };
 
@@ -1085,9 +1083,9 @@ strong { font-weight: 600; color: var(--color-heading); }
       sbPatch('contacts', 'id=eq.' + contact.id,
         { agreement_signed: true, agreement_signed_at: signedAt });
 
-      // Show signed state
-      document.getElementById('csaContent').style.display = 'none';
+      // Show signed state (keep agreement visible for reference)
       document.getElementById('csaAlreadySigned').style.display = 'block';
+      document.getElementById('signatureBlock').style.display = 'none';
       document.getElementById('signedDetails').textContent = 'Signed by ' + signerName + ' on ' + new Date(signedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     }).catch(function(err) {
       console.error('Failed to save agreement:', err);
@@ -1434,20 +1432,18 @@ strong { font-weight: 600; color: var(--color-heading); }
 
         if (agreements.length > 0) {
           stepData['sign_agreement'] = 'complete';
-          document.getElementById('csaContent').style.display = 'none';
+          document.getElementById('signatureBlock').style.display = 'none';
           document.getElementById('csaAlreadySigned').style.display = 'block';
           var a = agreements[0];
           document.getElementById('signedDetails').textContent = 'Signed by ' + a.signer_name + ' on ' + new Date(a.signed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
         }
 
-        // Check embed step states
+        // Check embed step states - show completion banners (keep embeds visible)
         if (stepData['book_intro_call'] === 'complete') {
           document.getElementById('callAlreadyBooked').style.display = 'block';
-          document.getElementById('calendarEmbed').style.display = 'none';
         }
         if (stepData['connect_accounts'] === 'complete') {
           document.getElementById('accessAlreadyDone').style.display = 'block';
-          document.getElementById('leadsieEmbed').style.display = 'none';
         }
 
         // Render CSA
@@ -1505,6 +1501,3 @@ strong { font-weight: 600; color: var(--color-heading); }
 </script>
 </body>
 </html>
-
-
-
