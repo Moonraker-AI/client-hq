@@ -189,6 +189,17 @@ function generateInsights(curr, prev, leads, proposals, signups, byClient) {
   return insights;
 }
 
+function prettyStatus(val) {
+    var map = {
+      'not_started': 'Not Started', 'in_progress': 'In Progress',
+      'internal_review': 'Internal Review', 'waiting_on_client': 'Waiting on Client',
+      'delivered': 'Delivered', 'complete': 'Complete',
+      'pending': 'Pending', 'active': 'Active',
+      'prospect': 'Prospect', 'onboarding': 'Onboarding', 'lead': 'Lead'
+    };
+    return map[val] || val;
+  }
+
 function buildDigestEmail(data) {
   var h = '';
   h += '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>';
@@ -293,7 +304,7 @@ function buildDigestEmail(data) {
         h += '<td style="padding:5px 0;font-size:13px;color:#6B7599;width:50px;vertical-align:top;">' + dateStr + '</td>';
         h += '<td style="padding:5px 4px;vertical-align:top;"><span style="background:' + badgeBg + ';color:' + badgeColor + ';font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;display:inline-block;">' + label + '</span></td>';
         var entryLabel = e.record_label ? '<strong>' + esc(e.record_label) + '</strong> - ' : '';
-        h += '<td style="padding:5px 0;font-size:13px;color:#333F70;">' + entryLabel + esc(e.field_name) + ': ' + esc(e.old_value || '-') + ' &#8594; ' + esc(e.new_value || '-') + '</td>';
+        h += '<td style="padding:5px 0;font-size:13px;color:#333F70;">' + entryLabel + esc(e.field_name) + ': ' + prettyStatus(e.old_value || '-') + ' &#8594; ' + prettyStatus(e.new_value || '-') + '</td>';
         h += '</tr>';
       });
       h += '</table>';
