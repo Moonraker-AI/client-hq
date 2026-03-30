@@ -257,9 +257,12 @@ strong { font-weight: 600; color: var(--color-heading); }
 }
 .task-owner-select:hover { border-color: var(--color-border); }
 .task-owner-select option { background: var(--color-surface); }
-.task-owner-select.ow-moonraker { background: rgba(0,212,126,.12); color: #00b86c; }
-.task-owner-select.ow-client { background: rgba(59,130,246,.1); color: #3B82F6; }
-.task-owner-select.ow-collaboration { background: rgba(245,158,11,.1); color: #D97706; }
+.task-owner-select.ow-moonraker, .task-owner-select.ow-client, .task-owner-select.ow-collaboration {
+  background: var(--color-bg); color: var(--color-body); border: 1px solid var(--color-border);
+}
+.task-delete { width: 24px; height: 24px; border-radius: 6px; border: none; background: transparent; color: var(--color-muted); cursor: pointer; font-size: .75rem; display: flex; align-items: center; justify-content: center; opacity: 0; transition: all .15s; flex-shrink: 0; }
+.task-row:hover .task-delete { opacity: .6; }
+.task-delete:hover { opacity: 1 !important; background: rgba(239,68,68,.1); color: var(--color-danger); }
 .task-expand-icon { font-size: .65rem; color: var(--color-muted); transition: transform .2s; }
 .task-row.expanded .task-expand-icon { transform: rotate(90deg); }
 .task-num { font-size: .72rem; font-weight: 600; color: var(--color-muted); min-width: 28px; padding-top: .1rem; }
@@ -292,6 +295,9 @@ strong { font-weight: 600; color: var(--color-heading); }
   transition: border-color .15s;
 }
 .del-status-select:hover { border-color: var(--color-border); }
+.del-delete { width: 24px; height: 24px; border-radius: 6px; border: none; background: transparent; color: var(--color-muted); cursor: pointer; font-size: .75rem; display: flex; align-items: center; justify-content: center; opacity: 0; transition: all .15s; flex-shrink: 0; }
+.del-row:hover .del-delete { opacity: .6; }
+.del-delete:hover { opacity: 1 !important; background: rgba(239,68,68,.1); color: var(--color-danger); }
 .del-status-select option { background: var(--color-surface); color: var(--color-body); }
 .del-status-select.st-not_started { background: rgba(107,117,153,.1); color: var(--color-muted); }
 .del-status-select.st-in_progress { background: rgba(59,130,246,.1); color: #3B82F6; }
@@ -1211,6 +1217,24 @@ strong { font-weight: 600; color: var(--color-heading); }
     }
   }
 
+  window.deleteTask = function deleteTask(taskId, title) {
+    if (!confirm('Delete audit task "' + title + '"? This cannot be undone.')) return;
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_record', table: 'checklist_items', filters: { id: taskId } })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success) {
+        state.tasks = state.tasks.filter(function(t) { return t.id !== taskId; });
+        renderAudit();
+        setTabCount('audit', state.tasks.length);
+        toast('Task deleted', 'success');
+      } else {
+        toast('Failed to delete', 'error');
+      }
+    });
+  }
+
   window.setTaskStatus = function setTaskStatus(taskId, newStatus, evt) {
     if (evt) evt.stopPropagation();
     var task = state.tasks.find(function(t) { return t.id === taskId; });
@@ -1323,6 +1347,7 @@ strong { font-weight: 600; color: var(--color-heading); }
         html += '<option value="' + s.v + '"' + (st === s.v ? ' selected' : '') + '>' + s.l + '</option>';
       });
       html += '</select>';
+      html += '<button class="task-delete" onclick="event.stopPropagation(); deleteTask(\'' + t.id + '\', \'' + esc(t.title).replace(/'/g, '') + '\')" title="Delete">&#10005;</button>';
       html += '</div>';
 
       // Expandable description
@@ -1408,6 +1433,24 @@ strong { font-weight: 600; color: var(--color-heading); }
     });
   }
 
+  window.deleteDel = function deleteDel(delId, title) {
+    if (!confirm('Delete deliverable "' + title + '"? This cannot be undone.')) return;
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_record', table: 'deliverables', filters: { id: delId } })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success) {
+        state.deliverables = state.deliverables.filter(function(d) { return d.id !== delId; });
+        renderDeliverables();
+        setTabCount('deliverables', state.deliverables.length);
+        toast('Deliverable deleted', 'success');
+      } else {
+        toast('Failed to delete', 'error');
+      }
+    });
+  }
+
   var delPhaseFilter = 'all';
   window.setDelPhase = function setDelPhase(phase) {
     delPhaseFilter = phase;
@@ -1469,7 +1512,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       {key:'all',label:'All'}, {key:'setup',label:'Setup'}, {key:'content',label:'Content & Audits'},
       {key:'offpage',label:'Off-Page'}, {key:'ongoing',label:'Ongoing'},
       {key:'not_started',label:'Not Started'}, {key:'in_progress',label:'In Progress'},
-      {key:'waiting_on_client',label:'Waiting on Client'}, {key:'delivered',label:'Delivered'}
+      {key:'internal_review',label:'Internal Review'}, {key:'waiting_on_client',label:'Waiting on Client'}, {key:'delivered',label:'Delivered'}
     ];
     var phaseHtml = '<div class="del-phase-bar">';
     phaseLabels.forEach(function(p) {
@@ -1536,7 +1579,9 @@ strong { font-weight: 600; color: var(--color-heading); }
       html += '<div class="del-actions">';
       if (d.page_url) html += '<a href="' + esc(d.page_url) + '" target="_blank" class="btn btn-ghost btn-sm" title="View">&#128279;</a>';
       if (d.drive_url) html += '<a href="' + esc(d.drive_url) + '" target="_blank" class="btn btn-ghost btn-sm" title="Drive">&#128193;</a>';
-      html += '</div></div>';
+      html += '</div>';
+      html += '<button class="del-delete" onclick="event.stopPropagation(); deleteDel(\'' + d.id + '\', \'' + esc(d.title).replace(/'/g, '') + '\')" title="Delete">&#10005;</button>';
+      html += '</div>';
     });
     document.getElementById('delList').innerHTML = html;
   }
@@ -2090,6 +2135,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
 
 
