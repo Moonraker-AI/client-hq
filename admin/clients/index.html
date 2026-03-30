@@ -67,7 +67,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 /* ---- SIDEBAR ---- */
 .sidebar { width: 240px; background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); position: fixed; top: 0; left: 0; bottom: 0; z-index: 200; display: flex; flex-direction: column; transition: transform .25s ease; }
 .sidebar-header { padding: 1.25rem 1.15rem .75rem; display: flex; align-items: center; gap: .75rem; }
-.sidebar-header img { height: 22px; opacity: .7; }
+.sidebar-header img { height: 22px; padding: 4px; background: var(--color-primary-subtle); border: 1px solid rgba(0,212,126,.15); border-radius: 8px; }
 .sidebar-header span { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .85rem; color: var(--color-heading); }
 .sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .sidebar-nav a, .sidebar-nav button { display: flex; align-items: center; gap: .65rem; padding: .55rem .75rem; border-radius: 8px; font-size: .82rem; font-weight: 500; color: var(--color-muted); text-decoration: none; transition: all .15s; border: none; background: none; cursor: pointer; width: 100%; text-align: left; font-family: inherit; }
@@ -554,7 +554,7 @@ strong { font-weight: 600; color: var(--color-heading); }
           <h1 id="detailName">Loading...</h1>
           <div class="detail-meta" id="detailMeta"></div>
         </div>
-        <div class="detail-actions" id="detailActions"></div>
+
       </div>
 
       <!-- Quick Links -->
@@ -941,12 +941,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     if (c.email) metaHtml += '<span class="sep">&middot;</span><span>' + esc(c.email) + '</span>';
     document.getElementById('detailMeta').innerHTML = metaHtml;
 
-    // Actions
-    var actHtml = '';
-    if (c.website_url) actHtml += '<a href="' + esc(c.website_url) + '" target="_blank" class="btn btn-outline btn-sm">&#127760; Website</a>';
-    actHtml += '<a href="/admin/reports" class="btn btn-outline btn-sm">&#9636; Reports</a>';
-    actHtml += '<a href="/' + esc(c.slug) + '" target="_blank" class="btn btn-outline btn-sm">&#128279; Client Portal</a>';
-    document.getElementById('detailActions').innerHTML = actHtml;
+
 
     // Quick Links
     var ql = [];
@@ -957,6 +952,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     if (c.psychology_today_url) ql.push({ icon: '&#129504;', label: 'Psychology Today', url: c.psychology_today_url });
     ql.push({ icon: '&#9881;', label: 'Audit Pages', url: '/' + c.slug + '/audits/diagnosis' });
     ql.push({ icon: '&#9654;', label: 'Onboarding', url: '/' + c.slug + '/onboarding' });
+    ql.push({ icon: '&#128279;', label: 'Client Portal', url: '/' + c.slug });
     if (c.stripe_customer_id) ql.push({ icon: '&#128179;', label: 'Stripe', url: 'https://dashboard.stripe.com/customers/' + c.stripe_customer_id });
 
     var qlHtml = ql.map(function(l) {
@@ -1977,6 +1973,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
 
 
