@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Get Started - Moonraker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+:root,[data-theme="light"]{--color-primary:#00D47E;--color-primary-hover:#00b86c;--color-primary-light:#B4EEE0;--color-primary-subtle:#DDF8F2;--color-bg:#F7FDFB;--color-surface:#FFFFFF;--color-border:#E2E8F0;--color-heading:#1E2A5E;--color-body:#333F70;--color-muted:#6B7599;--color-navy:#141C3A;--color-success:#00D47E;--color-warning:#F59E0B;--color-danger:#EF4444;--color-info:#3B82F6}
+[data-theme="dark"]{--color-primary:#00D47E;--color-primary-hover:#00f598;--color-primary-light:#1A4A38;--color-primary-subtle:#0D2E22;--color-bg:#080F0B;--color-surface:#0E1A14;--color-border:#1E3530;--color-heading:#E8F5EF;--color-body:#C8D8D0;--color-muted:#5A7A6E;--color-navy:#0A1630}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-weight:400;color:var(--color-body);background:var(--color-bg);line-height:1.7;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+h1,h2,h3,h4{font-family:'Outfit',sans-serif;font-weight:700;color:var(--color-heading);line-height:1.15}
+a{color:var(--color-primary);text-decoration:none;transition:color .2s}
+a:hover{color:var(--color-primary-hover)}
+strong{font-weight:600;color:var(--color-heading)}
+.theme-toggle{position:fixed;top:1.25rem;right:1.25rem;z-index:200;background:var(--color-surface);border:1px solid var(--color-border);border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.15rem;transition:all .25s;box-shadow:0 2px 8px rgba(0,0,0,.06)}.theme-toggle:hover{border-color:var(--color-primary)}
+.header{background:var(--color-navy);padding:2rem 0;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;top:-60%;right:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(0,212,126,.08) 0%,transparent 70%);pointer-events:none}
+.header-inner{max-width:1060px;margin:0 auto;padding:0 2rem;display:flex;justify-content:space-between;align-items:center}
+.header img{height:36px}
+.header-meta p{margin:0;font-size:.8125rem;color:rgba(232,245,239,.45)}
+.header-meta .name{color:#E8F5EF;font-weight:600;font-size:.9375rem}
+.container{max-width:1060px;margin:0 auto;padding:0 2rem}
+.hero{padding:3.5rem 0 2rem;text-align:center}
+.hero h1{font-size:2rem;margin-bottom:.5rem;letter-spacing:-0.02em}
+.hero .subtitle{color:var(--color-muted);font-size:1rem;max-width:520px;margin:0 auto}
+.step-label{font-family:'Outfit',sans-serif;font-weight:700;font-size:.8125rem;letter-spacing:.06em;text-transform:uppercase;color:var(--color-primary);margin-bottom:.75rem}
+.options-grid{display:grid;gap:.75rem;margin-bottom:2rem}
+.options-grid.three-col{grid-template-columns:1fr 1fr 1fr}
+.options-grid.two-col{grid-template-columns:1fr 1fr}
+@media(max-width:640px){.options-grid.three-col,.options-grid.two-col{grid-template-columns:1fr}}
+.option-card{background:var(--color-surface);border:2px solid var(--color-border);border-radius:14px;padding:1.5rem;text-align:center;cursor:pointer;transition:all .25s;position:relative}
+.option-card:hover{border-color:var(--color-primary);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,212,126,.08)}
+.option-card.selected{border-color:var(--color-primary);background:var(--color-primary-subtle)}
+.option-card .card-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--color-primary);color:#fff;font-family:'Outfit',sans-serif;font-weight:700;font-size:.65rem;letter-spacing:.06em;text-transform:uppercase;padding:.25rem .85rem;border-radius:100px;white-space:nowrap}
+.option-card .card-title{font-family:'Outfit',sans-serif;font-weight:700;font-size:1rem;color:var(--color-heading);margin-bottom:.15rem}
+.option-card .card-desc{font-size:.8125rem;color:var(--color-muted);line-height:1.4}
+.price-display{background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:2rem;text-align:center;margin-bottom:1.5rem}
+.price-amount{font-family:'Outfit',sans-serif;font-size:2.5rem;font-weight:700;color:var(--color-heading);line-height:1.1}
+.price-amount .currency{font-size:1.5rem;vertical-align:super;margin-right:2px}
+.price-amount .period{font-size:1rem;font-weight:400;color:var(--color-muted)}
+.price-detail{font-size:.875rem;color:var(--color-muted);margin-top:.35rem}
+.price-fee{font-size:.8125rem;color:var(--color-warning);margin-top:.35rem;font-weight:500}
+.method-toggle{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:2rem}
+.method-btn{background:var(--color-surface);border:2px solid var(--color-border);border-radius:12px;padding:1rem;text-align:center;cursor:pointer;transition:all .25s}
+.method-btn:hover{border-color:var(--color-primary)}
+.method-btn.selected{border-color:var(--color-primary);background:var(--color-primary-subtle)}
+.method-btn .method-icon{font-size:1.5rem;margin-bottom:.35rem}
+.method-btn .method-name{font-family:'Outfit',sans-serif;font-weight:700;font-size:.9375rem;color:var(--color-heading)}
+.method-btn .method-desc{font-size:.75rem;color:var(--color-muted);margin-top:.15rem}
+.checkout-cta{display:block;width:100%;background:var(--color-primary);color:#fff;font-family:'Outfit',sans-serif;font-weight:700;font-size:1.125rem;padding:1rem;border-radius:12px;border:none;cursor:pointer;transition:all .25s;text-align:center;text-decoration:none;margin-bottom:1rem}
+.checkout-cta:hover{background:var(--color-primary-hover);color:#fff;transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,212,126,.3)}
+.guarantee{background:var(--color-navy);border-radius:14px;padding:1.5rem 1.75rem;margin:0 0 2rem;display:flex;align-items:flex-start;gap:1rem}
+.guarantee .icon{font-size:1.5rem;flex-shrink:0;margin-top:2px}
+.guarantee h3{color:#E8F5EF;font-size:.9375rem;margin-bottom:.25rem}
+.guarantee p{color:rgba(232,245,239,.6);font-size:.8125rem;margin:0;line-height:1.6}
+.faq-section{margin:2rem 0 3rem}
+.faq-section h3{text-align:center;margin-bottom:1.25rem}
+.faq-item{background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1rem 1.25rem;margin-bottom:.5rem}
+.faq-q{font-weight:600;font-size:.875rem;color:var(--color-heading);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.faq-q::after{content:'+';font-size:1.2rem;color:var(--color-muted);transition:transform .2s}
+.faq-item.open .faq-q::after{content:'-'}
+.faq-a{font-size:.8125rem;color:var(--color-muted);line-height:1.7;max-height:0;overflow:hidden;transition:max-height .3s,margin .3s}
+.faq-item.open .faq-a{max-height:200px;margin-top:.5rem}
+.csa-banner{display:flex;align-items:center;justify-content:space-between;gap:1rem;background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px;padding:1.25rem 1.5rem;margin:1.5rem 0 2rem;transition:border-color .2s,transform .2s;text-decoration:none;cursor:pointer}
+.csa-banner:hover{border-color:var(--color-primary);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,212,126,.08)}
+.csa-banner .csa-text{font-size:.9375rem;color:var(--color-heading);font-weight:600}
+.csa-banner .csa-desc{font-size:.8125rem;color:var(--color-muted);margin-top:.15rem;font-weight:400}
+.csa-banner .csa-arrow{font-family:'Outfit',sans-serif;font-weight:700;font-size:.875rem;color:var(--color-primary);white-space:nowrap}
+.confidential{text-align:center;padding:1.5rem 0;color:var(--color-muted);font-size:.8125rem;letter-spacing:.04em}
+.footer{background:var(--color-navy);padding:3rem 0;text-align:center;color:rgba(232,245,239,.4);font-size:.8125rem}
+.footer img{height:28px;margin-bottom:.75rem;opacity:.6}
+.footer a{color:var(--color-primary)}
+.loading{text-align:center;padding:6rem 2rem;color:var(--color-muted)}
+.hidden{display:none!important}
+@media print{.theme-toggle{display:none!important}}
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
+<div class="header"><div class="header-inner"><a href="https://moonraker.ai"><img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker"></a><div class="header-meta"><p class="name" id="headerName">Get Started</p><p>Secure Checkout</p></div></div></div>
+
+<div id="loadingState" class="loading"><p>Loading your checkout...</p></div>
+
+<div id="mainContent" style="display:none;">
+<div class="container">
+  <div class="hero">
+    <h1>Choose Your Plan</h1>
+    <p class="subtitle">Select the campaign that works best for <span id="heroName">your practice</span>.</p>
+  </div>
+
+  <!-- STEP 1: Campaign Term -->
+  <div class="step-label">1. Campaign Length</div>
+  <div class="options-grid three-col" id="termOptions">
+    <div class="option-card" data-term="annual" onclick="selectTerm('annual')">
+      <div class="card-badge">Best Value</div>
+      <div class="card-title">12-Month Campaign</div>
+      <div class="card-desc">Performance guarantee included</div>
+    </div>
+    <div class="option-card" data-term="quarterly" onclick="selectTerm('quarterly')">
+      <div class="card-title">3-Month Campaign</div>
+      <div class="card-desc">Flexible quarterly commitment</div>
+    </div>
+    <div class="option-card" data-term="monthly" onclick="selectTerm('monthly')">
+      <div class="card-title">Month-to-Month</div>
+      <div class="card-desc">Maximum flexibility</div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Billing Frequency -->
+  <div id="billingSection" class="hidden">
+    <div class="step-label">2. Billing Preference</div>
+    <div class="options-grid" id="billingOptions"></div>
+  </div>
+
+  <!-- STEP 3: Payment Method -->
+  <div id="methodSection" class="hidden">
+    <div class="step-label" id="methodLabel">3. Payment Method</div>
+    <div class="method-toggle">
+      <div class="method-btn" data-method="ach" onclick="selectMethod('ach')">
+        <div class="method-icon">&#127970;</div>
+        <div class="method-name">Bank Transfer (ACH)</div>
+        <div class="method-desc">No processing fee</div>
+      </div>
+      <div class="method-btn" data-method="cc" onclick="selectMethod('cc')">
+        <div class="method-icon">&#128179;</div>
+        <div class="method-name">Credit Card</div>
+        <div class="method-desc">3.5% processing fee applies</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Price Display + CTA -->
+  <div id="priceSection" class="hidden">
+    <div class="price-display">
+      <div class="price-amount" id="priceAmount"></div>
+      <div class="price-detail" id="priceDetail"></div>
+      <div class="price-fee" id="priceFee"></div>
+    </div>
+    <button class="checkout-cta" id="checkoutBtn" onclick="goToCheckout()">Proceed to Secure Payment &#8594;</button>
+  </div>
+
+  <a href="/agreement" target="_blank" class="csa-banner">
+    <div>
+      <div class="csa-text">Client Service Agreement</div>
+      <div class="csa-desc">Review the full terms of our partnership before getting started</div>
+    </div>
+    <span class="csa-arrow">Review Agreement &#8594;</span>
+  </a>
+
+  <!-- Performance Guarantee -->
+  <div id="guaranteeBanner" class="guarantee hidden">
+    <div class="icon">&#128170;</div>
+    <div>
+      <h3>Performance Guarantee Included</h3>
+      <p>We set a measurable goal together. If we do not hit it by the end of your 12-month campaign, we continue working for free until we do. No other agency in this space offers this.</p>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq-section">
+    <h3>Common Questions</h3>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What happens after I pay?</div><div class="faq-a">You will be redirected to your personalized onboarding dashboard where you can sign the service agreement, book your intro call with Scott, and provide the information we need to launch your campaign.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Can I change plans later?</div><div class="faq-a">Yes. Terms are renegotiable after 90 days. If you start with monthly or quarterly and want to switch to annual to get the performance guarantee, we can make that transition.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What if I need to cancel?</div><div class="faq-a">You can cancel in writing at any time. We will complete all deliverables for the current billing cycle before offboarding. Nothing is removed from your site. All assets remain yours.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Do you offer financing?</div><div class="faq-a">We do not offer financing directly, but many clients use a 0% APR credit card for 12-18 months to finance the annual campaign. We also offer quarterly and monthly payment options.</div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Why is there a credit card processing fee?</div><div class="faq-a">Credit card transactions include a 3.5% processing fee charged by the payment processor. Bank transfers (ACH) have minimal fees that we absorb, so there is no additional charge when you pay via bank transfer.</div></div>
+  </div>
+</div>
+</div>
+
+<div class="confidential"><div class="container">Secure checkout powered by Stripe &middot; <a href="https://moonraker.ai">moonraker.ai</a></div></div>
+<footer class="footer"><div class="container"><img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker"><br><a href="https://moonraker.ai">moonraker.ai</a></div></footer>
+
+<script>
+(function() {
+  var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
+  var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
+
+  var LINKS = {
+    annual_upfront_ach:      'https://buy.stripe.com/28EfZgbsE9jrfWQ7PX5wI0K',
+    annual_upfront_cc:       'https://buy.stripe.com/dRm14m7co1QZfWQc6d5wI0P',
+    annual_quarterly_ach:    'https://buy.stripe.com/4gM9ASeEQ0MVh0U8U15wI0L',
+    annual_quarterly_cc:     'https://buy.stripe.com/7sY9AS8gs2V33a43zH5wI0Q',
+    annual_monthly_ach:      'https://buy.stripe.com/3cI00ieEQfHPaCw7PX5wI0N',
+    annual_monthly_cc:       'https://buy.stripe.com/eVqfZg7coanv11W5HP5wI0S',
+    quarterly_upfront_ach:   'https://buy.stripe.com/7sY00i2W8cvDbGA7PX5wI0M',
+    quarterly_upfront_cc:    'https://buy.stripe.com/cNi9ASaoA1QZ6mg6LT5wI0R',
+    quarterly_monthly_ach:   'https://buy.stripe.com/3cI00ieEQfHPaCw7PX5wI0N',
+    quarterly_monthly_cc:    'https://buy.stripe.com/eVqfZg7coanv11W5HP5wI0S',
+    monthly_ach:             'https://buy.stripe.com/3cI00ieEQfHPaCw7PX5wI0N',
+    monthly_cc:              'https://buy.stripe.com/eVqfZg7coanv11W5HP5wI0S'
+  };
+
+  var PRICING = {
+    annual_upfront:   { ach:'20,000',    cc:'20,700',    period:'',         detail:'One-time payment for 12 months' },
+    annual_quarterly: { ach:'5,000',     cc:'5,175',     period:'/quarter', detail:'4 quarterly payments over 12 months' },
+    annual_monthly:   { ach:'1,667',     cc:'1,725.35',  period:'/month',   detail:'12 monthly payments' },
+    quarterly_upfront:{ ach:'5,000',     cc:'5,175',     period:'',         detail:'One-time payment for 3 months' },
+    quarterly_monthly:{ ach:'1,667',     cc:'1,725.35',  period:'/month',   detail:'3 monthly payments' },
+    monthly:          { ach:'1,667',     cc:'1,725.35',  period:'/month',   detail:'Billed monthly, cancel anytime in writing' }
+  };
+
+  var BILLING_OPTIONS = {
+    annual: [
+      { key:'annual_upfront',   title:'Pay Upfront',      desc:'$20,000 one-time',      badge:null },
+      { key:'annual_quarterly', title:'Quarterly Billing', desc:'$5,000 x 4 payments',   badge:null },
+      { key:'annual_monthly',   title:'Monthly Billing',   desc:'$1,667 x 12 payments',  badge:null }
+    ],
+    quarterly: [
+      { key:'quarterly_upfront',  title:'Pay Upfront',     desc:'$5,000 one-time',       badge:null },
+      { key:'quarterly_monthly',  title:'Monthly Billing', desc:'$1,667 x 3 payments',   badge:null }
+    ],
+    monthly: []
+  };
+
+  var pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
+  var CLIENT_SLUG = pathParts[0] || '';
+  var contact = null;
+  var allowedPlans = null;
+  var currentTerm = null;
+  var currentBilling = null;
+  var currentMethod = null;
+
+  function init() {
+    if (!CLIENT_SLUG) { document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">No client specified.</p>'; return; }
+    fetch(SB_URL + '/rest/v1/contacts?slug=eq.' + CLIENT_SLUG + '&select=*&limit=1', {
+      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON }
+    }).then(function(r) { return r.json(); }).then(function(contacts) {
+      if (!contacts || contacts.length === 0) { document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">No account found.</p>'; return; }
+      contact = contacts[0];
+      var displayName = contact.practice_name || ((contact.first_name || '') + ' ' + (contact.last_name || '')).trim();
+      document.title = 'Get Started - ' + displayName + ' - Moonraker';
+      document.getElementById('headerName').textContent = displayName;
+      document.getElementById('heroName').textContent = displayName;
+      if (contact.checkout_options && contact.checkout_options.plans) {
+        allowedPlans = contact.checkout_options.plans;
+        applyPlanVisibility();
+      }
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'block';
+    }).catch(function(err) {
+      console.error('Init error:', err);
+      document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">Unable to load. Please refresh.</p>';
+    });
+  }
+
+  function applyPlanVisibility() {
+    if (!allowedPlans) return;
+    var showAnnual = allowedPlans.some(function(p) { return p.indexOf('annual') === 0; });
+    var showQuarterly = allowedPlans.some(function(p) { return p.indexOf('quarterly') === 0; });
+    var showMonthly = allowedPlans.indexOf('monthly') !== -1;
+    var cards = document.querySelectorAll('#termOptions .option-card');
+    cards.forEach(function(c) {
+      var t = c.getAttribute('data-term');
+      if ((t === 'annual' && !showAnnual) || (t === 'quarterly' && !showQuarterly) || (t === 'monthly' && !showMonthly)) c.style.display = 'none';
+    });
+    var visible = document.querySelectorAll('#termOptions .option-card:not([style*="display: none"])');
+    var grid = document.getElementById('termOptions');
+    if (visible.length === 1) { grid.classList.remove('three-col'); grid.style.maxWidth = '320px'; grid.style.margin = '0 auto 2rem'; }
+    else if (visible.length === 2) { grid.classList.remove('three-col'); grid.classList.add('two-col'); }
+    if (visible.length === 1) selectTerm(visible[0].getAttribute('data-term'));
+  }
+
+  window.selectTerm = function(term) {
+    currentTerm = term; currentBilling = null; currentMethod = null;
+    document.querySelectorAll('#termOptions .option-card').forEach(function(c) { c.classList.remove('selected'); });
+    var card = document.querySelector('#termOptions .option-card[data-term="' + term + '"]');
+    if (card) card.classList.add('selected');
+    document.getElementById('guaranteeBanner').classList.toggle('hidden', term !== 'annual');
+    document.getElementById('methodSection').classList.add('hidden');
+    document.getElementById('priceSection').classList.add('hidden');
+    document.querySelectorAll('.method-btn').forEach(function(c) { c.classList.remove('selected'); });
+
+    if (term === 'monthly') {
+      currentBilling = 'monthly';
+      document.getElementById('billingSection').classList.add('hidden');
+      document.getElementById('methodLabel').textContent = '2. Payment Method';
+      document.getElementById('methodSection').classList.remove('hidden');
+      return;
+    }
+
+    var options = BILLING_OPTIONS[term];
+    if (allowedPlans) options = options.filter(function(opt) { return allowedPlans.indexOf(opt.key) !== -1; });
+    var html = '';
+    options.forEach(function(opt) {
+      html += '<div class="option-card" data-billing="' + opt.key + '" onclick="selectBilling(\'' + opt.key + '\')">';
+      if (opt.badge) html += '<div class="card-badge">' + opt.badge + '</div>';
+      html += '<div class="card-title">' + opt.title + '</div><div class="card-desc">' + opt.desc + '</div></div>';
+    });
+    var bg = document.getElementById('billingOptions');
+    bg.innerHTML = html;
+    bg.className = 'options-grid ' + (options.length === 3 ? 'three-col' : 'two-col');
+    if (options.length === 1) { bg.className = 'options-grid'; bg.style.maxWidth = '320px'; bg.style.margin = '0 auto 2rem'; } else { bg.style.maxWidth = ''; bg.style.margin = ''; }
+    document.getElementById('billingSection').classList.remove('hidden');
+    document.getElementById('methodLabel').textContent = '3. Payment Method';
+    if (options.length === 1) selectBilling(options[0].key);
+  };
+
+  window.selectBilling = function(billing) {
+    currentBilling = billing; currentMethod = null;
+    document.querySelectorAll('#billingOptions .option-card').forEach(function(c) { c.classList.remove('selected'); });
+    var card = document.querySelector('#billingOptions .option-card[data-billing="' + billing + '"]');
+    if (card) card.classList.add('selected');
+    document.getElementById('methodSection').classList.remove('hidden');
+    document.getElementById('priceSection').classList.add('hidden');
+    document.querySelectorAll('.method-btn').forEach(function(c) { c.classList.remove('selected'); });
+  };
+
+  window.selectMethod = function(method) {
+    currentMethod = method;
+    document.querySelectorAll('.method-btn').forEach(function(c) { c.classList.remove('selected'); });
+    var btn = document.querySelector('.method-btn[data-method="' + method + '"]');
+    if (btn) btn.classList.add('selected');
+    var p = PRICING[currentBilling];
+    if (!p) return;
+    var isCC = method === 'cc';
+    var amt = isCC ? p.cc : p.ach;
+    document.getElementById('priceAmount').innerHTML = '<span class="currency">$</span>' + amt + (p.period ? '<span class="period">' + p.period + '</span>' : '');
+    document.getElementById('priceDetail').textContent = p.detail;
+    document.getElementById('priceFee').textContent = isCC ? 'Includes 3.5% credit card processing fee' : 'No processing fee with bank transfer';
+    document.getElementById('priceFee').style.color = isCC ? 'var(--color-warning)' : 'var(--color-success)';
+    document.getElementById('priceSection').classList.remove('hidden');
+  };
+
+  window.goToCheckout = function() {
+    if (!currentBilling || !currentMethod) return;
+    var linkKey = currentBilling + '_' + currentMethod;
+    var url = LINKS[linkKey];
+    if (!url) { alert('Payment option not available. Please contact support@moonraker.ai.'); return; }
+    var params = [];
+    if (CLIENT_SLUG) params.push('client_reference_id=' + encodeURIComponent(CLIENT_SLUG));
+    if (contact && contact.email) params.push('prefilled_email=' + encodeURIComponent(contact.email));
+    if (params.length > 0) url += (url.indexOf('?') === -1 ? '?' : '&') + params.join('&');
+    try { localStorage.setItem('moonraker-checkout-slug', CLIENT_SLUG); } catch(e) {}
+    window.location.href = url;
+  };
+
+  var themeBtn = document.getElementById('themeBtn');
+  if (themeBtn) {
+    var ct = document.documentElement.getAttribute('data-theme');
+    themeBtn.innerHTML = ct === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
+    themeBtn.addEventListener('click', function() {
+      var h = document.documentElement;
+      if (h.getAttribute('data-theme') === 'light') { h.setAttribute('data-theme', 'dark'); themeBtn.innerHTML = '&#9728;&#65039;'; try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {} }
+      else { h.setAttribute('data-theme', 'light'); themeBtn.innerHTML = '&#x1F319;'; try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {} }
+    });
+  }
+  init();
+})();
+</script>
+</body>
+</html>
