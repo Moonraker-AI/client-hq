@@ -74,23 +74,32 @@ module.exports = async function handler(req, res) {
     });
 
     // Send via Resend
+    var emailPayload = {
+      from: 'Client HQ <notifications@clients.moonraker.ai>',
+      to: recipients,
+      subject: 'Team Digest: ' + from + ' to ' + to + ' (' + totalChanges + ' changes)',
+      html: html
+    };
+
+    console.log('Sending digest to:', recipients, 'from:', emailPayload.from);
+
     var sendRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + resendKey,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        from: 'Client HQ <notifications@moonraker.ai>',
-        to: recipients,
-        subject: 'Team Digest: ' + from + ' to ' + to + ' (' + totalChanges + ' changes)',
-        html: html
-      })
+      body: JSON.stringify(emailPayload)
     });
 
-    var sendResult = await sendRes.json();
+    var sendText = await sendRes.text();
+    console.log('Resend response:', sendRes.status, sendText);
+
+    var sendResult;
+    try { sendResult = JSON.parse(sendText); } catch(e) { sendResult = { raw: sendText }; }
+
     if (!sendRes.ok) {
-      return res.status(500).json({ error: 'Resend error', detail: sendResult });
+      return res.status(500).json({ error: 'Resend error', status: sendRes.status, detail: sendResult });
     }
 
     return res.status(200).json({ success: true, messageId: sendResult.id, stats: { totalChanges, delCompleted, tasksCompleted, newClients: newClients.length } });
@@ -178,3 +187,4 @@ function esc(s) {
   if (!s) return '';
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
