@@ -1,4 +1,4 @@
-// /shared/chat-panel.js - Moonraker AI Chat Panel
+// /shared/chat-panel.js - COREBot Chat Panel
 // Self-contained component: injects CSS, creates UI, handles streaming chat
 // Include via <script src="/shared/chat-panel.js"></script> on any admin page
 
@@ -348,7 +348,7 @@
         <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker">
       </div>
       <div class="mr-chat-header-info">
-        <div class="mr-chat-header-title">Moonraker AI</div>
+        <div class="mr-chat-header-title">COREBot</div>
         <div class="mr-chat-header-sub">Claude Opus 4.6</div>
       </div>
       <div class="mr-chat-header-actions">
@@ -465,7 +465,7 @@
       if (msg.role === 'user') {
         html += '<div class="mr-msg mr-msg-user">' + esc(msg.content) + '</div>';
       } else if (msg.role === 'assistant') {
-        html += '<div class="mr-msg mr-msg-ai"><div class="mr-msg-label">Moonraker AI</div>' + formatAIMessage(msg.content, idx) + '</div>';
+        html += '<div class="mr-msg mr-msg-ai"><div class="mr-msg-label">COREBot</div>' + formatAIMessage(msg.content, idx) + '</div>';
       } else if (msg.role === 'system') {
         html += '<div class="mr-msg mr-msg-system">' + esc(msg.content) + '</div>';
       }
@@ -482,7 +482,7 @@
 
     var html = '<div class="mr-chat-welcome">';
     html += '<div class="mr-chat-welcome-icon"><img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker"></div>';
-    html += '<h3>Moonraker AI</h3>';
+    html += '<h3>COREBot</h3>';
     html += '<p>I can help you manage clients, update deliverables, build audits, and more. What would you like to do?</p>';
     html += '<div class="mr-chat-suggestions">';
     suggestions.forEach(function(s) {
@@ -796,7 +796,7 @@
 
         var aiDiv = document.createElement('div');
         aiDiv.className = 'mr-msg mr-msg-ai streaming';
-        aiDiv.innerHTML = '<div class="mr-msg-label">Moonraker AI</div>';
+        aiDiv.innerHTML = '<div class="mr-msg-label">COREBot</div>';
         messagesEl.appendChild(aiDiv);
         currentStreamEl = aiDiv;
         scrollToBottom(true);
@@ -899,7 +899,7 @@
     // Add empty AI message placeholder
     var aiDiv = document.createElement('div');
     aiDiv.className = 'mr-msg mr-msg-ai streaming';
-    aiDiv.innerHTML = '<div class="mr-msg-label">Moonraker AI</div>';
+    aiDiv.innerHTML = '<div class="mr-msg-label">COREBot</div>';
     messagesEl.appendChild(aiDiv);
     currentStreamEl = aiDiv;
     scrollToBottom();
@@ -1030,7 +1030,7 @@
     if (!currentStreamEl) return;
     requestAnimationFrame(function() {
       if (!currentStreamEl) return;
-      currentStreamEl.innerHTML = '<div class="mr-msg-label">Moonraker AI</div>' + formatAIMessage(displayedText, messages.length);
+      currentStreamEl.innerHTML = '<div class="mr-msg-label">COREBot</div>' + formatAIMessage(displayedText, messages.length);
       scrollToBottom();
     });
   }
@@ -1053,7 +1053,7 @@
     if (currentStreamEl) {
       currentStreamEl.classList.remove('streaming');
       if (currentStreamText) {
-        currentStreamEl.innerHTML = '<div class="mr-msg-label">Moonraker AI</div>' + formatAIMessage(currentStreamText, messages.length);
+        currentStreamEl.innerHTML = '<div class="mr-msg-label">COREBot</div>' + formatAIMessage(currentStreamText, messages.length);
       }
     }
 
@@ -1146,6 +1146,7 @@
   };
 
 })();
+
 
 
 
