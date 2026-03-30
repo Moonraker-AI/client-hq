@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moonraker x Sky Therapies: Action Plan</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root, [data-theme="light"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00b86c;
+  --color-primary-light: #B4EEE0;
+  --color-primary-subtle: #DDF8F2;
+  --color-bg: #F7FDFB;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-heading: #1E2A5E;
+  --color-body: #333F70;
+  --color-muted: #6B7599;
+  --color-navy: #141C3A;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+}
+[data-theme="dark"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00f598;
+  --color-primary-light: #1A4A38;
+  --color-primary-subtle: #0D2E22;
+  --color-bg: #080F0B;
+  --color-surface: #0E1A14;
+  --color-border: #1E3530;
+  --color-heading: #E8F5EF;
+  --color-body: #C8D8D0;
+  --color-muted: #5A7A6E;
+  --color-navy: #0A1630;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #FF6B6B;
+  --color-info: #60A5FA;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.7; -webkit-font-smoothing: antialiased; transition: background .3s ease, color .3s ease; }
+h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.15; }
+h1 { font-size: 2.75rem; letter-spacing: -0.02em; }
+h2 { font-size: 2rem; margin-bottom: .75rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.35rem; }
+h4 { font-size: 1.15rem; }
+p { margin-bottom: 1rem; }
+a { color: var(--color-primary); text-decoration: none; transition: color .2s; }
+a:hover { color: var(--color-primary-hover); }
+strong { font-weight: 600; color: var(--color-heading); }
+
+.progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--color-primary); width: 0%; z-index: 999; transition: width .1s linear; box-shadow: 0 0 8px rgba(0,212,126,.4); }
+.section-nav { position: fixed; right: 2rem; top: 50%; transform: translateY(-50%); z-index: 100; display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 1140px) { .section-nav { display: none; } }
+.section-nav a { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 8px; border-radius: 8px; font-size: .75rem; font-weight: 500; color: var(--color-muted); text-decoration: none; transition: all .25s ease; white-space: nowrap; }
+.section-nav a:hover { color: var(--color-heading); background: var(--color-surface); }
+.section-nav a.active { color: var(--color-primary); background: var(--color-primary-subtle); }
+.section-nav .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-border); flex-shrink: 0; transition: all .25s ease; }
+.section-nav a.active .nav-dot { background: var(--color-primary); width: 8px; height: 8px; box-shadow: 0 0 6px rgba(0,212,126,.5); }
+
+.container { max-width: 1060px; margin: 0 auto; padding: 0 3rem; }
+@media (max-width: 768px) { .container { padding: 0 1.5rem; } }
+section { padding: 4.5rem 0; }
+.divider { height: 1px; background: var(--color-border); border: none; margin: 0; }
+
+.theme-toggle { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 200; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; transition: all .25s ease; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.theme-toggle:hover { border-color: var(--color-primary); box-shadow: 0 2px 12px rgba(0,212,126,.15); }
+
+.header { background: var(--color-navy); padding: 2rem 0; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; top: -60%; right: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(0,212,126,.08) 0%, transparent 70%); pointer-events: none; }
+.header-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.header img { height: 36px; }
+.header-meta { text-align: right; }
+.header-meta p { margin: 0; font-size: .8125rem; color: rgba(232,245,239,.45); }
+.header-meta .name { color: #E8F5EF; font-weight: 600; font-size: .9375rem; }
+
+.hero { padding: 5.5rem 0 4rem; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; top: -100px; right: -80px; width: 500px; height: 500px; background: radial-gradient(circle at 30% 40%, rgba(0,212,126,.06) 0%, transparent 60%); pointer-events: none; }
+.hero-layout { display: grid; grid-template-columns: 1fr 280px; gap: 3rem; align-items: center; }
+@media (max-width: 768px) { .hero-layout { grid-template-columns: 1fr; } .hero-visual { display: none; } }
+.hero-content { position: relative; z-index: 1; }
+.hero h1 { margin-bottom: 1rem; }
+.hero .subtitle { font-size: 1.0625rem; color: var(--color-muted); max-width: 520px; line-height: 1.7; }
+.badge { display: inline-block; background: var(--color-primary-subtle); color: var(--color-primary); font-weight: 600; font-size: .75rem; padding: .4rem 1rem; border-radius: 100px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 1rem; }
+.hero-visual svg { width: 100%; height: auto; }
+
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 2rem; margin-bottom: 1.5rem; transition: box-shadow .3s ease, transform .3s ease; }
+.card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.05); transform: translateY(-2px); }
+
+/* Priority overview dashboard */
+.priority-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 2rem 0; }
+@media (max-width: 640px) { .priority-grid { grid-template-columns: 1fr; } }
+.priority-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.5rem; text-align: center; position: relative; overflow: hidden; }
+.priority-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.priority-card.p1::before { background: var(--color-danger); }
+.priority-card.p2::before { background: var(--color-warning); }
+.priority-card.p3::before { background: var(--color-success); }
+.priority-count { font-size: 2.5rem; font-weight: 700; font-family: 'Outfit', sans-serif; }
+.p1 .priority-count { color: var(--color-danger); }
+.p2 .priority-count { color: var(--color-warning); }
+.p3 .priority-count { color: var(--color-success); }
+.priority-label { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--color-muted); margin-top: .25rem; }
+.priority-desc { font-size: .8125rem; color: var(--color-muted); margin-top: .5rem; }
+
+/* Timeline visualization */
+.timeline { position: relative; padding-left: 2rem; margin: 2rem 0; }
+.timeline::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, var(--color-danger), var(--color-warning), var(--color-success)); }
+.timeline-item { position: relative; margin-bottom: 2rem; padding-bottom: .5rem; }
+.timeline-item::before { content: ''; position: absolute; left: -2rem; top: 6px; width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--color-bg); }
+.timeline-item.t-critical::before { background: var(--color-danger); }
+.timeline-item.t-important::before { background: var(--color-warning); }
+.timeline-item.t-maintenance::before { background: var(--color-success); }
+.timeline-item h4 { margin-bottom: .35rem; }
+.timeline-item p { margin-bottom: .25rem; font-size: .9375rem; }
+.timeline-phase { display: inline-block; font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-bottom: .25rem; }
+.timeline-item.t-critical .timeline-phase { color: var(--color-danger); }
+.timeline-item.t-important .timeline-phase { color: var(--color-warning); }
+.timeline-item.t-maintenance .timeline-phase { color: var(--color-success); }
+
+/* Phase sections */
+.phase-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.phase-number { width: 48px; height: 48px; border-radius: 14px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.125rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; }
+.phase-number.p1 { background: var(--color-danger); }
+.phase-number.p2 { background: var(--color-warning); }
+.phase-number.p3 { background: var(--color-success); }
+.phase-meta { flex: 1; }
+.phase-meta h2 { margin-bottom: .15rem; }
+.phase-meta p { margin: 0; font-size: .875rem; color: var(--color-muted); }
+.phase-priority-badge { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: .3rem .85rem; border-radius: 100px; white-space: nowrap; }
+.phase-priority-badge.p1 { background: rgba(239,68,68,.1); color: var(--color-danger); }
+.phase-priority-badge.p2 { background: rgba(245,158,11,.1); color: var(--color-warning); }
+.phase-priority-badge.p3 { background: rgba(0,212,126,.1); color: var(--color-success); }
+
+/* Task cards */
+.task-list { display: grid; gap: .75rem; margin-bottom: 2rem; }
+.task-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1.5rem; display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: start; }
+.task-num { width: 28px; height: 28px; border-radius: 8px; background: var(--color-primary-subtle); color: var(--color-primary); font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .8125rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: .1rem; }
+.task-card h4 { font-size: 1rem; margin-bottom: .35rem; }
+.task-card p { margin: 0 0 .5rem; font-size: .9375rem; line-height: 1.65; }
+.task-card p:last-child { margin-bottom: 0; }
+.task-tags { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
+.tag { font-size: .6875rem; font-weight: 600; padding: .2rem .6rem; border-radius: 100px; letter-spacing: .02em; }
+.tag-owner { background: rgba(59,130,246,.08); color: var(--color-info); }
+.tag-impact { background: rgba(0,212,126,.08); color: var(--color-success); }
+.tag-time { background: rgba(107,117,153,.08); color: var(--color-muted); }
+
+/* Alert box */
+.alert-box { background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.2); border-radius: 14px; padding: 1.5rem 2rem; margin: 1.5rem 0; }
+.alert-box h4 { color: var(--color-danger); margin-bottom: .5rem; display: flex; align-items: center; gap: .5rem; }
+.alert-box p { margin: 0; font-size: .9375rem; line-height: 1.65; }
+
+/* Collapsible */
+.collapsible { margin-bottom: .75rem; }
+.collapsible-toggle { width: 100%; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1rem; color: var(--color-heading); text-align: left; transition: all .2s ease; }
+.collapsible-toggle:hover { border-color: var(--color-primary); box-shadow: 0 2px 10px rgba(0,212,126,.06); }
+.collapsible-toggle .arrow { transition: transform .3s ease; color: var(--color-primary); font-size: 1rem; }
+.collapsible.open .collapsible-toggle .arrow { transform: rotate(180deg); }
+.collapsible.open .collapsible-toggle { border-radius: 12px 12px 0 0; }
+.collapsible-content { max-height: 0; overflow: hidden; transition: max-height .4s ease; background: var(--color-surface); border: 0 solid var(--color-border); border-width: 0 1px; border-radius: 0 0 12px 12px; }
+.collapsible.open .collapsible-content { max-height: 8000px; border-width: 0 1px 1px 1px; }
+.collapsible-content-inner { padding: 1.25rem; }
+
+/* Audit nav */
+.audit-nav { display: flex; flex-wrap: wrap; gap: 1rem; margin: 2rem 0; }
+.audit-nav-link { display: flex; align-items: center; gap: .75rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem 1.5rem; flex: 1; min-width: 200px; transition: all .25s ease; text-decoration: none; color: var(--color-body); }
+.audit-nav-link:hover { border-color: var(--color-primary); box-shadow: 0 4px 16px rgba(0,212,126,.1); transform: translateY(-2px); color: var(--color-body); }
+.audit-nav-link .nav-icon { font-size: 1.5rem; }
+.audit-nav-link h4 { margin-bottom: .15rem; font-size: .9375rem; }
+.audit-nav-link p { margin: 0; font-size: .8125rem; color: var(--color-muted); }
+
+.cta-btn { display: inline-block; background: var(--color-primary); color: #fff; font-weight: 600; font-size: 1rem; padding: .875rem 2rem; border-radius: 10px; transition: all .25s ease; text-decoration: none; }
+.cta-btn:hover { background: var(--color-primary-hover); color: #fff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,212,126,.3); }
+.cta-btn-outline { display: inline-block; background: transparent; color: var(--color-primary); font-weight: 600; font-size: .9375rem; padding: .7rem 1.75rem; border-radius: 10px; border: 2px solid var(--color-primary); transition: all .2s ease; text-decoration: none; }
+.cta-btn-outline:hover { background: var(--color-primary-subtle); color: var(--color-primary); }
+.cta-group { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 2.5rem; }
+
+.confidential { text-align: center; padding: 2rem 0; color: var(--color-muted); font-size: .8125rem; letter-spacing: .04em; }
+.footer { background: var(--color-navy); padding: 3rem 0; text-align: center; color: rgba(232,245,239,.4); font-size: .8125rem; }
+.footer img { height: 28px; margin-bottom: .75rem; opacity: .6; }
+.footer a { color: var(--color-primary); }
+
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+@media print {
+  .section-nav, .theme-toggle, .progress-bar { display: none !important; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+  .collapsible-content { max-height: none !important; border-width: 0 1px 1px 1px !important; }
+  .collapsible-toggle .arrow { display: none; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+.tag-moonraker { background: rgba(0,212,126,.12); color: #00b86c; border: 1px solid rgba(0,212,126,.25); }
+.tag-client { background: rgba(59,130,246,.1); color: #3B82F6; border: 1px solid rgba(59,130,246,.2); }
+.tag-collab { background: rgba(245,158,11,.1); color: #D97706; border: 1px solid rgba(245,158,11,.2); }
+[data-theme="dark"] .tag-moonraker { background: rgba(0,212,126,.15); color: #00f598; border-color: rgba(0,212,126,.3); }
+[data-theme="dark"] .tag-client { background: rgba(59,130,246,.15); color: #60A5FA; border-color: rgba(59,130,246,.3); }
+[data-theme="dark"] .tag-collab { background: rgba(245,158,11,.15); color: #FCD34D; border-color: rgba(245,158,11,.3); }
+.owner-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.5rem 0; padding: 1rem 1.25rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; }
+.owner-legend-item { display: flex; align-items: center; gap: .4rem; font-size: .8125rem; color: var(--color-body); }
+.owner-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.owner-legend-dot.m { background: #00D47E; }
+.owner-legend-dot.c { background: #3B82F6; }
+.owner-legend-dot.co { background: #F59E0B; }
+.owner-legend-label { font-weight: 600; }
+</style>
+<script>document.addEventListener('DOMContentLoaded',function(){try{var t=localStorage.getItem('moonraker-theme');if(t==='dark'){var b=document.getElementById('themeBtn');if(b)b.innerHTML='\u2600\uFE0F'}}catch(e){}})</script>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+<button class="theme-toggle" title="Toggle dark mode" id="themeBtn" aria-label="Toggle dark mode">&#x1F319;</button>
+
+<nav class="section-nav" id="sectionNav">
+  <a href="#hero"><span class="nav-dot"></span>Overview</a>
+  <a href="#priorities"><span class="nav-dot"></span>Priorities</a>
+  <a href="#timeline"><span class="nav-dot"></span>Timeline</a>
+  <a href="#phase-entity"><span class="nav-dot"></span>Entity Identity</a>
+  <a href="#phase-content"><span class="nav-dot"></span>Content</a>
+  <a href="#phase-faq"><span class="nav-dot"></span>FAQs</a>
+  <a href="#phase-offpage"><span class="nav-dot"></span>Off-Page</a>
+  <a href="#phase-media"><span class="nav-dot"></span>Media</a>
+  <a href="#phase-qa"><span class="nav-dot"></span>QA</a>
+  <a href="#next"><span class="nav-dot"></span>Next Steps</a>
+</nav>
+
+<header class="header">
+  <div class="container header-inner">
+    <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker">
+    <div class="header-meta">
+      <p class="name">Prepared for Anna Skomorovskaia, MSW, BASc, RSW, RD</p>
+      <p>Sky Therapies &middot; Toronto, Ontario</p>
+      <p>March 24, 2026 &middot; Confidential</p>
+    </div>
+  </div>
+</header>
+
+<section class="hero" id="hero">
+  <div class="container">
+    <div class="hero-layout">
+      <div class="hero-content">
+        <span class="badge">Implementation Roadmap</span>
+        <h1>Your Path from 37 to 20</h1>
+        <p class="subtitle">A phased action plan built from your Surge audit. Each task is prioritized by impact, with clear owners and timelines. The goal: close the entity recognition gap and unlock Google AI Overview within 30 days.</p>
+      </div>
+      <div class="hero-visual">
+        <svg viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="140" cy="140" r="120" stroke="var(--color-primary)" stroke-width=".5" opacity=".2"/>
+          <circle cx="140" cy="140" r="90" stroke="var(--color-primary)" stroke-width=".5" opacity=".15"/>
+          <circle cx="140" cy="140" r="60" stroke="var(--color-primary)" stroke-width=".5" opacity=".1"/>
+          <path d="M140 20 L140 80" stroke="var(--color-danger)" stroke-width="2" stroke-dasharray="4 4" opacity=".6"><animate attributeName="stroke-dashoffset" from="0" to="-16" dur="1.5s" repeatCount="indefinite"/></path>
+          <path d="M140 80 L140 140" stroke="var(--color-warning)" stroke-width="2" stroke-dasharray="4 4" opacity=".5"><animate attributeName="stroke-dashoffset" from="0" to="-16" dur="2s" repeatCount="indefinite"/></path>
+          <path d="M140 140 L140 200" stroke="var(--color-success)" stroke-width="2" stroke-dasharray="4 4" opacity=".4"><animate attributeName="stroke-dashoffset" from="0" to="-16" dur="2.5s" repeatCount="indefinite"/></path>
+          <circle cx="140" cy="20" r="6" fill="var(--color-danger)" opacity=".8"/>
+          <circle cx="140" cy="80" r="6" fill="var(--color-warning)" opacity=".7"/>
+          <circle cx="140" cy="140" r="6" fill="var(--color-success)" opacity=".6"/>
+          <text x="160" y="25" font-family="Outfit" font-weight="600" font-size="10" fill="var(--color-danger)">P1</text>
+          <text x="160" y="85" font-family="Outfit" font-weight="600" font-size="10" fill="var(--color-warning)">P2</text>
+          <text x="160" y="145" font-family="Outfit" font-weight="600" font-size="10" fill="var(--color-success)">P3</text>
+          <text x="140" y="240" text-anchor="middle" font-family="Inter" font-weight="400" font-size="10" fill="var(--color-muted)" letter-spacing=".06em">ACTION PLAN</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PRIORITY OVERVIEW -->
+<section class="reveal" id="priorities">
+  <div class="container">
+    <h2>Priority Overview</h2>
+    <p style="margin-bottom:1rem;">Tasks are organized into three priority tiers based on impact and urgency. P1 items address the root causes of your biggest visibility gaps and should be completed first.</p>
+    <div class="priority-grid">
+      <div class="priority-card p1">
+        <div class="priority-count">8</div>
+        <div class="priority-label">P1 Critical</div>
+        <div class="priority-desc">Week 1. Entity identity, schema, GBP fix, statistics sourcing.</div>
+      </div>
+      <div class="priority-card p2">
+        <div class="priority-count">10</div>
+        <div class="priority-label">P2 Important</div>
+        <div class="priority-desc">Weeks 2-3. Content restructuring, FAQs, video, Reddit, off-page signals.</div>
+      </div>
+      <div class="priority-card p3">
+        <div class="priority-count">4</div>
+        <div class="priority-label">P3 Maintenance</div>
+        <div class="priority-desc">Week 4+. Internal links, service schema, QA pass, re-run analysis.</div>
+      </div>
+    </div>
+
+    <div class="alert-box">
+      <h4>&#128680; GBP Alert: Critical Data Integrity Issue</h4>
+      <p>The Google Business Profile measurement detected a listing for <strong>"Sky's the Limit Fund"</strong> (a California non-profit) surfacing at your location instead of Sky Therapies. This must be resolved before any other local signal work begins. Verify your correct GBP listing at business.google.com, ensure the name reads "Sky Therapies" with phone 437-889-8427 and website skytherapies.ca, and upload a minimum of 10 photos.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- TIMELINE -->
+<section class="reveal" id="timeline">
+  <div class="container">
+    <h2>Implementation Timeline</h2>
+    <p style="margin-bottom:2rem;">A week-by-week sequence designed to unlock Google AI Overview generation within 30 days.</p>
+    <div class="timeline">
+      <div class="timeline-item t-critical">
+        <span class="timeline-phase">Week 1 (Days 1-5) - Critical Foundation</span>
+        <h4>Entity Identity + Schema + GBP</h4>
+        <p>Day 1: GBP audit and correction. Days 1-2: Create and deploy brand.jsonld. Days 2-3: Add AggregateRating schema. Days 3-4: Restructure H1 and heading hierarchy. Days 4-5: Source the three outcome statistics or add disclosure notes.</p>
+      </div>
+      <div class="timeline-item t-important">
+        <span class="timeline-phase">Weeks 2-3 - Content + Off-Page</span>
+        <h4>FAQ Build + Video + Community Presence</h4>
+        <p>Implement 10 FAQ questions with FAQPage schema. Add VideoObject schema for embedded video. Produce one 2-3 minute explainer video for YouTube. Publish 2-3 Reddit educational posts. Merge Ready-to-Publish content into homepage following the content integration guide.</p>
+      </div>
+      <div class="timeline-item t-maintenance">
+        <span class="timeline-phase">Week 4+ - Polish + Measure</span>
+        <h4>Service Schema + QA + Re-Run</h4>
+        <p>Add Service schema for individual therapy modalities. Complete full QA checklist. Submit for re-indexing via Google Search Console. Re-run Surge analysis after 14+ days to measure improvement. Target: variance score 20-25/100.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PHASE: ENTITY IDENTITY & SCHEMA -->
+<section class="reveal" id="phase-entity">
+  <div class="container">
+    
+    <div class="owner-legend">
+      <div class="owner-legend-item"><div class="owner-legend-dot m"></div><span class="owner-legend-label">Moonraker</span> &mdash; We handle this</div>
+      <div class="owner-legend-item"><div class="owner-legend-dot c"></div><span class="owner-legend-label">Client</span> &mdash; Requires your action</div>
+      <div class="owner-legend-item"><div class="owner-legend-dot co"></div><span class="owner-legend-label">Collaboration</span> &mdash; You provide info, we execute</div>
+    </div>
+<div class="phase-header">
+      <div class="phase-number p1">P1</div>
+      <div class="phase-meta">
+        <h2>Schema, Entity Identity + Technical AI Alignment</h2>
+        <p>Root cause of Google AI Overview absence. No other optimization will unblock Google until these are resolved.</p>
+      </div>
+      <span class="phase-priority-badge p1">Critical</span>
+    </div>
+
+    <div class="task-list">
+      <div class="task-card">
+        <div class="task-num">1</div>
+        <div>
+          <h4>Create and Deploy brand.jsonld Entity Identity File</h4>
+          <p>Google Cloud NLP does not detect Sky Therapies as a named entity (Knowledge Graph 0/100). Create a brand.jsonld file containing verified entity facts (founder credentials, location, services, directory URLs, knowsAbout topics) and deploy it to /.well-known/brand.jsonld. Add a reference link in your homepage &lt;head&gt; section. This is the single highest-leverage fix available.</p>
+          <div class="task-tags">
+            <span class="tag tag-collab">Collaboration</span>
+            <span class="tag tag-impact">Entity Recognition 0 &#8594; 40-60</span>
+            <span class="tag tag-time">1-2 days</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="task-num">2</div>
+        <div>
+          <h4>Add AggregateRating Schema to Homepage</h4>
+          <p>No star ratings surface in SERP despite reviews existing on Google Maps and Yelp. Psychology Today ranks #2 and #7 with visible ratings. Add AggregateRating to your LocalBusiness/MedicalBusiness schema with your verified GBP rating (e.g., 4.8/5, 47 reviews). Validate with Google's Rich Results Test.</p>
+          <div class="task-tags">
+            <span class="tag tag-collab">Collaboration</span>
+            <span class="tag tag-impact">Reputation Signal: None &#8594; Moderate</span>
+            <span class="tag tag-time">1 day</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="task-num">3</div>
+        <div>
+          <h4>Move H1 Into Main Content Block</h4>
+          <p>The H1 is currently in site chrome (header), not inside the &lt;main&gt; element. Main content uses H4/H6 almost exclusively with only a single H2 ("Step by step"). Restructure so the H1 appears as the first heading inside &lt;main&gt; (e.g., "Sky Therapies - Trauma-Informed Mind-Body Therapy in Toronto, Ontario"), with H2s for major sections and H3s for therapy modalities.</p>
+          <div class="task-tags">
+            <span class="tag tag-moonraker">Moonraker</span>
+            <span class="tag tag-impact">AI Extraction 55 &#8594; 65-70</span>
+            <span class="tag tag-time">1-2 days</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="task-num">4</div>
+        <div>
+          <h4>Source or Attribute the Three Outcome Statistics</h4>
+          <p>The 80%, 98%, and 67% figures register as Unsupported Assertions. Three options: (A) add methodology footnotes with sample size and dates, (B) replace with published research citations (e.g., Ashar et al. 2022 for PRT), or (C) remove until sourcing is available. Path A is recommended if figures come from internal outcomes data.</p>
+          <div class="task-tags">
+            <span class="tag tag-client">Client</span>
+            <span class="tag tag-impact">First-Party Evidence 1/5 &#8594; 3-4/5</span>
+            <span class="tag tag-time">2-3 days</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="task-num">5</div>
+        <div>
+          <h4>Resolve GBP Data Integrity Issue</h4>
+          <p>Search for "Sky Therapies Toronto" on Google Maps. Verify your listing shows the correct name, phone (437-889-8427), website (skytherapies.ca), and address (865 York Mills Road). Upload 10+ photos. Set business hours including evenings and weekends. Write a 750-character business description using entity-establishing language.</p>
+          <div class="task-tags">
+            <span class="tag tag-client">Client</span>
+            <span class="tag tag-impact">Local entity anchor</span>
+            <span class="tag tag-time">1 day</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="task-num">6</div>
+        <div>
+          <h4>Standardize Schema @id and Brand Name</h4>
+          <p>Ensure all homepage schema blocks use the same @id ("https://skytherapies.ca/#organization"). Standardize brand name to "Sky Therapies" (two words) everywhere, closing the "Skytherapies" variant. Add hasMap and knowsAbout properties to your organization schema.</p>
+          <div class="task-tags">
+            <span class="tag tag-moonraker">Moonraker</span>
+            <span class="tag tag-impact">Entity coherence 80 &#8594; 95+</span>
+            <span class="tag tag-time">1 day</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="task-num">7</div>
+        <div>
+          <h4>Add VideoObject Schema for Embedded Video</h4>
+          <p>The practice overview video on the homepage has no VideoObject schema. Add name, description, thumbnailUrl, uploadDate, duration, embedUrl, and contentUrl. This helps AI systems identify and extract your video content for video-specific search surfaces.</p>
+          <div class="task-tags">
+            <span class="tag tag-moonraker">Moonraker</span>
+            <span class="tag tag-impact">Schema stack 0.72 &#8594; 0.80+</span>
+            <span class="tag tag-time">1 day</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PHASE: CONTENT RESTRUCTURING -->
+<section class="reveal" id="phase-content">
+  <div class="container">
+    <div class="phase-header">
+      <div class="phase-number p2">P2</div>
+      <div class="phase-meta">
+        <h2>Content Structure + Ready-to-Publish Integration</h2>
+        <p>Restructure homepage content for AI extraction and integrate the Surge Ready-to-Publish Best Answer.</p>
+      </div>
+      <span class="phase-priority-badge p2">Important</span>
+    </div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>View All Content Tasks (5 items)</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+      <div class="task-list">
+        <div class="task-card">
+          <div class="task-num">8</div>
+          <div>
+            <h4>Replace Opening Narrative with Entity Definition Block</h4>
+            <p>Replace the generic "you are not alone" introductory copy with the structured opening from the Ready-to-Publish Best Answer. Lead with the entity definition: who Sky Therapies is, what it specializes in, and the dual RSW + RD credential. This must be visible above the fold on desktop.</p>
+            <div class="task-tags"><span class="tag tag-moonraker">Moonraker</span><span class="tag tag-time">1 day</span></div>
+          </div>
+        </div>
+        <div class="task-card">
+          <div class="task-num">9</div>
+          <div>
+            <h4>Add "Our Clinical Approaches" Section</h4>
+            <p>Insert expanded descriptions for each modality (EMDR, Somatic Therapy, PRT, DBR, Brainspotting, Clinical Hypnosis for IBS) under an H2 heading. Each description should explain the mechanism, who it helps, and what to expect. This addresses the Topical Depth gap (62/100 vs. 75 benchmark).</p>
+            <div class="task-tags"><span class="tag tag-moonraker">Moonraker</span><span class="tag tag-impact">Topical Depth 62 &#8594; 75+</span><span class="tag tag-time">2-3 days</span></div>
+          </div>
+        </div>
+        <div class="task-card">
+          <div class="task-num">10</div>
+          <div>
+            <h4>Surface the RSW + RD Bridging Differentiator</h4>
+            <p>The dual credential is your highest information-gain asset but no AI engine is synthesizing it. Add an H2 like "Mind-Body Therapy + Nutritional Support for IBS and Gut Disorders" and ensure "Registered Dietitian" appears in H2/H3 headings, not just in the bio. This unlocks Bridging dataset presence.</p>
+            <div class="task-tags"><span class="tag tag-moonraker">Moonraker</span><span class="tag tag-impact">Unique Value: Moderate &#8594; High</span><span class="tag tag-time">1 day</span></div>
+          </div>
+        </div>
+        <div class="task-card">
+          <div class="task-num">11</div>
+          <div>
+            <h4>Add Comparison Table (Mind-Body vs. Standard Therapy)</h4>
+            <p>Create a simple two-column table under an H2 "Is Sky Therapies Right for You?" comparing the Sky Therapies approach (EMDR, somatic, PRT, dual credentials, physical + emotional) vs. standard talk therapy (CBT, person-centred, thoughts/emotions only). This addresses the Comparison TEPM phase gap (20/100).</p>
+            <div class="task-tags"><span class="tag tag-moonraker">Moonraker</span><span class="tag tag-time">1 day</span></div>
+          </div>
+        </div>
+        <div class="task-card">
+          <div class="task-num">12</div>
+          <div>
+            <h4>Add Video Transcript / Key Points Summary</h4>
+            <p>Below the embedded video, add an H3 "Key points from this video" with 5-7 bullet points summarizing the content. Optionally add a full transcript as a linked subpage. This moves the Video-Text reinforcement score from 0/100 toward 50+.</p>
+            <div class="task-tags"><span class="tag tag-moonraker">Moonraker</span><span class="tag tag-time">1 day</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PHASE: FAQs -->
+<section class="reveal" id="phase-faq">
+  <div class="container">
+    <div class="phase-header">
+      <div class="phase-number p2">P2</div>
+      <div class="phase-meta">
+        <h2>FAQ Content + Schema</h2>
+        <p>Build 10 structured FAQ questions with FAQPage schema for AI extraction.</p>
+      </div>
+      <span class="phase-priority-badge p2">Important</span>
+    </div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>View FAQ Tasks (2 items)</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+      <div class="task-list">
+        <div class="task-card">
+          <div class="task-num">13</div>
+          <div>
+            <h4>Write and Place 10 FAQ Questions</h4>
+            <p>Create a new section with H2 "Sky Therapies - Frequently Asked Questions." Each answer should lead with a direct response in the first sentence. Topics: specializations, location/online, cost, differentiation, EMDR, IBS/chronic pain, First Responders, getting started, modalities, insurance coverage.</p>
+            <div class="task-tags"><span class="tag tag-moonraker">Moonraker</span><span class="tag tag-impact">FAQ Coverage 0.25 &#8594; 0.50+</span><span class="tag tag-time">2 days</span></div>
+          </div>
+        </div>
+        <div class="task-card">
+          <div class="task-num">14</div>
+          <div>
+            <h4>Implement FAQPage Schema</h4>
+            <p>Add FAQPage JSON-LD with all 10 questions. Each question's text must match the visible page text character-for-character. Note: Google restricts FAQPage rich results to health/gov sites, but Claude, Perplexity, and Bing all parse this schema for conversational AI responses regardless.</p>
+            <div class="task-tags"><span class="tag tag-moonraker">Moonraker</span><span class="tag tag-time">1 day</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PHASE: OFF-PAGE -->
+<section class="reveal" id="phase-offpage">
+  <div class="container">
+    <div class="phase-header">
+      <div class="phase-number p2">P2</div>
+      <div class="phase-meta">
+        <h2>Off-Page + Brand Signals</h2>
+        <p>Close brand dataset gaps in Google AI Overview, Reddit, YouTube, and ChatGPT Browse.</p>
+      </div>
+      <span class="phase-priority-badge p2">Important</span>
+    </div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>View Off-Page Tasks (4 items)</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+      <div class="task-list">
+        <div class="task-card">
+          <div class="task-num">15</div>
+          <div>
+            <h4>Standardize NAP Across All Directory Listings</h4>
+            <p>Search for "Sky Therapies" and "Skytherapies" on Google. Open every result (Psychology Today, eMentalHealth, eSante, Yelp, MapQuest, Facebook). Verify name, phone, website, and address match exactly on each. Log mismatches and correct them. NAP consistency is a key entity recognition signal.</p>
+            <div class="task-tags"><span class="tag tag-moonraker">Moonraker</span><span class="tag tag-time">2-3 days</span></div>
+          </div>
+        </div>
+        <div class="task-card">
+          <div class="task-num">16</div>
+          <div>
+            <h4>Optimize Psychology Today Profile for AI Extraction</h4>
+            <p>PT ranks #2 and #7 for your brand name with visible ratings. Update the profile bio using structured, AI-readable language: lead with specializations, include "RSW," "Registered Dietitian," "EMDR," "mind-body therapy," "chronic pain," and "IBS." This reinforces entity profile in third-party contexts.</p>
+            <div class="task-tags"><span class="tag tag-collab">Collaboration</span><span class="tag tag-time">1 day</span></div>
+          </div>
+        </div>
+        <div class="task-card">
+          <div class="task-num">17</div>
+          <div>
+            <h4>Build Reddit Community Presence</h4>
+            <p>Post educational responses in r/TorontoMentalHealth, r/ChronicPain, r/IBS, and r/PTSD. Focus on explaining mind-body therapy mechanisms, linking nervous system to physical symptoms. Mention Sky Therapies naturally, at most once per 5-10 comments. Target: 2-3 educational posts per week for 4 weeks.</p>
+            <div class="task-tags"><span class="tag tag-client">Client</span><span class="tag tag-impact">Reddit: 0 &#8594; Present</span><span class="tag tag-time">Ongoing</span></div>
+          </div>
+        </div>
+        <div class="task-card">
+          <div class="task-num">18</div>
+          <div>
+            <h4>Publish LinkedIn Article on Mind-Body Framework</h4>
+            <p>Create a LinkedIn company page (if not existing) and publish one article: "Why Chronic Pain Is Often a Nervous System Problem (And What Therapy Can Do About It)." LinkedIn content is indexed by ChatGPT Browse and contributes to the Amplifying dataset. Closes the ChatGPT Correlative gap.</p>
+            <div class="task-tags"><span class="tag tag-moonraker">Moonraker</span><span class="tag tag-time">1-2 days</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PHASE: MEDIA -->
+<section class="reveal" id="phase-media">
+  <div class="container">
+    <div class="phase-header">
+      <div class="phase-number p2">P2</div>
+      <div class="phase-meta">
+        <h2>Images, Video + Audio</h2>
+        <p>Close multi-modal coverage gaps. Video 58/100, Audio 0/100.</p>
+      </div>
+      <span class="phase-priority-badge p2">Important</span>
+    </div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>View Media Tasks (4 items)</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+      <div class="task-list">
+        <div class="task-card">
+          <div class="task-num">19</div>
+          <div>
+            <h4>Fix "Deression Therapy" Alt Text Typo</h4>
+            <p>One image alt text contains "Deression therapy" instead of "Depression therapy." Search your CMS image library for the typo and correct it to "Depression therapy in Toronto | Sky Therapies."</p>
+            <div class="task-tags"><span class="tag tag-moonraker">Moonraker</span><span class="tag tag-time">5 minutes</span></div>
+          </div>
+        </div>
+        <div class="task-card">
+          <div class="task-num">20</div>
+          <div>
+            <h4>Produce YouTube Explainer Video</h4>
+            <p>Record a 2-3 minute video: "What Is Mind-Body Therapy and How Does It Help Chronic Pain?" On-camera with Anna is ideal. Upload with title "Mind-Body Therapy for Chronic Pain and Trauma | Sky Therapies Toronto." Include full keyword-matched description. Push to email list and LinkedIn once.</p>
+            <div class="task-tags"><span class="tag tag-collab">Collaboration</span><span class="tag tag-impact">Video 58 &#8594; 68+</span><span class="tag tag-time">1 week</span></div>
+          </div>
+        </div>
+        <div class="task-card">
+          <div class="task-num">21</div>
+          <div>
+            <h4>Record 60-90 Second Audio Explainer</h4>
+            <p>Record a short audio value proposition on a smartphone and upload to Spotify for Podcasters (formerly Anchor). Title: "What Is Sky Therapies? A Brief Introduction." This creates audio presence from 0/100 to measurable. Low effort, high modality coverage impact.</p>
+            <div class="task-tags"><span class="tag tag-collab">Collaboration</span><span class="tag tag-impact">Audio 0 &#8594; 30+</span><span class="tag tag-time">30 minutes</span></div>
+          </div>
+        </div>
+        <div class="task-card">
+          <div class="task-num">22</div>
+          <div>
+            <h4>Second Video: Therapy for First Responders</h4>
+            <p>Produce within 30 days of first video: "Therapy for First Responders: Why Standard Mental Health Support Often Doesn't Work | Sky Therapies." Targets a distinctive, underserved content niche with low competition.</p>
+            <div class="task-tags"><span class="tag tag-collab">Collaboration</span><span class="tag tag-time">Within 30 days</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PHASE: QA & RE-RUN -->
+<section class="reveal" id="phase-qa">
+  <div class="container">
+    <div class="phase-header">
+      <div class="phase-number p3">P3</div>
+      <div class="phase-meta">
+        <h2>Final QA + Re-Run Analysis</h2>
+        <p>Complete after all P1 and P2 phases. Validate, measure, and re-score.</p>
+      </div>
+      <span class="phase-priority-badge p3">Maintenance</span>
+    </div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>View QA Tasks (3 items)</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+      <div class="task-list">
+        <div class="task-card">
+          <div class="task-num">23</div>
+          <div>
+            <h4>Add Service Schema for Individual Modalities</h4>
+            <p>Create lightweight Service schema blocks for each therapy modality (EMDR, Somatic Therapy, PRT, DBR, Brainspotting, Clinical Hypnosis for IBS). Each block includes serviceType, name, description, provider @id reference, and areaServed. This improves Parallel dataset extraction.</p>
+            <div class="task-tags"><span class="tag tag-moonraker">Moonraker</span><span class="tag tag-time">1-2 days</span></div>
+          </div>
+        </div>
+        <div class="task-card">
+          <div class="task-num">24</div>
+          <div>
+            <h4>Complete Full QA Checklist</h4>
+            <p>Run through the Content QA (15 items), Technical QA (16 items), and Claims Checklist (12 items) provided in the audit. Every factual claim from the Ready-to-Publish content must be human-verified before publishing. Verify Anna's RSW and RD credentials via their respective Ontario public registers.</p>
+            <div class="task-tags"><span class="tag tag-collab">Collaboration</span><span class="tag tag-time">1 day</span></div>
+          </div>
+        </div>
+        <div class="task-card">
+          <div class="task-num">25</div>
+          <div>
+            <h4>Re-Run Surge Analysis</h4>
+            <p>After all P1 items are implemented and at least 14 days have passed: submit homepage URL for re-indexing via GSC, test Google AI Overview generation in incognito, test AI citation quality in Claude/Perplexity/Bing, then re-run the full Surge analysis to measure new variance score. Target: 20-25/100.</p>
+            <div class="task-tags"><span class="tag tag-moonraker">Moonraker</span><span class="tag tag-impact">Variance 37 &#8594; 20-25</span><span class="tag tag-time">14+ days post-implementation</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- NEXT STEPS -->
+<section class="reveal" id="next">
+  <div class="container">
+    <h2>Navigate Your Audit</h2>
+    <p style="margin-bottom:1.5rem;">This action plan is one of three companion documents. Use the links below to navigate between your diagnosis findings, this roadmap, and the live progress tracker.</p>
+    <div class="audit-nav">
+      <a href="/anna-skomorovskaia/audits/diagnosis" class="audit-nav-link">
+        <span class="nav-icon">&#128269;</span>
+        <div>
+          <h4>View Diagnosis</h4>
+          <p>CORE assessment, findings, and opportunity analysis</p>
+        </div>
+      </a>
+      <a href="/anna-skomorovskaia/audits/progress" class="audit-nav-link">
+        <span class="nav-icon">&#9989;</span>
+        <div>
+          <h4>Track Progress</h4>
+          <p>Interactive checklist with real-time status updates</p>
+        </div>
+      </a>
+    </div>
+    <div class="cta-group">
+      <a href="https://msg.moonraker.ai/widget/bookings/scott-pope-calendar" class="cta-btn" target="_blank">Book a Call to Review This Plan</a>
+      <a href="mailto:support@moonraker.ai" class="cta-btn-outline">Email Us With Questions</a>
+    </div>
+  </div>
+</section>
+
+<div class="confidential"><div class="container">This report is confidential and prepared exclusively for Anna Skomorovskaia, MSW, BASc, RSW, RD.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai</div></div>
+<footer class="footer"><div class="container"><img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker"><br><a href="https://moonraker.ai">moonraker.ai</a></div></footer>
+
+<script>
+(function() {
+  var themeBtn = document.getElementById('themeBtn');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function() {
+      var h = document.documentElement;
+      if (h.getAttribute('data-theme') === 'light') {
+        h.setAttribute('data-theme', 'dark');
+        themeBtn.innerHTML = '&#9728;&#65039;';
+        try{localStorage.setItem('moonraker-theme','dark')}catch(e){}
+      } else {
+        h.setAttribute('data-theme', 'light');
+        themeBtn.innerHTML = '&#x1F319;';
+        try{localStorage.setItem('moonraker-theme','light')}catch(e){}
+      }
+    });
+  }
+
+  var progressBar = document.getElementById('progressBar');
+  function updateProgress() {
+    var scrollTop = window.scrollY;
+    var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    progressBar.style.width = (docHeight > 0 ? (scrollTop / docHeight) * 100 : 0) + '%';
+  }
+
+  var sections = document.querySelectorAll('section[id]');
+  var navLinks = document.querySelectorAll('.section-nav a');
+  function updateNav() {
+    var current = '';
+    sections.forEach(function(s) { if (window.scrollY >= s.offsetTop - 200) current = s.id; });
+    navLinks.forEach(function(l) { l.classList.toggle('active', l.getAttribute('href') === '#' + current); });
+  }
+
+  var reveals = document.querySelectorAll('.reveal');
+  function checkReveal() {
+    reveals.forEach(function(el) { if (el.getBoundingClientRect().top < window.innerHeight * 0.88) el.classList.add('visible'); });
+  }
+
+  function onScroll() { updateProgress(); updateNav(); checkReveal(); }
+  window.addEventListener('scroll', onScroll);
+  onScroll();
+
+  document.querySelectorAll('.collapsible-toggle').forEach(function(t) {
+    t.addEventListener('click', function() { this.parentElement.classList.toggle('open'); });
+  });
+})();
+</script>
+</body>
+</html>
