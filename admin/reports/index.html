@@ -527,6 +527,17 @@ strong { font-weight: 600; color: var(--color-heading); }
     setTimeout(function() { t.classList.remove('show'); }, 3000);
   }
 
+  function prettyStatus(val) {
+    var map = {
+      'not_started': 'Not Started', 'in_progress': 'In Progress',
+      'internal_review': 'Internal Review', 'waiting_on_client': 'Waiting on Client',
+      'delivered': 'Delivered', 'complete': 'Complete',
+      'pending': 'Pending', 'active': 'Active',
+      'prospect': 'Prospect', 'onboarding': 'Onboarding', 'lead': 'Lead'
+    };
+    return map[val] || val;
+  }
+
   // Tab switching
   window.switchReportTab = function(tabId) {
     document.querySelectorAll('.report-tab').forEach(function(t) { t.classList.remove('active'); });
@@ -734,7 +745,7 @@ strong { font-weight: 600; color: var(--color-heading); }
           html += '<span class="de-time">' + time + '</span>';
           html += '<span class="de-badge ' + esc(log.table_name) + '">' + esc(log.table_name.replace(/_/g,' ')) + '</span>';
           var entryLabel = log.record_label ? '<strong>' + esc(log.record_label) + '</strong> - ' : '';
-          html += '<span>' + entryLabel + esc(log.field_name) + ': ' + esc(log.old_value || '-') + ' &rarr; ' + esc(log.new_value || '-') + '</span>';
+          html += '<span>' + entryLabel + esc(log.field_name) + ': ' + prettyStatus(log.old_value || '-') + ' &rarr; ' + prettyStatus(log.new_value || '-') + '</span>';
           html += '</div>';
         });
         html += '</div>';
