@@ -911,28 +911,55 @@
     }
   }
 
-  var streamRafPending = false;
-  function updateStreamDisplay() {
+  var displayedText = '';
+  var typewriterTimer = null;
+  var TYPEWRITER_SPEED = 8; // ms per character - very fast but smooth
+
+  function startTypewriter() {
+    if (typewriterTimer) return;
+    typewriterTimer = setInterval(function() {
+      if (!currentStreamEl) { clearInterval(typewriterTimer); typewriterTimer = null; return; }
+      if (displayedText.length < currentStreamText.length) {
+        // Reveal multiple chars per tick for speed (up to 4)
+        var charsToAdd = Math.min(4, currentStreamText.length - displayedText.length);
+        displayedText = currentStreamText.substring(0, displayedText.length + charsToAdd);
+        renderStreamContent();
+      } else if (!isStreaming) {
+        // Streaming done and caught up
+        clearInterval(typewriterTimer);
+        typewriterTimer = null;
+      }
+    }, TYPEWRITER_SPEED);
+  }
+
+  function renderStreamContent() {
     if (!currentStreamEl) return;
-    if (streamRafPending) return;
-    streamRafPending = true;
     requestAnimationFrame(function() {
-      streamRafPending = false;
       if (!currentStreamEl) return;
-      currentStreamEl.innerHTML = '<div class="mr-msg-label">Moonraker AI</div>' + formatAIMessage(currentStreamText, messages.length);
+      currentStreamEl.innerHTML = '<div class="mr-msg-label">Moonraker AI</div>' + formatAIMessage(displayedText, messages.length);
       scrollToBottom();
     });
+  }
+
+  function updateStreamDisplay() {
+    if (!currentStreamEl) return;
+    startTypewriter();
   }
 
   function finishStream() {
     if (!isStreaming) return;
     isStreaming = false;
     sendBtn.disabled = false;
-    userScrolledUp = false;
-    scrollToBottom(true);
 
+    // Flush any remaining buffered text
+    if (typewriterTimer) { clearInterval(typewriterTimer); typewriterTimer = null; }
+    displayedText = currentStreamText;
+    
     if (currentStreamEl) {
       currentStreamEl.classList.remove('streaming');
+      if (currentStreamText) {
+        currentStreamEl.innerHTML = '<div class="mr-msg-label">Moonraker AI</div>' + formatAIMessage(currentStreamText, messages.length);
+      }
     }
 
     if (currentStreamText) {
@@ -944,7 +971,8 @@
     renderMessages();
     currentStreamEl = null;
     currentStreamText = '';
-    userScrolledUp = false;
+    displayedText = '';
+    if (typewriterTimer) { clearInterval(typewriterTimer); typewriterTimer = null; }
   }
 
   function addSystemMessage(text) {
@@ -1008,6 +1036,7 @@
   };
 
 })();
+
 
 
 
