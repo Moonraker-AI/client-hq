@@ -322,6 +322,10 @@ strong { font-weight: 600; color: var(--color-heading); }
 .de-badge.deliverables { background: rgba(107,117,153,.1); color: #6B7599; }
 .de-badge.checklist_items { background: rgba(107,117,153,.1); color: #6B7599; }
 .de-badge.contacts { background: rgba(245,158,11,.1); color: #D97706; }
+.de-badge.signed { background: rgba(0,212,126,.12); color: #00b86c; }
+.de-badge.proposal { background: rgba(59,130,246,.1); color: #3B82F6; }
+.de-badge.lead { background: rgba(245,158,11,.1); color: #D97706; }
+
 .de-badge.onboarding_steps { background: rgba(139,92,246,.1); color: #8B5CF6; }
 .de-arrow { color: var(--color-muted); font-size: .75rem; }
 .digest-empty { text-align: center; padding: 3rem; color: var(--color-muted); font-size: .85rem; }
@@ -368,7 +372,6 @@ strong { font-weight: 600; color: var(--color-heading); }
     <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">&#9776;</button>
     <div style="font-family:'Outfit',sans-serif;font-weight:600;font-size:.95rem;color:var(--color-heading);">Report Scheduler</div>
     <div class="topbar-right">
-      <button class="btn btn-secondary btn-sm" id="refreshBtn" onclick="loadData()">&#x21bb; Refresh</button>
       <span style="font-size:.78rem;color:var(--color-muted);" id="lastRefresh"></span>
     </div>
   </div>
@@ -647,7 +650,7 @@ strong { font-weight: 600; color: var(--color-heading); }
         else if (pct < 0) insights.push('Activity down ' + Math.abs(pct) + '% vs previous period (' + totalChanges + ' vs ' + prevTotal + ').');
         else insights.push('Activity steady at ' + totalChanges + ' changes.');
       } else if (totalChanges > 0) {
-        insights.push(totalChanges + ' changes this period (no previous data to compare).');
+        insights.push(totalChanges + ' change' + (totalChanges !== 1 ? 's' : '') + ' this period (no previous data to compare).');
       }
       if (delCompleted > 0) { var d = delCompleted + ' deliverable' + (delCompleted !== 1 ? 's' : '') + ' done.'; if (prevDel > 0) d += ' Prev: ' + prevDel + '.'; insights.push(d); }
       if (tasksCompleted > 0) { var t = tasksCompleted + ' audit task' + (tasksCompleted !== 1 ? 's' : '') + ' completed.'; if (prevTasks > 0) t += ' Prev: ' + prevTasks + '.'; insights.push(t); }
@@ -684,11 +687,11 @@ strong { font-weight: 600; color: var(--color-heading); }
         html += '<div class="digest-client"><h4>Pipeline</h4>';
         if (signups.length > 0) {
           html += '<div style="font-size:.7rem;font-weight:600;color:var(--color-success);text-transform:uppercase;margin:.5rem 0 .25rem;">Clients Signed (' + signups.length + ')</div>';
-          signups.forEach(function(cl) { html += '<div class="digest-entry"><span class="de-badge checklist_items">signed</span><span>' + esc(cl.practice_name || cl.slug) + '</span></div>'; });
+          signups.forEach(function(cl) { html += '<div class="digest-entry"><span class="de-badge signed">signed</span><span>' + esc(cl.practice_name || cl.slug) + '</span></div>'; });
         }
         if (proposals.length > 0) {
           html += '<div style="font-size:.7rem;font-weight:600;color:var(--color-info);text-transform:uppercase;margin:.5rem 0 .25rem;">Proposals Sent (' + proposals.length + ')</div>';
-          proposals.forEach(function(cl) { html += '<div class="digest-entry"><span class="de-badge deliverables">proposal</span><span>' + esc(cl.practice_name || cl.slug) + '</span></div>'; });
+          proposals.forEach(function(cl) { html += '<div class="digest-entry"><span class="de-badge proposal">proposal</span><span>' + esc(cl.practice_name || cl.slug) + '</span></div>'; });
         }
         if (leads.length > 0) {
           html += '<div style="font-size:.7rem;font-weight:600;color:#D97706;text-transform:uppercase;margin:.5rem 0 .25rem;">New Leads (' + leads.length + ')</div>';
@@ -791,7 +794,6 @@ strong { font-weight: 600; color: var(--color-heading); }
   // DATA LOADING
   // ============================================================
   window.loadData = function loadData() {
-    document.getElementById('refreshBtn').disabled = true;
 
     Promise.all([
       sbFetch('contacts?select=slug,status,practice_name,email,gsc_property,ga4_property&status=eq.active&order=practice_name'),
@@ -806,7 +808,6 @@ strong { font-weight: 600; color: var(--color-heading); }
         if (!state.snapshots[s.client_slug]) state.snapshots[s.client_slug] = s;
       });
       render();
-      document.getElementById('refreshBtn').disabled = false;
 
       // Wire up chat panel context
       if (window.MoonrakerChat) {
@@ -821,7 +822,6 @@ strong { font-weight: 600; color: var(--color-heading); }
     }).catch(function(err) {
       console.error('Load error:', err);
       showToast('Failed to load data', 'error');
-      document.getElementById('refreshBtn').disabled = false;
     });
   }
 
@@ -1177,26 +1177,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     t._timer = setTimeout(function() { t.classList.remove('show'); }, 3000);
   }
 
-  // ============================================================
-  // THEME TOGGLE
-  // ============================================================
-  var themeBtn = document.getElementById('themeBtn');
-  if (themeBtn) {
-    var current = document.documentElement.getAttribute('data-theme');
-    themeBtn.innerHTML = current === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
-    themeBtn.addEventListener('click', function() {
-      var h = document.documentElement;
-      if (h.getAttribute('data-theme') === 'light') {
-        h.setAttribute('data-theme', 'dark');
-        themeBtn.innerHTML = '&#9728;&#65039;';
-        try{localStorage.setItem('moonraker-theme','dark')}catch(e){}
-      } else {
-        h.setAttribute('data-theme', 'light');
-        themeBtn.innerHTML = '&#x1F319;';
-        try{localStorage.setItem('moonraker-theme','light')}catch(e){}
-      }
-    });
-  }
+  // Theme toggle: handled in INIT section below
 
   // ============================================================
   // INIT
