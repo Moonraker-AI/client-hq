@@ -330,6 +330,16 @@ strong { font-weight: 600; color: var(--color-heading); }
 .de-arrow { color: var(--color-muted); font-size: .75rem; }
 .digest-empty { text-align: center; padding: 3rem; color: var(--color-muted); font-size: .85rem; }
 
+/* ---- TOAST ---- */
+.toast { position: fixed; top: 1.25rem; left: 50%; transform: translateX(-50%); padding: .65rem 1.25rem; border-radius: 10px; font-size: .82rem; font-weight: 500; z-index: 1000; box-shadow: 0 4px 16px rgba(0,0,0,.15); opacity: 0; pointer-events: none; transition: opacity .3s; }
+.toast.show { opacity: 1; pointer-events: auto; }
+.toast.success { background: var(--color-primary); color: #fff; }
+.toast.error { background: var(--color-danger); color: #fff; }
+
+/* ---- DIGEST BUTTONS ---- */
+.btn-send { padding: .45rem 1rem; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-heading); cursor: pointer; font-family: inherit; font-size: .82rem; font-weight: 500; transition: all .15s; }
+.btn-send:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
 </style>
 </head>
 <body>
@@ -499,6 +509,15 @@ strong { font-weight: 600; color: var(--color-heading); }
 
   var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co/rest/v1';
   var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
+
+  // Toast notification
+  function toast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + (type || 'success');
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 3000);
+  }
 
   // Tab switching
   window.switchReportTab = function(tabId) {
