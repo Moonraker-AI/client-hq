@@ -141,13 +141,25 @@ function computeStats(activities) {
 function generateInsights(curr, prev, leads, proposals, signups, byClient) {
   var insights = [];
 
-  if (prev.totalChanges > 0) {
-    var pct = Math.round(((curr.totalChanges - prev.totalChanges) / prev.totalChanges) * 100);
-    if (pct > 0) insights.push('Activity is up ' + pct + '% compared to the previous period (' + curr.totalChanges + ' vs ' + prev.totalChanges + ' changes).');
-    else if (pct < 0) insights.push('Activity is down ' + Math.abs(pct) + '% compared to the previous period (' + curr.totalChanges + ' vs ' + prev.totalChanges + ' changes).');
-    else insights.push('Activity held steady at ' + curr.totalChanges + ' changes, same as last period.');
-  } else if (curr.totalChanges > 0) {
-    insights.push(curr.totalChanges + ' total change' + (curr.totalChanges !== 1 ? 's' : '') + ' this period (no previous period data to compare).');
+  // Pipeline summary first
+  var pipelineTotal = leads.length + proposals.length + signups.length;
+  if (pipelineTotal > 0) {
+    var parts = [];
+    if (signups.length > 0) parts.push(signups.length + ' signed');
+    if (proposals.length > 0) parts.push(proposals.length + ' proposal' + (proposals.length !== 1 ? 's' : ''));
+    if (leads.length > 0) parts.push(leads.length + ' new lead' + (leads.length !== 1 ? 's' : ''));
+    insights.push('Pipeline: ' + parts.join(', ') + '.');
+  }
+
+  // Work volume comparison
+  var workItems = curr.delCompleted + curr.tasksCompleted;
+  var prevWork = prev.delCompleted + prev.tasksCompleted;
+  if (workItems > 0 && prevWork > 0) {
+    var pct = Math.round(((workItems - prevWork) / prevWork) * 100);
+    if (pct > 0) insights.push('Work output up ' + pct + '% vs last period (' + workItems + ' items completed vs ' + prevWork + ').');
+    else if (pct < 0) insights.push('Work output down ' + Math.abs(pct) + '% vs last period (' + workItems + ' completed vs ' + prevWork + ').');
+  } else if (workItems > 0) {
+    insights.push(workItems + ' item' + (workItems !== 1 ? 's' : '') + ' completed this period.');
   }
 
   if (curr.delCompleted > 0) {
@@ -162,9 +174,10 @@ function generateInsights(curr, prev, leads, proposals, signups, byClient) {
     insights.push(t);
   }
 
-  if (leads.length > 0) insights.push(leads.length + ' new lead' + (leads.length !== 1 ? 's' : '') + ' added to the pipeline.');
-  if (proposals.length > 0) insights.push(proposals.length + ' proposal' + (proposals.length !== 1 ? 's' : '') + ' sent.');
-  if (signups.length > 0) insights.push(signups.length + ' new client' + (signups.length !== 1 ? 's' : '') + ' signed up!');
+  // Individual pipeline items already covered in summary above
+  if (curr.clientsActive > 0 && prev.clientsActive > 0 && curr.clientsActive > prev.clientsActive) {
+    insights.push('Active client count grew from ' + prev.clientsActive + ' to ' + curr.clientsActive + '.');
+  }
 
   var topSlug = null, topCount = 0;
   for (var slug in byClient) {
@@ -205,9 +218,9 @@ function buildDigestEmail(data) {
   }
   h += '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;"><tr>';
   var salesRow = [
-    { val: data.leads.length, label: 'New Leads', bg: 'rgba(245,158,11,.08)', nc: '#D97706', bc: 'rgba(245,158,11,.25)' },
-    { val: data.proposals.length, label: 'Proposals Sent', bg: 'rgba(59,130,246,.08)', nc: '#3B82F6', bc: 'rgba(59,130,246,.25)' },
-    { val: data.signups.length, label: 'Clients Signed', bg: 'rgba(0,212,126,.08)', nc: '#00b86c', bc: 'rgba(0,212,126,.25)' },
+    { val: data.leads.length, label: 'New Leads', bg: '#FFF8EB', nc: '#D97706', bc: '#FDE68A' },
+    { val: data.proposals.length, label: 'Proposals Sent', bg: '#EFF6FF', nc: '#3B82F6', bc: '#BFDBFE' },
+    { val: data.signups.length, label: 'Clients Signed', bg: '#ECFDF5', nc: '#00b86c', bc: '#A7F3D0' },
   ];
   salesRow.forEach(function(s, i) {
     if (i > 0) h += '<td width="12"></td>';
@@ -267,20 +280,22 @@ function buildDigestEmail(data) {
       var name = data.contactMap[slug] || slug;
       h += '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:16px;margin-bottom:12px;">';
       h += '<h4 style="font-size:14px;color:#1E2A5E;margin:0 0 8px;">' + esc(name) + ' <span style="font-size:11px;font-weight:400;color:#6B7599;">(' + entries.length + ')</span></h4>';
+      h += '<table width="100%" cellpadding="0" cellspacing="0">';
       entries.forEach(function(e) {
         var date = new Date(e.created_at);
         var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         var dateStr = months[date.getMonth()] + ' ' + date.getDate();
         var badgeBg, badgeColor, label;
-        if (e.table_name === 'deliverables') { badgeBg = 'rgba(107,117,153,.12)'; badgeColor = '#6B7599'; label = 'DELIVERABLE'; }
-        else if (e.table_name === 'checklist_items') { badgeBg = 'rgba(107,117,153,.12)'; badgeColor = '#6B7599'; label = 'AUDIT TASK'; }
-        else { badgeBg = 'rgba(245,158,11,.1)'; badgeColor = '#D97706'; label = e.table_name.replace(/_/g,' ').toUpperCase(); }
-        h += '<div style="padding:4px 0;font-size:13px;color:#333F70;">';
-        h += '<span style="color:#6B7599;font-size:12px;">' + dateStr + '</span> ';
-        h += '<span style="background:' + badgeBg + ';color:' + badgeColor + ';font-size:9px;font-weight:600;padding:2px 5px;border-radius:3px;">' + label + '</span> ';
-        h += esc(e.field_name) + ': ' + esc(e.old_value || '-') + ' &rarr; ' + esc(e.new_value || '-');
-        h += '</div>';
+        if (e.table_name === 'deliverables') { badgeBg = '#EDEDF0'; badgeColor = '#6B7599'; label = 'DELIVERABLE'; }
+        else if (e.table_name === 'checklist_items') { badgeBg = '#EDEDF0'; badgeColor = '#6B7599'; label = 'AUDIT TASK'; }
+        else { badgeBg = '#FEF3C7'; badgeColor = '#D97706'; label = e.table_name.replace(/_/g,' ').toUpperCase(); }
+        h += '<tr>';
+        h += '<td style="padding:5px 0;font-size:13px;color:#6B7599;width:50px;vertical-align:top;">' + dateStr + '</td>';
+        h += '<td style="padding:5px 4px;vertical-align:top;"><span style="background:' + badgeBg + ';color:' + badgeColor + ';font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;display:inline-block;">' + label + '</span></td>';
+        h += '<td style="padding:5px 0;font-size:13px;color:#333F70;">' + esc(e.field_name) + ': ' + esc(e.old_value || '-') + ' &#8594; ' + esc(e.new_value || '-') + '</td>';
+        h += '</tr>';
       });
+      h += '</table>';
       h += '</div>';
     });
   }
