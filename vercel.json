@@ -22,6 +22,10 @@
     },
     "api/convert-to-prospect.js": {
       "maxDuration": 60
+    },
+    "api/process-entity-audit.js": {
+      "maxDuration": 120,
+      "memory": 1024
     }
   }
 }
