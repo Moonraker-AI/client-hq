@@ -2072,7 +2072,7 @@ strong { font-weight: 600; color: var(--color-heading); }
         '<div class="modal-form-group"><label>State / Province</label><input type="text" id="nc_state" placeholder="CA"></div>' +
       '</div>' +
       '<div class="modal-form-group"><label>Website</label><input type="url" id="nc_website" placeholder="https://birthfeelings.com"></div>' +
-      '<div class="modal-form-group"><label>Slug</label><input type="text" id="nc_slug" placeholder="auto-generated from practice name"><div class="help">URL-safe identifier. Auto-generated if left blank.</div></div>' +
+      '<div class="modal-form-group"><label>Slug</label><div style="display:flex;gap:.5rem;align-items:center;"><input type="text" id="nc_slug" placeholder="auto-generated from name" style="flex:1;font-family:\'SF Mono\',\'Fira Code\',monospace;font-size:.85rem;"><span id="nc_slug_status" style="font-size:.75rem;white-space:nowrap;"></span></div><div class="help">URL identifier: firstname-lastname. Edit to add a suffix (e.g. -ca) if there is a conflict.</div></div>' +
       '<div class="modal-actions">' +
         '<button class="btn-cancel" onclick="document.getElementById(\'newClientModal\').remove()">Cancel</button>' +
         '<button class="btn-create" id="nc_submit" onclick="submitNewClient()">Create Client</button>' +
@@ -2082,15 +2082,21 @@ strong { font-weight: 600; color: var(--color-heading); }
     document.body.appendChild(overlay);
     document.getElementById('nc_first').focus();
 
-    // Auto-generate slug from practice name
-    document.getElementById('nc_practice').addEventListener('input', function() {
+    // Auto-generate slug from first + last name
+    function updateSlug() {
       var slugEl = document.getElementById('nc_slug');
-      if (!slugEl.dataset.manual) {
-        slugEl.value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      }
-    });
+      if (slugEl.dataset.manual) return;
+      var first = document.getElementById('nc_first').value.trim();
+      var last = document.getElementById('nc_last').value.trim();
+      var base = (first + ' ' + last).trim();
+      slugEl.value = base ? base.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : '';
+      document.getElementById('nc_slug_status').textContent = '';
+    }
+    document.getElementById('nc_first').addEventListener('input', updateSlug);
+    document.getElementById('nc_last').addEventListener('input', updateSlug);
     document.getElementById('nc_slug').addEventListener('input', function() {
       this.dataset.manual = 'true';
+      document.getElementById('nc_slug_status').textContent = '';
     });
   }
 
@@ -2100,11 +2106,40 @@ strong { font-weight: 600; color: var(--color-heading); }
     var practice = document.getElementById('nc_practice').value.trim();
     if (!first || !last || !practice) { alert('First name, last name, and practice name are required.'); return; }
 
-    var slug = document.getElementById('nc_slug').value.trim() || practice.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    var slug = document.getElementById('nc_slug').value.trim() || (first + ' ' + last).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    document.getElementById('nc_slug').value = slug;
     var btn = document.getElementById('nc_submit');
     btn.disabled = true;
-    btn.textContent = 'Creating...';
+    btn.textContent = 'Checking slug...';
 
+    // Check slug uniqueness first
+    sb('contacts?slug=eq.' + slug + '&select=id,practice_name&limit=1')
+      .then(function(existing) {
+        if (existing && existing.length > 0) {
+          // Conflict found
+          var slugEl = document.getElementById('nc_slug');
+          slugEl.dataset.manual = 'true';
+          slugEl.style.borderColor = 'var(--color-danger)';
+          document.getElementById('nc_slug_status').innerHTML = '<span style="color:var(--color-danger);">Taken</span>';
+          btn.disabled = false;
+          btn.textContent = 'Create Client';
+          alert('Slug "' + slug + '" is already in use by ' + (existing[0].practice_name || 'another contact') + '. Please edit the slug (e.g. add -' + (document.getElementById('nc_state').value.trim().toLowerCase() || 'xx') + ').');
+          slugEl.focus();
+          slugEl.select();
+          return;
+        }
+
+        document.getElementById('nc_slug_status').innerHTML = '<span style="color:var(--color-success);">\u2713</span>';
+        btn.textContent = 'Creating...';
+        createClientRecord(slug, first, last, practice, btn);
+      })
+      .catch(function() {
+        btn.textContent = 'Creating...';
+        createClientRecord(slug, first, last, practice, btn);
+      });
+  }
+
+  function createClientRecord(slug, first, last, practice, btn) {
     var data = {
       slug: slug,
       first_name: first,
@@ -2127,7 +2162,6 @@ strong { font-weight: 600; color: var(--color-heading); }
       if (res.success && res.data && res.data[0]) {
         document.getElementById('newClientModal').remove();
         toast('Client created: ' + practice, 'success');
-        // Navigate to the new client
         setTimeout(function() {
           window.location.href = '/admin/clients?slug=' + slug;
         }, 800);
