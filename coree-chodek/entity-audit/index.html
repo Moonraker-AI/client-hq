@@ -184,6 +184,22 @@ section { padding: 4.5rem 0; }
 .quick-wins ul { list-style: none; padding: 0; margin: 0; }
 .quick-wins li { padding: .35rem 0; font-size: .9375rem; display: flex; align-items: flex-start; gap: .5rem; }
 .quick-wins li::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--color-primary); border-radius: 50%; flex-shrink: 0; margin-top: .55rem; }
+/* RTPBA section */
+.rtpba-section { margin: 3rem 0; }
+.rtpba-toggle { width: 100%; background: linear-gradient(135deg, var(--color-navy), #1a2f5a); border: none; border-radius: 14px; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all .3s; }
+.rtpba-toggle:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+.rtpba-toggle span { color: #E8F5EF; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1rem; }
+.rtpba-toggle .arrow { color: var(--color-primary); transition: transform .3s; font-size: .8rem; }
+.rtpba-section.open .rtpba-toggle .arrow { transform: rotate(180deg); }
+.rtpba-content { max-height: 0; overflow: hidden; transition: max-height .5s ease; background: var(--color-surface); border: 0 solid var(--color-border); border-width: 0 1px; border-radius: 0 0 14px 14px; }
+.rtpba-section.open .rtpba-content { max-height: 10000px; border-width: 0 1px 1px 1px; }
+.rtpba-content-inner { padding: 2rem; }
+.rtpba-content-inner h4 { color: var(--color-primary); margin-bottom: 1rem; font-size: 1.125rem; }
+.rtpba-content-inner p { font-size: .9375rem; line-height: 1.8; margin-bottom: 1rem; color: var(--color-body); }
+.rtpba-content-inner strong { color: var(--color-heading); }
+.rtpba-content-inner ul, .rtpba-content-inner ol { padding-left: 1.25rem; margin-bottom: 1rem; }
+.rtpba-content-inner li { font-size: .9375rem; line-height: 1.7; margin-bottom: .35rem; }
+.rtpba-label { display: block; font-size: .875rem; color: var(--color-muted); margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-border); }
 
 /* CTA section */
 .cta-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2.5rem 0; }
@@ -237,6 +253,7 @@ section { padding: 4.5rem 0; }
   <a href="#walkthrough"><span class="nav-dot"></span>Walkthrough</a>
   <a href="#scores"><span class="nav-dot"></span>CORE Scores</a>
   <a href="#findings"><span class="nav-dot"></span>Findings</a>
+  <a href="#rtpbaSection" id="navRtpba" style="display:none;"><span class="nav-dot"></span>Best Answer</a>
   <a href="#next"><span class="nav-dot"></span>Next Steps</a>
 </nav>
 
@@ -348,6 +365,24 @@ section { padding: 4.5rem 0; }
     </div>
   </div>
 </section>
+
+<!-- READY-TO-PUBLISH BEST ANSWER -->
+<div id="rtpbaSection" class="rtpba-section" style="display:none;">
+  <div class="container">
+    <button class="rtpba-toggle" id="rtpbaToggle">
+      <span>&#128196; Ready-to-Publish Best Answer</span>
+      <span class="arrow">&#9660;</span>
+    </button>
+    <div class="rtpba-content">
+      <div class="rtpba-content-inner">
+        <p class="rtpba-label">This is the Surge-generated Ready-to-Publish Best Answer for your practice homepage. This is the content AI search engines are looking for when they decide whether to recommend your practice. Use this as a reference for rewriting or restructuring your homepage content.</p>
+        <div id="rtpbaContent">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <hr class="divider">
 
@@ -549,6 +584,14 @@ section { padding: 4.5rem 0; }
     });
     document.getElementById('findingsContainer').innerHTML = findingsHtml;
 
+    // RTPBA section - show only if data exists
+    if (scores.rtpba) {
+      document.getElementById('rtpbaContent').innerHTML = scores.rtpba;
+      document.getElementById('rtpbaSection').style.display = 'block';
+      var navLink = document.getElementById('navRtpba');
+      if (navLink) navLink.style.display = '';
+    }
+
     // CTA section - hide upgrade if already premium
     if (audit.audit_tier === 'premium') {
       document.getElementById('upgradeCard').style.display = 'none';
@@ -568,6 +611,16 @@ section { padding: 4.5rem 0; }
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
 
+    // Restart SVG orbit animations (they freeze when starting inside display:none)
+    setTimeout(function() {
+      document.querySelectorAll('.hero-visual animateTransform').forEach(function(anim) {
+        if (anim.beginElement) anim.beginElement();
+      });
+      // Fallback: force SVG repaint by toggling a class
+      var svg = document.querySelector('.hero-visual svg');
+      if (svg) { svg.style.display = 'none'; svg.offsetHeight; svg.style.display = ''; }
+    }, 50);
+
     // Trigger scroll handlers
     setTimeout(function() { onScroll(); }, 100);
   }
@@ -582,6 +635,11 @@ section { padding: 4.5rem 0; }
   // Theme toggle
   var themeBtn = document.getElementById('themeBtn');
   if (themeBtn) {
+
+  // RTPBA toggle
+  document.getElementById('rtpbaToggle').addEventListener('click', function() {
+    document.getElementById('rtpbaSection').classList.toggle('open');
+  });
     themeBtn.addEventListener('click', function() {
       var h = document.documentElement;
       h.classList.add('theme-transition');
