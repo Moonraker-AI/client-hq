@@ -277,6 +277,29 @@ a:hover { color: var(--color-primary-hover); }
     <div class="tab-content" id="tab-entity">
     <p class="section-desc">Entity audit scorecards for leads and prospects. Manage free and premium audits, add Loom URLs, and track delivery status.</p>
 
+    <div style="display:flex;justify-content:flex-end;margin-bottom:1rem;">
+      <button class="ea-btn" style="background:var(--color-primary);color:#fff;border-color:var(--color-primary);padding:.45rem 1rem;font-size:.82rem;" onclick="toggleNewAuditForm()">+ New Entity Audit</button>
+    </div>
+
+    <!-- New audit inline form -->
+    <div id="newAuditForm" style="display:none;background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;">
+      <h4 style="margin-bottom:1rem;font-size:1rem;">Create New Entity Audit</h4>
+      <p style="font-size:.85rem;color:var(--color-muted);margin-bottom:1rem;">This will create a new lead contact and a pending entity audit. The lead will also appear in the Clients directory.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+        <div><label style="font-size:.75rem;font-weight:600;color:var(--color-muted);display:block;margin-bottom:.25rem;">First Name *</label><input id="nea-first" style="width:100%;padding:.5rem .65rem;border:1px solid var(--color-border);border-radius:8px;font-size:.85rem;background:var(--color-bg);color:var(--color-body);font-family:inherit;" placeholder="Jane"></div>
+        <div><label style="font-size:.75rem;font-weight:600;color:var(--color-muted);display:block;margin-bottom:.25rem;">Last Name *</label><input id="nea-last" style="width:100%;padding:.5rem .65rem;border:1px solid var(--color-border);border-radius:8px;font-size:.85rem;background:var(--color-bg);color:var(--color-body);font-family:inherit;" placeholder="Smith"></div>
+        <div><label style="font-size:.75rem;font-weight:600;color:var(--color-muted);display:block;margin-bottom:.25rem;">Practice Name</label><input id="nea-practice" style="width:100%;padding:.5rem .65rem;border:1px solid var(--color-border);border-radius:8px;font-size:.85rem;background:var(--color-bg);color:var(--color-body);font-family:inherit;" placeholder="Wellness Therapy Group"></div>
+        <div><label style="font-size:.75rem;font-weight:600;color:var(--color-muted);display:block;margin-bottom:.25rem;">Email *</label><input id="nea-email" type="email" style="width:100%;padding:.5rem .65rem;border:1px solid var(--color-border);border-radius:8px;font-size:.85rem;background:var(--color-bg);color:var(--color-body);font-family:inherit;" placeholder="jane@practice.com"></div>
+        <div><label style="font-size:.75rem;font-weight:600;color:var(--color-muted);display:block;margin-bottom:.25rem;">Website URL *</label><input id="nea-url" type="url" style="width:100%;padding:.5rem .65rem;border:1px solid var(--color-border);border-radius:8px;font-size:.85rem;background:var(--color-bg);color:var(--color-body);font-family:inherit;" placeholder="https://practice.com"></div>
+        <div><label style="font-size:.75rem;font-weight:600;color:var(--color-muted);display:block;margin-bottom:.25rem;">Tier</label><select id="nea-tier" style="width:100%;padding:.5rem .65rem;border:1px solid var(--color-border);border-radius:8px;font-size:.85rem;background:var(--color-bg);color:var(--color-body);font-family:inherit;"><option value="free">Free</option><option value="premium">Premium</option></select></div>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:1rem;">
+        <button id="nea-submit" class="ea-btn" style="background:var(--color-primary);color:#fff;border-color:var(--color-primary);padding:.45rem 1rem;" onclick="submitNewAudit()">Create Audit + Lead</button>
+        <button class="ea-btn" onclick="toggleNewAuditForm()" style="padding:.45rem 1rem;">Cancel</button>
+        <span id="nea-status" style="font-size:.8rem;color:var(--color-muted);align-self:center;margin-left:.5rem;"></span>
+      </div>
+    </div>
+
     <div class="stat-grid" id="eaStatGrid"></div>
 
     <div id="eaLoading" style="text-align:center;padding:4rem;">
@@ -687,6 +710,62 @@ a:hover { color: var(--color-primary-hover); }
       body: JSON.stringify({ status: next })
     }).then(function(r) {
       if (r.ok) { eaLoaded = false; loadEntityAudits(); }
+    });
+  };
+
+  window.toggleNewAuditForm = function() {
+    var form = document.getElementById('newAuditForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    document.getElementById('nea-status').textContent = '';
+  };
+
+  window.submitNewAudit = function() {
+    var first = document.getElementById('nea-first').value.trim();
+    var last = document.getElementById('nea-last').value.trim();
+    var practice = document.getElementById('nea-practice').value.trim();
+    var email = document.getElementById('nea-email').value.trim();
+    var url = document.getElementById('nea-url').value.trim();
+    var tier = document.getElementById('nea-tier').value;
+    var statusEl = document.getElementById('nea-status');
+
+    if (!first || !last || !email || !url) { statusEl.textContent = 'Please fill all required fields.'; statusEl.style.color = 'var(--color-danger)'; return; }
+
+    var slug = (practice || first + ' ' + last).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 60);
+    var btn = document.getElementById('nea-submit');
+    btn.disabled = true;
+    statusEl.textContent = 'Creating...';
+    statusEl.style.color = 'var(--color-muted)';
+
+    // Step 1: Create contact as lead
+    fetch(SB + '/rest/v1/contacts', {
+      method: 'POST',
+      headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify({ first_name: first, last_name: last, practice_name: practice || null, email: email, website_url: url, slug: slug, status: 'lead', source: 'direct', audit_tier: tier })
+    })
+    .then(function(r) { if (!r.ok) return r.json().then(function(e) { throw new Error(e.message || 'Contact creation failed'); }); return r.json(); })
+    .then(function(contacts) {
+      var contact = contacts[0];
+      // Step 2: Create entity audit
+      return fetch(SB + '/rest/v1/entity_audits', {
+        method: 'POST',
+        headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ contact_id: contact.id, audit_tier: tier, brand_query: practice || first + ' ' + last, homepage_url: url, status: 'pending' })
+      });
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('Audit creation failed');
+      statusEl.textContent = 'Created! Refreshing...';
+      statusEl.style.color = 'var(--color-success)';
+      // Clear form and refresh
+      ['nea-first','nea-last','nea-practice','nea-email','nea-url'].forEach(function(id) { document.getElementById(id).value = ''; });
+      document.getElementById('nea-tier').value = 'free';
+      btn.disabled = false;
+      setTimeout(function() { toggleNewAuditForm(); eaLoaded = false; loadEntityAudits(); }, 1000);
+    })
+    .catch(function(err) {
+      statusEl.textContent = err.message.indexOf('duplicate') !== -1 ? 'A contact with this info already exists.' : err.message;
+      statusEl.style.color = 'var(--color-danger)';
+      btn.disabled = false;
     });
   };
 
