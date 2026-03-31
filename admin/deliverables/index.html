@@ -795,7 +795,7 @@ a:hover { color: var(--color-primary-hover); }
     themeBtn.innerHTML = _curTheme === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
     themeBtn.addEventListener('click', function() {
       var h = document.documentElement;
-      document.body.style.transition='opacity .15s ease';
+      document.body.style.transition='opacity .25s ease';
       document.body.style.opacity='0';
       setTimeout(function(){
         if (h.getAttribute('data-theme') === 'light') {
@@ -805,9 +805,10 @@ a:hover { color: var(--color-primary-hover); }
           h.setAttribute('data-theme', 'light'); themeBtn.innerHTML = '&#x1F319;';
           try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
         }
+        document.body.style.transition='opacity .3s ease';
         document.body.style.opacity='1';
-        setTimeout(function(){document.body.style.transition=''},350);
-      },150);
+        setTimeout(function(){document.body.style.transition=''},400);
+      },280);
     });
   }
   loadData();
