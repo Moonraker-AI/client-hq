@@ -187,6 +187,12 @@ strong { font-weight: 600; color: var(--color-heading); }
 .drive-card a { font-weight: 600; }
 .save-note { font-size: .8125rem; color: var(--color-success); margin-top: .75rem; display: none; }
 .save-note.visible { display: block; }
+.autosave-status { font-size: .75rem; color: var(--color-muted); display: inline-flex; align-items: center; gap: .35rem; margin-left: 1rem; opacity: 0; transition: opacity .3s ease; vertical-align: middle; }
+.autosave-status.visible { opacity: 1; }
+.autosave-status.saving { color: var(--color-warning); }
+.autosave-status.saved { color: var(--color-success); }
+.autosave-status.error { color: var(--color-danger); }
+.autosave-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
 /* Loading */
 .loading-state { text-align: center; padding: 6rem 2rem; }
@@ -236,7 +242,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     <!-- STEP 1: Confirm Info -->
     <div class="step-panel" data-step="confirm_info">
       <span class="step-badge">Step 1 of 8</span>
-      <h1>Confirm Your Info</h1>
+      <h1>Confirm Your Info <span class="autosave-status" id="ci_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
       <p style="color:var(--color-muted)">We have gathered some details about your practice. Please review and correct anything that needs updating.</p>
 
       <div class="form-section">
@@ -281,12 +287,9 @@ strong { font-weight: 600; color: var(--color-heading); }
         <div class="form-group"><label>Country</label><input type="text" id="ci_country"></div>
       </div>
 
-      <button class="btn btn-primary" onclick="saveConfirmInfo()">Save &amp; Continue &#8594;</button>
-      <div class="save-note" id="ci_saved">&#10003; Info saved</div>
-
       <div class="step-actions">
         <span></span>
-        <button class="btn btn-primary" onclick="goToStep(1)">Next: Sign Agreement &#8594;</button>
+        <button class="btn btn-primary" onclick="completeAndAdvance('confirm_info', 1)">Continue: Sign Agreement &#8594;</button>
       </div>
     </div>
 
@@ -435,7 +438,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     <!-- STEP 5: Practice Details -->
     <div class="step-panel" data-step="practice_details">
       <span class="step-badge">Step 5 of 8</span>
-      <h1>Practice &amp; Clinical Details</h1>
+      <h1>Practice &amp; Clinical Details <span class="autosave-status" id="pd_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
       <p style="color:var(--color-muted)">This information helps us build your service pages, write content in your voice, and target the right audience. Separate multiple items with commas.</p>
 
       <div class="form-section">
@@ -499,19 +502,16 @@ strong { font-weight: 600; color: var(--color-heading); }
         <div class="form-group"><label>What Can Clients Expect After Care is Established?</label><textarea id="pd_after_care" placeholder="Session cadence, communication between sessions, treatment planning..."></textarea></div>
       </div>
 
-      <button class="btn btn-primary" onclick="savePracticeDetails()">Save &amp; Continue &#8594;</button>
-      <div class="save-note" id="pd_saved">&#10003; Practice details saved</div>
-
       <div class="step-actions">
         <button class="btn btn-outline" onclick="goToStep(3)">&#8592; Back</button>
-        <button class="btn btn-primary" onclick="goToStep(5)">Next: Bio Materials &#8594;</button>
+        <button class="btn btn-primary" onclick="completeAndAdvance('practice_details', 5)">Continue: Bio Materials &#8594;</button>
       </div>
     </div>
 
     <!-- STEP 6: Bio Materials -->
     <div class="step-panel" data-step="bio_materials">
       <span class="step-badge">Step 6 of 8</span>
-      <h1>Bio Page Materials</h1>
+      <h1>Bio Page Materials <span class="autosave-status" id="bio_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
       <p style="color:var(--color-muted)">We build a detailed bio page for each therapist at your practice. This info feeds directly into your bio page, schema markup, and AI visibility. Start with the primary therapist and we can add more later.</p>
 
       <div class="form-section">
@@ -554,19 +554,16 @@ strong { font-weight: 600; color: var(--color-heading); }
 
 
 
-      <button class="btn btn-primary" onclick="saveBioMaterials()">Save &amp; Continue &#8594;</button>
-      <div class="save-note" id="bio_saved">&#10003; Bio materials saved</div>
-
       <div class="step-actions">
-        <button class="btn btn-outline" onclick="goToStep(3)">&#8592; Back</button>
-        <button class="btn btn-primary" onclick="goToStep(5)">Next: Connect Accounts &#8594;</button>
+        <button class="btn btn-outline" onclick="goToStep(4)">&#8592; Back</button>
+        <button class="btn btn-primary" onclick="completeAndAdvance('bio_materials', 6)">Continue: Social Profiles &#8594;</button>
       </div>
     </div>
 
     <!-- STEP 7: Social Profiles -->
     <div class="step-panel" data-step="social_profiles">
       <span class="step-badge">Step 7 of 8</span>
-      <h1>Social Profiles</h1>
+      <h1>Social Profiles <span class="autosave-status" id="sp_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
       <p style="color:var(--color-muted)">Google crawls social profiles to verify your practice is tied to a real person. We build out 9 interconnected profiles as part of our Rising Tide strategy. Please share any existing profile URLs below.</p>
 
       <div class="form-section">
@@ -680,12 +677,9 @@ strong { font-weight: 600; color: var(--color-heading); }
         <div class="form-group"><textarea id="dir_other" style="min-height:80px;" placeholder="e.g. AASECT Directory, https://aasect.org/referral-directory/...&#10;National Register, https://findapsychologist.org/...&#10;SE Directory, https://directory.traumahealing.org/..."></textarea></div>
       </div>
 
-      <button class="btn btn-primary" onclick="saveSocialProfiles()">Save &amp; Continue &#8594;</button>
-      <div class="save-note" id="sp_saved">&#10003; Social profiles saved</div>
-
       <div class="step-actions">
         <button class="btn btn-outline" onclick="goToStep(5)">&#8592; Back</button>
-        <button class="btn btn-primary" onclick="goToStep(7)">Next: Check-Ins &amp; Drive &#8594;</button>
+        <button class="btn btn-primary" onclick="completeAndAdvance('social_profiles', 7)">Continue: Google Drive &#8594;</button>
       </div>
     </div>
 
@@ -856,6 +850,68 @@ strong { font-weight: 600; color: var(--color-heading); }
       document.getElementById('accessAlreadyDone').style.display = 'block';
     }
   };
+
+  // ============================================================
+  // COMPLETE AND ADVANCE (save + mark complete + go to next step)
+  // ============================================================
+  window.completeAndAdvance = function(stepKey, nextStepIndex) {
+    var saveFns = {
+      'confirm_info': saveConfirmInfo,
+      'practice_details': savePracticeDetails,
+      'bio_materials': saveBioMaterials,
+      'social_profiles': saveSocialProfiles
+    };
+    var fn = saveFns[stepKey];
+    if (fn) {
+      fn().then(function() {
+        completeStep(stepKey);
+        goToStep(nextStepIndex);
+      }).catch(function(err) {
+        console.error('Save failed:', err);
+        // Still advance even if save fails - autosave will retry
+        completeStep(stepKey);
+        goToStep(nextStepIndex);
+      });
+    } else {
+      completeStep(stepKey);
+      goToStep(nextStepIndex);
+    }
+  };
+
+  // ============================================================
+  // AUTOSAVE SYSTEM
+  // ============================================================
+  var autoSaveTimers = {};
+
+  function showAutoSave(statusId, state) {
+    var el = document.getElementById(statusId);
+    if (!el) return;
+    var textEl = el.querySelector('.autosave-text');
+    el.className = 'autosave-status visible ' + state;
+    if (state === 'saving') { textEl.textContent = 'Saving...'; }
+    else if (state === 'saved') { textEl.textContent = 'Saved'; setTimeout(function() { el.classList.remove('visible'); }, 2500); }
+    else if (state === 'error') { textEl.textContent = 'Save failed'; setTimeout(function() { el.classList.remove('visible'); }, 4000); }
+  }
+
+  function setupAutosave(panelSelector, saveFn, statusId, delay) {
+    var panel = document.querySelector(panelSelector);
+    if (!panel) return;
+    var inputs = panel.querySelectorAll('input, textarea, select');
+    inputs.forEach(function(input) {
+      var eventType = (input.tagName === 'SELECT') ? 'change' : 'input';
+      input.addEventListener(eventType, function() {
+        if (autoSaveTimers[statusId]) clearTimeout(autoSaveTimers[statusId]);
+        showAutoSave(statusId, 'saving');
+        autoSaveTimers[statusId] = setTimeout(function() {
+          saveFn().then(function() {
+            showAutoSave(statusId, 'saved');
+          }).catch(function() {
+            showAutoSave(statusId, 'error');
+          });
+        }, delay || 1500);
+      });
+    });
+  }
 
   // ============================================================
   // CSA RENDERING
@@ -1254,12 +1310,9 @@ strong { font-weight: 600; color: var(--color-heading); }
       postal_code: document.getElementById('ci_postal_code').value.trim(),
       country: document.getElementById('ci_country').value.trim()
     };
-    sbPatch('contacts', 'id=eq.' + contact.id, data).then(function() {
+    return sbPatch('contacts', 'id=eq.' + contact.id, data).then(function() {
       Object.assign(contact, data);
-      document.getElementById('ci_saved').classList.add('visible');
-      completeStep('confirm_info');
-      setTimeout(function() { document.getElementById('ci_saved').classList.remove('visible'); }, 3000);
-    }).catch(function(err) { console.error('Save failed:', err); alert('Save failed. Please try again.'); });
+    });
   };
 
   // ============================================================
@@ -1301,14 +1354,11 @@ strong { font-weight: 600; color: var(--color-heading); }
       : SB_URL + '/rest/v1/practice_details';
     var h = sbHeaders(); h['Prefer'] = 'return=representation';
 
-    fetch(url, { method: method === 'PATCH' ? 'PATCH' : 'POST', headers: h, body: JSON.stringify(method === 'POST' ? data : (delete data.contact_id, data)) })
+    return fetch(url, { method: method === 'PATCH' ? 'PATCH' : 'POST', headers: h, body: JSON.stringify(method === 'POST' ? data : (delete data.contact_id, data)) })
       .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function(res) {
         practiceData = Array.isArray(res) ? res[0] : res;
-        document.getElementById('pd_saved').classList.add('visible');
-        completeStep('practice_details');
-        setTimeout(function() { document.getElementById('pd_saved').classList.remove('visible'); }, 3000);
-      }).catch(function(err) { console.error('Save failed:', err); alert('Save failed. Please try again.'); });
+      });
   };
 
   // ============================================================
@@ -1334,14 +1384,11 @@ strong { font-weight: 600; color: var(--color-heading); }
       : SB_URL + '/rest/v1/bio_materials';
     var h = sbHeaders(); h['Prefer'] = 'return=representation';
 
-    fetch(url, { method: method === 'PATCH' ? 'PATCH' : 'POST', headers: h, body: JSON.stringify(method === 'POST' ? data : (delete data.contact_id, data)) })
+    return fetch(url, { method: method === 'PATCH' ? 'PATCH' : 'POST', headers: h, body: JSON.stringify(method === 'POST' ? data : (delete data.contact_id, data)) })
       .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function(res) {
         bioData = Array.isArray(res) ? res[0] : res;
-        document.getElementById('bio_saved').classList.add('visible');
-        completeStep('bio_materials');
-        setTimeout(function() { document.getElementById('bio_saved').classList.remove('visible'); }, 3000);
-      }).catch(function(err) { console.error('Save failed:', err); alert('Save failed. Please try again.'); });
+      });
   };
 
   // ============================================================
@@ -1373,7 +1420,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     var omit = document.getElementById('sp_omit').value.trim();
 
     // Save socials + GBP + PT to contacts
-    sbPatch('contacts', 'id=eq.' + contact.id, socialData).then(function() {
+    return sbPatch('contacts', 'id=eq.' + contact.id, socialData).then(function() {
       Object.assign(contact, socialData);
 
       // Save directories to practice_details
@@ -1389,11 +1436,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       return fetch(pdUrl, { method: pdMethod, headers: h, body: JSON.stringify(pdBody) })
         .then(function(r) { return r.json(); })
         .then(function(res) { practiceData = Array.isArray(res) ? res[0] : res; });
-    }).then(function() {
-      document.getElementById('sp_saved').classList.add('visible');
-      completeStep('social_profiles');
-      setTimeout(function() { document.getElementById('sp_saved').classList.remove('visible'); }, 3000);
-    }).catch(function(err) { console.error('Save failed:', err); alert('Save failed. Please try again.'); });
+    });
   };
 
   // ============================================================
@@ -1451,6 +1494,12 @@ strong { font-weight: 600; color: var(--color-heading); }
 
         // Pre-fill all form fields
         prefillForms();
+
+        // Wire up autosave on form steps (1.5s debounce)
+        setupAutosave('[data-step="confirm_info"]', saveConfirmInfo, 'ci_autosave', 1500);
+        setupAutosave('[data-step="practice_details"]', savePracticeDetails, 'pd_autosave', 1500);
+        setupAutosave('[data-step="bio_materials"]', saveBioMaterials, 'bio_autosave', 1500);
+        setupAutosave('[data-step="social_profiles"]', saveSocialProfiles, 'sp_autosave', 1500);
 
         // Show the app
         document.getElementById('loadingState').style.display = 'none';
