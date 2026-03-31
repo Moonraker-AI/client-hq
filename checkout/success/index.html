@@ -13,7 +13,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',-apple-system,sans-serif;color:var(--color-body);background:var(--color-bg);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:background .3s,color .3s}
 h1{font-family:'Outfit',sans-serif;font-weight:700;color:var(--color-heading)}
-.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:20px;padding:3rem;text-align:center;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.06)}
+.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:20px;padding:3rem;text-align:center;max-width:520px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.06)}
 .check{width:64px;height:64px;background:var(--color-primary);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;animation:pop .5s cubic-bezier(.175,.885,.32,1.275)}
 .check svg{width:32px;height:32px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 @keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
@@ -24,6 +24,8 @@ h1{font-family:'Outfit',sans-serif;font-weight:700;color:var(--color-heading)}
 .redirect-note{font-size:.75rem;color:var(--color-muted);margin-top:1rem}
 .logo{margin-bottom:2rem;opacity:.6}
 .logo img{height:32px}
+.delivery-note{background:var(--color-primary-subtle);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:.875rem;line-height:1.6;color:var(--color-heading);text-align:left}
+.delivery-note strong{font-weight:600}
 </style>
 </head>
 <body>
@@ -32,10 +34,11 @@ h1{font-family:'Outfit',sans-serif;font-weight:700;color:var(--color-heading)}
 
 <div class="card">
   <div class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
-  <h1>Payment Confirmed!</h1>
-  <p>Thank you for choosing Moonraker. We are excited to get started on your campaign. Your onboarding dashboard is ready.</p>
-  <a href="#" id="onboardingBtn" class="btn">Start Onboarding &#8594;</a>
-  <div class="redirect-note" id="redirectNote">Redirecting automatically in <span id="countdown">5</span> seconds...</div>
+  <h1 id="heading">Payment Confirmed!</h1>
+  <p id="message">Processing your payment...</p>
+  <div id="deliveryNote" class="delivery-note" style="display:none;"></div>
+  <a href="#" id="actionBtn" class="btn" style="display:none;">Continue &#8594;</a>
+  <div class="redirect-note" id="redirectNote"></div>
 </div>
 
 <script>
@@ -43,52 +46,122 @@ h1{font-family:'Outfit',sans-serif;font-weight:700;color:var(--color-heading)}
   var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
   var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
 
-  // Get slug from localStorage (saved by checkout page before Stripe redirect)
   var slug = '';
-  try { slug = localStorage.getItem('moonraker-checkout-slug') || ''; } catch(e) {}
+  var checkoutType = '';
+  try {
+    slug = localStorage.getItem('moonraker-checkout-slug') || '';
+    checkoutType = localStorage.getItem('moonraker-checkout-type') || '';
+  } catch(e) {}
 
-  // Fallback: check URL params for slug
+  // Fallback: check URL params
   if (!slug) {
     var params = new URLSearchParams(window.location.search);
-    slug = params.get('slug') || '';
+    slug = params.get('slug') || params.get('client_reference_id') || '';
   }
 
-  var onboardingUrl = slug ? '/' + slug + '/onboarding' : '/';
-
-  document.getElementById('onboardingBtn').href = onboardingUrl;
-
-  if (slug) {
-    // Flip contact status to 'onboarding'
-    fetch(SB_URL + '/rest/v1/contacts?slug=eq.' + slug, {
+  function sbPatch(table, filter, body) {
+    return fetch(SB_URL + '/rest/v1/' + table + '?' + filter, {
       method: 'PATCH',
-      headers: {
-        'apikey': SB_ANON,
-        'Authorization': 'Bearer ' + SB_ANON,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ status: 'onboarding' })
-    }).then(function() {
-      console.log('Status updated to onboarding for ' + slug);
-    }).catch(function(err) {
-      console.error('Status update failed:', err);
+      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(body)
     });
+  }
 
-    // Clean up localStorage
-    try { localStorage.removeItem('moonraker-checkout-slug'); } catch(e) {}
+  function sbGet(path) {
+    return fetch(SB_URL + '/rest/v1/' + path, {
+      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON }
+    }).then(function(r) { return r.json(); });
+  }
 
-    // Auto-redirect countdown
+  if (!slug) {
+    document.getElementById('heading').textContent = 'Payment Received';
+    document.getElementById('message').textContent = 'Thank you! We could not determine your account automatically. Please contact support@moonraker.ai and we will get you set up.';
+    return;
+  }
+
+  // Clean up localStorage
+  try { localStorage.removeItem('moonraker-checkout-slug'); localStorage.removeItem('moonraker-checkout-type'); } catch(e) {}
+
+  if (checkoutType === 'entity-audit') {
+    handleEntityAudit();
+  } else {
+    handleCoreCheckout();
+  }
+
+  // ============================================================
+  // CORE CAMPAIGN CHECKOUT
+  // ============================================================
+  function handleCoreCheckout() {
+    document.getElementById('heading').textContent = 'Payment Confirmed!';
+    document.getElementById('message').textContent = 'Thank you for choosing Moonraker. We are excited to get started on your campaign. Your onboarding dashboard is ready.';
+
+    var onboardingUrl = '/' + slug + '/onboarding';
+    var btn = document.getElementById('actionBtn');
+    btn.href = onboardingUrl;
+    btn.textContent = 'Start Onboarding \u2192';
+    btn.style.display = 'inline-block';
+
+    document.getElementById('redirectNote').innerHTML = 'Redirecting automatically in <span id="countdown">5</span> seconds...';
+
+    // Flip contact status to onboarding
+    sbPatch('contacts', 'slug=eq.' + slug, { status: 'onboarding' })
+      .then(function() { console.log('Status updated to onboarding for ' + slug); })
+      .catch(function(err) { console.error('Status update failed:', err); });
+
+    // Auto-redirect
     var count = 5;
     var timer = setInterval(function() {
       count--;
-      document.getElementById('countdown').textContent = count;
-      if (count <= 0) {
-        clearInterval(timer);
-        window.location.href = onboardingUrl;
-      }
+      var el = document.getElementById('countdown');
+      if (el) el.textContent = count;
+      if (count <= 0) { clearInterval(timer); window.location.href = onboardingUrl; }
     }, 1000);
-  } else {
-    document.getElementById('redirectNote').textContent = 'Could not determine your account. Please contact support@moonraker.ai.';
+  }
+
+  // ============================================================
+  // ENTITY AUDIT CHECKOUT
+  // ============================================================
+  function handleEntityAudit() {
+    document.getElementById('heading').textContent = 'Premium Audit Confirmed!';
+    document.getElementById('message').textContent = 'Thank you for your purchase. Our team will begin preparing your premium entity audit package right away.';
+
+    var note = document.getElementById('deliveryNote');
+    note.style.display = 'block';
+    note.innerHTML = '<strong>What happens next:</strong> Within 48-72 hours you will receive your ready-to-deploy schema files and a personalized Loom walkthrough of your findings. We will also reach out to schedule your 30-minute strategy call.';
+
+    var btn = document.getElementById('actionBtn');
+    btn.href = '/' + slug + '/entity-audit';
+    btn.textContent = 'View Your Scorecard \u2192';
+    btn.style.display = 'inline-block';
+
+    // Look up contact and handle tier flip
+    sbGet('contacts?slug=eq.' + slug + '&select=id,audit_tier&limit=1')
+      .then(function(contacts) {
+        if (!contacts || contacts.length === 0) return;
+        var contact = contacts[0];
+
+        // Flip audit_tier to premium
+        sbPatch('contacts', 'slug=eq.' + slug, { audit_tier: 'premium' });
+
+        // Check for existing entity_audits row (upgrade vs new)
+        sbGet('entity_audits?contact_id=eq.' + contact.id + '&order=audit_date.desc&limit=1')
+          .then(function(audits) {
+            if (audits && audits.length > 0) {
+              // Upgrade existing audit
+              sbPatch('entity_audits', 'id=eq.' + audits[0].id, {
+                audit_tier: 'premium',
+                status: audits[0].status === 'delivered' ? 'delivered' : 'processing'
+              });
+            } else {
+              // New premium purchase - create row
+              fetch(SB_URL + '/rest/v1/entity_audits', {
+                method: 'POST',
+                headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                body: JSON.stringify({ contact_id: contact.id, audit_tier: 'premium', brand_query: slug, homepage_url: '', status: 'pending' })
+              });
+            }
+          });
+      });
   }
 })();
 </script>
