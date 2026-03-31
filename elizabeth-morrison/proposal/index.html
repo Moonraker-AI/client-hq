@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem("moonraker-theme");if(st){document.documentElement.setAttribute("data-theme",st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moonraker x Flourish Counseling: Growth Proposal</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+:root,[data-theme="light"]{--color-primary:#00D47E;--color-primary-hover:#00b86c;--color-primary-light:#B4EEE0;--color-primary-subtle:#DDF8F2;--color-bg:#F7FDFB;--color-surface:#FFFFFF;--color-border:#E2E8F0;--color-heading:#1E2A5E;--color-body:#333F70;--color-muted:#6B7599;--color-navy:#141C3A;--color-success:#00D47E;--color-warning:#F59E0B;--color-danger:#EF4444;--color-info:#3B82F6}
+[data-theme="dark"]{--color-primary:#00D47E;--color-primary-hover:#00f598;--color-primary-light:#1A4A38;--color-primary-subtle:#0D2E22;--color-bg:#080F0B;--color-surface:#0E1A14;--color-border:#1E3530;--color-heading:#E8F5EF;--color-body:#C8D8D0;--color-muted:#5A7A6E;--color-navy:#0A1630;--color-success:#00D47E;--color-warning:#F59E0B;--color-danger:#FF6B6B;--color-info:#60A5FA}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth;font-size:16px}body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-weight:400;color:var(--color-body);background:var(--color-bg);line-height:1.7;-webkit-font-smoothing:antialiased}h1,h2,h3,h4{font-family:'Outfit',sans-serif;font-weight:700;color:var(--color-heading);line-height:1.15}h1{font-size:2.75rem;letter-spacing:-0.02em}h2{font-size:2rem;margin-bottom:.75rem;letter-spacing:-0.01em}h3{font-size:1.35rem}h4{font-size:1.15rem}p{margin-bottom:1rem}a{color:var(--color-primary);text-decoration:none;transition:color .2s}a:hover{color:var(--color-primary-hover)}strong{font-weight:600;color:var(--color-heading)}
+.progress-bar{position:fixed;top:0;left:0;height:3px;background:var(--color-primary);width:0%;z-index:999;transition:width .1s linear;box-shadow:0 0 8px rgba(0,212,126,.4)}
+.section-nav{position:fixed;right:2rem;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:2px}@media(max-width:1140px){.section-nav{display:none}}.section-nav a{display:flex;align-items:center;gap:10px;padding:6px 12px 6px 8px;border-radius:8px;font-size:.75rem;font-weight:500;color:var(--color-muted);text-decoration:none;transition:all .25s ease;white-space:nowrap}.section-nav a:hover{color:var(--color-heading);background:var(--color-surface)}.section-nav a.active{color:var(--color-primary);background:var(--color-primary-subtle)}.section-nav .nav-dot{width:6px;height:6px;border-radius:50%;background:var(--color-border);flex-shrink:0;transition:all .25s ease}.section-nav a.active .nav-dot{background:var(--color-primary);width:8px;height:8px;box-shadow:0 0 6px rgba(0,212,126,.5)}
+.container{max-width:1060px;margin:0 auto;padding:0 3rem}@media(max-width:768px){.container{padding:0 1.5rem}}section{padding:4.5rem 0}.divider{height:1px;background:var(--color-border);border:none;margin:0}
+.theme-toggle{position:fixed;top:1.25rem;right:1.25rem;z-index:200;background:var(--color-surface);border:1px solid var(--color-border);border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.15rem;transition:all .25s ease;box-shadow:0 2px 8px rgba(0,0,0,.06)}.theme-toggle:hover{border-color:var(--color-primary);box-shadow:0 2px 12px rgba(0,212,126,.15)}
+.header{background:var(--color-navy);padding:2rem 0;position:relative;overflow:hidden}.header::before{content:'';position:absolute;top:-60%;right:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(0,212,126,.08) 0%,transparent 70%);pointer-events:none}.header-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}.header img{height:36px}.header-meta{text-align:right}.header-meta p{margin:0;font-size:.8125rem;color:rgba(232,245,239,.45)}.header-meta .name{color:#E8F5EF;font-weight:600;font-size:.9375rem}
+.hero{padding:5.5rem 0 4rem;position:relative;overflow:hidden}.hero::before{content:'';position:absolute;top:-100px;right:-80px;width:500px;height:500px;background:radial-gradient(circle at 30% 40%,rgba(0,212,126,.06) 0%,transparent 60%);pointer-events:none}.hero-layout{display:grid;grid-template-columns:1fr 280px;gap:3rem;align-items:center}@media(max-width:768px){.hero-layout{grid-template-columns:1fr}.hero-visual{display:none}}.hero-content{position:relative;z-index:1}.hero h1{margin-bottom:1rem}.hero .subtitle{font-size:1.0625rem;color:var(--color-muted);max-width:520px;line-height:1.7}.badge{display:inline-block;background:var(--color-primary-subtle);color:var(--color-primary);font-weight:600;font-size:.75rem;padding:.4rem 1rem;border-radius:100px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:1rem}
+.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:2rem;margin-bottom:1.5rem;transition:box-shadow .3s ease,transform .3s ease}.card:hover{box-shadow:0 8px 32px rgba(0,0,0,.05);transform:translateY(-2px)}.exec-summary .lead{font-size:1.0625rem;line-height:1.8}
+.scorecard-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin:2.5rem 0}@media(max-width:640px){.scorecard-grid{grid-template-columns:repeat(2,1fr)}}.score-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:1.5rem 1rem 1.25rem;text-align:center;position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s}.score-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.06)}.score-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}.score-card.score-low::after{background:var(--color-danger)}.score-card.score-med::after{background:var(--color-warning)}.ring-wrap{position:relative;width:88px;height:88px;margin:0 auto 12px}.ring-bg,.ring-fg{fill:none;stroke-width:5;stroke-linecap:round}.ring-bg{stroke:var(--color-border)}.ring-fg{transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1);transform:rotate(-90deg);transform-origin:center}.score-val{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Outfit',sans-serif;font-weight:700;font-size:1.375rem}.score-val span{font-size:.75rem;opacity:.4;font-weight:400}.score-low .ring-fg{stroke:var(--color-danger)}.score-low .score-val{color:var(--color-danger)}.score-med .ring-fg{stroke:var(--color-warning)}.score-med .score-val{color:var(--color-warning)}.score-label{font-size:.6875rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--color-muted);margin-bottom:2px}.score-pillar{font-family:'Outfit',sans-serif;font-weight:700;font-size:.9375rem;color:var(--color-heading)}
+.collapsible{margin-bottom:.75rem}.collapsible-toggle{width:100%;background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600;font-size:1rem;color:var(--color-heading);text-align:left;transition:all .2s ease}.collapsible-toggle:hover{border-color:var(--color-primary);box-shadow:0 2px 10px rgba(0,212,126,.06)}.collapsible-toggle .arrow{transition:transform .3s ease;color:var(--color-primary);font-size:1rem}.collapsible.open .collapsible-toggle .arrow{transform:rotate(180deg)}.collapsible.open .collapsible-toggle{border-radius:12px 12px 0 0}.collapsible-content{max-height:0;overflow:hidden;transition:max-height .4s ease;background:var(--color-surface);border:0 solid var(--color-border);border-width:0 1px;border-radius:0 0 12px 12px}.collapsible.open .collapsible-content{max-height:3000px;border-width:0 1px 1px 1px}.collapsible-content-inner{padding:1.25rem}.finding{display:flex;gap:.75rem;margin-bottom:.875rem;align-items:flex-start}.finding-icon{font-size:1.125rem;flex-shrink:0;margin-top:.1rem}.finding p{margin:0;font-size:.9375rem;line-height:1.7}.finding .highlight{font-weight:600;color:var(--color-heading)}
+.timeline{position:relative;padding-left:2rem;margin:2rem 0}.timeline::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--color-primary),var(--color-primary-light))}.timeline-item{position:relative;margin-bottom:2rem;padding-bottom:.5rem}.timeline-item::before{content:'';position:absolute;left:-2rem;top:6px;width:14px;height:14px;background:var(--color-primary);border-radius:50%;border:3px solid var(--color-bg)}.timeline-item h4{margin-bottom:.35rem}.timeline-item p{margin-bottom:.25rem;font-size:.9375rem}.timeline-phase{display:inline-block;font-size:.6875rem;font-weight:600;color:var(--color-primary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.25rem}
+.investment-card{background:var(--color-surface);border:2px solid var(--color-primary);border-radius:18px;padding:2.5rem;text-align:center;position:relative;overflow:hidden}.investment-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--color-primary),#00f598,var(--color-primary));background-size:200% 100%;animation:shimmer 3s ease infinite}@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}.investment-price{font-size:3.25rem;font-weight:700;color:var(--color-heading);margin:.75rem 0 .25rem;font-family:'Outfit',sans-serif}.investment-period{color:var(--color-muted);font-size:.9375rem;margin-bottom:1.5rem}.investment-features{text-align:left;max-width:480px;margin:0 auto 2rem}.investment-features li{list-style:none;padding:.5rem 0;border-bottom:1px solid var(--color-border);display:flex;align-items:center;gap:.6rem;font-size:.9375rem}.investment-features li:last-child{border-bottom:none}.check{color:var(--color-primary);font-weight:700;font-size:1.125rem}
+.cta-btn{display:inline-block;background:var(--color-primary);color:#fff;font-weight:600;font-size:1rem;padding:.875rem 2rem;border-radius:10px;transition:all .25s ease;text-decoration:none}.cta-btn:hover{background:var(--color-primary-hover);color:#fff;transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,212,126,.3)}.cta-btn-outline{display:inline-block;background:transparent;color:var(--color-primary);font-weight:600;font-size:.9375rem;padding:.7rem 1.75rem;border-radius:10px;border:2px solid var(--color-primary);transition:all .2s ease;text-decoration:none}.cta-btn-outline:hover{background:var(--color-primary-subtle);color:var(--color-primary)}.cta-group{display:flex;flex-wrap:wrap;justify-content:center;gap:1rem;margin-top:2.5rem}
+.roi-callout{background:var(--color-primary-subtle);border-left:4px solid var(--color-primary);border-radius:0 12px 12px 0;padding:1.5rem 2rem;margin:2rem 0}.roi-callout h4{color:var(--color-heading);margin-bottom:.5rem;font-size:1rem}.guarantee-box{background:linear-gradient(135deg,#141C3A,#1E3A5F);border-radius:16px;padding:2.5rem;color:#E8F5EF;margin:2rem 0;position:relative;overflow:hidden;border:1px solid rgba(59,130,246,.2)}.guarantee-box::before{content:'';position:absolute;top:-30%;right:-5%;width:260px;height:260px;background:radial-gradient(circle,rgba(0,212,126,.12) 0%,transparent 70%);pointer-events:none}.guarantee-box h3{color:var(--color-primary);margin-bottom:.75rem}.guarantee-box p{color:rgba(232,245,239,.9);margin-bottom:.5rem;font-size:1rem;line-height:1.6}.assets-note{background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px;padding:1.25rem 1.75rem;display:flex;gap:1rem;align-items:flex-start;margin:2rem 0}.assets-note .icon{font-size:1.25rem;flex-shrink:0}.assets-note p{margin:0;font-size:.9375rem}
+.confidential{text-align:center;padding:2rem 0;color:var(--color-muted);font-size:.8125rem;letter-spacing:.04em}.footer{background:var(--color-navy);padding:3rem 0;text-align:center;color:rgba(232,245,239,.4);font-size:.8125rem}.footer img{height:28px;margin-bottom:.75rem;opacity:.6}.footer a{color:var(--color-primary)}
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}.reveal.visible{opacity:1;transform:translateY(0)}
+.investment-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:2rem}@media(max-width:768px){.investment-grid{grid-template-columns:1fr}}.investment-card.recommended{border-color:var(--color-primary)}.investment-card.secondary{border:2px solid var(--color-border)}.investment-card.secondary::before{background:linear-gradient(90deg,var(--color-border),var(--color-muted),var(--color-border));background-size:200% 100%;animation:shimmer 3s ease infinite}.recommended-badge{position:absolute;top:12px;right:12px;background:var(--color-primary);color:#fff;font-size:.6875rem;font-weight:600;padding:.25rem .75rem;border-radius:100px;text-transform:uppercase;letter-spacing:.04em}
+@media print{.section-nav,.theme-toggle,.progress-bar{display:none !important}.reveal{opacity:1 !important;transform:none !important}.collapsible-content{max-height:none !important;border-width:0 1px 1px 1px !important}.collapsible-toggle .arrow{display:none}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<button class="theme-toggle" title="Toggle dark mode" id="themeBtn" aria-label="Toggle dark mode">&#x1F319;</button>
+<nav class="section-nav" id="sectionNav">
+  <a href="#hero"><span class="nav-dot"></span>Overview</a>
+  <a href="#summary"><span class="nav-dot"></span>What We Heard</a>
+  <a href="#assessment"><span class="nav-dot"></span>Assessment</a>
+  <a href="#strategy"><span class="nav-dot"></span>Strategy</a>
+  <a href="#timeline"><span class="nav-dot"></span>Roadmap</a>
+  <a href="#investment"><span class="nav-dot"></span>Investment</a>
+  <a href="#next"><span class="nav-dot"></span>Next Steps</a>
+</nav>
+
+<header class="header">
+  <div class="container header-inner">
+    <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker">
+    <div class="header-meta">
+      <p class="name">Prepared for Elizabeth Morrison, PhD, LCSW, MAC</p>
+      <p>Flourish Counseling Services &middot; Modesto, CA</p>
+      <p>April 1, 2026 &middot; Confidential</p>
+    </div>
+  </div>
+</header>
+
+<section class="hero" id="hero">
+  <div class="container">
+    <div class="hero-layout">
+      <div class="hero-content">
+        <span class="badge">Organic Growth Strategy</span>
+        <h1>Your Practice, Visible Where It Matters Most</h1>
+        <p class="subtitle">A CORE-based digital strategy to establish Flourish Counseling as the go-to resource for accessible, high-quality mental health counseling, starting locally in Modesto and expanding nationally.</p>
+      </div>
+      <div class="hero-visual">
+        <svg viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="140" cy="140" r="120" stroke="var(--color-primary)" stroke-width=".5" opacity=".2"/>
+          <circle cx="140" cy="140" r="90" stroke="var(--color-primary)" stroke-width=".5" opacity=".15"/>
+          <circle cx="140" cy="140" r="60" stroke="var(--color-primary)" stroke-width=".5" opacity=".1"/>
+          <circle cx="140" cy="60" r="8" fill="var(--color-primary)" opacity=".7"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="360 140 140" dur="20s" repeatCount="indefinite"/></circle>
+          <circle cx="230" cy="140" r="6" fill="var(--color-info)" opacity=".5"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="-360 140 140" dur="25s" repeatCount="indefinite"/></circle>
+          <circle cx="140" cy="200" r="5" fill="var(--color-warning)" opacity=".4"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="360 140 140" dur="30s" repeatCount="indefinite"/></circle>
+          <text x="140" y="136" text-anchor="middle" font-family="Outfit" font-weight="700" font-size="18" fill="var(--color-heading)">CORE</text>
+          <text x="140" y="156" text-anchor="middle" font-family="Inter" font-weight="400" font-size="11" fill="var(--color-muted)" letter-spacing=".08em">MARKETING SYSTEM</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+<hr class="divider">
+
+<section class="exec-summary reveal" id="summary">
+  <div class="container">
+    <h2>Elizabeth, Here's What We Heard</h2>
+    <div class="card" style="margin-top:1.5rem;">
+      <p class="lead">You've built something remarkable. Flourish started as a proof of concept for the Lay Counselor Academy, a way to demonstrate that trained lay counselors can deliver therapy that's comparable to what licensed clinicians provide. And the data backs it up. The California Health Care Foundation spent two years evaluating your program and confirmed exactly that. Now you have a team of 20 counselors, 8 organizational contracts, and a service model that works.</p>
+      <p class="lead">But the landscape has shifted. Public funding uncertainty has rattled your organizational pipeline, and you told us something that stayed with us: "I'm afraid I'm going to lose my team." That's not a marketing problem. That's a mission problem. These lay counselors you've invested in, who are doing incredible work without formal degrees, they need a sustainable caseload to keep doing it.</p>
+      <p class="lead">That's what led you to open Flourish to individual clients just a couple of months ago. The right move at the right time. But right now, the only way people find Flourish is through word of mouth. You don't have a Google Business Profile. You don't have social profiles beyond LinkedIn. Your website speaks to organizational buyers, not to someone searching "affordable counseling near me" at 11 PM on a Tuesday night. And at $136 per session with no insurance requirements and no state licensing barriers, you have one of the most accessible counseling services in the country. People just can't find it yet.</p>
+      <p class="lead">The goal is clear: protect your team by building a second revenue engine that doesn't depend on public funding cycles. More organizational contracts and more individual clients, both at the same time. That's what we're here to build.</p>
+    </div>
+  </div>
+</section>
+<hr class="divider">
+
+<section class="reveal" id="assessment">
+  <div class="container">
+    <h2>Your Current Digital Health</h2>
+    <p style="margin-bottom:1rem;">Every gap below is an opportunity. We've scored your presence across the four pillars of the CORE framework, the same system Google and AI platforms use (whether they know it or not) to decide who gets recommended.</p>
+    <div class="scorecard-grid">
+      <div class="score-card score-low"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="175.91"/></svg><div class="score-val">3<span>/10</span></div></div><div class="score-label">Pillar 1</div><div class="score-pillar">Credibility</div></div>
+      <div class="score-card score-low"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="201.04"/></svg><div class="score-val">2<span>/10</span></div></div><div class="score-label">Pillar 2</div><div class="score-pillar">Optimization</div></div>
+      <div class="score-card score-low"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="150.78"/></svg><div class="score-val">4<span>/10</span></div></div><div class="score-label">Pillar 3</div><div class="score-pillar">Reputation</div></div>
+      <div class="score-card score-low"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="175.91"/></svg><div class="score-val">3<span>/10</span></div></div><div class="score-label">Pillar 4</div><div class="score-pillar">Engagement</div></div>
+    </div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>Credibility: Can You Prove You Exist?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+      <div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">No Google Business Profile.</span> This is the single biggest gap. Without a GBP, Flourish is invisible on Google Maps and severely limited in AI recommendations. Setting up a GBP as a service area business is the foundation everything else builds on.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">No verifiable credentials for lay counselors.</span> Your team page shows 20+ people with headshots, which is great. But there are no credentials, bios, or verifiable links. Since lay counselors don't have traditional licenses or NPI numbers, we need to create an alternative verification pathway through LCA graduation records and structured bio content.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">Limited social footprint.</span> Only LinkedIn is actively used. Missing: Facebook Business, Quora Space, Instagram, Pinterest, TikTok, X. Google crawls all of these platforms and understands when they're connected to the same entity.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">WordPress site on Elementor.</span> A platform we work extremely well with. Full control over content, schema, and technical optimization.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">YouTube channel exists.</span> Currently used for LCA training content, but provides a foundation we can build on for Flourish visibility.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Elizabeth's personal credentials are strong.</span> PhD, LCSW, MAC with 25+ years of clinical practice. These anchor the credibility of the entire organization.</p></div></div>
+    </div></div></div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>Optimization: Can AI Understand What You Do?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+      <div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">No consumer-facing service pages.</span> The Flourish page targets organizational buyers exclusively. There are no dedicated pages for individual therapy, couples counseling, anxiety, depression, burnout, life transitions, or any consumer search terms.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">No schema markup detected.</span> No LocalBusiness, Person, Organization, FAQPage, or Service schema anywhere on the site. AI systems have no structured data to work with.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">No location keywords.</span> The site doesn't mention "Modesto," "Central Valley," "California," or any geographic terms. For someone searching locally, Flourish doesn't exist.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">No individual counselor bio pages.</span> 20+ counselors listed by name and photo only. No narrative bios, no specialties, no way for potential clients to feel a connection before reaching out.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">No FAQ sections.</span> No service-specific FAQs on any page. No general FAQ page covering fees, session format, or what to expect.</p></div></div>
+    </div></div></div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>Reputation: Can You Prove You're Good?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">CHCF independent evaluation.</span> The California Health Care Foundation spent two years evaluating the Lay Counselor Academy and published overwhelmingly positive findings. This is gold-standard third-party validation that most practices never achieve.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9989;</span><div><p><span class="highlight">Press coverage and thought leadership.</span> CHCF blog features, STAT News mentions, Modesto Bee front-page coverage, Centivox expert profile. Elizabeth has real media authority.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">No Google reviews.</span> Without a GBP, there's no review ecosystem. When AI compares Flourish to competitors with dozens of reviews, Flourish is at a disadvantage.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">CHCF validation is underutilized.</span> This incredible asset is barely featured on the site. It should be prominently displayed, embedded in schema, and distributed across all platforms.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">No press release syndication.</span> The organic press coverage is strong, but a syndicated press release across 500+ news sites would dramatically amplify the signal.</p></div></div>
+    </div></div></div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>Engagement: Is There a Path to Booking?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+      <div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">No booking path for individual clients.</span> The Flourish page mentions texting a number, but this is buried in the employee counseling context. There's no self-service scheduling for someone looking for a counselor.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">Homepage hero speaks to organizations, not individuals.</span> "Empathic Care For All" with "for both your clients and your employees" targets B2B. An individual searching for a therapist wouldn't see themselves here.</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">CTAs are vague.</span> "How we can help" and "Let's chat" don't tell individuals what to expect. No "Book a Free Consultation" or "Find Your Counselor."</p></div></div>
+      <div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">No trust elements above the fold.</span> Elizabeth's PhD, LCSW, the CHCF evaluation, the $136 price point, these should be immediately visible to build confidence.</p></div></div>
+    </div></div></div>
+  </div>
+</section>
+<hr class="divider">
+
+<section class="reveal" id="strategy">
+  <div class="container">
+    <h2>The CORE Strategy for Flourish</h2>
+    <p style="margin-bottom:2rem;">Every element below is interconnected. The website feeds the GBP. The GBP connects to the socials. The CHCF validation cross-references between platforms. AI sees the full picture and decides: Flourish is the real deal.</p>
+
+    <div class="card"><h3 style="margin-bottom:1rem;">Credibility: Prove Flourish is Real</h3><p><strong>Anchor your digital identity.</strong> We'll set up and optimize a Google Business Profile for Flourish as a service area business, verified through your Modesto location. This becomes the anchor for everything Google and AI need to see. We'll build out up to 9 social profiles (Facebook, Instagram, Quora, Pinterest, TikTok, X, plus your existing LinkedIn and YouTube) all interconnected and linked from the GBP. Directory listings across 15+ platforms establish consistent NAP data. For your lay counselors, we'll create a verification pathway by linking each counselor's bio to their LCA graduation record, creating the same kind of verifiable credential chain that licensed therapists have through state databases.</p></div>
+
+    <div class="card"><h3 style="margin-bottom:1rem;">Optimization: Make AI Understand What You Do</h3><p><strong>Build out 5 consumer-facing target pages.</strong> Based on your team's specialties and what people are actively searching for, we recommend dedicated pages for: Individual Counseling, Couples Counseling, Anxiety and Stress Support, Depression and Burnout Support, and an Online Therapy in California page. Each page gets comprehensive schema markup, service-specific FAQs from "People Also Ask" data, and heading structures optimized for AI citation. We'll build a counselor snapshot page with bios for each team member that gives potential clients a reason to connect before reaching out. Plus a general FAQ page covering fees, session format, booking process, and what to expect.</p></div>
+
+    <div class="card"><h3 style="margin-bottom:1rem;">Reputation: Amplify the Signal</h3><p><strong>Leverage your unfair advantage.</strong> The CHCF evaluation is an asset most practices will never have. We'll make sure it's prominently featured across your GBP, social profiles, bio pages, and schema markup. We'll distribute content across your YouTube channel, Quora Space, LinkedIn, Facebook, and GBP with a bi-weekly posting cadence. A syndicated press release across 500+ news sites announces Flourish's direct-to-community services and reinforces the CHCF-validated approach. Professional endorsement collection from colleagues who can speak to your team's effectiveness rounds out the reputation signals AI systems trust most.</p></div>
+
+    <div class="card"><h3 style="margin-bottom:1rem;">Engagement: Convert Visitors to Clients</h3><p><strong>Design for the individual seeking help.</strong> We'll optimize your site's conversion path for someone searching for affordable, accessible counseling. That means a hero section that speaks directly to individuals (not organizations), a clear CTA like "Find Your Counselor" or "Book a Free Consultation," your $136 price point and CHCF validation visible above the fold, and a streamlined path from discovery to booking. Every page designed to answer the question: "Can this team help me, and how do I get started?"</p></div>
+
+    <div class="roi-callout"><h4>The Dual-Audience Opportunity</h4><p style="margin-bottom:0;">Everything we build for individual client acquisition also strengthens Flourish's organizational pitch. When an HR director Googles your company and finds a well-optimized site with verified counselors, CHCF backing, Google reviews, and a professional media presence, that's the kind of credibility that closes contracts. The organic foundation works for both audiences simultaneously.</p></div>
+  </div>
+</section>
+<hr class="divider">
+
+<section class="reveal" id="timeline">
+  <div class="container">
+    <h2>Your Campaign Roadmap</h2>
+    <p style="margin-bottom:2rem;">Here's what happens after you sign. Week by week, no mystery.</p>
+    <div class="timeline">
+      <div class="timeline-item"><span class="timeline-phase">Week 1</span><h4>Onboarding and Intake</h4><p>Pay invoice, complete intake forms, onboarding call with Scott Pope (Director of Growth). Establish targets, review counselor details, confirm 5 target pages, grant website and property access.</p></div>
+      <div class="timeline-item"><span class="timeline-phase">Weeks 2 to 3</span><h4>Deep Audit and Foundation</h4><p>Comprehensive site audit with our Surge platform. Set up Google Business Profile as a service area business. Create and brand all social profiles. Interconnect all profiles. Configure 15+ directory listings. Begin NAP alignment.</p></div>
+      <div class="timeline-item"><span class="timeline-phase">Weeks 3 to 6</span><h4>Website Optimization and Build-Out</h4><p>Build 5 consumer-facing target pages with custom HTML. Build counselor bio snapshots. Build general FAQ page. Implement full schema markup (LocalBusiness, Person, Service, FAQPage). Optimize heading hierarchy, title tags, URL structure. Speed and security audit. Install caching and instant.page.</p></div>
+      <div class="timeline-item"><span class="timeline-phase">Weeks 4 to 6</span><h4>GBP and Local Optimization</h4><p>Align GBP services and categories with new site pages. Add all social links to GBP. Upload photos. Configure GBP attributes. Begin bi-weekly posting cadence. Activate LiveDrive and NEO unique image strategy.</p></div>
+      <div class="timeline-item"><span class="timeline-phase">Weeks 6 to 8</span><h4>Press Release and Off-Page</h4><p>Syndicated press release across 500+ news sites highlighting Flourish's direct-to-community launch and CHCF-validated approach. Entity Veracity Hub activation. YouTube content featuring endorsements. Quora Space creation and content seeding.</p></div>
+      <div class="timeline-item"><span class="timeline-phase">Months 3 to 12</span><h4>Amplify, Distribute, and Grow</h4><p>Continued bi-weekly content distribution across 4 platforms. Ongoing NEO image distribution. LiveDrive local signal strategy. Professional endorsement replication across platforms. AI visibility monitoring. Monthly reporting. Quarterly strategy reviews.</p></div>
+    </div>
+  </div>
+</section>
+<hr class="divider">
+
+<section class="reveal" id="investment">
+  <div class="container">
+    <h2>Your Investment</h2>
+    <div class="investment-grid">
+
+      <div class="investment-card recommended" style="position:relative;">
+        <span class="recommended-badge">Best Value</span>
+        <span class="badge">12-Month CORE Campaign</span>
+        <div class="investment-price">$20,000</div>
+        <div class="investment-period">One-time &middot; Full 12-month campaign + performance guarantee</div>
+        <ul class="investment-features">
+          <li><span class="check">&#10003;</span> Complete CORE audit via Surge platform</li>
+          <li><span class="check">&#10003;</span> 5 fully optimized service pages + counselor bios + FAQ page</li>
+          <li><span class="check">&#10003;</span> Full schema markup implementation</li>
+          <li><span class="check">&#10003;</span> Google Business Profile setup, optimization, and posting</li>
+          <li><span class="check">&#10003;</span> Social profile build-out and branding (up to 9 platforms)</li>
+          <li><span class="check">&#10003;</span> Directory listing activation and NAP alignment (15+ sites)</li>
+          <li><span class="check">&#10003;</span> Syndicated press release (500+ news sites)</li>
+          <li><span class="check">&#10003;</span> YouTube channel optimization + content</li>
+          <li><span class="check">&#10003;</span> Quora Space creation and content seeding</li>
+          <li><span class="check">&#10003;</span> LiveDrive + NEO + Entity Veracity Hub activation</li>
+          <li><span class="check">&#10003;</span> Ongoing social content distribution (2 posts/mo across 4 platforms)</li>
+          <li><span class="check">&#10003;</span> AI visibility monitoring across all major platforms</li>
+          <li><span class="check">&#10003;</span> Monthly reporting and quarterly strategy reviews</li>
+          <li><span class="check">&#10003;</span> Website speed and security optimization</li>
+          <li><span class="check">&#10003;</span> Hero section and CRO optimization</li>
+          <li><span class="check">&#10003;</span> <strong>Performance guarantee included</strong></li>
+        </ul>
+        <a href="https://invoice.stripe.com/i/acct_1GyMnvBQh6FUgIfx/live_YWNjdF8xR3lNbnZCUWg2RlVnSWZ4LF9VRmZMTzU4YVRGckRKa2RZcHJiVmdrRUZqUGpacGU2LDE2NTUzNDAxMQ0200yi9aMCJg?s=ap" class="cta-btn" target="_blank">Get Started &mdash; 12 Months &#8594;</a>
+      </div>
+
+      <div class="investment-card secondary">
+        <span class="badge" style="background:var(--color-surface);border:1px solid var(--color-border);color:var(--color-heading);">3-Month Foundation Build</span>
+        <div class="investment-price">$5,000</div>
+        <div class="investment-period">One-time &middot; Technical foundation + 3 months of active build-out</div>
+        <ul class="investment-features">
+          <li><span class="check">&#10003;</span> Complete CORE audit via Surge platform</li>
+          <li><span class="check">&#10003;</span> 5 fully optimized service pages + counselor bios + FAQ page</li>
+          <li><span class="check">&#10003;</span> Full schema markup implementation</li>
+          <li><span class="check">&#10003;</span> Google Business Profile setup and optimization</li>
+          <li><span class="check">&#10003;</span> Social profile build-out and branding (up to 9 platforms)</li>
+          <li><span class="check">&#10003;</span> Directory listing activation and NAP alignment (15+ sites)</li>
+          <li><span class="check">&#10003;</span> Website speed and security optimization</li>
+          <li><span class="check">&#10003;</span> Hero section and CRO optimization</li>
+          <li><span class="check">&#10003;</span> AI visibility monitoring across all major platforms</li>
+          <li><span class="check">&#10003;</span> End-of-engagement performance review</li>
+        </ul>
+        <a href="https://invoice.stripe.com/i/acct_1GyMnvBQh6FUgIfx/live_YWNjdF8xR3lNbnZCUWg2RlVnSWZ4LF9VRmZMZ2Fia3ZUdjZzSzc4NzNNR1E3T1d6dkt5a0ZpLDE2NTUzNDAyNA0200gPUTOD7n?s=ap" class="cta-btn-outline" target="_blank">Get Started &mdash; 3 Months &#8594;</a>
+      </div>
+
+    </div>
+
+    <div class="roi-callout"><h4>The Math That Matters</h4><p style="margin-bottom:0;">At $136 per session with an average of 20 sessions per client, each new individual client represents approximately $2,720 in revenue. For the 12-month campaign, doubling the $20,000 investment requires roughly 15 new individual clients over 12 months, or just over one new client per month. For the 3-month foundation, just two new clients covers the investment. Given that you have 20 counselors with available capacity and zero current organic visibility, these targets are very achievable.</p></div>
+
+    <div class="guarantee-box">
+      <h3>Performance Guarantee (12-Month Only)</h3>
+      <p>It's very important to us that our success aligns with yours. Our goal is to ensure that you double your investment in the form of new client revenue in the first year, or we continue running services for free until you get there.</p>
+      <p>We build this guarantee together from your historical data: average client lifetime value, consultation conversion rate, show rate, and current lead velocity. We reverse-engineer a benchmark of booked consultations that maps directly to your revenue target. No other agency in this space offers a similar guarantee.</p>
+      <p><a href="https://drive.google.com/file/d/1Dhy-yf4y4gMomCFeR7kvyNcZFJ-8k90c/view?usp=sharing" target="_blank" style="color:var(--color-primary);text-decoration:underline;">See a real example of how we structure this &rarr;</a></p>
+    </div>
+
+    <div class="guarantee-box" style="background:linear-gradient(135deg,#1A2A4A,#1E3A5F);">
+      <h3>Looking Ahead: 3-Month to 12-Month</h3>
+      <p>The 3-month foundation builds the entire technical infrastructure. If you choose to continue after 3 months, upgrading to the annual engagement adds ongoing content distribution, press release syndication, reputation amplification, and the performance guarantee. You'll have 3 months of real data to make that decision with confidence.</p>
+    </div>
+  </div>
+</section>
+<hr class="divider">
+
+<section class="reveal" id="next">
+  <div class="container">
+    <h2>What Happens Next</h2>
+    <div class="card">
+      <div style="display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.25rem;">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;">1</div>
+        <div><h4>Talk to Mike About Google Ads</h4><p style="margin-bottom:0;">Mike Ensor (our Director of Paid Media) can get Google Ads running quickly to generate immediate individual client leads while we build the organic foundation. He'll give you a clear picture of what paid traffic looks like for Flourish.</p></div>
+      </div>
+      <div style="display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.25rem;">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;">2</div>
+        <div><h4>Choose Your Plan and Pay the Invoice</h4><p style="margin-bottom:0;">Select the 12-month CORE campaign or the 3-month foundation build above. You'll be redirected to complete payment and then receive onboarding instructions.</p></div>
+      </div>
+      <div style="display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.25rem;">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;">3</div>
+        <div><h4>Complete Your Intake (about 30 minutes)</h4><p style="margin-bottom:0;">Practice details, counselor information, ideal client profiles, specialties, and anything we need to build your pages authentically.</p></div>
+      </div>
+      <div style="display:flex;gap:1rem;align-items:flex-start;">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;">4</div>
+        <div><h4>Onboarding Call with Scott</h4><p style="margin-bottom:0;">We review everything, set targets, confirm your 5 target pages, and walk through the GBP verification process. Then we get to work.</p></div>
+      </div>
+    </div>
+    <div class="assets-note"><span class="icon">&#128737;&#65039;</span><div><p><strong>Your assets are always yours.</strong> Everything we build (pages, content, social profiles, directory listings, schema markup) remains your property. If our engagement ends, nothing is removed. You keep it all.</p></div></div>
+    <div class="cta-group">
+      <a href="https://invoice.stripe.com/i/acct_1GyMnvBQh6FUgIfx/live_YWNjdF8xR3lNbnZCUWg2RlVnSWZ4LF9VRmZMTzU4YVRGckRKa2RZcHJiVmdrRUZqUGpacGU2LDE2NTUzNDAxMQ0200yi9aMCJg?s=ap" class="cta-btn" target="_blank">Get Started &mdash; 12 Months &#8594;</a>
+      <a href="https://invoice.stripe.com/i/acct_1GyMnvBQh6FUgIfx/live_YWNjdF8xR3lNbnZCUWg2RlVnSWZ4LF9VRmZMZ2Fia3ZUdjZzSzc4NzNNR1E3T1d6dkt5a0ZpLDE2NTUzNDAyNA0200gPUTOD7n?s=ap" class="cta-btn-outline" target="_blank">Get Started &mdash; 3 Months &#8594;</a>
+      <a href="https://msg.moonraker.ai/widget/bookings/scott-pope-calendar" class="cta-btn-outline" target="_blank">Book a Call with Scott</a>
+    </div>
+  </div>
+</section>
+
+<div style="text-align:center;padding:1.5rem 0;"><a href="/agreement" target="_blank" style="color:var(--color-muted);font-size:.875rem;text-decoration:underline;text-underline-offset:3px;">Review our Client Service Agreement</a></div>
+<div class="confidential"><div class="container">This proposal is confidential and prepared exclusively for Elizabeth Morrison, PhD, LCSW, MAC.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai</div></div>
+<footer class="footer"><div class="container"><img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker"><br><a href="https://moonraker.ai">moonraker.ai</a></div></footer>
+
+<script>
+(function(){var themeBtn=document.getElementById('themeBtn');if(themeBtn){themeBtn.addEventListener('click',function(){var h=document.documentElement;document.body.style.transition='opacity .25s ease';document.body.style.opacity='0';setTimeout(function(){if(h.getAttribute('data-theme')==='light'){h.setAttribute('data-theme','dark');themeBtn.innerHTML='&#9728;&#65039;';try{localStorage.setItem('moonraker-theme','dark')}catch(e){}}else{h.setAttribute('data-theme','light');themeBtn.innerHTML='&#x1F319;';try{localStorage.setItem('moonraker-theme','light')}catch(e){}}document.body.style.transition='opacity .3s ease';document.body.style.opacity='1';setTimeout(function(){document.body.style.transition=''},400)},280)})}var progressBar=document.getElementById('progressBar');function updateProgress(){var scrollTop=window.scrollY;var docHeight=document.documentElement.scrollHeight-window.innerHeight;progressBar.style.width=(docHeight>0?(scrollTop/docHeight)*100:0)+'%'}var sections=document.querySelectorAll('section[id]');var navLinks=document.querySelectorAll('.section-nav a');function updateNav(){var current='';sections.forEach(function(s){if(window.scrollY>=s.offsetTop-200)current=s.id});navLinks.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+current)})}var ringsAnimated=false;function animateRings(){if(ringsAnimated)return;var grid=document.querySelector('.scorecard-grid');if(!grid)return;if(grid.getBoundingClientRect().top<window.innerHeight*0.8){ringsAnimated=true;document.querySelectorAll('.ring-fg').forEach(function(c){c.style.strokeDashoffset=c.getAttribute('data-target')})}}var reveals=document.querySelectorAll('.reveal');function checkReveal(){reveals.forEach(function(el){if(el.getBoundingClientRect().top<window.innerHeight*0.88)el.classList.add('visible')})}function onScroll(){updateProgress();updateNav();animateRings();checkReveal()}window.addEventListener('scroll',onScroll);onScroll();document.querySelectorAll('.collapsible-toggle').forEach(function(t){t.addEventListener('click',function(){this.parentElement.classList.toggle('open')})})})();
+</script>
+</body>
+</html>
