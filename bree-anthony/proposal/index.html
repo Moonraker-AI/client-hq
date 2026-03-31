@@ -409,7 +409,7 @@ section { padding: 4.5rem 0; }
   if (themeBtn) {
     themeBtn.addEventListener('click', function() {
       var h = document.documentElement;
-      document.body.style.transition='opacity .15s ease';
+      document.body.style.transition='opacity .25s ease';
       document.body.style.opacity='0';
       setTimeout(function(){
         if (h.getAttribute('data-theme') === 'light') {
@@ -421,9 +421,10 @@ section { padding: 4.5rem 0; }
           themeBtn.innerHTML = '&#x1F319;';
           try{localStorage.setItem('moonraker-theme','light')}catch(e){}
         }
+        document.body.style.transition='opacity .3s ease';
         document.body.style.opacity='1';
-        setTimeout(function(){document.body.style.transition=''},350);
-      },150);
+        setTimeout(function(){document.body.style.transition=''},400);
+      },280);
     });
   }
 
