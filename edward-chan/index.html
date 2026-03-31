@@ -151,6 +151,7 @@ section { padding: 4.5rem 0; }
 .onboarding-item { display: flex; align-items: center; gap: 1rem; padding: .875rem 1rem; border-bottom: 1px solid var(--color-border); font-size: .9375rem; transition: background .2s; }
 .onboarding-item:last-child { border-bottom: none; }
 .onboarding-item:hover { background: var(--color-primary-subtle); }
+.onboarding-item a { display: flex; align-items: center; gap: 1rem; text-decoration: none; color: inherit; width: 100%; }
 .onboarding-check { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: .75rem; }
 .onboarding-check.done { background: var(--color-success); color: #fff; }
 .onboarding-check.pending { background: var(--color-border); color: var(--color-muted); }
@@ -562,9 +563,12 @@ section { padding: 4.5rem 0; }
           var checkIcon = s.status === 'complete' ? '&#10003;' : (s.status === 'in_progress' ? '&#9679;' : '');
           var labelClass = s.status === 'complete' ? 'done-label' : '';
           var note = s.notes ? '<span class="onboarding-step-note">' + s.notes + '</span>' : '';
+          var href = '/' + CLIENT_SLUG + '/onboarding#' + s.step_key;
           listHTML += '<li class="onboarding-item">' +
+            '<a href="' + href + '">' +
             '<div class="onboarding-check ' + checkClass + '">' + checkIcon + '</div>' +
-            '<span class="onboarding-step-label ' + labelClass + '">' + s.label + '</span>' + note + '</li>';
+            '<span class="onboarding-step-label ' + labelClass + '">' + s.label + '</span>' + note +
+            '</a></li>';
         });
         document.getElementById('onboardingList').innerHTML = listHTML;
       }
@@ -631,9 +635,12 @@ section { padding: 4.5rem 0; }
         var checkIcon = s.status === 'complete' ? '&#10003;' : (s.status === 'in_progress' ? '&#9679;' : '');
         var labelClass = s.status === 'complete' ? 'done-label' : '';
         var note = s.notes ? '<span class="onboarding-step-note">' + s.notes + '</span>' : '';
+        var href = '/' + CLIENT_SLUG + '/onboarding#' + s.step_key;
         listHTML += '<li class="onboarding-item">' +
+          '<a href="' + href + '">' +
           '<div class="onboarding-check ' + checkClass + '">' + checkIcon + '</div>' +
-          '<span class="onboarding-step-label ' + labelClass + '">' + s.label + '</span>' + note + '</li>';
+          '<span class="onboarding-step-label ' + labelClass + '">' + s.label + '</span>' + note +
+          '</a></li>';
       });
       document.getElementById('onboardingList').innerHTML = listHTML;
     }
