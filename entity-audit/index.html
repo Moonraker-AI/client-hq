@@ -608,6 +608,8 @@ section { padding: 5rem 0; }
     hideError();
 
     var slug = slugify(practiceName || firstName + ' ' + lastName);
+    // Add short random suffix to prevent slug collisions
+    slug = slug + '-' + Math.random().toString(36).substring(2, 6);
     var brandQuery = practiceName || firstName + ' ' + lastName;
 
     // Determine source value
