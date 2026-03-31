@@ -809,6 +809,15 @@ strong { font-weight: 600; color: var(--color-heading); }
       .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); });
   }
 
+  // Route through /api/action (uses service role key, bypasses RLS)
+  function apiAction(action, table, filters, data) {
+    return fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: action, table: table, filters: filters || undefined, data: data })
+    }).then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  }
+
   // ============================================================
   // STEP NAVIGATION
   // ============================================================
@@ -1390,17 +1399,14 @@ strong { font-weight: 600; color: var(--color-heading); }
       after_care: document.getElementById('pd_after_care').value.trim()
     };
 
-    var method = practiceData ? 'PATCH' : 'POST';
-    var url = practiceData
-      ? SB_URL + '/rest/v1/practice_details?contact_id=eq.' + contact.id
-      : SB_URL + '/rest/v1/practice_details';
-    var h = sbHeaders(); h['Prefer'] = 'return=representation';
-
-    return fetch(url, { method: method === 'PATCH' ? 'PATCH' : 'POST', headers: h, body: JSON.stringify(method === 'POST' ? data : (delete data.contact_id, data)) })
-      .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function(res) {
-        practiceData = Array.isArray(res) ? res[0] : res;
-      });
+    if (practiceData) {
+      delete data.contact_id;
+      return apiAction('update_record', 'practice_details', { contact_id: contact.id }, data)
+        .then(function(res) { practiceData = (res.data && res.data[0]) || practiceData; });
+    } else {
+      return apiAction('create_record', 'practice_details', null, data)
+        .then(function(res) { practiceData = (res.data && res.data[0]) || res.data || data; });
+    }
   };
 
   // ============================================================
@@ -1420,17 +1426,14 @@ strong { font-weight: 600; color: var(--color-heading); }
     var npi = document.getElementById('bio_npi').value.trim();
     if (npi) { sbPatch('contacts', 'id=eq.' + contact.id, { npi_number: npi }); }
 
-    var method = bioData ? 'PATCH' : 'POST';
-    var url = bioData
-      ? SB_URL + '/rest/v1/bio_materials?contact_id=eq.' + contact.id + '&is_primary=eq.true'
-      : SB_URL + '/rest/v1/bio_materials';
-    var h = sbHeaders(); h['Prefer'] = 'return=representation';
-
-    return fetch(url, { method: method === 'PATCH' ? 'PATCH' : 'POST', headers: h, body: JSON.stringify(method === 'POST' ? data : (delete data.contact_id, data)) })
-      .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function(res) {
-        bioData = Array.isArray(res) ? res[0] : res;
-      });
+    if (bioData) {
+      delete data.contact_id;
+      return apiAction('update_record', 'bio_materials', { contact_id: contact.id, is_primary: 'eq.true' }, data)
+        .then(function(res) { bioData = (res.data && res.data[0]) || bioData; });
+    } else {
+      return apiAction('create_record', 'bio_materials', null, data)
+        .then(function(res) { bioData = (res.data && res.data[0]) || res.data || data; });
+    }
   };
 
   // ============================================================
@@ -1465,19 +1468,18 @@ strong { font-weight: 600; color: var(--color-heading); }
     return sbPatch('contacts', 'id=eq.' + contact.id, socialData).then(function() {
       Object.assign(contact, socialData);
 
-      // Save directories to practice_details
+      // Save directories to practice_details via API (service role key)
       var pdUpdate = { additional_services: JSON.stringify(directories) };
       if (omit) pdUpdate.content_to_omit = omit;
-      var pdMethod = practiceData ? 'PATCH' : 'POST';
-      var pdUrl = practiceData
-        ? SB_URL + '/rest/v1/practice_details?contact_id=eq.' + contact.id
-        : SB_URL + '/rest/v1/practice_details';
-      var h = sbHeaders(); h['Prefer'] = 'return=representation';
-      var pdBody = pdMethod === 'POST' ? Object.assign({ contact_id: contact.id }, pdUpdate) : pdUpdate;
 
-      return fetch(pdUrl, { method: pdMethod, headers: h, body: JSON.stringify(pdBody) })
-        .then(function(r) { return r.json(); })
-        .then(function(res) { practiceData = Array.isArray(res) ? res[0] : res; });
+      if (practiceData) {
+        return apiAction('update_record', 'practice_details', { contact_id: contact.id }, pdUpdate)
+          .then(function(res) { practiceData = (res.data && res.data[0]) || practiceData; });
+      } else {
+        pdUpdate.contact_id = contact.id;
+        return apiAction('create_record', 'practice_details', null, pdUpdate)
+          .then(function(res) { practiceData = (res.data && res.data[0]) || res.data || pdUpdate; });
+      }
     });
   };
 
