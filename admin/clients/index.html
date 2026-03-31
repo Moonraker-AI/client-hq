@@ -2004,7 +2004,6 @@ strong { font-weight: 600; color: var(--color-heading); }
     var c = state.contact;
     var name = c.practice_name || c.slug;
     if (!confirm('Permanently delete "' + name + '"?\n\nThis will remove the contact and all related data (onboarding steps, entity audits, checklist items, etc.). This cannot be undone.')) return;
-    if (!confirm('Are you sure? Type the practice name or slug to confirm.\n\nExpected: ' + name)) return;
 
     // Cascade delete related tables first, then contact
     var tables = [
@@ -2020,7 +2019,6 @@ strong { font-weight: 600; color: var(--color-heading); }
       { table: 'report_snapshots', filters: { client_slug: c.slug } }
     ];
 
-    // Sequential deletes
     var chain = Promise.resolve();
     tables.forEach(function(t) {
       chain = chain.then(function() {
@@ -2028,19 +2026,18 @@ strong { font-weight: 600; color: var(--color-heading); }
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'delete_record', table: t.table, filters: t.filters })
-        }).catch(function() { /* ignore missing tables */ });
+        }).catch(function() {});
       });
     });
 
     chain.then(function() {
-      // Finally delete the contact itself
       return fetch('/api/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'delete_record', table: 'contacts', filters: { id: c.id } })
       });
     }).then(function() {
-      alert('Contact deleted. Redirecting to directory.');
+      alert('Contact deleted.');
       window.location.href = '/admin/clients';
     }).catch(function(err) {
       alert('Error deleting contact: ' + err.message);
