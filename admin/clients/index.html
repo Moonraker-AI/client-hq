@@ -54,6 +54,9 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html.theme-transition, html.theme-transition *, html.theme-transition *::before, html.theme-transition *::after {
+  transition: background-color .35s ease, color .35s ease, border-color .35s ease, fill .35s ease, box-shadow .35s ease !important;
+}
 html { font-size: 17px; }
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.6; -webkit-font-smoothing: antialiased; transition: background .3s, color .3s; overflow-x: hidden; }
 h1,h2,h3,h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.2; }
@@ -2275,6 +2278,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     themeBtn.innerHTML = _curTheme === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
     themeBtn.addEventListener('click', function() {
       var h = document.documentElement;
+      h.classList.add('theme-transition');
       if (h.getAttribute('data-theme') === 'light') {
         h.setAttribute('data-theme', 'dark'); themeBtn.innerHTML = '&#9728;&#65039;';
         try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
@@ -2282,6 +2286,7 @@ strong { font-weight: 600; color: var(--color-heading); }
         h.setAttribute('data-theme', 'light'); themeBtn.innerHTML = '&#x1F319;';
         try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
       }
+      setTimeout(function() { h.classList.remove('theme-transition'); }, 400);
     });
   }
   // ============================================================
