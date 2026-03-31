@@ -11,8 +11,6 @@
 :root,[data-theme="light"]{--color-primary:#00D47E;--color-primary-hover:#00b86c;--color-primary-light:#B4EEE0;--color-primary-subtle:#DDF8F2;--color-bg:#F7FDFB;--color-surface:#FFFFFF;--color-border:#E2E8F0;--color-heading:#1E2A5E;--color-body:#333F70;--color-muted:#6B7599;--color-navy:#141C3A;--color-success:#00D47E;--color-warning:#F59E0B;--color-danger:#EF4444;--color-info:#3B82F6}
 [data-theme="dark"]{--color-primary:#00D47E;--color-primary-hover:#00f598;--color-primary-light:#1A4A38;--color-primary-subtle:#0D2E22;--color-bg:#080F0B;--color-surface:#0E1A14;--color-border:#1E3530;--color-heading:#E8F5EF;--color-body:#C8D8D0;--color-muted:#5A7A6E;--color-navy:#0A1630}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html.theme-transition,html.theme-transition *,html.theme-transition *::before,html.theme-transition *::after{transition:all .35s ease !important}
-
 html{scroll-behavior:smooth;font-size:16px}
 body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-weight:400;color:var(--color-body);background:var(--color-bg);line-height:1.7;-webkit-font-smoothing:antialiased;}
 h1,h2,h3,h4{font-family:'Outfit',sans-serif;font-weight:700;color:var(--color-heading);line-height:1.15}
@@ -348,10 +346,12 @@ strong{font-weight:600;color:var(--color-heading)}
     themeBtn.innerHTML = ct === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
     themeBtn.addEventListener('click', function() {
       var h = document.documentElement;
-      h.classList.add('theme-transition');
+      document.body.style.transition='opacity .15s ease';document.body.style.opacity='0';
+      setTimeout(function(){
       if (h.getAttribute('data-theme') === 'light') { h.setAttribute('data-theme', 'dark'); themeBtn.innerHTML = '&#9728;&#65039;'; try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {} }
       else { h.setAttribute('data-theme', 'light'); themeBtn.innerHTML = '&#x1F319;'; try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {} }
-      setTimeout(function(){h.classList.remove('theme-transition')},400);
+      document.body.style.opacity='1';setTimeout(function(){document.body.style.transition=''},350);
+      },150);
     });
   }
   init();
