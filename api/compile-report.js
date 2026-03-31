@@ -81,6 +81,23 @@ module.exports = async function handler(req, res) {
     catch (e) { errors.push(label + ': ' + (e.message || String(e))); return null; }
   }
 
+  // Fetch with timeout (AbortController)
+  async function fetchT(url, opts, timeoutMs) {
+    timeoutMs = timeoutMs || 25000;
+    var controller = new AbortController();
+    var timer = setTimeout(function() { controller.abort(); }, timeoutMs);
+    try {
+      var mergedOpts = Object.assign({}, opts, { signal: controller.signal });
+      var resp = await fetch(url, mergedOpts);
+      clearTimeout(timer);
+      return resp;
+    } catch (e) {
+      clearTimeout(timer);
+      if (e.name === 'AbortError') throw new Error('Timeout after ' + timeoutMs + 'ms');
+      throw e;
+    }
+  }
+
   // ─── STEP 1: Load report config + contact ─────────────────────
   try {
     var configResp = await fetch(sbUrl + '/rest/v1/report_configs?client_slug=eq.' + clientSlug + '&active=eq.true&limit=1', { headers: sbHeaders() });
@@ -116,8 +133,11 @@ module.exports = async function handler(req, res) {
     return (rows && rows.length > 0) ? rows[0] : null;
   });
 
-  // ─── STEP 3: Pull Google Search Console data ──────────────────
-  var gscData = await safe('gsc', async function() {
+  // ─── STEPS 3-7: Pull all data sources IN PARALLEL ──────────────
+  // GSC, GBP, DataForSEO, and tasks all run concurrently.
+  // Within DataForSEO, all 5 engines also run concurrently.
+
+  var gscFn = safe('gsc', async function() {
     if (!googleSA || !config.gsc_property) {
       warnings.push('GSC: skipped (no credentials or property configured)');
       return null;
@@ -125,78 +145,57 @@ module.exports = async function handler(req, res) {
     var token = await getGoogleAccessToken(googleSA);
     if (!token) { warnings.push('GSC: could not get access token'); return null; }
 
-    // Aggregate totals
-    var totalResp = await fetch('https://www.googleapis.com/webmasters/v3/sites/' + encodeURIComponent(config.gsc_property) + '/searchAnalytics/query', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ startDate: range.start, endDate: range.end, dimensions: [], rowLimit: 1 })
-    });
-    var totalData = await totalResp.json();
-    var totals = (totalData.rows && totalData.rows[0]) || {};
+    var gscBase = 'https://www.googleapis.com/webmasters/v3/sites/' + encodeURIComponent(config.gsc_property) + '/searchAnalytics/query';
+    var gscHeaders = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
 
-    // Top pages
-    var pagesResp = await fetch('https://www.googleapis.com/webmasters/v3/sites/' + encodeURIComponent(config.gsc_property) + '/searchAnalytics/query', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ startDate: range.start, endDate: range.end, dimensions: ['page'], rowLimit: 10, orderBy: [{ fieldName: 'clicks', sortOrder: 'DESCENDING' }] })
-    });
-    var pagesData = await pagesResp.json();
+    // Run all 3 GSC queries in parallel
+    var results = await Promise.all([
+      fetchT(gscBase, { method: 'POST', headers: gscHeaders, body: JSON.stringify({ startDate: range.start, endDate: range.end, dimensions: [], rowLimit: 1 }) }, 15000).then(function(r) { return r.json(); }),
+      fetchT(gscBase, { method: 'POST', headers: gscHeaders, body: JSON.stringify({ startDate: range.start, endDate: range.end, dimensions: ['page'], rowLimit: 10, orderBy: [{ fieldName: 'clicks', sortOrder: 'DESCENDING' }] }) }, 15000).then(function(r) { return r.json(); }),
+      fetchT(gscBase, { method: 'POST', headers: gscHeaders, body: JSON.stringify({ startDate: range.start, endDate: range.end, dimensions: ['query'], rowLimit: 10, orderBy: [{ fieldName: 'clicks', sortOrder: 'DESCENDING' }] }) }, 15000).then(function(r) { return r.json(); })
+    ]);
 
-    // Top queries
-    var queriesResp = await fetch('https://www.googleapis.com/webmasters/v3/sites/' + encodeURIComponent(config.gsc_property) + '/searchAnalytics/query', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ startDate: range.start, endDate: range.end, dimensions: ['query'], rowLimit: 10, orderBy: [{ fieldName: 'clicks', sortOrder: 'DESCENDING' }] })
-    });
-    var queriesData = await queriesResp.json();
-
+    var totals = (results[0].rows && results[0].rows[0]) || {};
     return {
       clicks: Math.round(totals.clicks || 0),
       impressions: Math.round(totals.impressions || 0),
       ctr: Math.round((totals.ctr || 0) * 10000) / 100,
       position: Math.round((totals.position || 0) * 10) / 10,
-      pages: (pagesData.rows || []).slice(0, 5).map(function(r) {
+      pages: (results[1].rows || []).slice(0, 5).map(function(r) {
         return { page: r.keys[0].replace(/https?:\/\/[^/]+/, ''), clicks: r.clicks, impressions: r.impressions, ctr: Math.round(r.ctr * 10000) / 100, position: Math.round(r.position * 10) / 10 };
       }),
-      queries: (queriesData.rows || []).slice(0, 5).map(function(r) {
+      queries: (results[2].rows || []).slice(0, 5).map(function(r) {
         return { query: r.keys[0], clicks: r.clicks, impressions: r.impressions, ctr: Math.round(r.ctr * 10000) / 100, position: Math.round(r.position * 10) / 10 };
       })
     };
   });
 
-  // ─── STEP 4: Pull GBP data from Local Brand Manager ────────────
-  var gbpData = await safe('lbm', async function() {
+  var gbpFn = safe('lbm', async function() {
     if (!lbmKey || !config.lbm_location_id) {
       warnings.push('LBM/GBP: skipped (no key or location configured)');
       return null;
     }
 
-    // Get or create report for this month
     var reportUrl = 'https://api.localbrandmanager.com/reports';
-    var listResp = await fetch(reportUrl + '?location_id=' + config.lbm_location_id, {
+    var listResp = await fetchT(reportUrl + '?location_id=' + config.lbm_location_id, {
       headers: { 'Authorization': lbmKey, 'Content-Type': 'application/json' }
-    });
+    }, 15000);
     var reports = await listResp.json();
 
-    // Find a report covering this month, or use the most recent
     var report = null;
-    if (Array.isArray(reports)) {
-      report = reports[0]; // most recent
-    } else if (reports && reports.data) {
-      report = reports.data[0];
-    }
+    if (Array.isArray(reports)) { report = reports[0]; }
+    else if (reports && reports.data) { report = reports.data[0]; }
 
     if (!report) { warnings.push('LBM: no report found'); return null; }
 
     var reportId = report.id || report.report_id;
     if (!reportId) { warnings.push('LBM: no report ID'); return null; }
 
-    var detailResp = await fetch(reportUrl + '/' + reportId, {
+    var detailResp = await fetchT(reportUrl + '/' + reportId, {
       headers: { 'Authorization': lbmKey, 'Content-Type': 'application/json' }
-    });
+    }, 15000);
     var detail = await detailResp.json();
 
-    // Extract metrics - LBM structure varies, adapt as needed
     var metrics = detail.metrics || detail.data || detail;
     return {
       calls: metrics.phone_calls || metrics.calls || 0,
@@ -211,8 +210,7 @@ module.exports = async function handler(req, res) {
     };
   });
 
-  // ─── STEP 6: Pull AI Visibility from DataForSEO ───────────────
-  var aiData = await safe('dataforseo', async function() {
+  var aiFn = safe('dataforseo', async function() {
     if (!dfseLogin || !dfsePw) {
       warnings.push('DataForSEO: skipped (no credentials)');
       return null;
@@ -224,13 +222,11 @@ module.exports = async function handler(req, res) {
       return null;
     }
 
-    // Determine client's website domain from GSC property or contact
     var clientDomain = '';
     if (config.gsc_property) {
       clientDomain = config.gsc_property.replace('sc-domain:', '').replace('https://', '').replace('http://', '').split('/')[0];
     }
 
-    var engines = [];
     var engineChecks = [
       { name: 'Google AI Mode', method: 'google_ai_mode' },
       { name: 'Gemini', method: 'gemini_scraper' },
@@ -239,11 +235,10 @@ module.exports = async function handler(req, res) {
       { name: 'Claude', method: 'claude_llm' }
     ];
 
-    // Run checks for the first 3 tracked queries across all engines
-    var queriesToCheck = trackedQueries.slice(0, 5);
+    var queriesToCheck = trackedQueries.slice(0, 3); // Cap at 3 to stay within budget
 
-    for (var ei = 0; ei < engineChecks.length; ei++) {
-      var engine = engineChecks[ei];
+    // Run ALL engines in parallel — each engine checks its queries sequentially
+    var engineResults = await Promise.all(engineChecks.map(async function(engine) {
       var cited = false;
       var context = null;
       var citedQueries = [];
@@ -257,24 +252,21 @@ module.exports = async function handler(req, res) {
             citedQueries.push(q.label || q.query);
             if (!context && result.context) context = result.context;
           }
-          // Rate limit: 100ms between calls
-          await new Promise(function(r) { setTimeout(r, 100); });
         } catch (e) {
-          // Individual query failure doesn't fail the whole engine
           warnings.push('DataForSEO ' + engine.name + ' "' + q.query + '": ' + e.message);
         }
       }
 
-      engines.push({
+      return {
         name: engine.name,
         cited: cited,
         context: context || (cited ? 'Cited for: ' + citedQueries.join(', ') : null),
         queries_checked: queriesToCheck.length,
         queries_cited: citedQueries.length
-      });
-    }
+      };
+    }));
 
-    // Also pull LLM Mentions aggregated metrics for impressions/volume data
+    // Pull LLM Mentions aggregated in parallel with engine checks? No — it ran with them.
     var mentionsData = null;
     try {
       mentionsData = await getLLMMentionsAggregated(clientDomain, dfseAuth());
@@ -283,15 +275,34 @@ module.exports = async function handler(req, res) {
     }
 
     return {
-      engines: engines,
-      engines_checked: engines.length,
-      engines_citing: engines.filter(function(e) { return e.cited; }).length,
+      engines: engineResults,
+      engines_checked: engineResults.length,
+      engines_citing: engineResults.filter(function(e) { return e.cited; }).length,
       ai_search_volume: mentionsData ? mentionsData.ai_search_volume : null,
       ai_impressions: mentionsData ? mentionsData.impressions : null,
       ai_mentions_count: mentionsData ? mentionsData.mentions : null,
-      citation_trend: [] // populated from historical snapshots below
+      citation_trend: []
     };
   });
+
+  var taskFn = safe('tasks', async function() {
+    var taskResp = await fetchT(sbUrl + '/rest/v1/checklist_items?client_slug=eq.' + clientSlug + '&select=status', { headers: sbHeaders() }, 10000);
+    var tasks = await taskResp.json();
+    if (!Array.isArray(tasks)) return { total: 0, complete: 0, in_progress: 0, not_started: 0 };
+    return {
+      total: tasks.length,
+      complete: tasks.filter(function(t) { return t.status === 'complete'; }).length,
+      in_progress: tasks.filter(function(t) { return t.status === 'in_progress'; }).length,
+      not_started: tasks.filter(function(t) { return t.status === 'not_started'; }).length
+    };
+  });
+
+  // Fire all 4 data sources concurrently
+  var parallel = await Promise.all([gscFn, gbpFn, aiFn, taskFn]);
+  var gscData = parallel[0];
+  var gbpData = parallel[1];
+  var aiData = parallel[2];
+  var taskData = parallel[3];
 
   // Build citation_trend from historical snapshots
   if (aiData) {
@@ -303,24 +314,10 @@ module.exports = async function handler(req, res) {
           var av = r.ai_visibility || {};
           return { month: r.report_month.substring(0, 7), count: av.engines_citing || 0 };
         });
-        // Add current month
         aiData.citation_trend.push({ month: reportMonth.substring(0, 7), count: aiData.engines_citing });
       }
     } catch (e) { /* non-fatal */ }
   }
-
-  // ─── STEP 7: Pull task progress from Supabase ─────────────────
-  var taskData = await safe('tasks', async function() {
-    var taskResp = await fetch(sbUrl + '/rest/v1/checklist_items?client_slug=eq.' + clientSlug + '&select=status', { headers: sbHeaders() });
-    var tasks = await taskResp.json();
-    if (!Array.isArray(tasks)) return { total: 0, complete: 0, in_progress: 0, not_started: 0 };
-    return {
-      total: tasks.length,
-      complete: tasks.filter(function(t) { return t.status === 'complete'; }).length,
-      in_progress: tasks.filter(function(t) { return t.status === 'in_progress'; }).length,
-      not_started: tasks.filter(function(t) { return t.status === 'not_started'; }).length
-    };
-  });
 
   // ─── STEP 8: Build the snapshot row ────────────────────────────
   var snapshot = {
@@ -558,9 +555,24 @@ async function checkEngineVisibility(method, query, clientDomain, authHeader) {
   var headers = { 'Authorization': authHeader, 'Content-Type': 'application/json' };
   var cited = false;
   var context = null;
+  var TIMEOUT = 30000; // 30s per engine call
+
+  async function timedFetch(url, opts) {
+    var controller = new AbortController();
+    var timer = setTimeout(function() { controller.abort(); }, TIMEOUT);
+    try {
+      var r = await fetch(url, Object.assign({}, opts, { signal: controller.signal }));
+      clearTimeout(timer);
+      return r;
+    } catch (e) {
+      clearTimeout(timer);
+      if (e.name === 'AbortError') throw new Error('Timeout after ' + TIMEOUT + 'ms');
+      throw e;
+    }
+  }
 
   if (method === 'google_ai_mode') {
-    var resp = await fetch(baseUrl + '/serp/google/ai_mode/live/advanced', {
+    var resp = await timedFetch(baseUrl + '/serp/google/ai_mode/live/advanced', {
       method: 'POST', headers: headers, body: JSON.stringify([{ keyword: query, location_code: 2840, language_code: 'en' }])
     });
     var data = await resp.json();
@@ -594,7 +606,7 @@ async function checkEngineVisibility(method, query, clientDomain, authHeader) {
   }
 
   else if (method === 'gemini_scraper') {
-    var resp = await fetch(baseUrl + '/ai_optimization/gemini/llm_scraper/live/advanced', {
+    var resp = await timedFetch(baseUrl + '/ai_optimization/gemini/llm_scraper/live/advanced', {
       method: 'POST', headers: headers, body: JSON.stringify([{ keyword: query, location_code: 2840, language_code: 'en' }])
     });
     var data = await resp.json();
@@ -617,7 +629,7 @@ async function checkEngineVisibility(method, query, clientDomain, authHeader) {
   }
 
   else if (method === 'chatgpt_scraper') {
-    var resp = await fetch(baseUrl + '/ai_optimization/chat_gpt/llm_scraper/live/advanced', {
+    var resp = await timedFetch(baseUrl + '/ai_optimization/chat_gpt/llm_scraper/live/advanced', {
       method: 'POST', headers: headers, body: JSON.stringify([{ keyword: query, location_code: 2840, language_code: 'en' }])
     });
     var data = await resp.json();
@@ -639,7 +651,7 @@ async function checkEngineVisibility(method, query, clientDomain, authHeader) {
   }
 
   else if (method === 'perplexity_llm') {
-    var resp = await fetch(baseUrl + '/ai_optimization/perplexity/llm_responses/live', {
+    var resp = await timedFetch(baseUrl + '/ai_optimization/perplexity/llm_responses/live', {
       method: 'POST', headers: headers, body: JSON.stringify([{
         user_prompt: query, model_name: 'sonar', web_search: true, max_output_tokens: 800
       }])
@@ -675,7 +687,7 @@ async function checkEngineVisibility(method, query, clientDomain, authHeader) {
   }
 
   else if (method === 'claude_llm') {
-    var resp = await fetch(baseUrl + '/ai_optimization/claude/llm_responses/live', {
+    var resp = await timedFetch(baseUrl + '/ai_optimization/claude/llm_responses/live', {
       method: 'POST', headers: headers, body: JSON.stringify([{
         user_prompt: query, model_name: 'claude-haiku-4-5', web_search: true, max_output_tokens: 800
       }])
@@ -703,28 +715,38 @@ async function checkEngineVisibility(method, query, clientDomain, authHeader) {
 // Helper: LLM Mentions Aggregated Metrics
 // ═══════════════════════════════════════════════════════════════════
 async function getLLMMentionsAggregated(clientDomain, authHeader) {
-  var resp = await fetch('https://api.dataforseo.com/v3/ai_optimization/llm_mentions/aggregated_metrics/live', {
-    method: 'POST',
-    headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
-    body: JSON.stringify([{
-      language_code: 'en',
-      location_code: 2840,
-      platform: 'google',
-      target: [{ domain: clientDomain, search_filter: 'include', search_scope: ['sources'] }]
-    }])
-  });
-  var data = await resp.json();
-  var task = data.tasks && data.tasks[0];
-  if (task && task.result && task.result[0]) {
-    var total = task.result[0].total || {};
-    var platform = (total.platform && total.platform[0]) || {};
-    return {
-      mentions: platform.mentions || 0,
-      ai_search_volume: platform.ai_search_volume || 0,
-      impressions: platform.impressions || 0
-    };
+  var controller = new AbortController();
+  var timer = setTimeout(function() { controller.abort(); }, 20000);
+  try {
+    var resp = await fetch('https://api.dataforseo.com/v3/ai_optimization/llm_mentions/aggregated_metrics/live', {
+      method: 'POST',
+      headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify([{
+        language_code: 'en',
+        location_code: 2840,
+        platform: 'google',
+        target: [{ domain: clientDomain, search_filter: 'include', search_scope: ['sources'] }]
+      }])
+    });
+    clearTimeout(timer);
+    var data = await resp.json();
+    var task = data.tasks && data.tasks[0];
+    if (task && task.result && task.result[0]) {
+      var total = task.result[0].total || {};
+      var platform = (total.platform && total.platform[0]) || {};
+      return {
+        mentions: platform.mentions || 0,
+        ai_search_volume: platform.ai_search_volume || 0,
+        impressions: platform.impressions || 0
+      };
+    }
+    return null;
+  } catch (e) {
+    clearTimeout(timer);
+    if (e.name === 'AbortError') throw new Error('LLM Mentions timeout after 20s');
+    throw e;
   }
-  return null;
 }
 
 
@@ -796,3 +818,4 @@ async function generateHighlights(snapshot, prevSnap, practiceName, apiKey) {
     };
   });
 }
+
