@@ -781,16 +781,15 @@ a:hover { color: var(--color-primary-hover); }
     slugInput.style.borderColor = '';
   };
 
-  // Auto-generate slug as user types practice name or names
-  ['nea-practice', 'nea-first', 'nea-last'].forEach(function(id) {
+  // Auto-generate slug as user types first/last name
+  ['nea-first', 'nea-last'].forEach(function(id) {
     document.getElementById(id).addEventListener('input', function() {
       var slugInput = document.getElementById('nea-slug');
       if (!slugInput.readOnly) return; // don't overwrite if user is manually editing
-      var practice = document.getElementById('nea-practice').value.trim();
       var first = document.getElementById('nea-first').value.trim();
       var last = document.getElementById('nea-last').value.trim();
-      var base = practice || (first + ' ' + last);
-      slugInput.value = base.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 60);
+      var base = (first + ' ' + last).trim();
+      slugInput.value = base ? base.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 60) : '';
       document.getElementById('nea-slug-status').textContent = '';
     });
   });
@@ -807,7 +806,7 @@ a:hover { color: var(--color-primary-hover); }
 
     if (!first || !last || !email || !url) { statusEl.textContent = 'Please fill all required fields.'; statusEl.style.color = 'var(--color-danger)'; return; }
 
-    var slug = slugInput.value.trim() || (practice || first + ' ' + last).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 60);
+    var slug = slugInput.value.trim() || (first + ' ' + last).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 60);
     slugInput.value = slug;
 
     var btn = document.getElementById('nea-submit');
