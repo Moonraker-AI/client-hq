@@ -324,6 +324,13 @@ a:hover { color: var(--color-primary-hover); }
         <div><label style="font-size:.75rem;font-weight:600;color:var(--color-muted);display:block;margin-bottom:.25rem;">Website URL *</label><input id="nea-url" type="url" style="width:100%;padding:.5rem .65rem;border:1px solid var(--color-border);border-radius:8px;font-size:.85rem;background:var(--color-bg);color:var(--color-body);font-family:inherit;" placeholder="https://practice.com"></div>
         <div><label style="font-size:.75rem;font-weight:600;color:var(--color-muted);display:block;margin-bottom:.25rem;">Tier</label><select id="nea-tier" style="width:100%;padding:.5rem .65rem;border:1px solid var(--color-border);border-radius:8px;font-size:.85rem;background:var(--color-bg);color:var(--color-body);font-family:inherit;"><option value="free">Free</option><option value="premium">Premium</option></select></div>
       </div>
+      <div style="margin-top:.75rem;">
+        <label style="font-size:.75rem;font-weight:600;color:var(--color-muted);display:block;margin-bottom:.25rem;">Slug (auto-generated, editable if conflict)</label>
+        <div style="display:flex;gap:.5rem;align-items:center;">
+          <input id="nea-slug" style="flex:1;padding:.5rem .65rem;border:1px solid var(--color-border);border-radius:8px;font-size:.85rem;background:var(--color-bg);color:var(--color-body);font-family:'SF Mono','Fira Code',monospace;" placeholder="auto-generated" readonly>
+          <span id="nea-slug-status" style="font-size:.75rem;white-space:nowrap;"></span>
+        </div>
+      </div>
       <div style="display:flex;gap:.5rem;margin-top:1rem;">
         <button id="nea-submit" class="ea-btn" style="background:var(--color-primary);color:#fff;border-color:var(--color-primary);padding:.45rem 1rem;" onclick="submitNewAudit()">Create Audit + Lead</button>
         <button class="ea-btn" onclick="toggleNewAuditForm()" style="padding:.45rem 1rem;">Cancel</button>
@@ -768,7 +775,25 @@ a:hover { color: var(--color-primary-hover); }
     var form = document.getElementById('newAuditForm');
     form.style.display = form.style.display === 'none' ? 'block' : 'none';
     document.getElementById('nea-status').textContent = '';
+    document.getElementById('nea-slug-status').textContent = '';
+    var slugInput = document.getElementById('nea-slug');
+    slugInput.readOnly = true;
+    slugInput.style.borderColor = '';
   };
+
+  // Auto-generate slug as user types practice name or names
+  ['nea-practice', 'nea-first', 'nea-last'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', function() {
+      var slugInput = document.getElementById('nea-slug');
+      if (!slugInput.readOnly) return; // don't overwrite if user is manually editing
+      var practice = document.getElementById('nea-practice').value.trim();
+      var first = document.getElementById('nea-first').value.trim();
+      var last = document.getElementById('nea-last').value.trim();
+      var base = practice || (first + ' ' + last);
+      slugInput.value = base.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 60);
+      document.getElementById('nea-slug-status').textContent = '';
+    });
+  });
 
   window.submitNewAudit = function() {
     var first = document.getElementById('nea-first').value.trim();
@@ -777,47 +802,75 @@ a:hover { color: var(--color-primary-hover); }
     var email = document.getElementById('nea-email').value.trim();
     var url = document.getElementById('nea-url').value.trim();
     var tier = document.getElementById('nea-tier').value;
+    var slugInput = document.getElementById('nea-slug');
     var statusEl = document.getElementById('nea-status');
 
     if (!first || !last || !email || !url) { statusEl.textContent = 'Please fill all required fields.'; statusEl.style.color = 'var(--color-danger)'; return; }
 
-    var slug = (practice || first + ' ' + last).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 60);
+    var slug = slugInput.value.trim() || (practice || first + ' ' + last).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 60);
+    slugInput.value = slug;
+
     var btn = document.getElementById('nea-submit');
     btn.disabled = true;
-    statusEl.textContent = 'Creating...';
+    statusEl.textContent = 'Checking slug...';
     statusEl.style.color = 'var(--color-muted)';
 
-    // Step 1: Create contact as lead
-    fetch(SB + '/rest/v1/contacts', {
-      method: 'POST',
-      headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ first_name: first, last_name: last, practice_name: practice || null, email: email, website_url: url, slug: slug, status: 'lead', source: 'direct', audit_tier: tier })
-    })
-    .then(function(r) { if (!r.ok) return r.json().then(function(e) { throw new Error(e.message || 'Contact creation failed'); }); return r.json(); })
-    .then(function(contacts) {
-      var contact = contacts[0];
-      // Step 2: Create entity audit
-      return fetch(SB + '/rest/v1/entity_audits', {
-        method: 'POST',
-        headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ contact_id: contact.id, audit_tier: tier, brand_query: practice || first + ' ' + last, homepage_url: url, status: 'pending' })
+    // Check slug uniqueness first
+    sb('contacts?slug=eq.' + slug + '&select=id,practice_name&limit=1')
+      .then(function(existing) {
+        if (existing && existing.length > 0) {
+          // Conflict - unlock slug field for manual editing
+          slugInput.readOnly = false;
+          slugInput.style.borderColor = 'var(--color-danger)';
+          slugInput.style.background = 'var(--color-bg)';
+          document.getElementById('nea-slug-status').innerHTML = '<span style="color:var(--color-danger);">Taken by ' + esc(existing[0].practice_name || 'another contact') + '</span>';
+          statusEl.textContent = 'Slug conflict. Edit the slug (e.g. add state abbreviation like -ca or -tx) and try again.';
+          statusEl.style.color = 'var(--color-danger)';
+          btn.disabled = false;
+          btn.textContent = 'Create Audit + Lead';
+          slugInput.focus();
+          slugInput.select();
+          return;
+        }
+
+        // Slug is available, proceed with creation
+        document.getElementById('nea-slug-status').innerHTML = '<span style="color:var(--color-success);">Available</span>';
+        statusEl.textContent = 'Creating...';
+        statusEl.style.color = 'var(--color-muted)';
+
+        return fetch(SB + '/rest/v1/contacts', {
+          method: 'POST',
+          headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+          body: JSON.stringify({ first_name: first, last_name: last, practice_name: practice || null, email: email, website_url: url, slug: slug, status: 'lead', source: 'direct', audit_tier: tier })
+        })
+        .then(function(r) { if (!r.ok) return r.json().then(function(e) { throw new Error(e.message || 'Contact creation failed'); }); return r.json(); })
+        .then(function(contacts) {
+          var contact = contacts[0];
+          return fetch(SB + '/rest/v1/entity_audits', {
+            method: 'POST',
+            headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ contact_id: contact.id, audit_tier: tier, brand_query: practice || first + ' ' + last, homepage_url: url, status: 'pending' })
+          });
+        })
+        .then(function(r) {
+          if (!r.ok) throw new Error('Audit creation failed');
+          statusEl.textContent = 'Created! Refreshing...';
+          statusEl.style.color = 'var(--color-success)';
+          ['nea-first','nea-last','nea-practice','nea-email','nea-url','nea-slug'].forEach(function(id) { document.getElementById(id).value = ''; });
+          document.getElementById('nea-tier').value = 'free';
+          document.getElementById('nea-slug-status').textContent = '';
+          slugInput.readOnly = true;
+          slugInput.style.borderColor = '';
+          btn.disabled = false;
+          setTimeout(function() { toggleNewAuditForm(); eaLoaded = false; loadEntityAudits(); }, 1000);
+        });
+      })
+      .catch(function(err) {
+        statusEl.textContent = err.message;
+        statusEl.style.color = 'var(--color-danger)';
+        btn.disabled = false;
+        btn.textContent = 'Create Audit + Lead';
       });
-    })
-    .then(function(r) {
-      if (!r.ok) throw new Error('Audit creation failed');
-      statusEl.textContent = 'Created! Refreshing...';
-      statusEl.style.color = 'var(--color-success)';
-      // Clear form and refresh
-      ['nea-first','nea-last','nea-practice','nea-email','nea-url'].forEach(function(id) { document.getElementById(id).value = ''; });
-      document.getElementById('nea-tier').value = 'free';
-      btn.disabled = false;
-      setTimeout(function() { toggleNewAuditForm(); eaLoaded = false; loadEntityAudits(); }, 1000);
-    })
-    .catch(function(err) {
-      statusEl.textContent = err.message.indexOf('duplicate') !== -1 ? 'A contact with this info already exists.' : err.message;
-      statusEl.style.color = 'var(--color-danger)';
-      btn.disabled = false;
-    });
   };
 
   // ============================================================
