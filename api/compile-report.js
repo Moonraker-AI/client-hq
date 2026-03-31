@@ -125,6 +125,37 @@ module.exports = async function handler(req, res) {
     if (campaignMonth < 1) campaignMonth = 1;
   }
 
+  // ─── STEP 1b: Load tracked keywords (source of truth) ─────────
+  // Falls back to report_configs.tracked_queries for backward compat
+  var trackedKeywords = [];
+  try {
+    var kwResp = await fetch(sbUrl + '/rest/v1/tracked_keywords?client_slug=eq.' + clientSlug + '&active=eq.true&order=priority.asc,keyword.asc', { headers: sbHeaders() });
+    var kwRows = await kwResp.json();
+    if (Array.isArray(kwRows) && kwRows.length > 0) {
+      trackedKeywords = kwRows;
+    }
+  } catch (e) { /* non-fatal */ }
+
+  // Build unified query list for AI visibility (from tracked_keywords or report_configs fallback)
+  var aiQueries = [];
+  var geogridKeywords = [];
+  if (trackedKeywords.length > 0) {
+    trackedKeywords.forEach(function(kw) {
+      if (kw.track_ai_visibility) {
+        aiQueries.push({ label: kw.label || kw.keyword, query: kw.keyword });
+      }
+      if (kw.track_geogrid) {
+        geogridKeywords.push(kw);
+      }
+    });
+  } else if (config.tracked_queries && config.tracked_queries.length > 0) {
+    // Fallback to report_configs
+    config.tracked_queries.forEach(function(q) {
+      aiQueries.push({ label: q.label, query: q.query });
+    });
+    // Can't do geogrids without tracked_keywords (no place_id etc)
+  }
+
   // ─── STEP 2: Load previous month snapshot for deltas ──────────
   var prevSnap = await safe('prev_snapshot', async function() {
     var pm = prevMonth(reportMonth);
@@ -248,8 +279,7 @@ module.exports = async function handler(req, res) {
       return null;
     }
 
-    var trackedQueries = config.tracked_queries || [];
-    if (trackedQueries.length === 0) {
+    if (aiQueries.length === 0) {
       warnings.push('DataForSEO: no tracked queries configured');
       return null;
     }
@@ -267,7 +297,7 @@ module.exports = async function handler(req, res) {
       { name: 'Claude', method: 'claude_llm' }
     ];
 
-    var queriesToCheck = trackedQueries.slice(0, 3); // Cap at 3 to stay within budget
+    var queriesToCheck = aiQueries.slice(0, 3); // Cap at 3 to stay within budget
 
     // Run ALL engines in parallel — each engine checks its queries sequentially
     var engineResults = await Promise.all(engineChecks.map(async function(engine) {
