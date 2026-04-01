@@ -95,6 +95,35 @@ h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var
 .modal-demo { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.5rem; max-width: 400px; }
 .modal-demo h3 { font-size: 1rem; margin-bottom: .75rem; }
 .modal-actions-demo { display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1rem; }
+
+/* Tabs */
+.ds-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--color-border); margin-bottom: 2rem; }
+.ds-tab { padding: .6rem 1.25rem; font-family: 'Outfit', sans-serif; font-size: .95rem; font-weight: 600; color: var(--color-muted); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; margin-bottom: -2px; transition: all .2s; }
+.ds-tab:hover { color: var(--color-heading); }
+.ds-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.ds-tab-panel { display: none; }
+.ds-tab-panel.active { display: block; }
+
+/* Sitemap */
+.sitemap-group { margin-bottom: 2rem; }
+.sitemap-group h3 { font-size: 1rem; margin-bottom: .75rem; }
+.sitemap-tree { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; }
+.sitemap-item { display: grid; grid-template-columns: 280px 1fr 140px; gap: 1rem; align-items: center; padding: .6rem 1rem; border-bottom: 1px solid var(--color-border); font-size: .82rem; }
+.sitemap-item:last-child { border-bottom: none; }
+.sitemap-item.header { background: var(--color-bg); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); }
+.sitemap-url { font-family: 'SF Mono', 'Fira Code', monospace; font-size: .78rem; color: var(--color-primary); }
+.sitemap-url a { color: var(--color-primary); text-decoration: none; }
+.sitemap-url a:hover { text-decoration: underline; }
+.sitemap-desc { color: var(--color-body); }
+.sitemap-type { font-size: .72rem; font-weight: 600; padding: .15rem .45rem; border-radius: 4px; text-align: center; }
+.sitemap-type.static { background: rgba(107,117,153,.08); color: var(--color-muted); }
+.sitemap-type.dynamic { background: rgba(0,212,126,.1); color: #00b86c; }
+.sitemap-type.api { background: rgba(59,130,246,.1); color: #3B82F6; }
+.sitemap-type.template { background: rgba(139,92,246,.1); color: #8B5CF6; }
+.sitemap-type.cron { background: rgba(245,158,11,.1); color: #D97706; }
+.db-table { display: grid; grid-template-columns: 200px 1fr; gap: .5rem; align-items: start; padding: .5rem 1rem; border-bottom: 1px solid var(--color-border); font-size: .82rem; }
+.db-table:last-child { border-bottom: none; }
+.db-name { font-family: 'SF Mono', 'Fira Code', monospace; font-size: .78rem; font-weight: 600; color: var(--color-heading); }
 </style>
 </head>
 <body>
@@ -109,6 +138,13 @@ h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var
   </div>
   <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" style="height:32px;">
 </div>
+
+<div class="ds-tabs">
+  <button class="ds-tab active" onclick="switchDsTab('design')">Design Tokens</button>
+  <button class="ds-tab" onclick="switchDsTab('sitemap')">Architecture & Sitemap</button>
+</div>
+
+<div class="ds-tab-panel active" id="tab-design">
 
 <!-- ═══════════════════════════════════════ -->
 <!-- COLORS -->
@@ -507,6 +543,222 @@ h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var
   Client HQ Design System &middot; Last updated April 2026 &middot; <a href="/admin" style="color:var(--color-primary);">Back to Admin</a>
 </div>
 
+</div><!-- end tab-design -->
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- TAB: ARCHITECTURE & SITEMAP -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="ds-tab-panel" id="tab-sitemap">
+
+<div class="ds-section">
+  <h2>Platform Architecture</h2>
+  <p class="ds-section-desc">Client HQ is a static HTML site hosted on Vercel with Supabase as the backend. All pages auto-deploy from the <code>main</code> branch of <code>Moonraker-AI/client-hq</code>. Client-facing pages are dynamic templates that read the slug from the URL and pull data from Supabase at runtime.</p>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:2rem;">
+    <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:1rem;text-align:center;">
+      <div style="font-family:Outfit;font-weight:700;font-size:1.1rem;color:var(--color-heading);">Vercel</div>
+      <div style="font-size:.78rem;color:var(--color-muted);">Hosting + Serverless Functions</div>
+      <div style="font-size:.72rem;color:var(--color-muted);margin-top:.25rem;">clients.moonraker.ai</div>
+    </div>
+    <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:1rem;text-align:center;">
+      <div style="font-family:Outfit;font-weight:700;font-size:1.1rem;color:var(--color-heading);">Supabase</div>
+      <div style="font-size:.78rem;color:var(--color-muted);">Database + RLS + Auth</div>
+      <div style="font-size:.72rem;color:var(--color-muted);margin-top:.25rem;">22 tables</div>
+    </div>
+    <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:1rem;text-align:center;">
+      <div style="font-family:Outfit;font-weight:700;font-size:1.1rem;color:var(--color-heading);">Stripe</div>
+      <div style="font-size:.78rem;color:var(--color-muted);">Payments + Checkout</div>
+      <div style="font-size:.72rem;color:var(--color-muted);margin-top:.25rem;">8 payment links</div>
+    </div>
+    <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:1rem;text-align:center;">
+      <div style="font-family:Outfit;font-weight:700;font-size:1.1rem;color:var(--color-heading);">GitHub</div>
+      <div style="font-size:.78rem;color:var(--color-muted);">Source + Auto-Deploy</div>
+      <div style="font-size:.72rem;color:var(--color-muted);margin-top:.25rem;">Moonraker-AI/client-hq</div>
+    </div>
+  </div>
+</div>
+
+<div class="ds-divider"></div>
+
+<!-- Admin Pages -->
+<div class="sitemap-group">
+  <h2 style="font-size:1.25rem;margin-bottom:.25rem;">Admin Pages</h2>
+  <p class="ds-section-desc">Internal team pages. Protected by Vercel password. All under <code>/admin/*</code>.</p>
+
+  <div class="sitemap-tree">
+    <div class="sitemap-item header"><div>URL Path</div><div>Description</div><div>Type</div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/admin</div><div class="sitemap-desc">Dashboard - Cmd+K search, stat cards, pipeline table of all clients</div><div><span class="sitemap-type dynamic">Dynamic</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/admin/clients</div><div class="sitemap-desc">Client list view - sortable, filterable table of all contacts</div><div><span class="sitemap-type dynamic">Dynamic</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/admin/clients?slug=xxx</div><div class="sitemap-desc">Client deep-dive with 7 tabs: Overview, Onboarding, Intro Call, Deliverables, Audit, Reports, Billing</div><div><span class="sitemap-type dynamic">Dynamic</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/admin/clients?slug=xxx&tab=reports</div><div class="sitemap-desc">Deep-link to specific tab via URL param</div><div><span class="sitemap-type dynamic">Dynamic</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/admin/onboarding</div><div class="sitemap-desc">Onboarding workflow - Cards and Matrix views across all onboarding clients</div><div><span class="sitemap-type dynamic">Dynamic</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/admin/deliverables</div><div class="sitemap-desc">Deliverables workflow - List and Template Matrix views across all clients</div><div><span class="sitemap-type dynamic">Dynamic</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/admin/audits</div><div class="sitemap-desc">Audit pipeline - CORE score badges, task progress across all clients</div><div><span class="sitemap-type dynamic">Dynamic</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/admin/reports</div><div class="sitemap-desc">Reports overview - Clickable rows linking to client deep-dive reports tab</div><div><span class="sitemap-type dynamic">Dynamic</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/admin/design</div><div class="sitemap-desc">This page - Design system reference and sitemap</div><div><span class="sitemap-type static">Static</span></div></div>
+  </div>
+</div>
+
+<div class="ds-divider"></div>
+
+<!-- Client-Facing Pages -->
+<div class="sitemap-group">
+  <h2 style="font-size:1.25rem;margin-bottom:.25rem;">Client-Facing Pages</h2>
+  <p class="ds-section-desc">Pages visible to prospects and clients. All use dynamic templates that read the slug from the URL path and pull contact data from Supabase. All pages are <code>noindex, nofollow</code>.</p>
+
+  <div class="sitemap-tree">
+    <div class="sitemap-item header"><div>URL Pattern</div><div>Description</div><div>Type</div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/[slug]</div><div class="sitemap-desc"><strong>Router</strong> - Detects contact status and shows the appropriate CTA. Prospect: shows proposal link. Onboarding: redirects to onboarding wizard. Active: shows client portal links.</div><div><span class="sitemap-type dynamic">Dynamic</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/[slug]/proposal</div><div class="sitemap-desc"><strong>Proposal</strong> - Personalized sales proposal with CORE assessment, strategy, timeline, investment. Fully custom HTML per client (not a template fill).</div><div><span class="sitemap-type static">Per-Client</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/[slug]/checkout</div><div class="sitemap-desc"><strong>Checkout</strong> - 3-step plan selector (campaign length, billing, payment method). Reads <code>checkout_options</code> from Supabase to control visible plans. Links to Stripe Payment Links.</div><div><span class="sitemap-type dynamic">Dynamic</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/[slug]/onboarding</div><div class="sitemap-desc"><strong>Onboarding Wizard</strong> - 8-step wizard: Confirm Info, Sign Agreement, Book Intro Call, Connect Accounts, Practice Details, Bio Materials, Social Profiles, Google Drive. All forms save to Supabase.</div><div><span class="sitemap-type dynamic">Dynamic</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/[slug]/audits/diagnosis</div><div class="sitemap-desc"><strong>Audit Diagnosis</strong> - CORE score rings, findings by pillar, competitor analysis, AI visibility, Brand Beacon. Built from Surge audit data.</div><div><span class="sitemap-type static">Per-Client</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/[slug]/audits/action-plan</div><div class="sitemap-desc"><strong>Audit Action Plan</strong> - Phased task list with timeline, priority, owner badges. Built from Surge audit data.</div><div><span class="sitemap-type static">Per-Client</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/[slug]/audits/progress</div><div class="sitemap-desc"><strong>Progress Tracker</strong> - Interactive task list with Supabase-synced status updates. Expandable rows with detailed instructions. Client can track task completion in real-time.</div><div><span class="sitemap-type dynamic">Dynamic</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/[slug]/reports</div><div class="sitemap-desc"><strong>Monthly Reports</strong> - Campaign performance dashboard. GSC metrics, AI visibility, geogrid maps, task progress. Only published reports visible to clients.</div><div><span class="sitemap-type dynamic">Dynamic</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/[slug]/entity-audit</div><div class="sitemap-desc"><strong>Entity Audit</strong> - Lead magnet audit page. First fix free per CORE pillar, rest gated behind $2,000 premium CTA.</div><div><span class="sitemap-type static">Per-Client</span></div></div>
+  </div>
+</div>
+
+<div class="ds-divider"></div>
+
+<!-- Shared / Global Pages -->
+<div class="sitemap-group">
+  <h2 style="font-size:1.25rem;margin-bottom:.25rem;">Shared Pages</h2>
+  <p class="ds-section-desc">Pages not tied to a specific client slug.</p>
+
+  <div class="sitemap-tree">
+    <div class="sitemap-item header"><div>URL Path</div><div>Description</div><div>Type</div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/</div><div class="sitemap-desc">Root landing page</div><div><span class="sitemap-type static">Static</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/agreement</div><div class="sitemap-desc">Read-only Client Service Agreement reference page</div><div><span class="sitemap-type static">Static</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/checkout/success</div><div class="sitemap-desc">Post-payment redirect. Reads slug from localStorage, flips status to "onboarding", auto-redirects to onboarding wizard after 5s countdown.</div><div><span class="sitemap-type dynamic">Dynamic</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/entity-audit</div><div class="sitemap-desc">Generic entity audit landing page (no client data)</div><div><span class="sitemap-type static">Static</span></div></div>
+  </div>
+</div>
+
+<div class="ds-divider"></div>
+
+<!-- API Endpoints -->
+<div class="sitemap-group">
+  <h2 style="font-size:1.25rem;margin-bottom:.25rem;">API Endpoints</h2>
+  <p class="ds-section-desc">Vercel serverless functions. All POST unless noted. Cron endpoints require <code>CRON_SECRET</code> auth.</p>
+
+  <div class="sitemap-tree">
+    <div class="sitemap-item header"><div>Endpoint</div><div>Description</div><div>Type</div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/api/action</div><div class="sitemap-desc">Generic CRUD proxy for Supabase tables. Supports create_record, update_record, delete_record. Allowlisted tables only.</div><div><span class="sitemap-type api">API</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/api/chat</div><div class="sitemap-desc">Anthropic Claude proxy for AI chatbot features. 120s timeout, 1024MB memory.</div><div><span class="sitemap-type api">API</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/api/compile-report</div><div class="sitemap-desc">Core reporting engine. Pulls GSC + LBM + DataForSEO + Supabase, generates highlights via Claude, sends Resend notification. 300s timeout.</div><div><span class="sitemap-type api">API</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/api/convert-to-prospect</div><div class="sitemap-desc">Converts lead to prospect status with validation.</div><div><span class="sitemap-type api">API</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/api/delete-client</div><div class="sitemap-desc">Cascading delete of contact and all related records across all tables.</div><div><span class="sitemap-type api">API</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/api/digest</div><div class="sitemap-desc">Team digest email generator. Compiles cross-client summary and sends via Resend.</div><div><span class="sitemap-type api">API</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/api/discover-services</div><div class="sitemap-desc">Auto-discovers GSC properties and LBM locations for a client. Matches by domain/practice name, saves to contact + report_configs.</div><div><span class="sitemap-type api">API</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/api/process-entity-audit</div><div class="sitemap-desc">Processes entity audit data from Surge, generates CORE scores and findings. 120s timeout.</div><div><span class="sitemap-type api">API</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/api/send-report-email</div><div class="sitemap-desc">Sends branded report email to client via Resend. Supports preview mode (returns HTML without sending).</div><div><span class="sitemap-type api">API</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/api/cron/enqueue-reports</div><div class="sitemap-desc">Monthly cron (1st at 10am UTC). Creates staggered queue entries for all active report configs, 3 min apart. Supports <code>?dry_run=true</code>.</div><div><span class="sitemap-type cron">Cron</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">/api/cron/process-queue</div><div class="sitemap-desc">Runs every 5 min. Picks one pending queue item where scheduled_for &lt;= now, compiles the report, marks complete/failed.</div><div><span class="sitemap-type cron">Cron</span></div></div>
+  </div>
+</div>
+
+<div class="ds-divider"></div>
+
+<!-- Templates -->
+<div class="sitemap-group">
+  <h2 style="font-size:1.25rem;margin-bottom:.25rem;">Templates</h2>
+  <p class="ds-section-desc">Reference HTML files in <code>_templates/</code>. Used as patterns when building client pages. Not served directly.</p>
+
+  <div class="sitemap-tree">
+    <div class="sitemap-item header"><div>Template File</div><div>Description</div><div>Type</div></div>
+    <div class="sitemap-item"><div class="sitemap-url">_templates/router.html</div><div class="sitemap-desc">Client router - status-aware landing page. Copied verbatim per client.</div><div><span class="sitemap-type template">Template</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">_templates/proposal.html</div><div class="sitemap-desc">Proposal - has {{PLACEHOLDER}} variables. Claude fills with personalized content per client.</div><div><span class="sitemap-type template">Template</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">_templates/checkout.html</div><div class="sitemap-desc">Checkout - dynamic, reads slug from URL + Supabase. Copied verbatim.</div><div><span class="sitemap-type template">Template</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">_templates/onboarding.html</div><div class="sitemap-desc">Onboarding wizard - dynamic 8-step form. Copied verbatim.</div><div><span class="sitemap-type template">Template</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">_templates/diagnosis.html</div><div class="sitemap-desc">Audit diagnosis - Claude fills with Surge data per client.</div><div><span class="sitemap-type template">Template</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">_templates/action-plan.html</div><div class="sitemap-desc">Audit action plan - Claude fills with task list per client.</div><div><span class="sitemap-type template">Template</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">_templates/progress.html</div><div class="sitemap-desc">Progress tracker - dynamic, Supabase-synced. Claude fills tasks then page reads live status.</div><div><span class="sitemap-type template">Template</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">_templates/report.html</div><div class="sitemap-desc">Monthly report - dynamic, reads snapshot data from Supabase at runtime.</div><div><span class="sitemap-type template">Template</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">_templates/entity-audit.html</div><div class="sitemap-desc">Entity audit lead magnet - Claude fills with audit data.</div><div><span class="sitemap-type template">Template</span></div></div>
+    <div class="sitemap-item"><div class="sitemap-url">_templates/entity-audit-checkout.html</div><div class="sitemap-desc">Entity audit checkout page for premium upgrade.</div><div><span class="sitemap-type template">Template</span></div></div>
+  </div>
+</div>
+
+<div class="ds-divider"></div>
+
+<!-- Database -->
+<div class="sitemap-group">
+  <h2 style="font-size:1.25rem;margin-bottom:.25rem;">Supabase Tables</h2>
+  <p class="ds-section-desc">All tables in the public schema. RLS enabled on all. Anon key for client-facing reads/writes, service role for admin and API operations.</p>
+
+  <div class="sitemap-tree" style="display:block;">
+    <div class="db-table" style="background:var(--color-bg);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);"><div>Table</div><div>Purpose</div></div>
+    <div class="db-table"><div class="db-name">contacts</div><div>Core client/prospect records. Slug, status, plan, contact info, practice details, social URLs, Stripe ID.</div></div>
+    <div class="db-table"><div class="db-name">practice_details</div><div>Clinical info: specialties, modalities, populations, campaign objectives, ideal client profile.</div></div>
+    <div class="db-table"><div class="db-name">bio_materials</div><div>Therapist bio content: credentials, education, licenses, certifications, professional bio.</div></div>
+    <div class="db-table"><div class="db-name">onboarding_steps</div><div>8-step wizard progress per contact. Step key, status (pending/in_progress/complete), sort order.</div></div>
+    <div class="db-table"><div class="db-name">intro_call_steps</div><div>17 intro call checklist items per contact. Platform access, campaign setup, expectations categories.</div></div>
+    <div class="db-table"><div class="db-name">deliverables</div><div>Campaign deliverables per contact. Type, title, status (5 options), page/drive URLs, notes.</div></div>
+    <div class="db-table"><div class="db-name">checklist_items</div><div>Audit tasks from Surge. Task ID, priority, category, scope, owner, status, phase, web visibility.</div></div>
+    <div class="db-table"><div class="db-name">audit_scores</div><div>CORE scores per audit period. 4 pillar scores, 30+ individual metrics, citation booleans.</div></div>
+    <div class="db-table"><div class="db-name">tracked_keywords</div><div>P1/P2 target keywords per contact. Keyword, target page, priority, source, active flag.</div></div>
+    <div class="db-table"><div class="db-name">report_configs</div><div>Reporting config per client. GSC property, LBM IDs, tracked queries (JSONB), report day, active flag.</div></div>
+    <div class="db-table"><div class="db-name">report_snapshots</div><div>Monthly report data. GSC/GBP/GA4 metrics, AI visibility (JSONB), task counts, CORE scores, report status.</div></div>
+    <div class="db-table"><div class="db-name">report_highlights</div><div>Auto-generated report highlights via Claude. Title, description, category, sort order per snapshot.</div></div>
+    <div class="db-table"><div class="db-name">report_queue</div><div>Staggered compilation queue. Status (pending/processing/complete/failed), scheduled_for, snapshot link.</div></div>
+    <div class="db-table"><div class="db-name">entity_audits</div><div>Entity audit data for lead magnet pages. CORE scores, findings, payment status.</div></div>
+    <div class="db-table"><div class="db-name">signed_agreements</div><div>Electronic CSA signatures. Signer name, signed_at timestamp, document HTML snapshot.</div></div>
+    <div class="db-table"><div class="db-name">social_profiles</div><div>Social platform profiles per contact. Platform, URL, status.</div></div>
+    <div class="db-table"><div class="db-name">account_access</div><div>Third-party account access records. Platform, credentials, access level.</div></div>
+    <div class="db-table"><div class="db-name">payments</div><div>Payment records linked to contacts.</div></div>
+    <div class="db-table"><div class="db-name">scheduled_touchpoints</div><div>Scheduled check-ins and follow-ups.</div></div>
+    <div class="db-table"><div class="db-name">activity_log</div><div>Admin activity tracking. Table, record ID, field, old/new values, timestamp.</div></div>
+    <div class="db-table"><div class="db-name">settings</div><div>Global platform settings key-value store.</div></div>
+    <div class="db-table"><div class="db-name">csa_template_sections</div><div>Client Service Agreement template sections for rendering in onboarding.</div></div>
+  </div>
+</div>
+
+<div class="ds-divider"></div>
+
+<!-- Client Lifecycle Flow -->
+<div class="sitemap-group">
+  <h2 style="font-size:1.25rem;margin-bottom:.25rem;">Client Lifecycle Flow</h2>
+  <p class="ds-section-desc">How a contact moves through the system from lead to active.</p>
+
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:1.5rem;">
+    <div style="background:rgba(107,117,153,.08);border:1px solid var(--color-border);border-radius:8px;padding:.5rem 1rem;text-align:center;">
+      <div style="font-weight:600;font-size:.82rem;color:var(--color-heading);">Lead</div>
+      <div style="font-size:.72rem;color:var(--color-muted);">Contact created</div>
+    </div>
+    <div style="font-size:1.25rem;color:var(--color-muted);">&#8594;</div>
+    <div style="background:rgba(59,130,246,.08);border:1px solid var(--color-border);border-radius:8px;padding:.5rem 1rem;text-align:center;">
+      <div style="font-weight:600;font-size:.82rem;color:#3B82F6;">Prospect</div>
+      <div style="font-size:.72rem;color:var(--color-muted);">Proposal + checkout pages built</div>
+    </div>
+    <div style="font-size:1.25rem;color:var(--color-muted);">&#8594;</div>
+    <div style="background:rgba(245,158,11,.08);border:1px solid var(--color-border);border-radius:8px;padding:.5rem 1rem;text-align:center;">
+      <div style="font-weight:600;font-size:.82rem;color:#D97706;">Onboarding</div>
+      <div style="font-size:.72rem;color:var(--color-muted);">Payment complete, 8-step wizard</div>
+    </div>
+    <div style="font-size:1.25rem;color:var(--color-muted);">&#8594;</div>
+    <div style="background:rgba(0,212,126,.08);border:1px solid var(--color-border);border-radius:8px;padding:.5rem 1rem;text-align:center;">
+      <div style="font-weight:600;font-size:.82rem;color:#00b86c;">Active</div>
+      <div style="font-size:.72rem;color:var(--color-muted);">Auto-promoted when 8 steps complete</div>
+    </div>
+  </div>
+
+  <table class="token-table">
+    <tr><th>Transition</th><th>Trigger</th><th>What Happens</th></tr>
+    <tr><td>Lead &#8594; Prospect</td><td>Manual via admin or <code>/api/convert-to-prospect</code></td><td>Proposal + checkout pages built and pushed to GitHub</td></tr>
+    <tr><td>Prospect &#8594; Onboarding</td><td>Stripe payment completes, <code>/checkout/success</code> patches status</td><td>Onboarding wizard activates, 8 steps seeded, intro call steps seeded via trigger</td></tr>
+    <tr><td>Onboarding &#8594; Active</td><td>Supabase trigger <code>trg_auto_promote_active</code> when all 8 steps = complete</td><td>Status auto-set to "active". Cannot be manually assigned.</td></tr>
+    <tr><td>Any &#8594; Lost</td><td>Manual "Mark as Lost" with reason capture</td><td>Contact marked lost with timestamp and reason. Filterable in admin.</td></tr>
+  </table>
+</div>
+
+<div style="text-align:center;padding:2rem 0;color:var(--color-muted);font-size:.82rem;">
+  Client HQ Architecture &middot; Last updated April 2026 &middot; <a href="/admin" style="color:var(--color-primary);">Back to Admin</a>
+</div>
+
+</div><!-- end tab-sitemap -->
+
 </div>
 
 <script>
@@ -522,6 +774,16 @@ function toggleTheme() {
     btn.innerHTML = '&#127769;';
     try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
   }
+}
+function switchDsTab(tabId) {
+  document.querySelectorAll('.ds-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.ds-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('tab-' + tabId).classList.add('active');
+  // Find the clicked button
+  document.querySelectorAll('.ds-tab').forEach(function(t) {
+    if (t.textContent.indexOf(tabId === 'design' ? 'Design' : 'Architecture') >= 0) t.classList.add('active');
+  });
+  window.scrollTo(0, 0);
 }
 // Set initial icon
 try {
