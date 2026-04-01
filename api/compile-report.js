@@ -40,10 +40,11 @@ module.exports = async function handler(req, res) {
 
   if (!clientSlug) return res.status(400).json({ error: 'client_slug required' });
 
-  // Default to current month if not specified
+  // Default to previous month if not specified (reports compile data for the month that just ended)
   if (!reportMonth) {
     var now = new Date();
-    reportMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+    var prev = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+    reportMonth = prev.getUTCFullYear() + '-' + String(prev.getUTCMonth() + 1).padStart(2, '0') + '-01';
   }
 
   var errors = [];
@@ -980,4 +981,5 @@ async function generateHighlights(snapshot, prevSnap, practiceName, apiKey) {
     };
   });
 }
+
 
