@@ -778,19 +778,21 @@ section { padding: 4.5rem 0; }
           var opt = document.createElement('option');
           opt.value = m.report_month;
           var label = monthLabel(m.report_month);
-          if (isPreview && m.report_status && m.report_status !== 'published') label += ' [' + m.report_status.replace(/_/g, ' ') + ']';
+          if (isPreview && m.report_status && m.report_status !== 'published') label += ' (' + m.report_status.replace(/_/g, ' ') + ')';
           opt.textContent = label;
           select.appendChild(opt);
         });
         document.getElementById('monthSelector').style.display = 'flex';
 
-        // Show admin preview banner
+        // Show admin preview banner with approve button
         if (isPreview) {
           var banner = document.createElement('div');
-          banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:#D97706;color:#fff;text-align:center;padding:.5rem;font-family:Outfit,sans-serif;font-weight:600;font-size:.82rem;letter-spacing:.02em;';
-          banner.textContent = 'ADMIN PREVIEW - This report has not been published to the client yet';
+          banner.id = 'adminBanner';
+          banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:#D97706;color:#fff;text-align:center;padding:.5rem 1rem;font-family:Outfit,sans-serif;font-weight:600;font-size:.82rem;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:1rem;';
+          banner.innerHTML = '<span>ADMIN PREVIEW - Not yet published to client</span>' +
+            '<button id="bannerApproveBtn" style="padding:.3rem .85rem;border-radius:6px;border:2px solid #fff;background:transparent;color:#fff;font-family:Outfit,sans-serif;font-weight:700;font-size:.78rem;cursor:pointer;transition:all .15s;" onmouseover="this.style.background=\'#fff\';this.style.color=\'#D97706\'" onmouseout="this.style.background=\'transparent\';this.style.color=\'#fff\'" onclick="approveFromBanner()">&#10003; Approve &amp; Publish</button>';
           document.body.appendChild(banner);
-          document.body.style.paddingTop = '36px';
+          document.body.style.paddingTop = '40px';
         }
 
         select.addEventListener('change', function() {
@@ -868,6 +870,38 @@ section { padding: 4.5rem 0; }
   function onScroll() { updateProgress(); updateNav(); checkReveal(); }
   window.addEventListener('scroll', onScroll);
   onScroll();
+
+  // Admin approve from preview banner
+  window.approveFromBanner = function() {
+    if (!currentSnap) return;
+    if (currentSnap.report_status === 'published') {
+      alert('This report is already published.');
+      return;
+    }
+    if (!confirm('Approve this report for ' + monthLabel(currentSnap.report_month) + '? It will become visible to the client.')) return;
+    var btn = document.getElementById('bannerApproveBtn');
+    if (btn) { btn.textContent = 'Publishing...'; btn.disabled = true; }
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'report_snapshots', filters: { id: currentSnap.id }, data: { report_status: 'published', updated_at: new Date().toISOString() } })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success) {
+        currentSnap.report_status = 'published';
+        var banner = document.getElementById('adminBanner');
+        if (banner) {
+          banner.style.background = '#00b86c';
+          banner.innerHTML = '<span>&#10003; Report published successfully - <a href="/' + CLIENT_SLUG + '/reports#' + currentSnap.report_month + '" style="color:#fff;text-decoration:underline;">View client page</a></span>';
+        }
+      } else {
+        alert('Failed to publish: ' + JSON.stringify(res));
+        if (btn) { btn.textContent = '✓ Approve & Publish'; btn.disabled = false; }
+      }
+    }).catch(function(err) {
+      alert('Error: ' + err);
+      if (btn) { btn.textContent = '✓ Approve & Publish'; btn.disabled = false; }
+    });
+  };
 
   // Start
   init();
