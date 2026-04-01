@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client HQ - Moonraker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root, [data-theme="light"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00b86c;
+  --color-primary-light: #B4EEE0;
+  --color-primary-subtle: #DDF8F2;
+  --color-bg: #F7FDFB;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-heading: #1E2A5E;
+  --color-body: #333F70;
+  --color-muted: #6B7599;
+  --color-navy: #141C3A;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+}
+[data-theme="dark"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00f598;
+  --color-primary-light: #1A4A38;
+  --color-primary-subtle: #0D2E22;
+  --color-bg: #080F0B;
+  --color-surface: #0E1A14;
+  --color-border: #1E3530;
+  --color-heading: #E8F5EF;
+  --color-body: #C8D8D0;
+  --color-muted: #5A7A6E;
+  --color-navy: #0A1630;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #FF6B6B;
+  --color-info: #60A5FA;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.7; -webkit-font-smoothing: antialiased;  }
+h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.15; }
+h1 { font-size: 2.75rem; letter-spacing: -0.02em; }
+h2 { font-size: 2rem; margin-bottom: .75rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.35rem; }
+h4 { font-size: 1.15rem; }
+p { margin-bottom: 1rem; }
+a { color: var(--color-primary); text-decoration: none; transition: color .2s; }
+a:hover { color: var(--color-primary-hover); }
+strong { font-weight: 600; color: var(--color-heading); }
+
+.progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--color-primary); width: 0%; z-index: 999; transition: width .1s linear; box-shadow: 0 0 8px rgba(0,212,126,.4); }
+
+.section-nav { position: fixed; right: 2rem; top: 50%; transform: translateY(-50%); z-index: 100; display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 1140px) { .section-nav { display: none; } }
+.section-nav a { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 8px; border-radius: 8px; font-size: .75rem; font-weight: 500; color: var(--color-muted); text-decoration: none; transition: all .25s ease; white-space: nowrap; }
+.section-nav a:hover { color: var(--color-heading); background: var(--color-surface); }
+.section-nav a.active { color: var(--color-primary); background: var(--color-primary-subtle); }
+.section-nav .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-border); flex-shrink: 0; transition: all .25s ease; }
+.section-nav a.active .nav-dot { background: var(--color-primary); width: 8px; height: 8px; box-shadow: 0 0 6px rgba(0,212,126,.5); }
+
+.container { max-width: 1060px; margin: 0 auto; padding: 0 3rem; }
+@media (max-width: 768px) { .container { padding: 0 1.5rem; } }
+section { padding: 4.5rem 0; }
+.divider { height: 1px; background: var(--color-border); border: none; margin: 0; }
+
+.theme-toggle { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 200; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; transition: all .25s ease; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.theme-toggle:hover { border-color: var(--color-primary); box-shadow: 0 2px 12px rgba(0,212,126,.15); }
+
+.header { background: var(--color-navy); padding: 2rem 0; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; top: -60%; right: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(0,212,126,.08) 0%, transparent 70%); pointer-events: none; }
+.header-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.header img { height: 36px; }
+.header-meta { text-align: right; }
+.header-meta p { margin: 0; font-size: .8125rem; color: rgba(232,245,239,.45); }
+.header-meta .name { color: #E8F5EF; font-weight: 600; font-size: .9375rem; }
+
+/* Hero */
+.hero { padding: 5.5rem 0 4rem; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; top: -100px; right: -80px; width: 500px; height: 500px; background: radial-gradient(circle at 30% 40%, rgba(0,212,126,.06) 0%, transparent 60%); pointer-events: none; }
+.hero h1 { margin-bottom: 1rem; }
+.hero .subtitle { font-size: 1.0625rem; color: var(--color-muted); max-width: 600px; line-height: 1.7; }
+.badge { display: inline-block; background: var(--color-primary-subtle); color: var(--color-primary); font-weight: 600; font-size: .75rem; padding: .4rem 1rem; border-radius: 100px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 1rem; }
+.badge.status-active { background: rgba(0,212,126,.1); color: var(--color-success); }
+.badge.status-onboarding { background: rgba(59,130,246,.1); color: var(--color-info); }
+.badge.status-lead, .badge.status-prospect { background: rgba(245,158,11,.1); color: var(--color-warning); }
+
+/* Campaign timeline bar */
+.campaign-timeline { margin-top: 2rem; max-width: 500px; }
+.campaign-timeline-label { display: flex; justify-content: space-between; font-size: .75rem; color: var(--color-muted); margin-bottom: .5rem; }
+.campaign-timeline-track { height: 8px; background: var(--color-border); border-radius: 4px; overflow: hidden; position: relative; }
+.campaign-timeline-fill { height: 100%; background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover)); border-radius: 4px; transition: width 1s ease; }
+.campaign-timeline-meta { display: flex; justify-content: space-between; font-size: .75rem; color: var(--color-muted); margin-top: .35rem; }
+
+/* Quick links grid */
+.quick-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 2rem 0; }
+.quick-link { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.75rem; text-decoration: none; transition: transform .3s, box-shadow .3s, border-color .3s; display: flex; flex-direction: column; gap: .5rem; position: relative; overflow: hidden; }
+.quick-link:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,.07); border-color: var(--color-primary); }
+.quick-link::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--color-primary); transform: scaleX(0); transition: transform .3s ease; transform-origin: left; }
+.quick-link:hover::after { transform: scaleX(1); }
+.quick-link-icon { font-size: 1.75rem; margin-bottom: .25rem; }
+.quick-link h4 { color: var(--color-heading); font-size: 1.1rem; margin: 0; }
+.quick-link p { color: var(--color-muted); font-size: .8125rem; margin: 0; line-height: 1.5; }
+.quick-link .link-arrow { color: var(--color-primary); font-size: .8125rem; font-weight: 600; margin-top: auto; padding-top: .5rem; }
+
+/* CORE score mini gauges */
+.core-mini-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 2rem 0; }
+@media (max-width: 640px) { .core-mini-grid { grid-template-columns: repeat(2, 1fr); } }
+.core-mini-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.25rem 1rem; text-align: center; position: relative; overflow: hidden; transition: transform .3s, box-shadow .3s; }
+.core-mini-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+.core-mini-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+.core-mini-card.score-low::after { background: var(--color-danger); }
+.core-mini-card.score-med::after { background: var(--color-warning); }
+.core-mini-card.score-high::after { background: var(--color-success); }
+.ring-wrap { position: relative; width: 72px; height: 72px; margin: 0 auto 8px; }
+.ring-bg, .ring-fg { fill: none; stroke-width: 5; stroke-linecap: round; }
+.ring-bg { stroke: var(--color-border); }
+.ring-fg { transition: stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1); transform: rotate(-90deg); transform-origin: center; }
+.score-val { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.2rem; }
+.score-val span { font-size: .7rem; opacity: .4; font-weight: 400; }
+.score-low .ring-fg { stroke: var(--color-danger); }
+.score-low .score-val { color: var(--color-danger); }
+.score-med .ring-fg { stroke: var(--color-warning); }
+.score-med .score-val { color: var(--color-warning); }
+.score-high .ring-fg { stroke: var(--color-success); }
+.score-high .score-val { color: var(--color-success); }
+.core-mini-label { font-size: .6875rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--color-muted); }
+
+/* Task progress */
+.task-progress { margin: 1.5rem 0; }
+.progress-track { height: 10px; background: var(--color-border); border-radius: 5px; overflow: hidden; display: flex; }
+.progress-fill-complete { background: var(--color-success); transition: width .8s ease; }
+.progress-fill-inprogress { background: var(--color-warning); transition: width .8s ease; }
+.progress-stats { display: flex; gap: 1.5rem; margin-top: .75rem; font-size: .875rem; flex-wrap: wrap; }
+.progress-stat { display: flex; align-items: center; gap: .35rem; }
+.progress-stat .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.progress-stat .dot.complete { background: var(--color-success); }
+.progress-stat .dot.inprogress { background: var(--color-warning); }
+.progress-stat .dot.notstarted { background: var(--color-border); }
+
+/* Onboarding checklist */
+.onboarding-list { list-style: none; margin: 1.5rem 0; }
+.onboarding-item { display: flex; align-items: center; gap: 1rem; padding: .875rem 1rem; border-bottom: 1px solid var(--color-border); font-size: .9375rem; transition: background .2s; }
+.onboarding-item:last-child { border-bottom: none; }
+.onboarding-item:hover { background: var(--color-primary-subtle); }
+.onboarding-item a { display: flex; align-items: center; gap: 1rem; text-decoration: none; color: inherit; width: 100%; }
+.onboarding-check { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: .75rem; }
+.onboarding-check.done { background: var(--color-success); color: #fff; }
+.onboarding-check.pending { background: var(--color-border); color: var(--color-muted); }
+.onboarding-check.active { background: rgba(245,158,11,.15); color: var(--color-warning); border: 2px solid var(--color-warning); }
+.onboarding-step-label { color: var(--color-heading); font-weight: 500; }
+.onboarding-step-label.done-label { color: var(--color-muted); }
+.onboarding-step-note { font-size: .75rem; color: var(--color-muted); margin-left: auto; max-width: 250px; text-align: right; }
+
+/* Deliverables list */
+.deliverables-list { list-style: none; margin: 1.5rem 0; }
+.deliverable-row { display: flex; align-items: center; gap: 1rem; padding: .875rem 0; border-bottom: 1px solid var(--color-border); }
+.deliverable-row:last-child { border-bottom: none; }
+.deliverable-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--color-primary-subtle); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+.deliverable-info { flex: 1; }
+.deliverable-title { font-weight: 600; font-size: .9375rem; color: var(--color-heading); }
+.deliverable-meta { font-size: .75rem; color: var(--color-muted); }
+.deliverable-link { font-size: .8125rem; font-weight: 600; color: var(--color-primary); white-space: nowrap; }
+
+/* Team cards */
+.team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin: 2rem 0; }
+.team-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.5rem; transition: transform .2s, box-shadow .2s; }
+.team-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+.team-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.05rem; color: var(--color-heading); }
+.team-role { font-size: .8125rem; color: var(--color-muted); margin-bottom: .75rem; }
+.team-contact { font-size: .8125rem; }
+.team-contact a { display: inline-flex; align-items: center; gap: .35rem; }
+
+/* CTA banner */
+.cta-banner { background: var(--color-navy); border-radius: 16px; padding: 2.5rem; text-align: center; margin: 2rem 0; position: relative; overflow: hidden; }
+.cta-banner::before { content: ''; position: absolute; top: -50%; left: -20%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(0,212,126,.1) 0%, transparent 70%); pointer-events: none; }
+.cta-banner h3 { color: #E8F5EF; margin-bottom: .5rem; font-size: 1.5rem; position: relative; }
+.cta-banner p { color: rgba(232,245,239,.6); margin-bottom: 1.25rem; font-size: .9375rem; position: relative; }
+.cta-btn { display: inline-block; background: var(--color-primary); color: #fff; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .9375rem; padding: .75rem 2rem; border-radius: 10px; text-decoration: none; transition: background .2s, transform .2s; position: relative; }
+.cta-btn:hover { background: var(--color-primary-hover); transform: translateY(-1px); color: #fff; }
+
+/* Loading state */
+.loading-state { text-align: center; padding: 6rem 0; }
+.loading-spinner { width: 40px; height: 40px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { color: var(--color-muted); font-size: .9375rem; }
+
+/* Error state */
+.error-state { text-align: center; padding: 6rem 0; }
+.error-state h2 { font-size: 1.5rem; margin-bottom: .5rem; }
+.error-state p { color: var(--color-muted); max-width: 400px; margin: 0 auto 1.5rem; }
+
+/* Reveal animation */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity .7s ease, transform .7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* Print */
+@media print {
+  .progress-bar, .section-nav, .theme-toggle { display: none !important; }
+  body { background: #fff; color: #333; }
+  .header { background: #141C3A !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  section { break-inside: avoid; padding: 2rem 0; }
+}
+
+.confidential { text-align: center; padding: 2rem 0; color: var(--color-muted); font-size: .8125rem; letter-spacing: .04em; }
+.footer { background: var(--color-navy); padding: 3rem 0; text-align: center; color: rgba(232,245,239,.4); font-size: .8125rem; }
+.footer img { height: 28px; margin-bottom: .75rem; opacity: .6; }
+.footer a { color: var(--color-primary); }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+<button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
+
+<nav class="section-nav" id="sectionNav"></nav>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="container header-inner">
+    <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker">
+    <div class="header-meta">
+      <p class="name" id="headerName">Client HQ</p>
+      <p>Confidential</p>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING STATE (visible on page load) -->
+<div id="loadingState" class="loading-state">
+  <div class="loading-spinner"></div>
+  <p class="loading-text">Loading your dashboard...</p>
+</div>
+
+<!-- ERROR STATE (hidden by default) -->
+<div id="errorState" class="error-state" style="display:none;">
+  <h2>Unable to Load Dashboard</h2>
+  <p id="errorMessage">Something went wrong. Please try refreshing the page.</p>
+  <a href="https://moonraker.ai" class="cta-btn">Visit Moonraker</a>
+</div>
+
+<!-- MAIN CONTENT (hidden until data loads) -->
+<main id="mainContent" style="display:none;">
+
+  <!-- HERO -->
+  <section class="hero" id="overview">
+    <div class="container">
+      <div id="heroBadge"></div>
+      <h1 id="heroTitle">Client HQ</h1>
+      <p class="subtitle" id="heroSubtitle"></p>
+      <div id="campaignTimeline"></div>
+    </div>
+  </section>
+  <hr class="divider">
+
+  <!-- QUICK LINKS -->
+  <section id="pages">
+    <div class="container">
+      <h2 class="reveal">Your Pages</h2>
+      <p class="reveal" style="color:var(--color-muted);margin-bottom:1.5rem;">Everything we have built for your campaign, all in one place.</p>
+      <div class="quick-links reveal" id="quickLinks"></div>
+    </div>
+  </section>
+  <hr class="divider">
+
+  <!-- CAMPAIGN SNAPSHOT -->
+  <section id="snapshot">
+    <div class="container">
+      <h2 class="reveal">Campaign Snapshot</h2>
+      <div id="coreScores" class="reveal"></div>
+      <div id="taskProgress" class="reveal"></div>
+    </div>
+  </section>
+  <hr class="divider">
+
+  <!-- ONBOARDING (shown if onboarding not complete) -->
+  <section id="onboarding" style="display:none;">
+    <div class="container">
+      <h2 class="reveal">Onboarding Progress</h2>
+      <p class="reveal" style="color:var(--color-muted);">Here is where things stand with your account setup.</p>
+      <ul class="onboarding-list reveal" id="onboardingList"></ul>
+    </div>
+  </section>
+
+  <!-- DELIVERABLES -->
+  <section id="deliverables">
+    <div class="container">
+      <h2 class="reveal">Deliverables</h2>
+      <ul class="deliverables-list reveal" id="deliverablesList"></ul>
+    </div>
+  </section>
+  <hr class="divider">
+
+  <!-- YOUR TEAM -->
+  <section id="team">
+    <div class="container">
+      <h2 class="reveal">Your Moonraker Team</h2>
+      <p class="reveal" style="color:var(--color-muted);margin-bottom:1rem;">Have a question? Reach out anytime.</p>
+      <div class="team-grid reveal">
+        <div class="team-card">
+          <div class="team-name">Scott Pope</div>
+          <div class="team-role">Director of Growth &amp; Operations</div>
+          <div class="team-contact">
+            <a href="mailto:scott@moonraker.ai">scott@moonraker.ai</a><br>
+            <a href="https://msg.moonraker.ai/widget/bookings/scott-pope-calendar" target="_blank">Book a call &#8599;</a>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="team-name">Karen Francisco</div>
+          <div class="team-role">Client Success Manager</div>
+          <div class="team-contact">
+            <a href="mailto:support@moonraker.ai">support@moonraker.ai</a>
+          </div>
+        </div>
+      </div>
+      <div class="cta-banner reveal" style="margin-top:2.5rem;">
+        <h3>Need to chat?</h3>
+        <p>Book a call with Scott to talk strategy, results, or next steps.</p>
+        <a href="https://msg.moonraker.ai/widget/bookings/scott-pope-calendar" target="_blank" class="cta-btn">Book a Call</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="confidential"><div class="container" id="confidentialLine">This dashboard is confidential.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai</div></div>
+<footer class="footer"><div class="container"><img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker"><br><a href="https://moonraker.ai">moonraker.ai</a></div></footer>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // CONFIG
+  // ============================================================
+  var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
+
+  // Extract slug from URL path: /sky-therapies/ -> sky-therapies
+  var pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
+  var CLIENT_SLUG = pathParts[0] || '';
+
+  if (!CLIENT_SLUG) {
+    showError('No client specified in the URL.');
+    return;
+  }
+
+  // ============================================================
+  // SUPABASE HELPERS
+  // ============================================================
+  function sbHeaders() {
+    return { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Accept': 'application/json' };
+  }
+
+  function sbFetch(table, query) {
+    return fetch(SB_URL + '/rest/v1/' + table + '?' + query, { headers: sbHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  }
+
+  // ============================================================
+  // ERROR / LOADING
+  // ============================================================
+  function showError(msg) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('errorState').style.display = 'block';
+    document.getElementById('errorMessage').textContent = msg;
+  }
+
+  // ============================================================
+  // FORMATTING HELPERS
+  // ============================================================
+  function fmtDate(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function pct(num, den) {
+    return den > 0 ? Math.round((num / den) * 100) : 0;
+  }
+
+  function scoreClass(val) {
+    if (val <= 3) return 'score-low';
+    if (val <= 6) return 'score-med';
+    return 'score-high';
+  }
+
+  function ringGauge(val, max) {
+    var r = 28;
+    var circ = 2 * Math.PI * r;
+    var offset = circ - (val / max) * circ;
+    return '<div class="ring-wrap">' +
+      '<svg viewBox="0 0 64 64" width="72" height="72">' +
+      '<circle class="ring-bg" cx="32" cy="32" r="' + r + '"/>' +
+      '<circle class="ring-fg" cx="32" cy="32" r="' + r + '" stroke-dasharray="' + circ.toFixed(1) + '" stroke-dashoffset="' + offset.toFixed(1) + '"/>' +
+      '</svg>' +
+      '<div class="score-val">' + val + '<span>/10</span></div></div>';
+  }
+
+  // ============================================================
+  // SECTION NAV BUILDER
+  // ============================================================
+  function buildSectionNav(sections) {
+    var nav = document.getElementById('sectionNav');
+    nav.innerHTML = '';
+    sections.forEach(function(s) {
+      var a = document.createElement('a');
+      a.href = '#' + s.id;
+      a.innerHTML = '<span class="nav-dot"></span>' + s.label;
+      nav.appendChild(a);
+    });
+  }
+
+  // ============================================================
+  // DELIVERABLE TYPE ICONS
+  // ============================================================
+  var deliverableIcons = {
+    'audit_diagnosis': '&#128269;',
+    'audit_action_plan': '&#128203;',
+    'audit_progress': '&#9989;',
+    'report': '&#128202;',
+    'proposal': '&#128196;',
+    'target_page': '&#128196;',
+    'bio_page': '&#128100;',
+    'press_release': '&#128240;',
+    'faq_page': '&#10067;',
+    'default': '&#128230;'
+  };
+
+  function getIcon(type) {
+    return deliverableIcons[type] || deliverableIcons['default'];
+  }
+
+  // ============================================================
+  // RENDER: ACTIVE CLIENT MODE
+  // ============================================================
+  function renderActive(contact, practiceDetails, onboardingSteps, deliverables, auditScores, taskStats) {
+    // Page title
+    document.title = 'Client HQ - ' + contact.practice_name + ' - Moonraker';
+    document.getElementById('headerName').textContent = contact.practice_name;
+
+    // Hero
+    document.getElementById('heroBadge').innerHTML = '<span class="badge status-active">Active Campaign</span>';
+    document.getElementById('heroTitle').textContent = 'Welcome, ' + contact.first_name;
+    document.getElementById('heroSubtitle').textContent = 'Your ' + contact.practice_name + ' campaign hub. Everything related to your Moonraker engagement lives here.';
+
+    // Campaign timeline
+    if (contact.campaign_start && contact.campaign_end) {
+      var start = new Date(contact.campaign_start);
+      var end = new Date(contact.campaign_end);
+      var now = new Date();
+      var totalDays = (end - start) / (1000 * 60 * 60 * 24);
+      var elapsedDays = Math.max(0, (now - start) / (1000 * 60 * 60 * 24));
+      var progress = Math.min(100, pct(elapsedDays, totalDays));
+      var monthsElapsed = Math.max(1, Math.round(elapsedDays / 30));
+      var totalMonths = Math.round(totalDays / 30);
+
+      document.getElementById('campaignTimeline').innerHTML =
+        '<div class="campaign-timeline">' +
+        '<div class="campaign-timeline-label"><span>Month ' + monthsElapsed + ' of ' + totalMonths + '</span><span>' + progress + '% complete</span></div>' +
+        '<div class="campaign-timeline-track"><div class="campaign-timeline-fill" style="width:' + progress + '%"></div></div>' +
+        '<div class="campaign-timeline-meta"><span>' + fmtDate(contact.campaign_start) + '</span><span>' + fmtDate(contact.campaign_end) + '</span></div>' +
+        '</div>';
+    }
+
+    // Quick links
+    var links = '';
+    var hasAudit = false;
+    var hasReport = false;
+    deliverables.forEach(function(d) {
+      if (d.deliverable_type === 'audit_diagnosis') hasAudit = true;
+      if (d.deliverable_type === 'report') hasReport = true;
+    });
+
+    if (hasAudit) {
+      links += '<a href="/' + CLIENT_SLUG + '/audits/diagnosis" class="quick-link">' +
+        '<div class="quick-link-icon">&#128269;</div><h4>Diagnosis</h4>' +
+        '<p>Baseline audit with CORE scores and competitive analysis</p>' +
+        '<div class="link-arrow">View diagnosis &#8599;</div></a>';
+      links += '<a href="/' + CLIENT_SLUG + '/audits/action-plan" class="quick-link">' +
+        '<div class="quick-link-icon">&#128203;</div><h4>Action Plan</h4>' +
+        '<p>Phased roadmap with prioritized tasks and timeline</p>' +
+        '<div class="link-arrow">View plan &#8599;</div></a>';
+      links += '<a href="/' + CLIENT_SLUG + '/audits/progress" class="quick-link">' +
+        '<div class="quick-link-icon">&#9989;</div><h4>Progress Tracker</h4>' +
+        '<p>Interactive checklist with live task status updates</p>' +
+        '<div class="link-arrow">Track progress &#8599;</div></a>';
+    }
+    if (hasReport) {
+      links += '<a href="/' + CLIENT_SLUG + '/reports" class="quick-link">' +
+        '<div class="quick-link-icon">&#128202;</div><h4>Monthly Reports</h4>' +
+        '<p>GSC, GA4, and GBP performance data with trend analysis</p>' +
+        '<div class="link-arrow">View reports &#8599;</div></a>';
+    }
+    document.getElementById('quickLinks').innerHTML = links;
+
+    // CORE scores
+    if (auditScores && auditScores.length > 0) {
+      var a = auditScores[0];
+      var coreHTML = '<div class="core-mini-grid">';
+      var pillars = [
+        { key: 'score_credibility', label: 'Credibility', letter: 'C' },
+        { key: 'score_optimization', label: 'Optimization', letter: 'O' },
+        { key: 'score_reputation', label: 'Reputation', letter: 'R' },
+        { key: 'score_engagement', label: 'Engagement', letter: 'E' }
+      ];
+      pillars.forEach(function(p) {
+        var val = a[p.key] || 0;
+        coreHTML += '<div class="core-mini-card ' + scoreClass(val) + '">' +
+          ringGauge(val, 10) +
+          '<div class="core-mini-label">' + p.label + '</div></div>';
+      });
+      coreHTML += '</div>';
+      document.getElementById('coreScores').innerHTML = coreHTML;
+
+      // Animate ring gauges after a short delay
+      setTimeout(function() {
+        document.querySelectorAll('.ring-fg').forEach(function(el) {
+          el.style.strokeDashoffset = el.getAttribute('stroke-dashoffset');
+        });
+      }, 300);
+    }
+
+    // Task progress
+    if (taskStats) {
+      var total = taskStats.total || 0;
+      var complete = taskStats.complete || 0;
+      var inProgress = taskStats.inProgress || 0;
+      var notStarted = total - complete - inProgress;
+      var pctComplete = pct(complete, total);
+      var pctInProgress = pct(inProgress, total);
+
+      document.getElementById('taskProgress').innerHTML =
+        '<h3 style="margin:2.5rem 0 .75rem;">Task Progress</h3>' +
+        '<div class="task-progress">' +
+        '<div class="progress-track">' +
+        '<div class="progress-fill-complete" style="width:' + pctComplete + '%"></div>' +
+        '<div class="progress-fill-inprogress" style="width:' + pctInProgress + '%"></div>' +
+        '</div>' +
+        '<div class="progress-stats">' +
+        '<div class="progress-stat"><span class="dot complete"></span> ' + complete + ' Complete</div>' +
+        '<div class="progress-stat"><span class="dot inprogress"></span> ' + inProgress + ' In Progress</div>' +
+        '<div class="progress-stat"><span class="dot notstarted"></span> ' + notStarted + ' Not Started</div>' +
+        '</div></div>';
+    }
+
+    // Onboarding section (show if not fully complete)
+    if (onboardingSteps && onboardingSteps.length > 0) {
+      var allComplete = onboardingSteps.every(function(s) { return s.status === 'complete'; });
+      if (!allComplete) {
+        document.getElementById('onboarding').style.display = 'block';
+        var listHTML = '';
+        onboardingSteps.forEach(function(s) {
+          var checkClass = s.status === 'complete' ? 'done' : (s.status === 'in_progress' ? 'active' : 'pending');
+          var checkIcon = s.status === 'complete' ? '&#10003;' : (s.status === 'in_progress' ? '&#9679;' : '');
+          var labelClass = s.status === 'complete' ? 'done-label' : '';
+          var note = s.notes ? '<span class="onboarding-step-note">' + s.notes + '</span>' : '';
+          var href = '/' + CLIENT_SLUG + '/onboarding#' + s.step_key;
+          listHTML += '<li class="onboarding-item">' +
+            '<a href="' + href + '">' +
+            '<div class="onboarding-check ' + checkClass + '">' + checkIcon + '</div>' +
+            '<span class="onboarding-step-label ' + labelClass + '">' + s.label + '</span>' + note +
+            '</a></li>';
+        });
+        document.getElementById('onboardingList').innerHTML = listHTML;
+      }
+    }
+
+    // Deliverables list
+    if (deliverables && deliverables.length > 0) {
+      var dlHTML = '';
+      deliverables.forEach(function(d) {
+        var link = d.page_url ? '<a href="' + d.page_url + '" class="deliverable-link" target="_blank">Open &#8599;</a>' : '';
+        dlHTML += '<li class="deliverable-row">' +
+          '<div class="deliverable-icon">' + getIcon(d.deliverable_type) + '</div>' +
+          '<div class="deliverable-info">' +
+          '<div class="deliverable-title">' + d.title + '</div>' +
+          '<div class="deliverable-meta">' + (d.delivered_at ? 'Delivered ' + fmtDate(d.delivered_at) : d.status) + '</div>' +
+          '</div>' + link + '</li>';
+      });
+      document.getElementById('deliverablesList').innerHTML = dlHTML;
+    }
+
+    // Confidential line
+    var fullName = contact.first_name + ' ' + contact.last_name;
+    if (contact.credentials) fullName += ', ' + contact.credentials;
+    document.getElementById('confidentialLine').innerHTML =
+      'This dashboard is confidential and prepared exclusively for ' + fullName + '.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai';
+
+    // Build section nav
+    var navSections = [
+      { id: 'overview', label: 'Overview' },
+      { id: 'pages', label: 'Pages' },
+      { id: 'snapshot', label: 'Snapshot' }
+    ];
+    if (document.getElementById('onboarding').style.display !== 'none') {
+      navSections.push({ id: 'onboarding', label: 'Onboarding' });
+    }
+    navSections.push({ id: 'deliverables', label: 'Deliverables' });
+    navSections.push({ id: 'team', label: 'Team' });
+    buildSectionNav(navSections);
+  }
+
+  // ============================================================
+  // RENDER: ONBOARDING MODE
+  // ============================================================
+  function renderOnboarding(contact, onboardingSteps) {
+    document.title = 'Onboarding - ' + contact.practice_name + ' - Moonraker';
+    document.getElementById('headerName').textContent = contact.practice_name;
+
+    document.getElementById('heroBadge').innerHTML = '<span class="badge status-onboarding">Onboarding</span>';
+    document.getElementById('heroTitle').textContent = 'Welcome aboard, ' + contact.first_name;
+    document.getElementById('heroSubtitle').textContent = 'We are setting up your ' + contact.practice_name + ' campaign. Here is what we need to get started.';
+    document.getElementById('campaignTimeline').innerHTML = '';
+
+    // Hide pages and snapshot for onboarding mode
+    document.getElementById('pages').style.display = 'none';
+    document.getElementById('snapshot').style.display = 'none';
+    document.querySelectorAll('.divider').forEach(function(d, i) { if (i === 1 || i === 2) d.style.display = 'none'; });
+
+    // Show onboarding section
+    document.getElementById('onboarding').style.display = 'block';
+    if (onboardingSteps && onboardingSteps.length > 0) {
+      var listHTML = '';
+      onboardingSteps.forEach(function(s) {
+        var checkClass = s.status === 'complete' ? 'done' : (s.status === 'in_progress' ? 'active' : 'pending');
+        var checkIcon = s.status === 'complete' ? '&#10003;' : (s.status === 'in_progress' ? '&#9679;' : '');
+        var labelClass = s.status === 'complete' ? 'done-label' : '';
+        var note = s.notes ? '<span class="onboarding-step-note">' + s.notes + '</span>' : '';
+        var href = '/' + CLIENT_SLUG + '/onboarding#' + s.step_key;
+        listHTML += '<li class="onboarding-item">' +
+          '<a href="' + href + '">' +
+          '<div class="onboarding-check ' + checkClass + '">' + checkIcon + '</div>' +
+          '<span class="onboarding-step-label ' + labelClass + '">' + s.label + '</span>' + note +
+          '</a></li>';
+      });
+      document.getElementById('onboardingList').innerHTML = listHTML;
+    }
+
+    // Deliverables likely empty at this stage but show section anyway
+    document.getElementById('deliverablesList').innerHTML =
+      '<li class="deliverable-row" style="justify-content:center;color:var(--color-muted);font-size:.9375rem;padding:2rem 0;">' +
+      'Deliverables will appear here once your campaign kicks off.</li>';
+
+    var fullName = contact.first_name + ' ' + contact.last_name;
+    if (contact.credentials) fullName += ', ' + contact.credentials;
+    document.getElementById('confidentialLine').innerHTML =
+      'This dashboard is confidential and prepared exclusively for ' + fullName + '.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai';
+
+    buildSectionNav([
+      { id: 'overview', label: 'Overview' },
+      { id: 'onboarding', label: 'Onboarding' },
+      { id: 'deliverables', label: 'Deliverables' },
+      { id: 'team', label: 'Team' }
+    ]);
+  }
+
+  // ============================================================
+  // RENDER: LEAD / PROSPECT MODE
+  // ============================================================
+  function renderProspect(contact) {
+    document.title = contact.practice_name + ' - Moonraker';
+    document.getElementById('headerName').textContent = contact.practice_name;
+
+    var statusLabel = contact.status === 'lead' ? 'Lead' : 'Prospect';
+    document.getElementById('heroBadge').innerHTML = '<span class="badge status-' + contact.status + '">' + statusLabel + '</span>';
+    document.getElementById('heroTitle').textContent = 'Hi, ' + contact.first_name;
+    document.getElementById('heroSubtitle').textContent = 'Thanks for your interest in Moonraker. Here is what we have prepared for ' + contact.practice_name + '.';
+    document.getElementById('campaignTimeline').innerHTML = '';
+
+    // Show only a proposal link and CTA for prospects
+    document.getElementById('pages').style.display = 'none';
+    document.getElementById('snapshot').style.display = 'none';
+    document.getElementById('deliverables').style.display = 'none';
+    document.querySelectorAll('.divider').forEach(function(d) { d.style.display = 'none'; });
+
+    // Replace onboarding section with proposal CTA
+    document.getElementById('onboarding').style.display = 'block';
+    document.getElementById('onboarding').querySelector('h2').textContent = 'Your Proposal';
+    document.getElementById('onboarding').querySelector('p').textContent = '';
+    document.getElementById('onboardingList').innerHTML = '';
+
+    var proposalHTML =
+      '<div class="cta-banner" style="margin:0;">' +
+      '<h3>Your custom proposal is ready</h3>' +
+      '<p>See exactly how Moonraker can grow ' + contact.practice_name + '\'s visibility in AI and Google search.</p>' +
+      '<a href="/' + CLIENT_SLUG + '/proposal" class="cta-btn">View Your Proposal</a>' +
+      '</div>';
+    document.getElementById('onboarding').querySelector('.container').insertAdjacentHTML('beforeend', proposalHTML);
+
+    var fullName = contact.first_name + ' ' + contact.last_name;
+    if (contact.credentials) fullName += ', ' + contact.credentials;
+    document.getElementById('confidentialLine').innerHTML =
+      'This page is confidential and prepared exclusively for ' + fullName + '.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai';
+
+    buildSectionNav([
+      { id: 'overview', label: 'Overview' },
+      { id: 'onboarding', label: 'Proposal' },
+      { id: 'team', label: 'Team' }
+    ]);
+  }
+
+  // ============================================================
+  // MAIN INIT
+  // ============================================================
+  function init() {
+    // Fetch contact by slug
+    sbFetch('contacts', 'slug=eq.' + CLIENT_SLUG + '&select=*&limit=1')
+      .then(function(contacts) {
+        if (!contacts || contacts.length === 0) {
+          showError('No account found for "' + CLIENT_SLUG + '". Please check the URL.');
+          return;
+        }
+        var contact = contacts[0];
+        var contactId = contact.id;
+
+        // Fetch all related data in parallel
+        return Promise.all([
+          Promise.resolve(contact),
+          sbFetch('practice_details', 'contact_id=eq.' + contactId + '&select=*&limit=1'),
+          sbFetch('onboarding_steps', 'contact_id=eq.' + contactId + '&select=*&order=sort_order'),
+          sbFetch('deliverables', 'contact_id=eq.' + contactId + '&select=*&order=delivered_at.desc'),
+          sbFetch('audit_scores', 'client_slug=eq.' + CLIENT_SLUG + '&select=*&order=audit_date.desc&limit=1'),
+          sbFetch('checklist_items', 'client_slug=eq.' + CLIENT_SLUG + '&select=status')
+        ]);
+      })
+      .then(function(results) {
+        if (!results) return; // contact not found already handled
+
+        var contact = results[0];
+        var practiceDetails = results[1] && results[1][0] ? results[1][0] : null;
+        var onboardingSteps = results[2] || [];
+        var deliverables = results[3] || [];
+        var auditScores = results[4] || [];
+        var taskRows = results[5] || [];
+
+        // Compute task stats
+        var taskStats = { total: taskRows.length, complete: 0, inProgress: 0 };
+        taskRows.forEach(function(t) {
+          if (t.status === 'complete') taskStats.complete++;
+          else if (t.status === 'in-progress') taskStats.inProgress++;
+        });
+
+        // Hide loading, show content
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+
+        // Route to the appropriate render mode
+        if (contact.status === 'active') {
+          renderActive(contact, practiceDetails, onboardingSteps, deliverables, auditScores, taskStats);
+        } else if (contact.status === 'onboarding') {
+          renderOnboarding(contact, onboardingSteps);
+        } else {
+          renderProspect(contact);
+        }
+
+        // Trigger reveal animations
+        setTimeout(checkReveal, 100);
+      })
+      .catch(function(err) {
+        console.error('Failed to load dashboard:', err);
+        showError('Unable to connect to the data source. Please try refreshing.');
+      });
+  }
+
+  // ============================================================
+  // UI: THEME TOGGLE, PROGRESS BAR, SECTION NAV, REVEAL
+  // ============================================================
+  var themeBtn = document.getElementById('themeBtn');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function() {
+      var h = document.documentElement;
+      document.body.style.transition='opacity .25s ease';
+      document.body.style.opacity='0';
+      setTimeout(function(){
+        if (h.getAttribute('data-theme') === 'light') {
+          h.setAttribute('data-theme', 'dark');
+          themeBtn.innerHTML = '&#9728;&#65039;';
+          try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
+        } else {
+          h.setAttribute('data-theme', 'light');
+          themeBtn.innerHTML = '&#x1F319;';
+          try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
+        }
+        document.body.style.transition='opacity .3s ease';
+        document.body.style.opacity='1';
+        setTimeout(function(){document.body.style.transition=''},400);
+      },280);
+    });
+  }
+
+  var progressBar = document.getElementById('progressBar');
+  function updateProgress() {
+    var scrollTop = window.scrollY;
+    var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    progressBar.style.width = (docHeight > 0 ? (scrollTop / docHeight) * 100 : 0) + '%';
+  }
+
+  function updateNav() {
+    var current = '';
+    document.querySelectorAll('section[id]').forEach(function(s) {
+      if (s.style.display !== 'none' && window.scrollY >= s.offsetTop - 200) current = s.id;
+    });
+    document.querySelectorAll('.section-nav a').forEach(function(l) {
+      l.classList.toggle('active', l.getAttribute('href') === '#' + current);
+    });
+  }
+
+  function checkReveal() {
+    document.querySelectorAll('.reveal').forEach(function(el) {
+      if (el.getBoundingClientRect().top < window.innerHeight * 0.88) el.classList.add('visible');
+    });
+  }
+
+  function onScroll() { updateProgress(); updateNav(); checkReveal(); }
+  window.addEventListener('scroll', onScroll);
+  onScroll();
+
+  // Start
+  init();
+})();
+</script>
+</body>
+</html>
