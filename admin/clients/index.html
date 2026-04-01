@@ -1978,7 +1978,10 @@ strong { font-weight: 600; color: var(--color-heading); }
       if (s.report_status === 'published') {
         html += '<button class="btn btn-ghost btn-sm" style="margin-left:.5rem;color:var(--color-info);" onclick="event.stopPropagation(); previewReportEmail(\'' + s.id + '\')" title="Preview client email">&#9993; Preview Email</button>';
       }
-      html += '<a href="/' + esc(slug) + '/reports?preview=admin#' + esc(s.report_month) + '" target="_blank" class="btn btn-ghost btn-sm" title="View report" style="margin-left:.5rem;">&#128279; View</a>';
+      var viewUrl = s.report_status === 'published'
+        ? '/' + esc(slug) + '/reports#' + esc(s.report_month)
+        : '/' + esc(slug) + '/reports?preview=admin#' + esc(s.report_month);
+      html += '<a href="' + viewUrl + '" target="_blank" class="btn btn-ghost btn-sm" title="View report" style="margin-left:.5rem;">&#128279; View</a>';
       html += '</div>';
     });
     document.getElementById('rptList').innerHTML = html;
