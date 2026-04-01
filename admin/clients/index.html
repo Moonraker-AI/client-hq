@@ -737,10 +737,13 @@ strong { font-weight: 600; color: var(--color-heading); }
         <!-- Status Overview -->
         <div class="stat-row" id="rptOverview"></div>
 
-        <!-- Tracked Keywords (editable) -->
+        <!-- Configuration -->
         <div class="card" style="margin-bottom:1rem;">
-          <div class="card-header"><h3>Tracked Keywords</h3></div>
-          <div id="rptKeywords" style="padding:.25rem 0;"></div>
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+            <h3>Configuration</h3>
+            <button class="btn-sm" id="rptSaveBtn" onclick="saveReportConfig()" style="padding:.35rem .85rem;font-size:.75rem;font-weight:600;border:none;background:var(--color-primary);color:#fff;border-radius:6px;cursor:pointer;font-family:inherit;">Save Configuration</button>
+          </div>
+          <div id="rptConfigForm"></div>
         </div>
 
         <!-- Report History -->
@@ -749,7 +752,7 @@ strong { font-weight: 600; color: var(--color-heading); }
           <button class="btn-sm" id="compileNowBtn" onclick="compileReportNow()" style="padding:.35rem .85rem;font-size:.75rem;font-weight:600;border:1px solid var(--color-primary);background:var(--color-primary-subtle);color:var(--color-primary);border-radius:6px;cursor:pointer;font-family:inherit;">&#9654; Compile Now</button>
         </div>
         <div id="rptList"></div>
-        <div class="empty-state" id="rptEmpty" style="display:none;"><p>No reports compiled yet. Configure data streams and compile your first report.</p></div>
+        <div class="empty-state" id="rptEmpty" style="display:none;"><p>No reports compiled yet. Complete platform setup deliverables and compile your first report.</p></div>
       </div>
 
       <!-- TAB: Billing -->
@@ -1457,7 +1460,7 @@ strong { font-weight: 600; color: var(--color-heading); }
   // ---- KEYWORD FORM (inside Intro Call) ----
   function renderKeywordForm(targetId) {
     // Renders into any element - used by both IC tab and Reports tab
-    var targets = targetId ? [targetId] : ['icKeywordForm', 'rptKeywords'];
+    var targets = targetId ? [targetId] : ['icKeywordForm'];
     var slug = state.contact.slug;
     sb('tracked_keywords?client_slug=eq.' + slug + '&active=eq.true&order=priority.asc,keyword.asc').then(function(kws) {
       var html = '<div class="ic-kw-form">';
@@ -2034,9 +2037,8 @@ strong { font-weight: 600; color: var(--color-heading); }
     // ── STATUS OVERVIEW (stat cards) ──
     var gscVal = (cfg && cfg.gsc_property) || (c && c.gsc_property) || '';
     var gscOk = !!gscVal;
-    var lbmOk = !!(cfg && (cfg.lbm_location_id || cfg.gbp_id));
+    var lbmOk = !!(cfg && cfg.lbm_location_id);
     var isActive = cfg && cfg.active;
-    var totalReports = snaps.length;
     var publishedReports = snaps.filter(function(s) { return s.report_status === 'published'; }).length;
     var pendingReview = snaps.filter(function(s) { return s.report_status === 'internal_review'; }).length;
 
@@ -2050,8 +2052,37 @@ strong { font-weight: 600; color: var(--color-heading); }
       '<div class="stat-mini"><div class="stat-label">Published</div><div class="stat-value" style="color:var(--color-success);">' + publishedReports + '</div></div>' +
       '<div class="stat-mini"><div class="stat-label">Pending Review</div><div class="stat-value" style="color:' + (pendingReview > 0 ? 'var(--color-warning)' : 'var(--color-muted)') + ';">' + pendingReview + '</div></div>';
 
-    // ── TRACKED KEYWORDS (editable, shared form) ──
-    renderKeywordForm('rptKeywords');
+    // ── CONFIGURATION FORM ──
+    var fHtml = '<div style="padding:.75rem 0;">';
+    fHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">';
+
+    fHtml += '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.3rem;">GSC Property</label>';
+    fHtml += '<input type="text" id="rptGsc" value="' + esc(gscVal) + '" placeholder="e.g. sc-domain:example.com" style="width:100%;font-family:inherit;font-size:.84rem;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);"></div>';
+
+    fHtml += '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.3rem;">LBM Location ID</label>';
+    fHtml += '<input type="text" id="rptLbmLoc" value="' + esc((cfg && cfg.lbm_location_id) || '') + '" placeholder="e.g. v53rmqv5" style="width:100%;font-family:inherit;font-size:.84rem;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);"></div>';
+
+    fHtml += '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.3rem;">LBM Report ID</label>';
+    fHtml += '<input type="text" id="rptLbmRpt" value="' + esc((cfg && cfg.lbm_report_id) || '') + '" placeholder="e.g. 8lgo2w1z" style="width:100%;font-family:inherit;font-size:.84rem;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);"></div>';
+
+    fHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">';
+    fHtml += '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.3rem;">Report Day (1-28)</label>';
+    fHtml += '<input type="number" id="rptDay" min="1" max="28" value="' + ((cfg && cfg.report_day) || 1) + '" style="width:100%;font-family:inherit;font-size:.84rem;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);"></div>';
+
+    fHtml += '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.3rem;">Status</label>';
+    fHtml += '<select id="rptActive" style="width:100%;font-family:inherit;font-size:.84rem;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);">';
+    fHtml += '<option value="true"' + (isActive ? ' selected' : '') + '>Active</option>';
+    fHtml += '<option value="false"' + (!isActive ? ' selected' : '') + '>Inactive</option>';
+    fHtml += '</select></div>';
+    fHtml += '</div>';
+
+    fHtml += '</div>';
+
+    if (cfg && cfg.last_compiled_at) {
+      fHtml += '<div style="margin-top:.75rem;font-size:.78rem;color:var(--color-muted);">Last compiled: ' + formatDateTime(cfg.last_compiled_at) + '</div>';
+    }
+    fHtml += '</div>';
+    document.getElementById('rptConfigForm').innerHTML = fHtml;
 
     // ── REPORT HISTORY ──
     if (snaps.length === 0) {
@@ -2094,6 +2125,52 @@ strong { font-weight: 600; color: var(--color-heading); }
     });
     document.getElementById('rptList').innerHTML = html;
   }
+
+  window.saveReportConfig = function() {
+    var c = state.contact;
+    if (!c) return;
+    var gscVal = (document.getElementById('rptGsc') || {}).value || '';
+    var lbmLocVal = (document.getElementById('rptLbmLoc') || {}).value || '';
+    var lbmRptVal = (document.getElementById('rptLbmRpt') || {}).value || '';
+    var dayVal = parseInt((document.getElementById('rptDay') || {}).value) || 1;
+    var activeVal = (document.getElementById('rptActive') || {}).value === 'true';
+
+    var configData = {
+      client_slug: c.slug,
+      gsc_property: gscVal || null,
+      lbm_location_id: lbmLocVal || null,
+      lbm_report_id: lbmRptVal || null,
+      report_day: dayVal,
+      active: activeVal
+    };
+
+    // Also save gsc_property on the contact record
+    if (gscVal && gscVal !== c.gsc_property) {
+      apiAction('update_record', 'contacts', { slug: c.slug }, { gsc_property: gscVal });
+      state.contact.gsc_property = gscVal;
+    }
+
+    var btn = document.getElementById('rptSaveBtn');
+    if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
+
+    var cfg = state.reportConfig;
+    var action = cfg ? apiAction('update_record', 'report_configs', { client_slug: c.slug }, configData)
+                     : apiAction('create_record', 'report_configs', null, configData);
+
+    action.then(function(res) {
+      if (res.success) {
+        state.reportConfig = (res.data && res.data[0]) || configData;
+        toast('Report config saved', 'success');
+        renderReports();
+      } else {
+        toast('Failed to save config', 'error');
+      }
+      if (btn) { btn.textContent = 'Save Configuration'; btn.disabled = false; }
+    }).catch(function() {
+      toast('Error saving config', 'error');
+      if (btn) { btn.textContent = 'Save Configuration'; btn.disabled = false; }
+    });
+  };
 
   window.approveReport = function(snapId) {
     if (!confirm('Approve this report and mark it as published? This will make it visible to the client on their reports page.')) return;
