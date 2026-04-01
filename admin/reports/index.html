@@ -418,9 +418,9 @@ strong { font-weight: 600; color: var(--color-heading); }
   </div>
 
   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem;">
-    <h2 style="font-size: 1.35rem; margin-bottom: 0;">Client Configurations</h2>
+    <h2 style="font-size: 1.35rem; margin-bottom: 0;">Client Reports Overview</h2>
   </div>
-  <p style="color: var(--color-muted); font-size: .85rem; margin-bottom: 0;">Configure data sources and tracked queries for each active client. Once verified, trigger compilation from Claude.</p>
+  <p style="color: var(--color-muted); font-size: .85rem; margin-bottom: 0;">Click any client to view and configure their reports in the client deep-dive.</p>
 
   <div class="client-grid" id="clientGrid">
     <div class="empty-state">
@@ -896,11 +896,9 @@ strong { font-weight: 600; color: var(--color-heading); }
       var cfg = state.configs[client.slug] || {};
       var snap = state.snapshots[client.slug];
       var queries = cfg.tracked_queries || [];
-      var isExpanded = state.expanded === client.slug;
 
       // Source status
       var hasGSC = !!(cfg.gsc_property || client.gsc_property);
-      var hasGA4 = !!(cfg.ga4_property || client.ga4_property);
       var hasLBM = !!cfg.lbm_location_id;
       var hasQueries = queries.length > 0;
 
@@ -908,14 +906,13 @@ strong { font-weight: 600; color: var(--color-heading); }
       var lastCompiled = cfg.last_compiled_at ? timeAgo(cfg.last_compiled_at) : null;
       var compiledStatus = cfg.last_compiled_status;
 
-      html += '<div class="client-row' + (isExpanded ? ' expanded' : '') + '" onclick="window._toggleClient(\'' + client.slug + '\')">';
+      html += '<div class="client-row" onclick="window.location.href=\'/admin/clients?slug=' + client.slug + '&tab=reports\'" style="cursor:pointer;">';
       html += '<div><div class="client-name">' + esc(client.practice_name || client.slug) + '</div>';
       html += '<div class="client-slug">' + esc(client.slug) + (client.email ? ' &middot; ' + esc(client.email) : '') + '</div></div>';
 
       // Source indicators
       html += '<div class="source-indicators">';
       html += '<div class="source-badge ' + (hasGSC ? 'connected' : 'missing') + '"><span class="status-dot ' + (hasGSC ? 'green' : 'red') + '"></span>GSC</div>';
-      html += '<div class="source-badge ' + (hasGA4 ? 'connected' : 'missing') + '"><span class="status-dot ' + (hasGA4 ? 'green' : 'red') + '"></span>GA4</div>';
       html += '<div class="source-badge ' + (hasLBM ? 'connected' : 'missing') + '"><span class="status-dot ' + (hasLBM ? 'green' : 'gray') + '"></span>GBP</div>';
       html += '<div class="source-badge ' + (hasQueries ? 'connected' : 'missing') + '"><span class="status-dot ' + (hasQueries ? 'green' : 'gray') + '"></span>AI (' + queries.length + ')</div>';
       html += '</div>';
@@ -928,7 +925,7 @@ strong { font-weight: 600; color: var(--color-heading); }
         html += '<span class="tag tag-muted">Not compiled</span>';
       }
 
-      // Last notified / published
+      // Review status
       if (cfg.last_published_at) {
         html += '<span class="tag tag-success">Published</span>';
       } else if (cfg.last_notified_at) {
@@ -937,13 +934,7 @@ strong { font-weight: 600; color: var(--color-heading); }
         html += '<span class="tag tag-muted">--</span>';
       }
 
-      // Expand arrow
-      html += '<span style="color:var(--color-muted);font-size:.85rem;">' + (isExpanded ? '&#9650;' : '&#9660;') + '</span>';
-      html += '</div>';
-
-      // Detail panel
-      html += '<div class="detail-panel' + (isExpanded ? ' open' : '') + '" id="panel-' + client.slug + '" onclick="event.stopPropagation()">';
-      html += renderDetail(client, cfg, snap);
+      html += '<span style="color:var(--color-muted);font-size:.75rem;">&#8599;</span>';
       html += '</div>';
     });
 
