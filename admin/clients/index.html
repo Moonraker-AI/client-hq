@@ -255,7 +255,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 /* ---- INTRO CALL CHECKLIST ---- */
 .ic-category { margin-bottom: 1.5rem; }
 .ic-category-header { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); margin-bottom: .5rem; padding-bottom: .35rem; border-bottom: 1px solid var(--color-border); }
-.ic-row { display: flex; align-items: center; gap: .75rem; padding: .65rem .75rem; border-bottom: 1px solid var(--color-border); font-size: .84rem; transition: background .1s; cursor: pointer; }
+.ic-row { display: flex; align-items: center; gap: .75rem; padding: .65rem .75rem; padding-right: 3.5rem; border-bottom: 1px solid var(--color-border); font-size: .84rem; transition: background .1s; cursor: pointer; }
 .ic-row:hover { background: var(--sidebar-hover); }
 .ic-row.expanded { background: var(--color-bg); }
 .ic-expand-icon { font-size: .65rem; color: var(--color-muted); transition: transform .2s; flex-shrink: 0; }
@@ -2109,21 +2109,26 @@ strong { font-weight: 600; color: var(--color-heading); }
     var queries = (cfg && cfg.tracked_queries) || [];
     var tqHtml = '<p style="font-size:.82rem;color:var(--color-muted);margin:0 0 .75rem;">Checked against 5 AI engines each month (Google AI Mode, Gemini, ChatGPT, Perplexity, Bing).</p>';
     if (queries.length > 0) {
-      tqHtml += '<div style="display:grid;grid-template-columns:1fr 180px 28px;gap:.5rem;padding:0 0 .4rem;border-bottom:1px solid var(--color-border);margin-bottom:.35rem;">';
+      tqHtml += '<div style="display:grid;grid-template-columns:1fr 200px 50px 28px;gap:.5rem;padding:0 0 .4rem;border-bottom:1px solid var(--color-border);margin-bottom:.35rem;">';
       tqHtml += '<span style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">Search Query</span>';
-      tqHtml += '<span style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">Label</span>';
+      tqHtml += '<span style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">Target URL</span>';
+      tqHtml += '<span style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">Priority</span>';
       tqHtml += '<span></span></div>';
       queries.forEach(function(q, i) {
-        tqHtml += '<div style="display:grid;grid-template-columns:1fr 180px 28px;gap:.5rem;align-items:center;padding:.35rem 0;border-bottom:1px solid var(--color-border);font-size:.82rem;">';
+        var pri = q.priority || 'P1';
+        var priColor = pri === 'P1' ? 'background:rgba(0,212,126,.1);color:#00b86c' : 'background:rgba(59,130,246,.1);color:#3B82F6';
+        tqHtml += '<div style="display:grid;grid-template-columns:1fr 200px 50px 28px;gap:.5rem;align-items:center;padding:.35rem 0;border-bottom:1px solid var(--color-border);font-size:.82rem;">';
         tqHtml += '<input type="text" value="' + esc(q.query || '') + '" data-idx="' + i + '" data-field="query" class="rpt-tq-input" style="font-family:inherit;font-size:.82rem;padding:.3rem .5rem;border:1px solid var(--color-border);border-radius:6px;background:var(--color-surface);color:var(--color-heading);">';
-        tqHtml += '<input type="text" value="' + esc(q.label || '') + '" data-idx="' + i + '" data-field="label" class="rpt-tq-input" style="font-family:inherit;font-size:.82rem;padding:.3rem .5rem;border:1px solid var(--color-border);border-radius:6px;background:var(--color-surface);color:var(--color-heading);" placeholder="Label">';
+        tqHtml += '<input type="text" value="' + esc(q.target_url || q.label || '') + '" data-idx="' + i + '" data-field="target_url" class="rpt-tq-input" style="font-family:inherit;font-size:.82rem;padding:.3rem .5rem;border:1px solid var(--color-border);border-radius:6px;background:var(--color-surface);color:var(--color-heading);" placeholder="/page-url/">';
+        tqHtml += '<button data-idx="' + i + '" data-field="priority" class="rpt-tq-input" onclick="toggleQueryPriority(' + i + ')" style="font-family:inherit;font-size:.72rem;font-weight:600;padding:.2rem .4rem;border-radius:5px;border:none;cursor:pointer;' + priColor + ';">' + esc(pri) + '</button>';
         tqHtml += '<button onclick="removeTrackedQuery(' + i + ')" style="width:22px;height:22px;border:none;background:transparent;color:var(--color-muted);cursor:pointer;font-size:.75rem;border-radius:4px;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background=\'rgba(239,68,68,.1)\';this.style.color=\'var(--color-danger)\'" onmouseout="this.style.background=\'transparent\';this.style.color=\'var(--color-muted)\'" title="Remove">&#10005;</button>';
         tqHtml += '</div>';
       });
     }
-    tqHtml += '<div style="margin-top:.6rem;display:flex;gap:.75rem;">';
+    tqHtml += '<div style="margin-top:.6rem;display:flex;gap:.75rem;align-items:center;">';
     tqHtml += '<button onclick="addTrackedQuery()" style="padding:.35rem .85rem;font-size:.78rem;font-weight:600;border:1px solid var(--color-border);background:transparent;color:var(--color-heading);border-radius:6px;cursor:pointer;font-family:inherit;">+ Add Query</button>';
     tqHtml += '<button onclick="saveTrackedQueries()" style="padding:.35rem .85rem;font-size:.78rem;font-weight:600;border:none;background:var(--color-primary);color:#fff;border-radius:6px;cursor:pointer;font-family:inherit;">Save Queries</button>';
+    tqHtml += '<span style="font-size:.72rem;color:var(--color-muted);"><strong>P1</strong> = primary targets &nbsp;|&nbsp; <strong>P2</strong> = secondary monitoring</span>';
     tqHtml += '</div>';
     tqEl.innerHTML = tqHtml;
 
@@ -2219,7 +2224,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     var cfg = state.reportConfig;
     if (!cfg) { cfg = { tracked_queries: [] }; state.reportConfig = cfg; }
     if (!cfg.tracked_queries) cfg.tracked_queries = [];
-    cfg.tracked_queries.push({ query: '', engine: 'google_ai_mode', label: '' });
+    cfg.tracked_queries.push({ query: '', target_url: '', priority: 'P1' });
     renderReports();
   };
 
@@ -2230,17 +2235,24 @@ strong { font-weight: 600; color: var(--color-heading); }
     renderReports();
   };
 
+  window.toggleQueryPriority = function(idx) {
+    var cfg = state.reportConfig;
+    if (!cfg || !cfg.tracked_queries || !cfg.tracked_queries[idx]) return;
+    cfg.tracked_queries[idx].priority = cfg.tracked_queries[idx].priority === 'P1' ? 'P2' : 'P1';
+    renderReports();
+  };
+
   window.saveTrackedQueries = function() {
     var cfg = state.reportConfig;
     var c = state.contact;
     if (!cfg || !c) return;
-    // Read current values from DOM
-    var inputs = document.querySelectorAll('.rpt-tq-input');
+    // Read current values from DOM inputs (not buttons)
+    var inputs = document.querySelectorAll('input.rpt-tq-input');
     var queries = cfg.tracked_queries || [];
     inputs.forEach(function(el) {
       var idx = parseInt(el.getAttribute('data-idx'));
       var field = el.getAttribute('data-field');
-      if (queries[idx]) queries[idx][field] = el.value;
+      if (queries[idx] && field) queries[idx][field] = el.value;
     });
     // Remove empty queries
     queries = queries.filter(function(q) { return q.query && q.query.trim(); });
