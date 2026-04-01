@@ -2195,6 +2195,16 @@ strong { font-weight: 600; color: var(--color-heading); }
       html += '<div class="del-info"><div class="del-title">' + esc(d.title) + '</div>';
       html += '<div class="del-date">' + (d.delivered_at ? formatDate(d.delivered_at) : 'Pending') + '</div>';
       html += '</div>';
+
+      // Bootstrap button for automatable service deliverables (placed before status dropdown for alignment)
+      var bootstrapMap = { localfalcon_setup: 'localfalcon', gbp_service_account: 'gbp', ga4_setup: 'ga4', gtm_setup: 'gtm' };
+      if (bootstrapMap[d.deliverable_type] && d.status !== 'delivered') {
+        var bSvc = bootstrapMap[d.deliverable_type];
+        html += '<button class="del-bootstrap" id="bs-' + d.id + '" onclick="event.stopPropagation(); bootstrapService(\'' + bSvc + '\', \'' + d.id + '\')" title="Auto-configure via bootstrap-access API">&#9889; Setup</button>';
+      } else if (d.deliverable_type === 'report_config' && d.status !== 'delivered') {
+        html += '<button class="del-bootstrap" id="bs-' + d.id + '" onclick="event.stopPropagation(); bootstrapAll(\'' + d.id + '\')" title="Run bootstrap-access for ALL services (GBP, GA4, GTM, LocalFalcon)">&#9889; Bootstrap All</button>';
+      }
+
       html += '<select class="del-status-select st-' + (d.status || 'not_started') + '" onchange="setDelStatus(\'' + d.id + '\', this.value)" onclick="event.stopPropagation()">';
       html += '<option value="not_started"' + (d.status === 'not_started' ? ' selected' : '') + '>Not Started</option>';
       html += '<option value="in_progress"' + (d.status === 'in_progress' ? ' selected' : '') + '>In Progress</option>';
@@ -2203,16 +2213,6 @@ strong { font-weight: 600; color: var(--color-heading); }
       html += '<option value="delivered"' + (d.status === 'delivered' ? ' selected' : '') + '>Delivered</option>';
       html += '</select>';
       if (urg.level !== 'none') html += '<div class="urgency-dot ' + urg.level + '" title="Urgency: ' + urg.score + '"></div>';
-
-      // Bootstrap button for automatable service deliverables
-      var bootstrapMap = { localfalcon_setup: 'localfalcon', gbp_service_account: 'gbp', ga4_setup: 'ga4', gtm_setup: 'gtm' };
-      if (bootstrapMap[d.deliverable_type] && d.status !== 'delivered') {
-        var bSvc = bootstrapMap[d.deliverable_type];
-        html += '<button class="del-bootstrap" id="bs-' + d.id + '" onclick="event.stopPropagation(); bootstrapService(\'' + bSvc + '\', \'' + d.id + '\')" title="Auto-configure via bootstrap-access API">&#9889; Setup</button>';
-      }
-      if (d.deliverable_type === 'report_config' && d.status !== 'delivered') {
-        html += '<button class="del-bootstrap" id="bs-' + d.id + '" onclick="event.stopPropagation(); bootstrapAll(\'' + d.id + '\')" title="Run bootstrap-access for ALL services (GBP, GA4, GTM, LocalFalcon)">&#9889; Bootstrap All</button>';
-      }
 
       html += '<div class="del-actions">';
       if (d.page_url) html += '<a href="' + esc(d.page_url) + '" target="_blank" class="btn btn-ghost btn-sm" title="View" onclick="event.stopPropagation()">&#128279;</a>';
