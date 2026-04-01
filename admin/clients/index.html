@@ -1390,12 +1390,57 @@ strong { font-weight: 600; color: var(--color-heading); }
     if (newStatus === 'complete') { body.completed_at = new Date().toISOString(); body.completed_by = 'admin'; }
     apiAction('update_record', 'intro_call_steps', { id: stepId }, body).then(function(r) {
       if (!r.success) { step.status = oldStatus; renderIntroCall(); return; }
-      // Auto-configure report_configs when platform steps are completed
-      if (newStatus === 'complete' && (step.step_key === 'gsc_configured' || step.step_key === 'lbm_report_config')) {
-        autoConfigReports();
+      // Auto-discover services when platform steps are completed
+      if (newStatus === 'complete' && step.step_key === 'gsc_configured') {
+        discoverService('gsc');
+      }
+      if (newStatus === 'complete' && step.step_key === 'lbm_report_config') {
+        discoverService('lbm');
       }
     }).catch(function() { step.status = oldStatus; renderIntroCall(); });
   };
+
+  function discoverService(service) {
+    var c = state.contact;
+    if (!c) return;
+    toast('Searching for ' + (service === 'gsc' ? 'GSC property' : 'LBM location') + '...', 'info');
+    fetch('/api/discover-services', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_slug: c.slug, service: service })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.found) {
+        if (service === 'gsc') {
+          toast('GSC auto-discovered: ' + res.property, 'success');
+          // Update local state
+          state.contact.gsc_property = res.property;
+        } else {
+          toast('LBM location found: ' + (res.location_name || res.location_id), 'success');
+        }
+        // Reload report config
+        sb('report_configs?client_slug=eq.' + c.slug + '&limit=1').then(function(cfgs) {
+          state.reportConfig = (cfgs && cfgs[0]) || state.reportConfig;
+          renderReports();
+        });
+      } else {
+        // Not found - show available options
+        var msg = service === 'gsc'
+          ? 'No matching GSC site found for "' + (c.website_url || '') + '". '
+          : 'No matching LBM location for "' + (c.practice_name || '') + '". ';
+        if (res.all_sites && res.all_sites.length > 0) {
+          msg += 'Available: ' + res.all_sites.slice(0, 5).join(', ');
+        } else if (res.all_locations && res.all_locations.length > 0) {
+          msg += 'Available: ' + res.all_locations.slice(0, 5).map(function(l) { return l.name; }).join(', ');
+        }
+        toast(msg, 'warning');
+        // Still create report_configs even without discovery
+        autoConfigReports();
+      }
+    }).catch(function(err) {
+      toast('Discovery error: ' + err.message, 'error');
+      autoConfigReports();
+    });
+  }
 
   function autoConfigReports() {
     var c = state.contact;
@@ -1403,17 +1448,14 @@ strong { font-weight: 600; color: var(--color-heading); }
     var slug = c.slug;
     var configData = { client_slug: slug, active: true };
     if (c.gsc_property) configData.gsc_property = c.gsc_property;
-    // Check if config exists
     sb('report_configs?client_slug=eq.' + slug + '&limit=1').then(function(existing) {
       if (existing && existing.length > 0) {
-        // Update existing
         apiAction('update_record', 'report_configs', { client_slug: slug }, configData).then(function(res) {
-          if (res.success) { state.reportConfig = (res.data && res.data[0]) || state.reportConfig; toast('Report config updated', 'success'); renderReports(); }
+          if (res.success) { state.reportConfig = (res.data && res.data[0]) || state.reportConfig; renderReports(); }
         });
       } else {
-        // Create new
         apiAction('create_record', 'report_configs', null, configData).then(function(res) {
-          if (res.success) { state.reportConfig = (res.data && res.data[0]) || configData; toast('Report config auto-created', 'success'); renderReports(); }
+          if (res.success) { state.reportConfig = (res.data && res.data[0]) || configData; renderReports(); }
         });
       }
     });
