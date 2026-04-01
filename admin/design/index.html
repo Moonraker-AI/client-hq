@@ -730,7 +730,7 @@ h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var
     <div style="font-size:1.25rem;color:var(--color-muted);">&#8594;</div>
     <div style="background:rgba(59,130,246,.08);border:1px solid var(--color-border);border-radius:8px;padding:.5rem 1rem;text-align:center;">
       <div style="font-weight:600;font-size:.82rem;color:#3B82F6;">Prospect</div>
-      <div style="font-size:.72rem;color:var(--color-muted);">Proposal + checkout pages built</div>
+      <div style="font-size:.72rem;color:var(--color-muted);">Proposal, checkout + onboarding pages built</div>
     </div>
     <div style="font-size:1.25rem;color:var(--color-muted);">&#8594;</div>
     <div style="background:rgba(245,158,11,.08);border:1px solid var(--color-border);border-radius:8px;padding:.5rem 1rem;text-align:center;">
@@ -746,7 +746,7 @@ h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var
 
   <table class="token-table">
     <tr><th>Transition</th><th>Trigger</th><th>What Happens</th></tr>
-    <tr><td>Lead &#8594; Prospect</td><td>Manual via admin or <code>/api/convert-to-prospect</code></td><td>Proposal + checkout pages built and pushed to GitHub</td></tr>
+    <tr><td>Lead &#8594; Prospect</td><td>Manual via admin or <code>/api/convert-to-prospect</code></td><td>Proposal, checkout + onboarding pages built and pushed to GitHub</td></tr>
     <tr><td>Prospect &#8594; Onboarding</td><td>Stripe payment completes, <code>/checkout/success</code> patches status</td><td>Onboarding wizard activates, 8 steps seeded, intro call steps seeded via trigger</td></tr>
     <tr><td>Onboarding &#8594; Active</td><td>Supabase trigger <code>trg_auto_promote_active</code> when all 8 steps = complete</td><td>Status auto-set to "active". Cannot be manually assigned.</td></tr>
     <tr><td>Any &#8594; Lost</td><td>Manual "Mark as Lost" with reason capture</td><td>Contact marked lost with timestamp and reason. Filterable in admin.</td></tr>
