@@ -399,20 +399,30 @@ section { padding: 4.5rem 0; }
 <section class="reveal" id="next">
   <div class="container">
     <h2 style="text-align:center;">What Comes Next</h2>
-    <p style="text-align:center;max-width:600px;margin:0 auto 1rem;">You now have a clear picture of where your practice stands. Here are two ways to move forward.</p>
-    <div class="cta-cards">
-      <div class="cta-card" id="upgradeCard">
-        <div class="cta-icon">&#127909;</div>
-        <h3>Premium Audit Package</h3>
-        <p>Get ready-to-deploy schema files, a comprehensive personalized Loom walkthrough, and a 30-minute strategy call with our team.</p>
-        <div class="price-tag">$2,000 <span>one-time</span></div>
-        <a href="" id="upgradeBtn" class="cta-btn">Upgrade to Premium</a>
+    <!-- FREE TIER: Premium upgrade CTA -->
+    <div id="ctaFree">
+      <p style="text-align:center;max-width:600px;margin:0 auto 1.5rem;">You have seen a preview of the action steps for each CORE pillar. The Premium Entity Audit unlocks everything you need to start fixing these issues today.</p>
+      <div class="cta-cards" style="grid-template-columns:1fr;max-width:520px;margin:0 auto;">
+        <div class="cta-card featured">
+          <div class="cta-icon">&#127909;</div>
+          <h3>Premium Entity Audit</h3>
+          <p>Unlock all action steps across every CORE pillar, ready-to-deploy schema code, a comprehensive personalized Loom walkthrough of your findings, and a 30-minute strategy call with our team.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin:.75rem 0;justify-content:center;">
+            <span style="font-size:.75rem;padding:.3rem .65rem;border-radius:6px;background:rgba(0,212,126,.08);color:var(--color-success);font-weight:500;">All Action Steps Unlocked</span>
+            <span style="font-size:.75rem;padding:.3rem .65rem;border-radius:6px;background:rgba(59,130,246,.08);color:var(--color-info);font-weight:500;">Ready-to-Use Schema Code</span>
+            <span style="font-size:.75rem;padding:.3rem .65rem;border-radius:6px;background:rgba(139,92,246,.08);color:#8B5CF6;font-weight:500;">Personalized Loom Walkthrough</span>
+            <span style="font-size:.75rem;padding:.3rem .65rem;border-radius:6px;background:rgba(245,158,11,.08);color:var(--color-warning);font-weight:500;">30-Min Strategy Call</span>
+          </div>
+          <div class="price-tag">$2,000 <span>one-time</span></div>
+          <a href="" id="upgradeBtn" class="cta-btn">Upgrade to Premium</a>
+        </div>
       </div>
-      <div class="cta-card featured">
-        <div class="cta-icon">&#128640;</div>
-        <h3>Full CORE Campaign</h3>
-        <p>Ready for us to handle everything? Our CORE Marketing System addresses all of these findings and more, with ongoing optimization.</p>
-        <a href="https://msg.moonraker.ai/widget/bookings/scott-pope-calendar" class="cta-btn" target="_blank">Book a Call With Scott</a>
+    </div>
+    <!-- PREMIUM TIER: Already unlocked -->
+    <div id="ctaPremium" style="display:none;">
+      <p style="text-align:center;max-width:600px;margin:0 auto 1rem;">Your Premium Entity Audit is fully unlocked. All action steps, schema code, and recommendations are available above.</p>
+      <div style="text-align:center;margin-top:1rem;">
+        <p style="font-size:.875rem;color:var(--color-muted);">Questions about your audit findings? Reach out to <a href="mailto:support@moonraker.ai">support@moonraker.ai</a></p>
       </div>
     </div>
   </div>
@@ -460,18 +470,18 @@ section { padding: 4.5rem 0; }
 
   var IS_PREMIUM = false; // set in renderPage
 
-  function renderFinding(f) {
+  function renderFinding(f, idx) {
     var html = '<div class="finding"><span class="finding-icon">' + findingIcon(f.severity) + '</span><div>';
     html += '<p><span class="highlight">' + escHtml(f.title) + '</span> ' + escHtml(f.detail) + '</p>';
     if (f.fix) {
       html += '<div class="fix-accordion"><button class="fix-toggle" onclick="this.parentElement.classList.toggle(\'open\')"><span class="fix-arrow">&#9654;</span> How to fix this</button>';
-      if (IS_PREMIUM) {
+      if (IS_PREMIUM || idx === 0) {
         html += '<div class="fix-content"><div class="fix-content-inner">' + f.fix + '</div></div>';
       } else {
         html += '<div class="fix-content"><div class="gated-wrap"><div class="gated-blur"><div class="fix-content-inner">' + f.fix + '</div></div>';
         html += '<div class="gated-overlay"><div class="gated-icon">&#128274;</div><h4>Premium Audit Content</h4>';
-        html += '<p>Detailed fix instructions with ready-to-use schema code are included in the Premium Entity Audit.</p>';
-        html += '<a href="" class="gated-cta upgrade-link">Unlock Premium Audit</a></div></div></div>';
+        html += '<p>Unlock all action steps, ready-to-use schema, and a personalized Loom walkthrough.</p>';
+        html += '<a href="" class="gated-cta upgrade-link">Unlock Premium Audit - $2,000</a></div></div></div>';
       }
       html += '</div>';
     }
@@ -482,7 +492,7 @@ section { padding: 4.5rem 0; }
   function renderPillar(title, subtitle, findings) {
     var html = '<div class="collapsible"><button class="collapsible-toggle"><span>' + escHtml(title) + ': ' + escHtml(subtitle) + '</span><span class="arrow">&#9660;</span></button>';
     html += '<div class="collapsible-content"><div class="collapsible-content-inner">';
-    findings.forEach(function(f) { html += renderFinding(f); });
+    findings.forEach(function(f, idx) { html += renderFinding(f, idx); });
     html += '</div></div></div>';
     return html;
   }
@@ -619,14 +629,12 @@ section { padding: 4.5rem 0; }
       if (navLink) navLink.style.display = '';
     }
 
-    // CTA section - hide upgrade if already premium
+    // CTA section - toggle free vs premium view
     if (audit.audit_tier === 'premium') {
-      document.getElementById('upgradeCard').style.display = 'none';
-      document.querySelector('.cta-cards').style.gridTemplateColumns = '1fr';
-      document.querySelector('.cta-cards').style.maxWidth = '480px';
-      document.querySelector('.cta-cards').style.margin = '2.5rem auto';
+      document.getElementById('ctaFree').style.display = 'none';
+      document.getElementById('ctaPremium').style.display = 'block';
     } else {
-      // Set upgrade link to entity-audit-checkout or landing page
+      // Set upgrade link to entity-audit-checkout
       var checkoutUrl = '/' + CLIENT_SLUG + '/entity-audit-checkout';
       document.getElementById('upgradeBtn').href = checkoutUrl;
       // Also set all gated content upgrade links
