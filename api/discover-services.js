@@ -1,8 +1,8 @@
 // /api/discover-services.js
-// Auto-discovers GSC properties and LBM locations for a client
+// Auto-discovers GSC properties and LocalFalcon locations for a client
 // Called from admin UI when Intro Call steps are marked complete
 //
-// POST { client_slug, service: "gsc" | "lbm" }
+// POST { client_slug, service: "gsc" | "localfalcon" }
 // Returns discovered properties/locations and saves to contact + report_configs
 
 module.exports = async function handler(req, res) {
@@ -10,17 +10,17 @@ module.exports = async function handler(req, res) {
 
   var sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   var googleSA = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
-  var lbmKey = process.env.LBM_API_KEY;
+  var lfKey = process.env.LOCALFALCON_API_KEY;
   var sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
 
   if (!sbKey) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
 
   var body = req.body;
   var clientSlug = body.client_slug;
-  var service = body.service; // "gsc" or "lbm"
+  var service = body.service; // "gsc" or "localfalcon"
 
   if (!clientSlug) return res.status(400).json({ error: 'client_slug required' });
-  if (!service || !['gsc', 'lbm'].includes(service)) return res.status(400).json({ error: 'service must be "gsc" or "lbm"' });
+  if (!service || !['gsc', 'localfalcon'].includes(service)) return res.status(400).json({ error: 'service must be "gsc" or "localfalcon"' });
 
   function sbHeaders() {
     return { 'apikey': sbKey, 'Authorization': 'Bearer ' + sbKey, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
@@ -101,70 +101,134 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // ─── LBM DISCOVERY ───
-    if (service === 'lbm') {
-      if (!lbmKey) return res.status(500).json({ error: 'LBM_API_KEY not configured' });
+    // ─── LOCALFALCON DISCOVERY ───
+    if (service === 'localfalcon') {
+      if (!lfKey) return res.status(500).json({ error: 'LOCALFALCON_API_KEY not configured' });
 
-      // Fetch all LBM locations
-      var lbmResp = await fetch('https://api.localbrandmanager.com/locations', {
-        headers: { 'Authorization': lbmKey }
-      });
-      var lbmData = await lbmResp.json();
-      var allLocations = Array.isArray(lbmData) ? lbmData : (lbmData.data || lbmData.locations || []);
+      var practiceName = (contact.practice_name || '').trim();
+      var city = (contact.city || '').trim();
+      var state = (contact.state || contact.province || '').trim();
+      var proximity = [city, state].filter(Boolean).join(', ');
 
-      if (allLocations.length === 0) {
-        return res.status(200).json({ success: true, service: 'lbm', found: false, message: 'No LBM locations found', all_locations: [] });
+      if (!practiceName) {
+        return res.status(400).json({ error: 'Contact has no practice_name set - needed for LocalFalcon search' });
       }
 
-      // Try to match by practice name or website
-      var practiceName = (contact.practice_name || '').toLowerCase().trim();
-      var websiteDomain = (contact.website_url || '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '').toLowerCase();
-      var matched = null;
+      // Step 1: Check if already in saved locations (by GBP place_id if we have one)
+      var gbpPlaceId = contact.google_place_id || null;
+      var existingLocation = null;
 
-      for (var i = 0; i < allLocations.length; i++) {
-        var loc = allLocations[i];
-        var locName = (loc.name || loc.business_name || loc.title || '').toLowerCase().trim();
-        var locWebsite = (loc.website || loc.url || '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '').toLowerCase();
-
-        // Match by name (fuzzy - check if practice name appears in location name or vice versa)
-        if (practiceName && locName && (locName.indexOf(practiceName) >= 0 || practiceName.indexOf(locName) >= 0)) {
-          matched = loc;
-          break;
-        }
-        // Match by website domain
-        if (websiteDomain && locWebsite && (locWebsite.indexOf(websiteDomain) >= 0 || websiteDomain.indexOf(locWebsite) >= 0)) {
-          matched = loc;
-          break;
-        }
+      if (gbpPlaceId) {
+        var checkResp = await fetch('https://api.localfalcon.com/v1/locations/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'api_key=' + lfKey + '&query=' + encodeURIComponent(gbpPlaceId) + '&limit=5'
+        });
+        var checkData = await checkResp.json();
+        var saved = (checkData.data && checkData.data.locations) || [];
+        existingLocation = saved.find(function(l) { return l.place_id === gbpPlaceId; });
       }
 
-      var locId = matched ? (matched.id || matched.location_id || matched.slug || null) : null;
-
-      if (matched && locId) {
-        // Save to report_configs
-        await upsertReportConfig(sbUrl, sbHeaders(), clientSlug, { lbm_location_id: String(locId) });
-
+      if (existingLocation) {
+        // Already saved - just store the place_id on report_configs
+        await upsertReportConfig(sbUrl, sbHeaders(), clientSlug, { localfalcon_place_id: existingLocation.place_id });
         return res.status(200).json({
           success: true,
-          service: 'lbm',
+          service: 'localfalcon',
           found: true,
-          location_id: locId,
-          location_name: matched.name || matched.business_name || matched.title,
+          place_id: existingLocation.place_id,
+          location_name: existingLocation.name,
+          already_saved: true,
           saved: true,
-          message: 'Matched and saved LBM location: ' + (matched.name || locId),
-          all_locations: allLocations.map(function(l) { return { id: l.id || l.location_id || l.slug, name: l.name || l.business_name || l.title }; })
-        });
-      } else {
-        return res.status(200).json({
-          success: true,
-          service: 'lbm',
-          found: false,
-          message: 'No matching LBM location found for "' + practiceName + '".',
-          client_name: practiceName,
-          client_domain: websiteDomain,
-          all_locations: allLocations.map(function(l) { return { id: l.id || l.location_id || l.slug, name: l.name || l.business_name || l.title }; })
+          message: 'Location already in LocalFalcon: ' + existingLocation.name
         });
       }
+
+      // Step 2: Search LocalFalcon by name + proximity
+      var searchResp = await fetch('https://api.localfalcon.com/v2/locations/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'api_key=' + lfKey + '&name=' + encodeURIComponent(practiceName) + (proximity ? '&proximity=' + encodeURIComponent(proximity) : '')
+      });
+      var searchData = await searchResp.json();
+      var results = (searchData.data && searchData.data.results) || [];
+
+      if (results.length === 0 && searchData.data && searchData.data.true_count > 0) {
+        // Location exists but is already saved (LF filters saved locations from search results)
+        // Re-check saved locations by name
+        var savedResp = await fetch('https://api.localfalcon.com/v1/locations/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'api_key=' + lfKey + '&query=' + encodeURIComponent(practiceName) + '&limit=10'
+        });
+        var savedData = await savedResp.json();
+        var savedLocs = (savedData.data && savedData.data.locations) || [];
+        var nameMatch = savedLocs.find(function(l) {
+          return (l.name || '').toLowerCase().indexOf(practiceName.toLowerCase()) >= 0;
+        });
+        if (nameMatch) {
+          await upsertReportConfig(sbUrl, sbHeaders(), clientSlug, { localfalcon_place_id: nameMatch.place_id });
+          return res.status(200).json({
+            success: true,
+            service: 'localfalcon',
+            found: true,
+            place_id: nameMatch.place_id,
+            location_name: nameMatch.name,
+            already_saved: true,
+            saved: true,
+            message: 'Location already saved in LocalFalcon: ' + nameMatch.name
+          });
+        }
+      }
+
+      if (results.length === 0) {
+        return res.status(200).json({
+          success: true,
+          service: 'localfalcon',
+          found: false,
+          message: 'No LocalFalcon search results for "' + practiceName + '"' + (proximity ? ' near ' + proximity : ''),
+          search_name: practiceName,
+          search_proximity: proximity
+        });
+      }
+
+      // Step 3: Take the best match and add it to the account
+      var best = results[0]; // LF returns best match first
+      var addResp = await fetch('https://api.localfalcon.com/v2/locations/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'api_key=' + lfKey + '&platform=google&place_id=' + encodeURIComponent(best.place_id)
+      });
+      var addData = await addResp.json();
+
+      if (!addData.success) {
+        return res.status(200).json({
+          success: true,
+          service: 'localfalcon',
+          found: true,
+          added: false,
+          place_id: best.place_id,
+          location_name: best.name,
+          message: 'Found but failed to add: ' + (addData.message || 'unknown error'),
+          search_results: results.slice(0, 5).map(function(r) { return { place_id: r.place_id, name: r.name, address: r.address }; })
+        });
+      }
+
+      // Step 4: Save place_id to report_configs
+      await upsertReportConfig(sbUrl, sbHeaders(), clientSlug, { localfalcon_place_id: best.place_id });
+
+      return res.status(200).json({
+        success: true,
+        service: 'localfalcon',
+        found: true,
+        added: true,
+        saved: true,
+        place_id: best.place_id,
+        location_name: best.name,
+        address: best.address,
+        message: 'Added to LocalFalcon and saved: ' + best.name,
+        search_results: results.slice(0, 5).map(function(r) { return { place_id: r.place_id, name: r.name, address: r.address }; })
+      });
     }
 
   } catch (err) {
@@ -236,3 +300,4 @@ async function getGoogleAccessToken(saJson) {
     return { error: e.message || String(e) };
   }
 }
+
