@@ -1317,18 +1317,18 @@ strong { font-weight: 600; color: var(--color-heading); }
   var IC_STEPS = [
     { key: 'verify_website_access', label: 'Verify Website Access', cat: 'platform_access', sort: 1,
       desc: '<div class="ic-detail-label">Talking Points</div><ul><li>Confirm we can log into the CMS (WordPress, Squarespace, Wix, etc.) with admin-level credentials</li><li>Check which website platform they are on and note it on the contact record</li><li>If WordPress: note any page builders (Elementor, Bricks, Divi) and caching plugins</li><li>If they don\'t have credentials handy, ask them to share via the Connect Accounts step in onboarding</li></ul><div class="ic-detail-label">Why This Matters</div><p>We need direct CMS access to implement schema, restructure headings, edit Hero sections, and build target pages with custom HTML blocks.</p>' },
-    { key: 'gsc_configured', label: 'GSC Configured + Access Granted', cat: 'platform_access', sort: 2,
-      desc: '<div class="ic-detail-label">Confirm During Intro Call</div><ul><li>Has the team completed the <strong>Google Search Console Setup</strong> deliverable?</li><li>Has the service account (<code>reporting@...</code>) been added with Restricted access?</li><li>Has the <code>gsc_property</code> been saved on the contact record?</li></ul><p style="margin-top:.5rem;font-size:.82rem;color:var(--color-muted);">Full setup details are in the GSC deliverable. Auto-discovery runs when that deliverable is marked Delivered.</p>' },
-    { key: 'ga4_configured', label: 'GA4 Configured + Access Granted', cat: 'platform_access', sort: 3,
-      desc: '<div class="ic-detail-label">Confirm During Intro Call</div><ul><li>Has the team completed the <strong>Google Analytics Setup</strong> deliverable?</li><li>Is the measurement ID firing correctly on the site?</li><li>Has the GA4 property ID been saved on the contact record?</li></ul><p style="margin-top:.5rem;font-size:.82rem;color:var(--color-muted);">Full setup details are in the GA4 deliverable.</p>' },
-    { key: 'gtm_configured', label: 'GTM Configured + Access Granted', cat: 'platform_access', sort: 4,
-      desc: '<div class="ic-detail-label">Confirm During Intro Call</div><ul><li>Has the team completed the <strong>Google Tag Manager Setup</strong> deliverable?</li><li>Is the GTM container installed on the site?</li><li>Is GA4 firing through GTM (not a direct tag)?</li></ul><p style="margin-top:.5rem;font-size:.82rem;color:var(--color-muted);">Full setup details are in the GTM deliverable.</p>' },
+    { key: 'gsc_configured', label: 'GSC Configured + SA Added', cat: 'platform_access', sort: 2,
+      desc: '<div class="ic-detail-label">Post-Leadsie: Manual Step Required</div><ul><li>Once Leadsie grants <code>support@moonraker.ai</code> access to GSC, log in as support@ and manually add <code>reporting@moonraker-client-hq.iam.gserviceaccount.com</code> as a Restricted user</li><li>This is the <strong>only platform without a user management API</strong> - all others are automated via Bootstrap</li><li>GSC property auto-discovery runs when the GSC Setup deliverable is marked Delivered</li></ul>' },
+    { key: 'ga4_configured', label: 'GA4 Configured + SA Added', cat: 'platform_access', sort: 3,
+      desc: '<div class="ic-detail-label">Automated via Bootstrap</div><ul><li>Once Leadsie grants <code>support@</code> access to GA4, use the <strong>\u26a1 Setup</strong> button on the GA4 deliverable card</li><li>Bootstrap impersonates support@ to add the service account as Viewer and saves the <code>ga4_property</code></li><li>Confirm the measurement ID is firing correctly on the site</li></ul>' },
+    { key: 'gtm_configured', label: 'GTM Configured + SA Added', cat: 'platform_access', sort: 4,
+      desc: '<div class="ic-detail-label">Automated via Bootstrap</div><ul><li>Once Leadsie grants <code>support@</code> access to GTM, use the <strong>\u26a1 Setup</strong> button on the GTM deliverable card</li><li>Bootstrap impersonates support@ to add the service account with Read access</li><li>Confirm the GTM container is installed and GA4 fires through GTM</li></ul>' },
     { key: 'gbp_access', label: 'GBP Access Confirmed', cat: 'platform_access', sort: 5,
-      desc: '<div class="ic-detail-label">Confirm During Intro Call</div><ul><li>Has the client claimed and verified their GBP listing?</li><li>Has Owner access been granted to our team?</li><li>Has the GBP Place ID been saved on the contact record?</li></ul><p style="margin-top:.5rem;font-size:.82rem;color:var(--color-muted);">Full setup details are in the GBP Verification deliverable.</p>' },
+      desc: '<div class="ic-detail-label">Confirm During Intro Call</div><ul><li>Has the client claimed and verified their GBP listing?</li><li>Has Leadsie granted <code>support@moonraker.ai</code> Manager access?</li><li>Once confirmed, use Bootstrap to auto-add the service account and save the GBP location ID</li></ul>' },
     { key: 'localfalcon_setup', label: 'LocalFalcon Location Added', cat: 'platform_access', sort: 6,
-      desc: '<div class="ic-detail-label">Confirm During Intro Call</div><ul><li>Has the team added the client location to <strong>LocalFalcon</strong>?</li><li>Is the localfalcon_place_id set on report_configs?</li></ul><p style="margin-top:.5rem;font-size:.82rem;color:var(--color-muted);">Use the LocalFalcon API to search + add the location by place_id. Auto-discovery runs when the deliverable is marked Delivered.</p>' },
+      desc: '<div class="ic-detail-label">Automated via Bootstrap</div><ul><li>Use the <strong>\u26a1 Setup</strong> button on the LocalFalcon deliverable card, or <strong>\u26a1 Bootstrap All</strong> on Report Pipeline Config</li><li>Searches LocalFalcon by practice name + city, auto-adds location, saves <code>localfalcon_place_id</code></li><li>No Leadsie access required - runs directly against LocalFalcon API</li></ul>' },
     { key: 'gbp_service_account', label: 'GBP Service Account Added', cat: 'platform_access', sort: 7,
-      desc: '<div class="ic-detail-label">Confirm During Intro Call</div><ul><li>Has the service account been added as <strong>Manager</strong> on the client GBP?</li><li>Is the gbp_location_id set on report_configs?</li></ul><p style="margin-top:.5rem;font-size:.82rem;color:var(--color-muted);">The service account email is in GOOGLE_SERVICE_ACCOUNT_JSON. Add it as Manager on the client GBP listing.</p>' },
+      desc: '<div class="ic-detail-label">Automated via Bootstrap</div><ul><li>Use the <strong>\u26a1 Setup</strong> button on the GBP Service Account deliverable card</li><li>Bootstrap impersonates <code>support@</code> (domain-wide delegation) to add the SA as Manager and extract the <code>gbp_location_id</code></li><li><strong>Prerequisite:</strong> Leadsie must have already granted support@ Manager access to the client GBP</li></ul>' },
     { key: 'referral_source', label: 'Confirm Referral Source / Partner Commission', cat: 'campaign_setup', sort: 9,
       desc: '<div class="ic-detail-label">Talking Points</div><ul><li>Ask the client how they heard about Moonraker</li><li>If they came through a partner referral, note the partner name so we can track commission</li><li>Check if they were part of an accelerator group, webinar, or other lead source</li><li>Record the referral source on their contact record for attribution</li></ul><div class="ic-detail-label">Why This Matters</div><p>Partner commissions depend on accurate attribution. If we don\'t capture where the client came from during the intro call, it becomes much harder to reconcile later. This also helps us understand which channels are driving the best clients.</p>' },
     { key: 'pick_target_keywords', label: 'Pick Target Keywords (up to 5)', cat: 'campaign_setup', sort: 10,
@@ -1984,6 +1984,77 @@ strong { font-weight: 600; color: var(--color-heading); }
       setTimeout(function() { btn.classList.remove('fail'); btn.innerHTML = '&#9889; Retry'; }, 4000);
     }
   };
+
+  window.bootstrapAll = async function bootstrapAll(delId) {
+    var btn = document.getElementById('bs-' + delId);
+    if (!btn || btn.classList.contains('running')) return;
+
+    btn.classList.add('running');
+    btn.innerHTML = '&#9889; Running all...';
+    toast('Bootstrapping all services (GBP, GA4, GTM, LocalFalcon)...', 'info');
+
+    try {
+      var resp = await fetch('/api/bootstrap-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_slug: state.contact.slug, services: ['gbp', 'ga4', 'gtm', 'localfalcon'] })
+      });
+      var data = await resp.json();
+
+      var succeeded = [];
+      var failed = [];
+      var svcLabels = { gbp: 'GBP', ga4: 'GA4', gtm: 'GTM', localfalcon: 'LocalFalcon' };
+      ['gbp', 'ga4', 'gtm', 'localfalcon'].forEach(function(svc) {
+        var r = data.results && data.results[svc];
+        if (r && r.success) succeeded.push(svcLabels[svc]);
+        else if (r) failed.push(svcLabels[svc] + ': ' + (r.error || 'failed'));
+      });
+
+      if (succeeded.length > 0) {
+        btn.classList.remove('running');
+        btn.classList.add('done');
+        btn.innerHTML = '&#10003; ' + succeeded.length + '/4 Done';
+        toast('Bootstrap complete: ' + succeeded.join(', ') + ' configured!', 'success');
+        if (failed.length > 0) toast('Failed: ' + failed.join('; '), 'warning');
+      } else {
+        btn.classList.remove('running');
+        btn.classList.add('fail');
+        btn.innerHTML = '&#10007; Failed';
+        toast('Bootstrap failed: ' + failed.join('; '), 'error');
+        setTimeout(function() { btn.classList.remove('fail'); btn.innerHTML = '&#9889; Retry All'; }, 4000);
+      }
+
+      // Update config state
+      if (data.config_updates && Object.keys(data.config_updates).length > 0) {
+        if (state.reportConfig) Object.assign(state.reportConfig, data.config_updates);
+      }
+
+      // Update local deliverable statuses
+      ['localfalcon_setup', 'gbp_service_account', 'ga4_setup', 'gtm_setup', 'report_config'].forEach(function(dt) {
+        var svcKey = { localfalcon_setup: 'localfalcon', gbp_service_account: 'gbp', ga4_setup: 'ga4', gtm_setup: 'gtm', report_config: null }[dt];
+        var r = svcKey ? (data.results && data.results[svcKey]) : null;
+        if (r && r.success) {
+          var del = state.deliverables.find(function(d) { return d.deliverable_type === dt; });
+          if (del) { del.status = 'delivered'; del.delivered_at = new Date().toISOString(); }
+        }
+      });
+
+      // If all 4 succeeded, mark report_config as delivered too
+      if (succeeded.length === 4) {
+        var rcDel = state.deliverables.find(function(d) { return d.id === delId; });
+        if (rcDel) { rcDel.status = 'delivered'; rcDel.delivered_at = new Date().toISOString(); }
+        apiAction('update_record', 'deliverables', { id: delId }, { status: 'delivered', delivered_at: new Date().toISOString(), notes: 'All services bootstrapped: ' + succeeded.join(', ') });
+      }
+
+      setTimeout(function() { renderDeliverables(); renderReports(); }, 1500);
+    } catch (e) {
+      btn.classList.remove('running');
+      btn.classList.add('fail');
+      btn.innerHTML = '&#10007; Error';
+      toast('Bootstrap All error: ' + e.message, 'error');
+      setTimeout(function() { btn.classList.remove('fail'); btn.innerHTML = '&#9889; Retry All'; }, 4000);
+    }
+  };
   window.setDelPhase = function setDelPhase(phase) {
     delPhaseFilter = phase;
     renderDeliverables();
@@ -2138,6 +2209,9 @@ strong { font-weight: 600; color: var(--color-heading); }
       if (bootstrapMap[d.deliverable_type] && d.status !== 'delivered') {
         var bSvc = bootstrapMap[d.deliverable_type];
         html += '<button class="del-bootstrap" id="bs-' + d.id + '" onclick="event.stopPropagation(); bootstrapService(\'' + bSvc + '\', \'' + d.id + '\')" title="Auto-configure via bootstrap-access API">&#9889; Setup</button>';
+      }
+      if (d.deliverable_type === 'report_config' && d.status !== 'delivered') {
+        html += '<button class="del-bootstrap" id="bs-' + d.id + '" onclick="event.stopPropagation(); bootstrapAll(\'' + d.id + '\')" title="Run bootstrap-access for ALL services (GBP, GA4, GTM, LocalFalcon)">&#9889; Bootstrap All</button>';
       }
 
       html += '<div class="del-actions">';
