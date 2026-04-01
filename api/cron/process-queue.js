@@ -51,10 +51,8 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({ status: 'processing', started_at: now, attempt: (item.attempt || 0) + 1 })
     });
 
-    // Call compile-report internally
-    var baseUrl = process.env.VERCEL_URL
-      ? 'https://' + process.env.VERCEL_URL
-      : 'https://clients.moonraker.ai';
+    // Call compile-report via custom domain (VERCEL_URL is behind deployment protection)
+    var baseUrl = 'https://clients.moonraker.ai';
 
     var compileResp = await fetch(baseUrl + '/api/compile-report', {
       method: 'POST',
@@ -62,10 +60,24 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({
         client_slug: item.client_slug,
         report_month: item.report_month
-      })
+      }),
+      signal: AbortSignal.timeout(280000) // 280s timeout (under Vercel's 300s limit)
     });
 
-    var compileResult = await compileResp.json();
+    var compileText = await compileResp.text();
+    var compileResult;
+    try {
+      compileResult = JSON.parse(compileText);
+    } catch (e) {
+      // Non-JSON response (HTML error page, timeout, etc.)
+      var errorMsg = 'Compile returned non-JSON (HTTP ' + compileResp.status + '): ' + compileText.substring(0, 200);
+      await fetch(sbUrl + '/rest/v1/report_queue?id=eq.' + item.id, {
+        method: 'PATCH',
+        headers: sbHeaders,
+        body: JSON.stringify({ status: 'failed', completed_at: new Date().toISOString(), error_message: errorMsg })
+      });
+      return res.status(200).json({ success: false, processed: 1, client_slug: item.client_slug, error: errorMsg });
+    }
 
     if (compileResult.success) {
       // Mark complete
