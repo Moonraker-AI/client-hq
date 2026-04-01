@@ -244,6 +244,22 @@ strong { font-weight: 600; color: var(--color-heading); }
 .ob-step.in_progress .ob-status { color: var(--color-info); }
 .ob-step.pending .ob-status { color: var(--color-muted); }
 
+/* ---- INTRO CALL CHECKLIST ---- */
+.ic-category { margin-bottom: 1.5rem; }
+.ic-category-header { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); margin-bottom: .5rem; padding-bottom: .35rem; border-bottom: 1px solid var(--color-border); }
+.ic-item { display: flex; align-items: center; gap: .75rem; padding: .55rem .75rem; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-surface); margin-bottom: .35rem; transition: border-color .15s; }
+.ic-item.complete { border-color: rgba(0,212,126,.2); }
+.ic-item.not_applicable { opacity: .5; }
+.ic-check { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .65rem; flex-shrink: 0; cursor: pointer; transition: all .15s; }
+.ic-item.complete .ic-check { background: rgba(0,212,126,.12); color: var(--color-success); }
+.ic-item.in_progress .ic-check { background: rgba(59,130,246,.1); color: var(--color-info); }
+.ic-item.pending .ic-check { background: var(--color-bg); color: var(--color-muted); border: 1px solid var(--color-border); }
+.ic-item.not_applicable .ic-check { background: var(--color-bg); color: var(--color-muted); }
+.ic-check:hover { transform: scale(1.15); }
+.ic-label { font-size: .82rem; font-weight: 500; color: var(--color-heading); flex: 1; }
+.ic-label small { display: block; font-size: .72rem; font-weight: 400; color: var(--color-muted); margin-top: .1rem; }
+.ic-notes { font-size: .72rem; color: var(--color-muted); max-width: 200px; text-align: right; }
+
 /* ---- TASK LIST ---- */
 .task-filters { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
 .task-filter { padding: .3rem .65rem; border-radius: 6px; font-size: .75rem; font-weight: 500; border: 1px solid var(--color-border); background: none; color: var(--color-muted); cursor: pointer; font-family: inherit; transition: all .15s; }
@@ -611,8 +627,9 @@ strong { font-weight: 600; color: var(--color-heading); }
       <div class="tab-bar" id="tabBar">
         <button class="tab-btn active" data-tab="overview">Overview</button>
         <button class="tab-btn" data-tab="onboarding">Onboarding</button>
-        <button class="tab-btn" data-tab="audit">Audit</button>
+        <button class="tab-btn" data-tab="intro-call">Intro Call</button>
         <button class="tab-btn" data-tab="deliverables">Deliverables</button>
+        <button class="tab-btn" data-tab="audit">Audit</button>
         <button class="tab-btn" data-tab="reports">Reports</button>
         <button class="tab-btn" data-tab="billing">Billing</button>
       </div>
@@ -662,6 +679,22 @@ strong { font-weight: 600; color: var(--color-heading); }
         <div class="empty-state" id="obEmpty" style="display:none;"><p>No onboarding steps found for this client.</p></div>
       </div>
 
+      <!-- TAB: Intro Call -->
+      <div class="tab-panel" id="tab-intro-call">
+        <div class="stat-row" id="icStats"></div>
+        <div id="icSeedBtn" style="margin-bottom:1rem;display:none;"><button class="btn-sm" onclick="seedIntroCallSteps()" style="padding:.4rem 1rem;font-size:.78rem;font-weight:600;border:1px solid var(--color-primary);background:var(--color-primary-subtle);color:var(--color-primary);border-radius:6px;cursor:pointer;">Initialize Intro Call Checklist</button></div>
+        <div id="icCategories"></div>
+        <div class="empty-state" id="icEmpty" style="display:none;"><p>No intro call data. Click "Initialize" above to create the checklist for this client.</p></div>
+      </div>
+
+      <!-- TAB: Deliverables -->
+      <div class="tab-panel" id="tab-deliverables">
+        <div id="delForm"></div>
+        <div id="delPhaseBar"></div>
+        <div id="delList"></div>
+        <div class="empty-state" id="delEmpty" style="display:none;"><p>No deliverables tracked yet.</p></div>
+      </div>
+
       <!-- TAB: Audit -->
       <div class="tab-panel" id="tab-audit">
         <div id="auditScores" style="margin-bottom:1.5rem;"></div>
@@ -672,14 +705,6 @@ strong { font-weight: 600; color: var(--color-heading); }
         </div>
         <div id="taskList"></div>
         <div class="empty-state" id="auditEmpty" style="display:none;"><p>No audit tasks found. Run a Surge audit to get started.</p></div>
-      </div>
-
-      <!-- TAB: Deliverables -->
-      <div class="tab-panel" id="tab-deliverables">
-        <div id="delForm"></div>
-        <div id="delPhaseBar"></div>
-        <div id="delList"></div>
-        <div class="empty-state" id="delEmpty" style="display:none;"><p>No deliverables tracked yet.</p></div>
       </div>
 
       <!-- TAB: Reports -->
@@ -832,7 +857,8 @@ strong { font-weight: 600; color: var(--color-heading); }
         sb('deliverables?select=*&order=created_at.desc&contact_id=eq.' + cid).catch(function() { return []; }),
         sb('report_configs?select=*&client_slug=eq.' + slug + '&limit=1').catch(function() { return []; }),
         sb('report_snapshots?select=*&client_slug=eq.' + slug + '&order=created_at.desc&limit=20').catch(function() { return []; }),
-        sb('signed_agreements?select=*&contact_id=eq.' + cid + '&limit=1').catch(function() { return []; })
+        sb('signed_agreements?select=*&contact_id=eq.' + cid + '&limit=1').catch(function() { return []; }),
+        sb('intro_call_steps?select=*&order=sort_order&contact_id=eq.' + cid).catch(function() { return []; })
       ]);
     }).then(function(res) {
       if (!res) return; // Contact not found, already handled
@@ -845,6 +871,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       state.reportConfig = (res[5] && res[5][0]) || null;
       state.snapshots = res[6] || [];
       state.signed = (res[7] && res[7][0]) || null;
+      state.introCall = res[8] || [];
 
       document.getElementById('loadingState').style.display = 'none';
 
@@ -1042,8 +1069,9 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     renderOverview(c, p);
     renderOnboarding();
-    renderAudit();
+    renderIntroCall();
     renderDeliverables();
+    renderAudit();
     renderReports();
     renderBilling(c);
   }
@@ -1188,6 +1216,130 @@ strong { font-weight: 600; color: var(--color-heading); }
     });
     document.getElementById('obSteps').innerHTML = html;
   }
+
+  // ---- INTRO CALL TAB ----
+  var IC_STEPS = [
+    { key: 'verify_website_access', label: 'Verify Website Access', hint: 'Confirm we can log in and edit the site', cat: 'platform_access', sort: 1 },
+    { key: 'gsc_configured', label: 'GSC Configured + Access Granted', hint: 'Add support@, chris@, kalyn@, reporting service account', cat: 'platform_access', sort: 2 },
+    { key: 'ga4_configured', label: 'GA4 Configured + Access Granted', hint: 'Add support@, chris@, kalyn@', cat: 'platform_access', sort: 3 },
+    { key: 'gtm_configured', label: 'GTM Configured + Access Granted', hint: 'Add support@, chris@, kalyn@', cat: 'platform_access', sort: 4 },
+    { key: 'gbp_access', label: 'GBP Access Confirmed', hint: 'Verify GBP listing ownership and admin access', cat: 'platform_access', sort: 5 },
+    { key: 'lbm_location_enabled', label: 'LBM Location Added + Enabled', hint: 'Add location via API or UI, enable for reporting', cat: 'platform_access', sort: 6 },
+    { key: 'lbm_report_config', label: 'LBM Report Configuration Created', hint: 'Create report config in LBM UI so GBP metrics flow', cat: 'platform_access', sort: 7 },
+    { key: 'pick_target_keywords', label: 'Pick Target Keywords (up to 5)', hint: 'Select primary keywords and map to target pages', cat: 'campaign_setup', sort: 10 },
+    { key: 'review_socials', label: 'Review Social Profiles + Marketing Account', hint: 'Audit existing socials, review Rising Tide strategy', cat: 'campaign_setup', sort: 11 },
+    { key: 'check_booking_calendar', label: 'Check Booking Calendar', hint: 'Confirm booking exists and is configured on site', cat: 'campaign_setup', sort: 12 },
+    { key: 'lead_attribution', label: 'Lead Attribution Setup', hint: '"How did you hear about us?" + AI Search option on forms', cat: 'campaign_setup', sort: 13 },
+    { key: 'google_marketing_account', label: 'Google Marketing Account', hint: 'Workspace or Gmail dedicated to marketing', cat: 'campaign_setup', sort: 14 },
+    { key: 'content_turnaround', label: 'Set Content Feedback Expectations', hint: '~1 week turnaround, 48hr response, 4-6 week buildout', cat: 'expectations', sort: 20 },
+    { key: 'scope_boundaries', label: 'Review Scope Boundaries', hint: 'NAP changes $300, extra pages $300, no WP plugins/email', cat: 'expectations', sort: 21 },
+    { key: 'schedule_checkins', label: 'Schedule Check-in Cadence', hint: 'Book recurring check-in calls', cat: 'expectations', sort: 22 },
+    { key: 'client_tracking_sheet', label: 'Share Client Tracking Sheet', hint: 'Lead attribution spreadsheet for new inquiries', cat: 'expectations', sort: 23 }
+  ];
+
+  var IC_CATEGORIES = {
+    platform_access: 'Platform Access & Configuration',
+    campaign_setup: 'Campaign Setup',
+    expectations: 'Expectations & Scheduling'
+  };
+
+  function renderIntroCall() {
+    var steps = state.introCall;
+    if (steps.length === 0) {
+      document.getElementById('icEmpty').style.display = 'block';
+      document.getElementById('icSeedBtn').style.display = 'block';
+      document.getElementById('icStats').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('icEmpty').style.display = 'none';
+    document.getElementById('icSeedBtn').style.display = 'none';
+
+    var complete = steps.filter(function(s) { return s.status === 'complete'; }).length;
+    var na = steps.filter(function(s) { return s.status === 'not_applicable'; }).length;
+    var actionable = steps.length - na;
+    var pct = actionable > 0 ? Math.round(complete / actionable * 100) : 0;
+
+    document.getElementById('icStats').innerHTML =
+      '<div class="stat-mini"><div class="stat-label">Progress</div><div class="stat-value">' + pct + '%</div><div class="stat-sub">' + complete + ' of ' + actionable + ' complete</div></div>' +
+      '<div class="stat-mini"><div class="stat-label">Complete</div><div class="stat-value" style="color:var(--color-success);">' + complete + '</div></div>' +
+      '<div class="stat-mini"><div class="stat-label">In Progress</div><div class="stat-value" style="color:var(--color-info);">' + steps.filter(function(s) { return s.status === 'in_progress'; }).length + '</div></div>' +
+      '<div class="stat-mini"><div class="stat-label">Pending</div><div class="stat-value">' + steps.filter(function(s) { return s.status === 'pending'; }).length + '</div></div>';
+
+    var statusIcons = { complete: '&#10003;', in_progress: '&#9654;', pending: '', not_applicable: '&#8212;' };
+    var nextStatuses = { pending: 'in_progress', in_progress: 'complete', complete: 'pending', not_applicable: 'not_applicable' };
+
+    // Group by category
+    var byCat = {};
+    steps.forEach(function(s) {
+      var cat = s.category || 'other';
+      if (!byCat[cat]) byCat[cat] = [];
+      byCat[cat].push(s);
+    });
+
+    var html = '';
+    var catOrder = ['platform_access', 'campaign_setup', 'expectations'];
+    catOrder.forEach(function(cat) {
+      var items = byCat[cat];
+      if (!items || items.length === 0) return;
+      html += '<div class="ic-category">';
+      html += '<div class="ic-category-header">' + esc(IC_CATEGORIES[cat] || cat) + '</div>';
+      items.forEach(function(s) {
+        html += '<div class="ic-item ' + s.status + '" data-ic-id="' + s.id + '">';
+        html += '<div class="ic-check" onclick="cycleICStatus(\'' + s.id + '\')" title="Click to change status">' + (statusIcons[s.status] || '') + '</div>';
+        html += '<div class="ic-label">' + esc(s.label);
+        var def = IC_STEPS.find(function(d) { return d.key === s.step_key; });
+        if (def && def.hint) html += '<small>' + esc(def.hint) + '</small>';
+        html += '</div>';
+        if (s.notes) html += '<div class="ic-notes">' + esc(s.notes) + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+
+    document.getElementById('icCategories').innerHTML = html;
+  }
+
+  window.cycleICStatus = function(stepId) {
+    var step = state.introCall.find(function(s) { return s.id === stepId; });
+    if (!step) return;
+    var cycle = { pending: 'in_progress', in_progress: 'complete', complete: 'pending', not_applicable: 'pending' };
+    var oldStatus = step.status;
+    var newStatus = cycle[oldStatus] || 'pending';
+    step.status = newStatus;
+    renderIntroCall();
+
+    var body = { status: newStatus };
+    if (newStatus === 'complete') {
+      body.completed_at = new Date().toISOString();
+      body.completed_by = 'admin';
+    }
+    apiAction('update_record', 'intro_call_steps', { id: stepId }, body).then(function(r) {
+      if (!r.success) { step.status = oldStatus; renderIntroCall(); }
+    }).catch(function() { step.status = oldStatus; renderIntroCall(); });
+  };
+
+  window.seedIntroCallSteps = function() {
+    var cid = state.contact.id;
+    var rows = IC_STEPS.map(function(s) {
+      return { contact_id: cid, step_key: s.key, label: s.label, category: s.cat, sort_order: s.sort, status: 'pending' };
+    });
+    apiAction('create_record', 'intro_call_steps', null, rows).then(function(res) {
+      if (res.success && res.data) {
+        state.introCall = res.data;
+      } else {
+        // Reload from Supabase
+        sb('intro_call_steps?select=*&order=sort_order&contact_id=eq.' + cid).then(function(data) {
+          state.introCall = data || [];
+          renderIntroCall();
+        });
+      }
+      renderIntroCall();
+    }).catch(function(err) {
+      console.error('Failed to seed intro call steps:', err);
+      alert('Failed to create checklist. Check console for details.');
+    });
+  };
 
   // ---- AUDIT TAB ----
   function renderAudit() {
