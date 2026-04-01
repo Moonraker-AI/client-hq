@@ -80,7 +80,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 .sidebar-footer { padding: .75rem 1rem; border-top: 1px solid var(--sidebar-border); }
 
 /* ---- MAIN ---- */
-.main { flex: 1; margin-left: 240px; min-width: 0; }
+.main { flex: 1; margin-left: 240px; min-width: 0; transition: margin-left .2s ease; }
 
 /* ---- TOP BAR ---- */
 .topbar { position: sticky; top: 0; z-index: 100; background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 0 2rem; height: 56px; display: flex; align-items: center; gap: 1rem; }
@@ -256,7 +256,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 /* ---- INTRO CALL CHECKLIST ---- */
 .ic-category { margin-bottom: 1.5rem; }
 .ic-category-header { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); margin-bottom: .5rem; padding-bottom: .35rem; border-bottom: 1px solid var(--color-border); }
-.ic-row { display: flex; align-items: center; gap: .75rem; padding: .65rem .75rem; padding-right: 3.5rem; border-bottom: 1px solid var(--color-border); font-size: .84rem; transition: background .1s; cursor: pointer; }
+.ic-row { display: flex; align-items: center; gap: .75rem; padding: .65rem .75rem; padding-right: 2.5rem; border-bottom: 1px solid var(--color-border); font-size: .84rem; transition: background .1s; cursor: pointer; }
 .ic-row:hover { background: var(--sidebar-hover); }
 .ic-row.expanded { background: var(--color-bg); }
 .ic-expand-icon { font-size: .65rem; color: var(--color-muted); transition: transform .2s; flex-shrink: 0; }
@@ -271,7 +271,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 .ic-status-select.st-in_progress { background: rgba(59,130,246,.1); color: #3B82F6; }
 .ic-status-select.st-complete { background: rgba(0,212,126,.1); color: #00b86c; }
 .ic-status-select.st-not_applicable { background: rgba(107,117,153,.05); color: var(--color-muted); }
-.ic-expand-desc { padding: .75rem 1rem .75rem 2.5rem; font-size: .82rem; color: var(--color-body); line-height: 1.7; border-bottom: 1px solid var(--color-border); background: var(--color-bg); display: none; }
+.ic-expand-desc { padding: .75rem 1rem .75rem 3.5rem; font-size: .82rem; color: var(--color-body); line-height: 1.7; border-bottom: 1px solid var(--color-border); background: var(--color-bg); display: none; }
 .ic-expand-desc.show { display: block; }
 .ic-expand-desc ul { margin: .5rem 0 .5rem 1.25rem; }
 .ic-expand-desc li { margin-bottom: .3rem; }
@@ -532,7 +532,6 @@ strong { font-weight: 600; color: var(--color-heading); }
 .sidebar.collapsed:hover .sidebar-footer { justify-content: space-between; }
 
 /* Main content shift */
-.main { transition: margin-left .2s ease; }
 .sidebar.collapsed ~ .main { margin-left: 56px; }
 
 /* Collapse button */
@@ -1380,8 +1379,18 @@ strong { font-weight: 600; color: var(--color-heading); }
       items.forEach(function(s) {
         var def = IC_STEPS.find(function(d) { return d.key === s.step_key; });
         var isExp = expandedICId === s.id; var st = s.status || 'pending';
+        var icIcons = {
+          verify_website_access: '&#127760;', gsc_configured: '&#128200;', ga4_configured: '&#128200;',
+          gtm_configured: '&#127991;', gbp_access: '&#128205;', lbm_location_enabled: '&#128205;',
+          lbm_report_config: '&#128202;', referral_source: '&#129309;', pick_target_keywords: '&#127919;',
+          review_socials: '&#128101;', check_booking_calendar: '&#128197;', lead_attribution: '&#128203;',
+          google_marketing_account: '&#9993;', content_turnaround: '&#9200;', scope_boundaries: '&#128208;',
+          schedule_checkins: '&#128197;', client_tracking_sheet: '&#128202;'
+        };
+        var icIcon = icIcons[s.step_key] || '&#128196;';
         html += '<div class="ic-row' + (isExp ? ' expanded' : '') + '" onclick="toggleICExpand(\'' + s.id + '\')">';
         html += '<div class="ic-expand-icon">&#9654;</div>';
+        html += '<div class="del-icon">' + icIcon + '</div>';
         html += '<div class="ic-label"><div class="ic-title">' + esc(s.label) + '</div></div>';
         html += '<select class="ic-status-select st-' + st + '" onchange="setICStatus(\'' + s.id + '\', this.value, event)" onclick="event.stopPropagation()">';
         IC_STATUSES.forEach(function(opt) { html += '<option value="' + opt.v + '"' + (st === opt.v ? ' selected' : '') + '>' + opt.l + '</option>'; });
@@ -1999,8 +2008,26 @@ strong { font-weight: 600; color: var(--color-heading); }
       video: '&#127909;'
     };
 
-    // Sort by urgency (highest first)
+    // Sort by logical phase order, then urgency within same phase
+    var typeSortOrder = {
+      // Setup (dependency order)
+      gsc_setup: 1, ga4_setup: 2, gtm_setup: 3, gbp_setup: 4,
+      lbm_setup: 5, lbm_report_setup: 6, instant_page: 7, onboarding: 8,
+      // Content & Audits
+      surge_entity: 10, surge_page: 11, surge_sitewide: 12,
+      target_page: 13, bio_page: 14, faq_page: 15, location_page: 16,
+      schema: 17, audit_diagnosis: 18, audit_action_plan: 19, audit_progress: 20,
+      // Off-Page
+      press_release: 30, citations: 31, gbp_optimization: 32,
+      social_profiles: 33, entity_veracity_hub: 34,
+      // Ongoing
+      social_posts: 40, neo_images: 41, neo_distribution: 42,
+      livedrive: 43, youtube_video: 44, endorsement: 45, report: 46
+    };
     var sorted = filtered.slice().sort(function(a, b) {
+      var orderA = typeSortOrder[a.deliverable_type] || 50;
+      var orderB = typeSortOrder[b.deliverable_type] || 50;
+      if (orderA !== orderB) return orderA - orderB;
       return getUrgency(b).score - getUrgency(a).score;
     });
 
