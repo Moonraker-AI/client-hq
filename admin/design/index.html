@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client HQ - Design System</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root, [data-theme="light"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00b86c;
+  --color-primary-light: #B4EEE0;
+  --color-primary-subtle: #DDF8F2;
+  --color-bg: #F7FDFB;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-heading: #1E2A5E;
+  --color-body: #333F70;
+  --color-muted: #6B7599;
+  --color-navy: #141C3A;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+}
+[data-theme="dark"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00f598;
+  --color-primary-light: #1A4A38;
+  --color-primary-subtle: #0D2E22;
+  --color-bg: #080F0B;
+  --color-surface: #0E1A14;
+  --color-border: #1E3530;
+  --color-heading: #E8F5EF;
+  --color-body: #C8D8D0;
+  --color-muted: #5A7A6E;
+  --color-navy: #0A1630;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #FF6B6B;
+  --color-info: #60A5FA;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; color: var(--color-body); background: var(--color-bg); line-height: 1.6; }
+h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); }
+
+.ds-page { max-width: 1100px; margin: 0 auto; padding: 2rem 2.5rem 4rem; }
+.ds-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid var(--color-primary); }
+.ds-header h1 { font-size: 1.75rem; }
+.ds-header-meta { font-size: .82rem; color: var(--color-muted); }
+
+.ds-section { margin-bottom: 3rem; }
+.ds-section h2 { font-size: 1.25rem; margin-bottom: .25rem; }
+.ds-section-desc { font-size: .85rem; color: var(--color-muted); margin-bottom: 1.25rem; }
+.ds-subsection { margin-bottom: 1.5rem; }
+.ds-subsection h3 { font-size: .95rem; margin-bottom: .75rem; color: var(--color-heading); }
+.ds-divider { height: 1px; background: var(--color-border); margin: 2.5rem 0; }
+
+/* Swatch grid */
+.swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .75rem; }
+.swatch { border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; background: var(--color-surface); }
+.swatch-color { height: 56px; }
+.swatch-info { padding: .5rem .65rem; }
+.swatch-name { font-size: .75rem; font-weight: 600; color: var(--color-heading); }
+.swatch-var { font-size: .68rem; color: var(--color-muted); font-family: 'SF Mono', 'Fira Code', monospace; }
+.swatch-hex { font-size: .68rem; color: var(--color-muted); }
+
+/* Token table */
+.token-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.token-table th { text-align: left; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); padding: .4rem .5rem; border-bottom: 2px solid var(--color-border); }
+.token-table td { padding: .5rem; border-bottom: 1px solid var(--color-border); color: var(--color-body); }
+.token-table td code { background: var(--color-bg); padding: .15rem .4rem; border-radius: 4px; font-size: .75rem; color: var(--color-heading); }
+
+/* Demo row */
+.demo-row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-bottom: .75rem; }
+.demo-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); min-width: 100px; }
+
+/* Theme toggle */
+.theme-toggle { position: fixed; top: 1rem; right: 1rem; z-index: 200; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.theme-toggle:hover { border-color: var(--color-primary); }
+
+/* Component demos */
+.card-demo { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.5rem; margin-bottom: .75rem; }
+.stat-demo { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1rem 1.25rem; text-align: center; }
+
+.row-demo { display: flex; align-items: center; gap: .75rem; padding: .65rem .75rem; border: 1px solid var(--color-border); border-radius: 8px; font-size: .84rem; cursor: pointer; transition: background .1s; margin-bottom: .5rem; background: var(--color-surface); }
+.row-demo:hover { background: var(--color-bg); }
+.row-demo .expand-icon { font-size: .65rem; color: var(--color-muted); flex-shrink: 0; }
+.row-demo .row-label { flex: 1; font-weight: 500; color: var(--color-heading); }
+
+.modal-demo { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.5rem; max-width: 400px; }
+.modal-demo h3 { font-size: 1rem; margin-bottom: .75rem; }
+.modal-actions-demo { display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1rem; }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">&#127769;</button>
+
+<div class="ds-page">
+
+<div class="ds-header">
+  <div>
+    <h1>Client HQ Design System</h1>
+    <p class="ds-header-meta">Reference guide for all UI patterns, tokens, and components used across the platform.</p>
+  </div>
+  <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" style="height:32px;">
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- COLORS -->
+<!-- ═══════════════════════════════════════ -->
+<div class="ds-section" id="colors">
+  <h2>Colors</h2>
+  <p class="ds-section-desc">Primary brand color (#00D47E) never changes between modes. All other colors adapt. Toggle dark mode (top right) to see both palettes.</p>
+
+  <div class="ds-subsection">
+    <h3>Brand & Primary</h3>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="swatch-color" style="background:#00D47E;"></div><div class="swatch-info"><div class="swatch-name">Primary</div><div class="swatch-var">--color-primary</div><div class="swatch-hex">#00D47E</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--color-primary-hover);"></div><div class="swatch-info"><div class="swatch-name">Primary Hover</div><div class="swatch-var">--color-primary-hover</div><div class="swatch-hex">Light: #00b86c / Dark: #00f598</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--color-primary-light);"></div><div class="swatch-info"><div class="swatch-name">Primary Light</div><div class="swatch-var">--color-primary-light</div><div class="swatch-hex">Light: #B4EEE0 / Dark: #1A4A38</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--color-primary-subtle);"></div><div class="swatch-info"><div class="swatch-name">Primary Subtle</div><div class="swatch-var">--color-primary-subtle</div><div class="swatch-hex">Light: #DDF8F2 / Dark: #0D2E22</div></div></div>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Surfaces & Backgrounds</h3>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="swatch-color" style="background:var(--color-bg);border:1px solid var(--color-border);"></div><div class="swatch-info"><div class="swatch-name">Background</div><div class="swatch-var">--color-bg</div><div class="swatch-hex">Light: #F7FDFB / Dark: #080F0B</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--color-surface);border:1px solid var(--color-border);"></div><div class="swatch-info"><div class="swatch-name">Surface</div><div class="swatch-var">--color-surface</div><div class="swatch-hex">Light: #FFFFFF / Dark: #0E1A14</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--color-navy);"></div><div class="swatch-info"><div class="swatch-name">Navy</div><div class="swatch-var">--color-navy</div><div class="swatch-hex">Light: #141C3A / Dark: #0A1630</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--color-border);"></div><div class="swatch-info"><div class="swatch-name">Border</div><div class="swatch-var">--color-border</div><div class="swatch-hex">Light: #E2E8F0 / Dark: #1E3530</div></div></div>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Text</h3>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="swatch-color" style="background:var(--color-heading);"></div><div class="swatch-info"><div class="swatch-name">Heading</div><div class="swatch-var">--color-heading</div><div class="swatch-hex">Light: #1E2A5E / Dark: #E8F5EF</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--color-body);"></div><div class="swatch-info"><div class="swatch-name">Body</div><div class="swatch-var">--color-body</div><div class="swatch-hex">Light: #333F70 / Dark: #C8D8D0</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--color-muted);"></div><div class="swatch-info"><div class="swatch-name">Muted</div><div class="swatch-var">--color-muted</div><div class="swatch-hex">Light: #6B7599 / Dark: #5A7A6E</div></div></div>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Semantic</h3>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="swatch-color" style="background:var(--color-success);"></div><div class="swatch-info"><div class="swatch-name">Success</div><div class="swatch-var">--color-success</div><div class="swatch-hex">#00D47E</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--color-warning);"></div><div class="swatch-info"><div class="swatch-name">Warning</div><div class="swatch-var">--color-warning</div><div class="swatch-hex">#F59E0B</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--color-danger);"></div><div class="swatch-info"><div class="swatch-name">Danger</div><div class="swatch-var">--color-danger</div><div class="swatch-hex">Light: #EF4444 / Dark: #FF6B6B</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--color-info);"></div><div class="swatch-info"><div class="swatch-name">Info</div><div class="swatch-var">--color-info</div><div class="swatch-hex">Light: #3B82F6 / Dark: #60A5FA</div></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="ds-divider"></div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- TYPOGRAPHY -->
+<!-- ═══════════════════════════════════════ -->
+<div class="ds-section" id="typography">
+  <h2>Typography</h2>
+  <p class="ds-section-desc">Two font families. Outfit for headings, Inter for body. Never mix them in the wrong context.</p>
+
+  <div class="ds-subsection">
+    <h3>Font Families</h3>
+    <table class="token-table">
+      <tr><th>Usage</th><th>Family</th><th>Import</th></tr>
+      <tr><td>Headings, titles, scores</td><td><code>Outfit</code></td><td><code>fonts.googleapis.com/css2?family=Outfit:wght@400;600;700</code></td></tr>
+      <tr><td>Body text, UI elements</td><td><code>Inter</code></td><td><code>fonts.googleapis.com/css2?family=Inter:wght@400;500;600</code></td></tr>
+    </table>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Type Scale</h3>
+    <div style="margin-bottom:.5rem;"><span style="font-family:Outfit;font-weight:700;font-size:1.75rem;color:var(--color-heading);">Page Title</span> <span style="font-size:.72rem;color:var(--color-muted);">Outfit 700, 1.75rem</span></div>
+    <div style="margin-bottom:.5rem;"><span style="font-family:Outfit;font-weight:700;font-size:1.25rem;color:var(--color-heading);">Section Heading</span> <span style="font-size:.72rem;color:var(--color-muted);">Outfit 700, 1.25rem</span></div>
+    <div style="margin-bottom:.5rem;"><span style="font-family:Outfit;font-weight:700;font-size:.95rem;color:var(--color-heading);">Card Header</span> <span style="font-size:.72rem;color:var(--color-muted);">Outfit 700, .95rem</span></div>
+    <div style="margin-bottom:.5rem;"><span style="font-weight:500;font-size:.84rem;color:var(--color-heading);">Row Title</span> <span style="font-size:.72rem;color:var(--color-muted);">Inter 500, .84rem</span></div>
+    <div style="margin-bottom:.5rem;"><span style="font-size:.82rem;color:var(--color-body);">Body Text</span> <span style="font-size:.72rem;color:var(--color-muted);">Inter 400, .82rem</span></div>
+    <div style="margin-bottom:.5rem;"><span style="font-size:.78rem;color:var(--color-muted);">Secondary / Detail</span> <span style="font-size:.72rem;color:var(--color-muted);">Inter 400, .78rem</span></div>
+    <div style="margin-bottom:.5rem;"><span style="font-size:.75rem;color:var(--color-muted);">Small / Date</span> <span style="font-size:.72rem;color:var(--color-muted);">Inter 400, .75rem</span></div>
+    <div><span style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">LABEL / HEADER</span> <span style="font-size:.72rem;color:var(--color-muted);">Inter 600, .72rem, uppercase, .04em tracking</span></div>
+  </div>
+</div>
+
+<div class="ds-divider"></div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- BUTTONS -->
+<!-- ═══════════════════════════════════════ -->
+<div class="ds-section" id="buttons">
+  <h2>Buttons</h2>
+  <p class="ds-section-desc">Consistent button patterns across the platform. Primary for actions, outline for secondary, ghost for inline.</p>
+
+  <div class="ds-subsection">
+    <h3>Primary Buttons</h3>
+    <div class="demo-row">
+      <button style="padding:.45rem 1.25rem;border-radius:8px;border:none;background:var(--color-primary);color:#fff;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:600;">Save Configuration</button>
+      <button style="padding:.35rem .85rem;font-size:.75rem;font-weight:600;border:none;background:var(--color-primary);color:#fff;border-radius:6px;cursor:pointer;font-family:inherit;">Save Queries</button>
+      <span style="font-size:.72rem;color:var(--color-muted);">bg: --color-primary, color: #fff, radius: 6-8px, weight: 600</span>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Outline / Secondary Buttons</h3>
+    <div class="demo-row">
+      <button style="padding:.35rem .85rem;font-size:.75rem;font-weight:600;border:1px solid var(--color-primary);background:var(--color-primary-subtle);color:var(--color-primary);border-radius:6px;cursor:pointer;font-family:inherit;">&#9654; Compile Now</button>
+      <button style="padding:.35rem .85rem;font-size:.78rem;font-weight:600;border:1px solid var(--color-border);background:transparent;color:var(--color-heading);border-radius:6px;cursor:pointer;font-family:inherit;">+ Add Query</button>
+      <span style="font-size:.72rem;color:var(--color-muted);">border: --color-primary or --color-border, bg: subtle or transparent</span>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Modal Action Buttons</h3>
+    <div class="demo-row">
+      <button style="padding:.45rem 1rem;border-radius:8px;border:1px solid var(--color-border);background:transparent;color:var(--color-muted);cursor:pointer;font-family:inherit;font-size:.82rem;">Close</button>
+      <button style="padding:.45rem 1.25rem;border-radius:8px;border:none;background:var(--color-primary);color:#fff;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:600;">Create Client</button>
+      <span style="font-size:.72rem;color:var(--color-muted);">Cancel: bordered transparent. Confirm: primary filled. Always right-aligned.</span>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Ghost / Inline Buttons</h3>
+    <div class="demo-row">
+      <button style="background:transparent;border:none;color:var(--color-success);font-weight:600;cursor:pointer;font-family:inherit;font-size:.82rem;">&#10003; Approve</button>
+      <button style="background:transparent;border:none;color:var(--color-info);cursor:pointer;font-family:inherit;font-size:.82rem;">&#9993; Email</button>
+      <button style="width:22px;height:22px;border:none;background:rgba(239,68,68,.1);color:var(--color-danger);cursor:pointer;font-size:.75rem;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;">&#10005;</button>
+      <span style="font-size:.72rem;color:var(--color-muted);">No background, semantic color, appears inline in rows</span>
+    </div>
+  </div>
+</div>
+
+<div class="ds-divider"></div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- STATUS ELEMENTS -->
+<!-- ═══════════════════════════════════════ -->
+<div class="ds-section" id="status">
+  <h2>Status Elements</h2>
+  <p class="ds-section-desc">Dropdowns, tags, and badges for tracking status across the platform.</p>
+
+  <div class="ds-subsection">
+    <h3>Status Dropdowns (Standardized)</h3>
+    <p style="font-size:.82rem;color:var(--color-body);margin-bottom:.75rem;">All tabs use identical sizing: <code>font-size: .72rem</code>, <code>padding: .25rem .4rem</code>, <code>border-radius: 6px</code>, <code>min-width: 110px</code>.</p>
+    <div class="demo-row">
+      <select style="font-family:inherit;font-size:.72rem;font-weight:500;padding:.25rem .4rem;border-radius:6px;border:1px solid transparent;min-width:110px;background:rgba(107,117,153,.1);color:#6B7599;">
+        <option>Not Started</option></select>
+      <select style="font-family:inherit;font-size:.72rem;font-weight:500;padding:.25rem .4rem;border-radius:6px;border:1px solid transparent;min-width:110px;background:rgba(59,130,246,.1);color:#3B82F6;">
+        <option>In Progress</option></select>
+      <select style="font-family:inherit;font-size:.72rem;font-weight:500;padding:.25rem .4rem;border-radius:6px;border:1px solid transparent;min-width:110px;background:rgba(139,92,246,.1);color:#8B5CF6;">
+        <option>Internal Review</option></select>
+      <select style="font-family:inherit;font-size:.72rem;font-weight:500;padding:.25rem .4rem;border-radius:6px;border:1px solid transparent;min-width:110px;background:rgba(245,158,11,.1);color:#D97706;">
+        <option>Waiting on Client</option></select>
+      <select style="font-family:inherit;font-size:.72rem;font-weight:500;padding:.25rem .4rem;border-radius:6px;border:1px solid transparent;min-width:110px;background:rgba(0,212,126,.1);color:#00b86c;">
+        <option>Delivered</option></select>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Status Tags</h3>
+    <div class="demo-row">
+      <span style="display:inline-block;padding:.2rem .6rem;border-radius:6px;font-size:.72rem;font-weight:600;background:rgba(0,212,126,.1);color:#00b86c;">active</span>
+      <span style="display:inline-block;padding:.2rem .6rem;border-radius:6px;font-size:.72rem;font-weight:600;background:rgba(59,130,246,.1);color:#3B82F6;">prospect</span>
+      <span style="display:inline-block;padding:.2rem .6rem;border-radius:6px;font-size:.72rem;font-weight:600;background:rgba(245,158,11,.1);color:#D97706;">onboarding</span>
+      <span style="display:inline-block;padding:.2rem .6rem;border-radius:6px;font-size:.72rem;font-weight:600;background:rgba(107,117,153,.08);color:#6B7599;">lead</span>
+      <span style="display:inline-block;padding:.2rem .6rem;border-radius:6px;font-size:.72rem;font-weight:600;background:rgba(139,92,246,.1);color:#8B5CF6;">internal review</span>
+      <span style="display:inline-block;padding:.2rem .6rem;border-radius:6px;font-size:.72rem;font-weight:600;background:rgba(0,212,126,.1);color:#00b86c;">published</span>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Owner Badges (Audit)</h3>
+    <div class="demo-row">
+      <span style="display:inline-block;padding:.2rem .6rem;border-radius:6px;font-size:.72rem;font-weight:600;background:rgba(0,212,126,.12);color:#00b86c;">Moonraker</span>
+      <span style="display:inline-block;padding:.2rem .6rem;border-radius:6px;font-size:.72rem;font-weight:600;background:rgba(59,130,246,.1);color:#3B82F6;">Client</span>
+      <span style="display:inline-block;padding:.2rem .6rem;border-radius:6px;font-size:.72rem;font-weight:600;background:rgba(245,158,11,.1);color:#D97706;">Collaboration</span>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Data Stream Badges</h3>
+    <div class="demo-row">
+      <span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;background:rgba(0,212,126,.1);color:#00b86c;">GSC</span>
+      <span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;background:rgba(0,212,126,.1);color:#00b86c;">GBP</span>
+      <span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;background:rgba(0,212,126,.1);color:#00b86c;">AI</span>
+      <span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;background:rgba(239,68,68,.1);color:#EF4444;">GSC</span>
+      <span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;background:rgba(245,158,11,.1);color:#D97706;">GBP</span>
+      <span style="font-size:.72rem;color:var(--color-muted);">Connected (green) / Missing (red) / Partial (amber)</span>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Priority Badges</h3>
+    <div class="demo-row">
+      <span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;background:rgba(0,212,126,.1);color:#00b86c;">P1</span>
+      <span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;background:rgba(59,130,246,.1);color:#3B82F6;">P2</span>
+      <span style="font-size:.72rem;color:var(--color-muted);">P1 = green primary, P2 = blue info</span>
+    </div>
+  </div>
+</div>
+
+<div class="ds-divider"></div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SPACING & BORDERS -->
+<!-- ═══════════════════════════════════════ -->
+<div class="ds-section" id="spacing">
+  <h2>Spacing, Borders & Radii</h2>
+  <p class="ds-section-desc">Consistent spacing tokens used across all components.</p>
+
+  <table class="token-table">
+    <tr><th>Token</th><th>Value</th><th>Usage</th></tr>
+    <tr><td>Row padding</td><td><code>.65rem .75rem</code></td><td>All expandable rows (IC, deliverables, audit)</td></tr>
+    <tr><td>Card padding</td><td><code>1.5rem - 2rem</code></td><td>Card content areas</td></tr>
+    <tr><td>Grid gap (tight)</td><td><code>.5rem</code></td><td>Form grids, inline elements</td></tr>
+    <tr><td>Grid gap (standard)</td><td><code>.75rem</code></td><td>Row elements, button groups</td></tr>
+    <tr><td>Grid gap (wide)</td><td><code>1rem</code></td><td>Card grids, section spacing</td></tr>
+    <tr><td>Section margin</td><td><code>1.5rem - 2rem</code></td><td>Between major sections</td></tr>
+    <tr><td>IC row right padding</td><td><code>3.5rem</code></td><td>Aligns dropdown with deliverable/audit rows</td></tr>
+    <tr><td colspan="3" style="font-weight:600;color:var(--color-heading);padding-top:.75rem;">Border Radii</td></tr>
+    <tr><td>Small badge</td><td><code>4px</code></td><td>Data stream badges, priority badges</td></tr>
+    <tr><td>Status dropdown</td><td><code>6px</code></td><td>All status selects, small buttons</td></tr>
+    <tr><td>Input / Button</td><td><code>6-8px</code></td><td>Form inputs, action buttons</td></tr>
+    <tr><td>Row / Expandable</td><td><code>8px</code></td><td>Standalone row items</td></tr>
+    <tr><td>Card</td><td><code>14px</code></td><td>All card containers</td></tr>
+    <tr><td>Circle</td><td><code>50%</code></td><td>Avatars, theme toggle, step numbers</td></tr>
+    <tr><td colspan="3" style="font-weight:600;color:var(--color-heading);padding-top:.75rem;">Borders</td></tr>
+    <tr><td>Standard border</td><td><code>1px solid var(--color-border)</code></td><td>Cards, inputs, row separators</td></tr>
+    <tr><td>Primary accent</td><td><code>2px solid var(--color-primary)</code></td><td>Active card, investment card</td></tr>
+    <tr><td>Status dropdown</td><td><code>1px solid transparent</code></td><td>Invisible until hover shows --color-border</td></tr>
+  </table>
+</div>
+
+<div class="ds-divider"></div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- FORM INPUTS -->
+<!-- ═══════════════════════════════════════ -->
+<div class="ds-section" id="forms">
+  <h2>Form Inputs</h2>
+  <p class="ds-section-desc">All inputs share the same base styling. Background is always --color-surface for contrast against --color-bg page background.</p>
+
+  <div class="ds-subsection">
+    <h3>Text Input</h3>
+    <div class="demo-row">
+      <input type="text" value="sc-domain:skytherapies.ca" style="font-family:inherit;font-size:.84rem;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);width:300px;">
+      <span style="font-size:.72rem;color:var(--color-muted);">Inter, .84rem, .45rem .65rem padding, 8px radius</span>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Select</h3>
+    <div class="demo-row">
+      <select style="font-family:inherit;font-size:.84rem;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);width:200px;">
+        <option>Active</option><option>Inactive</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Form Labels</h3>
+    <div style="margin-bottom:.3rem;"><span style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">GSC PROPERTY</span></div>
+    <input type="text" placeholder="e.g. sc-domain:example.com" style="font-family:inherit;font-size:.84rem;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);width:300px;">
+    <p style="font-size:.72rem;color:var(--color-muted);margin-top:.35rem;">Label: .72rem, 600 weight, uppercase, .04em letter-spacing, --color-muted</p>
+  </div>
+</div>
+
+<div class="ds-divider"></div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- COMPONENTS -->
+<!-- ═══════════════════════════════════════ -->
+<div class="ds-section" id="components">
+  <h2>Components</h2>
+  <p class="ds-section-desc">Reusable UI patterns used across all tabs and pages.</p>
+
+  <div class="ds-subsection">
+    <h3>Card</h3>
+    <div class="card-demo">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+        <h3 style="font-family:Outfit;font-weight:700;font-size:.95rem;">Card Header</h3>
+        <button style="padding:.35rem .85rem;font-size:.75rem;font-weight:600;border:none;background:var(--color-primary);color:#fff;border-radius:6px;cursor:pointer;font-family:inherit;">Action Button</button>
+      </div>
+      <p style="font-size:.82rem;color:var(--color-body);">Card content goes here. Background: --color-surface, border: 1px --color-border, radius: 14px, padding: 1.5-2rem.</p>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Stat Cards</h3>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;">
+      <div class="stat-demo">
+        <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">Data Streams</div>
+        <div style="font-size:1rem;margin-top:.25rem;">
+          <span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;background:rgba(0,212,126,.1);color:#00b86c;">GSC</span>
+          <span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;background:rgba(0,212,126,.1);color:#00b86c;">GBP</span>
+          <span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;background:rgba(0,212,126,.1);color:#00b86c;">AI</span>
+        </div>
+      </div>
+      <div class="stat-demo">
+        <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">Schedule</div>
+        <div style="font-family:Outfit;font-weight:700;font-size:1.25rem;color:var(--color-success);">Active</div>
+        <div style="font-size:.72rem;color:var(--color-muted);">1st of month</div>
+      </div>
+      <div class="stat-demo">
+        <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">Published</div>
+        <div style="font-family:Outfit;font-weight:700;font-size:1.25rem;color:var(--color-success);">2</div>
+      </div>
+      <div class="stat-demo">
+        <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">Pending</div>
+        <div style="font-family:Outfit;font-weight:700;font-size:1.25rem;color:var(--color-warning);">1</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Expandable Rows</h3>
+    <p style="font-size:.82rem;color:var(--color-muted);margin-bottom:.5rem;">Used across Intro Call, Deliverables, and Audit tabs. Click anywhere to expand, dropdown stops propagation.</p>
+    <div class="row-demo" onclick="this.classList.toggle('expanded'); var d=this.nextElementSibling; d.style.display=d.style.display==='block'?'none':'block';">
+      <div class="expand-icon">&#9654;</div>
+      <div style="font-size:1rem;opacity:.5;width:24px;text-align:center;">&#128295;</div>
+      <div style="flex:1;"><div class="row-label">Google Search Console Setup</div><div style="font-size:.75rem;color:var(--color-muted);">Pending</div></div>
+      <select style="font-family:inherit;font-size:.72rem;font-weight:500;padding:.25rem .4rem;border-radius:6px;border:1px solid transparent;min-width:110px;background:rgba(0,212,126,.1);color:#00b86c;" onclick="event.stopPropagation()">
+        <option>Delivered</option></select>
+    </div>
+    <div style="display:none;padding:.65rem .75rem .65rem 3.25rem;font-size:.78rem;color:var(--color-body);line-height:1.6;border:1px solid var(--color-border);border-top:none;border-radius:0 0 8px 8px;background:var(--color-surface);margin-top:-9px;margin-bottom:.5rem;">
+      Prefer sc-domain: property (covers all URL variants). Grant access to support@moonraker.ai (Owner), chris@moonraker.ai (Owner). Save gsc_property on contact record.
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Phase Filter Pills</h3>
+    <div class="demo-row">
+      <button style="padding:.3rem .75rem;border-radius:100px;font-size:.75rem;font-weight:500;cursor:pointer;border:1px solid var(--color-primary);background:var(--color-primary-subtle);color:var(--color-primary);">All 40</button>
+      <button style="padding:.3rem .75rem;border-radius:100px;font-size:.75rem;font-weight:500;cursor:pointer;border:1px solid var(--color-border);background:transparent;color:var(--color-muted);">Setup 8</button>
+      <button style="padding:.3rem .75rem;border-radius:100px;font-size:.75rem;font-weight:500;cursor:pointer;border:1px solid var(--color-border);background:transparent;color:var(--color-muted);">Content 20</button>
+      <button style="padding:.3rem .75rem;border-radius:100px;font-size:.75rem;font-weight:500;cursor:pointer;border:1px solid var(--color-border);background:transparent;color:var(--color-muted);">Delivered 13</button>
+    </div>
+    <p style="font-size:.72rem;color:var(--color-muted);margin-top:.25rem;">Active: primary border + subtle bg. Inactive: border + transparent bg. Radius: 100px (pill).</p>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Toast Notifications</h3>
+    <div style="display:flex;flex-direction:column;gap:.5rem;max-width:400px;">
+      <div style="padding:.6rem 1rem;border-radius:8px;font-size:.82rem;font-weight:500;background:rgba(0,212,126,.1);color:#00b86c;border-left:3px solid #00D47E;">&#10003; Report config saved</div>
+      <div style="padding:.6rem 1rem;border-radius:8px;font-size:.82rem;font-weight:500;background:rgba(239,68,68,.1);color:#EF4444;border-left:3px solid #EF4444;">&#10007; Failed to save config</div>
+      <div style="padding:.6rem 1rem;border-radius:8px;font-size:.82rem;font-weight:500;background:rgba(245,158,11,.1);color:#D97706;border-left:3px solid #F59E0B;">&#9888; No matching GSC site found</div>
+      <div style="padding:.6rem 1rem;border-radius:8px;font-size:.82rem;font-weight:500;background:rgba(59,130,246,.1);color:#3B82F6;border-left:3px solid #3B82F6;">&#8505; Searching for GSC property...</div>
+    </div>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Tab Navigation</h3>
+    <div style="display:flex;gap:0;border-bottom:2px solid var(--color-border);">
+      <button style="padding:.5rem 1rem;font-family:inherit;font-size:.84rem;font-weight:500;color:var(--color-muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-2px;">Overview</button>
+      <button style="padding:.5rem 1rem;font-family:inherit;font-size:.84rem;font-weight:600;color:var(--color-primary);background:none;border:none;border-bottom:2px solid var(--color-primary);cursor:pointer;margin-bottom:-2px;">Deliverables <span style="font-size:.72rem;font-weight:600;padding:.1rem .4rem;border-radius:4px;background:rgba(245,158,11,.15);color:#D97706;margin-left:.25rem;">27</span></button>
+      <button style="padding:.5rem 1rem;font-family:inherit;font-size:.84rem;font-weight:500;color:var(--color-muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-2px;">Reports <span style="font-size:.72rem;font-weight:500;padding:.1rem .4rem;border-radius:4px;background:rgba(107,117,153,.08);color:#6B7599;margin-left:.25rem;">2</span></button>
+    </div>
+    <p style="font-size:.72rem;color:var(--color-muted);margin-top:.5rem;">Active: primary color + 2px bottom border. Badge: amber for outstanding items, muted for info-only counts.</p>
+  </div>
+
+  <div class="ds-subsection">
+    <h3>Modal Pattern</h3>
+    <div class="modal-demo">
+      <h3>Create New Client</h3>
+      <p style="font-size:.82rem;color:var(--color-muted);margin-bottom:.75rem;">Modal content with form fields. Backdrop click does not dismiss.</p>
+      <input type="text" placeholder="First Name" style="width:100%;font-family:inherit;font-size:.84rem;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);margin-bottom:.5rem;">
+      <div class="modal-actions-demo">
+        <button style="padding:.45rem 1rem;border-radius:8px;border:1px solid var(--color-border);background:transparent;color:var(--color-muted);cursor:pointer;font-family:inherit;font-size:.82rem;">Cancel</button>
+        <button style="padding:.45rem 1.25rem;border-radius:8px;border:none;background:var(--color-primary);color:#fff;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:600;">Create Client</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ds-divider"></div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- PATTERNS -->
+<!-- ═══════════════════════════════════════ -->
+<div class="ds-section" id="patterns">
+  <h2>Patterns & Conventions</h2>
+  <p class="ds-section-desc">Behavioral patterns and naming conventions used throughout the codebase.</p>
+
+  <table class="token-table">
+    <tr><th>Pattern</th><th>Convention</th></tr>
+    <tr><td>Theme persistence</td><td><code>localStorage.getItem('moonraker-theme')</code> - reads on page load before paint</td></tr>
+    <tr><td>Sidebar collapse</td><td><code>localStorage.getItem('moonraker-sidebar')</code> - text hidden via <code>color: transparent</code></td></tr>
+    <tr><td>Optimistic updates</td><td>Change local state first, revert on API failure. Standard for all status changes.</td></tr>
+    <tr><td>Window-scoped functions</td><td>All functions called from inline <code>onclick</code> must be assigned to <code>window</code></td></tr>
+    <tr><td>Event propagation</td><td>Dropdowns, links, delete buttons use <code>onclick="event.stopPropagation()"</code> inside clickable rows</td></tr>
+    <tr><td>Status naming</td><td>Deliverables end-state: <code>delivered</code>. Checklist end-state: <code>complete</code>. Intentionally different semantics.</td></tr>
+    <tr><td>Expand state</td><td>Single <code>expandedXxxId</code> variable per tab. Toggled by <code>toggleXxxExpand(id)</code>. Re-render on toggle.</td></tr>
+    <tr><td>Tab count badges</td><td>Show outstanding items (non-complete/non-delivered). Amber when > 0, muted when info-only.</td></tr>
+    <tr><td>Supabase queries</td><td>Use <code>sb()</code> helper for reads, <code>apiAction()</code> for writes. Two-step lookup for PostgREST (no subqueries).</td></tr>
+    <tr><td>GitHub push (large files)</td><td>Write payload to <code>/home/claude/push.json</code> then <code>curl -d @push.json</code></td></tr>
+    <tr><td>Logo</td><td><code>https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png</code></td></tr>
+    <tr><td>Scott's calendar</td><td><code>https://msg.moonraker.ai/widget/bookings/scott-pope-calendar</code></td></tr>
+  </table>
+</div>
+
+<div style="text-align:center;padding:2rem 0;color:var(--color-muted);font-size:.82rem;">
+  Client HQ Design System &middot; Last updated April 2026 &middot; <a href="/admin" style="color:var(--color-primary);">Back to Admin</a>
+</div>
+
+</div>
+
+<script>
+function toggleTheme() {
+  var h = document.documentElement;
+  var btn = document.getElementById('themeBtn');
+  if (h.getAttribute('data-theme') === 'light') {
+    h.setAttribute('data-theme', 'dark');
+    btn.innerHTML = '&#9728;&#65039;';
+    try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
+  } else {
+    h.setAttribute('data-theme', 'light');
+    btn.innerHTML = '&#127769;';
+    try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
+  }
+}
+// Set initial icon
+try {
+  if (localStorage.getItem('moonraker-theme') === 'dark') document.getElementById('themeBtn').innerHTML = '&#9728;&#65039;';
+} catch(e) {}
+</script>
+</body>
+</html>
