@@ -760,7 +760,7 @@ section { padding: 4.5rem 0; }
 
   function init() {
     // Fetch all available months
-    sbFetch('report_snapshots', 'client_slug=eq.' + CLIENT_SLUG + '&select=report_month,campaign_month&order=report_month.desc')
+    sbFetch('report_snapshots', 'client_slug=eq.' + CLIENT_SLUG + '&report_status=eq.published&select=report_month,campaign_month&order=report_month.desc')
       .then(function(months) {
         if (!months || months.length === 0) {
           document.getElementById('loadingState').innerHTML =
