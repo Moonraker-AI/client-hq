@@ -33,7 +33,26 @@
     "api/compile-report.js": {
       "maxDuration": 300,
       "memory": 1024
+    },
+    "api/send-report-email.js": {
+      "maxDuration": 30
+    },
+    "api/cron/enqueue-reports.js": {
+      "maxDuration": 30
+    },
+    "api/cron/process-queue.js": {
+      "maxDuration": 300,
+      "memory": 1024
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/enqueue-reports",
+      "schedule": "0 10 1 * *"
+    },
+    {
+      "path": "/api/cron/process-queue",
+      "schedule": "*/5 * * * *"
+    }
+  ]
 }
-
