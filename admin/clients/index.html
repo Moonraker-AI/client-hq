@@ -2025,9 +2025,9 @@ strong { font-weight: 600; color: var(--color-heading); }
       '</div>' +
       '<div id="emailMeta" style="font-size:.78rem;color:var(--color-muted);margin-bottom:.75rem;padding:.5rem .75rem;background:var(--color-bg);border-radius:8px;"></div>' +
       '<div id="emailPreviewFrame" style="flex:1;overflow-y:auto;border:1px solid var(--color-border);border-radius:8px;min-height:400px;background:#fff;"></div>' +
-      '<div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem;" id="emailActions">' +
+      '<div class="modal-actions" style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem;" id="emailActions">' +
         '<button class="btn-cancel" onclick="document.getElementById(\'emailPreviewModal\').remove()">Close</button>' +
-        '<button class="btn-create" id="sendEmailBtn" onclick="sendReportEmail(\'' + snapId + '\')" style="background:var(--color-primary);color:#fff;">&#9993; Send to Client</button>' +
+        '<button class="btn-create" id="sendEmailBtn" onclick="sendReportEmail(\'' + snapId + '\')">&#9993; Send to Client</button>' +
       '</div>' +
     '</div>';
     document.body.appendChild(overlay);
