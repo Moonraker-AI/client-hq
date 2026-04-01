@@ -1,13 +1,12 @@
 // /api/compile-report.js
-// Core reporting engine. Pulls data from 5+ sources, writes a report snapshot,
+// Core reporting engine. Pulls data from multiple sources, writes a report snapshot,
 // generates highlights via Claude, and sends team notification via Resend.
 //
 // Sources:
-//   1. Google Search Console (via Google API + service account)
-//   2. Local Brand Manager   (via LBM API for GBP data)
-//   3. DataForSEO            (AI visibility: Google AI Mode, Gemini, ChatGPT, Perplexity, Claude scrapers)
-//   4. Supabase              (task progress from checklist_items)
-//   5. Supabase              (previous month snapshot for deltas)
+//   1. Google Search Console  (via Google API + service account)
+//   2. LocalFalcon            (geogrids on Google Maps + AI visibility across 5 AI platforms)
+//   3. Supabase               (task progress from checklist_items)
+//   4. Supabase               (previous month snapshot for deltas)
 //
 // Outputs:
 //   - report_snapshots row (status: internal_review)
@@ -17,7 +16,7 @@
 //
 // ENV VARS:
 //   SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, RESEND_API_KEY,
-//   DATAFORSEO_LOGIN, DATAFORSEO_PASSWORD, LBM_API_KEY,
+//   LOCALFALCON_API_KEY,
 //   GOOGLE_SERVICE_ACCOUNT_JSON (optional - graceful skip if missing)
 
 module.exports = async function handler(req, res) {
@@ -26,9 +25,7 @@ module.exports = async function handler(req, res) {
   var sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   var anthropicKey = process.env.ANTHROPIC_API_KEY;
   var resendKey = process.env.RESEND_API_KEY;
-  var dfseLogin = process.env.DATAFORSEO_LOGIN;
-  var dfsePw = process.env.DATAFORSEO_PASSWORD;
-  var lbmKey = process.env.LBM_API_KEY;
+  var lfKey = process.env.LOCALFALCON_API_KEY;
   var googleSA = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   var sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
 
@@ -55,12 +52,7 @@ module.exports = async function handler(req, res) {
     return { 'apikey': sbKey, 'Authorization': 'Bearer ' + sbKey, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
   }
 
-  function dfseAuth() {
-    return 'Basic ' + Buffer.from(dfseLogin + ':' + dfsePw).toString('base64');
-  }
-
   function monthRange(monthStr) {
-    // "2026-04-01" -> { start: "2026-04-01", end: "2026-04-30" }
     var d = new Date(monthStr + 'T00:00:00Z');
     var y = d.getUTCFullYear();
     var m = d.getUTCMonth();
@@ -127,7 +119,6 @@ module.exports = async function handler(req, res) {
   }
 
   // ─── STEP 1b: Load tracked keywords (source of truth) ─────────
-  // Falls back to report_configs.tracked_queries for backward compat
   var trackedKeywords = [];
   try {
     var kwResp = await fetch(sbUrl + '/rest/v1/tracked_keywords?client_slug=eq.' + clientSlug + '&active=eq.true&order=priority.asc,keyword.asc', { headers: sbHeaders() });
@@ -137,24 +128,30 @@ module.exports = async function handler(req, res) {
     }
   } catch (e) { /* non-fatal */ }
 
-  // Build unified query list for AI visibility (from tracked_keywords or report_configs fallback)
-  var aiQueries = [];
-  var geogridKeywords = [];
+  // Build unified query list (from tracked_keywords or report_configs fallback)
+  var scanKeywords = [];
   if (trackedKeywords.length > 0) {
     trackedKeywords.forEach(function(kw) {
-      if (kw.track_ai_visibility) {
-        aiQueries.push({ label: kw.label || kw.keyword, query: kw.keyword });
-      }
-      if (kw.track_geogrid) {
-        geogridKeywords.push(kw);
+      if (kw.track_geogrid || kw.track_ai_visibility) {
+        scanKeywords.push({
+          keyword: kw.keyword,
+          label: kw.label || kw.keyword,
+          track_geogrid: kw.track_geogrid,
+          track_ai_visibility: kw.track_ai_visibility,
+          grid_size: kw.geogrid_grid_size || 7
+        });
       }
     });
   } else if (config.tracked_queries && config.tracked_queries.length > 0) {
-    // Fallback to report_configs
     config.tracked_queries.forEach(function(q) {
-      aiQueries.push({ label: q.label, query: q.query });
+      scanKeywords.push({
+        keyword: q.query,
+        label: q.label || q.query,
+        track_geogrid: true,
+        track_ai_visibility: true,
+        grid_size: 7
+      });
     });
-    // Can't do geogrids without tracked_keywords (no place_id etc)
   }
 
   // ─── STEP 2: Load previous month snapshot for deltas ──────────
@@ -165,10 +162,9 @@ module.exports = async function handler(req, res) {
     return (rows && rows.length > 0) ? rows[0] : null;
   });
 
-  // ─── STEPS 3-7: Pull all data sources IN PARALLEL ──────────────
-  // GSC, GBP, DataForSEO, and tasks all run concurrently.
-  // Within DataForSEO, all 5 engines also run concurrently.
+  // ─── STEPS 3-6: Pull all data sources IN PARALLEL ──────────────
 
+  // ── GSC (unchanged) ────────────────────────────────────────────
   var gscFn = safe('gsc', async function() {
     if (!googleSA || !config.gsc_property) {
       warnings.push('GSC: skipped (no credentials or property configured)');
@@ -183,7 +179,6 @@ module.exports = async function handler(req, res) {
     var gscBase = 'https://www.googleapis.com/webmasters/v3/sites/' + encodeURIComponent(config.gsc_property) + '/searchAnalytics/query';
     var gscHeaders = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
 
-    // Run all 3 GSC queries in parallel
     var results = await Promise.all([
       fetchT(gscBase, { method: 'POST', headers: gscHeaders, body: JSON.stringify({ startDate: range.start, endDate: range.end, dimensions: [], rowLimit: 1 }) }, 15000).then(function(r) { return r.json(); }),
       fetchT(gscBase, { method: 'POST', headers: gscHeaders, body: JSON.stringify({ startDate: range.start, endDate: range.end, dimensions: ['page'], rowLimit: 10, orderBy: [{ fieldName: 'clicks', sortOrder: 'DESCENDING' }] }) }, 15000).then(function(r) { return r.json(); }),
@@ -205,157 +200,275 @@ module.exports = async function handler(req, res) {
     };
   });
 
-  var gbpFn = safe('lbm', async function() {
-    if (!lbmKey || !config.lbm_location_id) {
-      warnings.push('LBM/GBP: skipped (no key or location configured)');
+  // ── LocalFalcon: Geogrids + AI Visibility (replaces LBM + DataForSEO) ──
+  var localFalconFn = safe('localfalcon', async function() {
+    if (!lfKey) {
+      warnings.push('LocalFalcon: skipped (no API key)');
       return null;
     }
 
-    var lbmHeaders = { 'Authorization': lbmKey, 'Content-Type': 'application/json' };
-
-    // Step 1: Get the location to find its gbp_id and check if enabled
-    var locResp = await fetchT('https://api.localbrandmanager.com/locations', { headers: lbmHeaders }, 10000);
-    var locations = await locResp.json();
-    var location = null;
-    if (Array.isArray(locations)) {
-      location = locations.find(function(l) { return l.id === config.lbm_location_id; });
+    var placeId = config.localfalcon_place_id;
+    if (!placeId) {
+      warnings.push('LocalFalcon: skipped (no localfalcon_place_id configured in report_configs)');
+      return null;
     }
-    if (!location) { warnings.push('LBM: location ' + config.lbm_location_id + ' not found'); return null; }
-    if (!location.enabled) { warnings.push('LBM: location "' + location.name + '" is disabled in LBM - enable it to generate reports'); return null; }
 
-    // Step 2: Find a report that contains this location
-    var reportUrl = 'https://api.localbrandmanager.com/reports';
-    var listResp = await fetchT(reportUrl, { headers: lbmHeaders }, 10000);
-    var reports = await listResp.json();
+    if (scanKeywords.length === 0) {
+      warnings.push('LocalFalcon: no tracked keywords configured');
+      return null;
+    }
 
-    var report = null;
-    if (Array.isArray(reports)) {
-      report = reports.find(function(r) {
-        var locs = r.locations || [];
-        return locs.some(function(l) { return l.store_code === location.gbp_id || l.store_code === location.store_code || l.name === location.name; });
+    // Step 1: Look up saved location for coordinates + GBP snapshot
+    var locResp = await fetchT('https://api.localfalcon.com/v1/locations/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'api_key=' + lfKey + '&query=' + encodeURIComponent(placeId) + '&limit=5'
+    }, 15000);
+    var locData = await locResp.json();
+    var locations = (locData.data && locData.data.locations) || [];
+    var location = locations.find(function(l) { return l.place_id === placeId; });
+
+    if (!location) {
+      warnings.push('LocalFalcon: place_id ' + placeId + ' not found in saved locations');
+      return null;
+    }
+
+    var lat = location.lat;
+    var lng = location.lng;
+
+    // GBP snapshot from location data (rating + reviews - engagement metrics not available from LF)
+    var gbpSnapshot = {
+      rating: parseFloat(location.rating) || 0,
+      reviews: parseInt(location.reviews) || 0,
+      name: location.name,
+      address: location.address,
+      phone: location.phone || null,
+      categories: location.categories || {},
+      note: 'GBP engagement metrics (calls, directions, website clicks) require a separate GBP Performance API integration'
+    };
+
+    // Step 2: Build scan tasks
+    // Google Maps: 7x7 grid, 5mi radius (49 data points per scan)
+    // AI platforms: 3x3 grid, 5mi radius (9 data points per scan - AI answers less geographically granular)
+    var GEO_PLATFORMS = ['google'];
+    var AI_PLATFORMS = ['chatgpt', 'gemini', 'grok', 'gaio', 'aimode'];
+    var GEO_GRID_SIZE = '7';
+    var AI_GRID_SIZE = '3';
+    var SCAN_RADIUS = '5';
+
+    var scanTasks = [];
+    scanKeywords.forEach(function(kw) {
+      if (kw.track_geogrid) {
+        GEO_PLATFORMS.forEach(function(platform) {
+          scanTasks.push({
+            keyword: kw.keyword,
+            label: kw.label,
+            platform: platform,
+            type: 'geo',
+            grid_size: String(kw.grid_size || GEO_GRID_SIZE)
+          });
+        });
+      }
+      if (kw.track_ai_visibility) {
+        AI_PLATFORMS.forEach(function(platform) {
+          scanTasks.push({
+            keyword: kw.keyword,
+            label: kw.label,
+            platform: platform,
+            type: 'ai',
+            grid_size: AI_GRID_SIZE
+          });
+        });
+      }
+    });
+
+    // Step 3: Fire all scans with eager=true (returns within 20s with report_key)
+    var SCAN_TIMEOUT = 25000;
+    var scanPromises = scanTasks.map(function(task) {
+      return fetchT('https://api.localfalcon.com/v2/run-scan/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'api_key=' + lfKey
+          + '&place_id=' + encodeURIComponent(placeId)
+          + '&keyword=' + encodeURIComponent(task.keyword)
+          + '&lat=' + lat
+          + '&lng=' + lng
+          + '&grid_size=' + task.grid_size
+          + '&radius=' + SCAN_RADIUS
+          + '&measurement=mi'
+          + '&platform=' + task.platform
+          + '&eager=true'
+      }, SCAN_TIMEOUT).then(function(r) { return r.json(); }).then(function(data) {
+        return { task: task, data: data };
       });
-    }
-    if (!report) { warnings.push('LBM: no report found for "' + location.name + '"'); return null; }
+    });
 
-    // Step 3: Get report detail
-    var detailResp = await fetchT(reportUrl + '/' + report.id, { headers: lbmHeaders }, 10000);
-    var detail = await detailResp.json();
+    var scanResults = await Promise.allSettled(scanPromises);
 
-    // Step 4: Extract metrics from charts.stats[] array
-    var stats = (detail.charts && detail.charts.stats) || [];
-    function statSum(id) {
-      var s = stats.find(function(st) { return st.id === id; });
-      return s ? (s.sum || 0) : 0;
-    }
-    function statPrev(id) {
-      var s = stats.find(function(st) { return st.id === id; });
-      return s ? (s.sum_compare || 0) : 0;
+    // Step 4: Collect report_keys that need polling (202 = still processing)
+    var completed = [];
+    var pendingPolls = [];
+
+    scanResults.forEach(function(result, idx) {
+      if (result.status === 'rejected') {
+        warnings.push('LocalFalcon scan failed (' + scanTasks[idx].platform + '/"' + scanTasks[idx].keyword + '"): ' + (result.reason ? result.reason.message : 'unknown'));
+        return;
+      }
+      var r = result.value;
+      if (r.data.success && r.data.data && r.data.data.report_key) {
+        // Completed immediately
+        completed.push({ task: r.task, report: r.data.data });
+      } else if (r.data.code === 202 && r.data.data && r.data.data.report_key) {
+        // Still processing, need to poll
+        pendingPolls.push({ task: r.task, report_key: r.data.data.report_key });
+      } else if (r.data.success === false) {
+        warnings.push('LocalFalcon scan error (' + r.task.platform + '/"' + r.task.keyword + '"): ' + (r.data.message || JSON.stringify(r.data).substring(0, 200)));
+      }
+    });
+
+    // Step 5: Poll pending scans (batch poll every 5s, max 90s total)
+    if (pendingPolls.length > 0) {
+      var POLL_INTERVAL = 5000;
+      var MAX_POLL_TIME = 90000;
+      var waited = 0;
+      var remaining = pendingPolls.slice();
+
+      while (remaining.length > 0 && waited < MAX_POLL_TIME) {
+        await new Promise(function(resolve) { setTimeout(resolve, POLL_INTERVAL); });
+        waited += POLL_INTERVAL;
+
+        var pollBatch = remaining.slice();
+        remaining = [];
+
+        var pollResults = await Promise.allSettled(pollBatch.map(function(item) {
+          return fetchT('https://api.localfalcon.com/v1/reports/' + item.report_key + '/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'api_key=' + lfKey + '&report_key=' + item.report_key
+          }, 15000).then(function(r) { return r.json(); }).then(function(data) {
+            return { task: item.task, report_key: item.report_key, data: data };
+          });
+        }));
+
+        pollResults.forEach(function(pr) {
+          if (pr.status === 'rejected') {
+            warnings.push('LocalFalcon poll failed: ' + (pr.reason ? pr.reason.message : 'unknown'));
+            return;
+          }
+          var r = pr.value;
+          if (r.data.code === 202) {
+            // Still processing, keep polling
+            remaining.push({ task: r.task, report_key: r.report_key });
+          } else if (r.data.success && r.data.data) {
+            completed.push({ task: r.task, report: r.data.data });
+          } else {
+            warnings.push('LocalFalcon poll error (' + r.task.platform + '/"' + r.task.keyword + '"): ' + (r.data.message || 'unknown'));
+          }
+        });
+      }
+
+      if (remaining.length > 0) {
+        remaining.forEach(function(item) {
+          warnings.push('LocalFalcon scan timeout (' + item.task.platform + '/"' + item.task.keyword + '"): still processing after ' + (MAX_POLL_TIME / 1000) + 's');
+        });
+      }
     }
 
-    var reviewData = detail.reviews || {};
-    var aggReviews = (reviewData.aggregated && reviewData.aggregated.sum && reviewData.aggregated.sum.data) || {};
+    // Step 6: Split results into geo grids and AI scans
+    var geoGrids = [];
+    var aiScans = [];
+
+    completed.forEach(function(item) {
+      var report = item.report;
+      var entry = {
+        keyword: item.task.keyword,
+        label: item.task.label,
+        platform: item.task.platform,
+        report_key: report.report_key || null,
+        arp: parseFloat(report.arp) || 0,
+        atrp: parseFloat(report.atrp) || 0,
+        solv: parseFloat(report.solv) || 0,
+        grid_size: report.grid_size || item.task.grid_size,
+        data_points_total: parseInt(report.points || report.data_points) || 0,
+        found_in: parseInt(report.found_in) || 0,
+        image_url: report.image || null,
+        heatmap_url: report.heatmap || null,
+        pdf_url: report.pdf || null,
+        public_url: report.public_url || null
+      };
+
+      if (item.task.type === 'geo') {
+        geoGrids.push(entry);
+      } else {
+        aiScans.push(entry);
+      }
+    });
+
+    // Sort geo grids by SoLV descending (best performing first)
+    geoGrids.sort(function(a, b) { return b.solv - a.solv; });
+
+    // Compute geo grid averages
+    var geoAvgArp = geoGrids.length > 0 ? geoGrids.reduce(function(s, g) { return s + g.arp; }, 0) / geoGrids.length : 0;
+    var geoAvgAtrp = geoGrids.length > 0 ? geoGrids.reduce(function(s, g) { return s + g.atrp; }, 0) / geoGrids.length : 0;
+    var geoAvgSolv = geoGrids.length > 0 ? geoGrids.reduce(function(s, g) { return s + g.solv; }, 0) / geoGrids.length : 0;
+
+    // Build AI visibility summary per platform
+    var aiPlatformSummary = {};
+    AI_PLATFORMS.forEach(function(p) { aiPlatformSummary[p] = { platform: p, scans: 0, keywords_found: 0, keywords_checked: 0, avg_solv: 0, keywords: [] }; });
+
+    aiScans.forEach(function(scan) {
+      var ps = aiPlatformSummary[scan.platform];
+      if (!ps) return;
+      ps.scans++;
+      ps.keywords_checked++;
+      if (scan.found_in > 0) {
+        ps.keywords_found++;
+        ps.keywords.push(scan.label);
+      }
+    });
+
+    // Compute per-platform avg SoLV
+    Object.keys(aiPlatformSummary).forEach(function(p) {
+      var platformScans = aiScans.filter(function(s) { return s.platform === p; });
+      if (platformScans.length > 0) {
+        aiPlatformSummary[p].avg_solv = Math.round(platformScans.reduce(function(s, sc) { return s + sc.solv; }, 0) / platformScans.length * 100) / 100;
+      }
+    });
+
+    var aiPlatforms = Object.values(aiPlatformSummary);
+    var aiPlatformsCiting = aiPlatforms.filter(function(p) { return p.keywords_found > 0; }).length;
+
+    // Credit usage estimate
+    var totalDataPoints = completed.reduce(function(s, c) { return s + (c.report ? (parseInt(c.report.points || c.report.data_points) || 0) : 0); }, 0);
 
     return {
-      calls: statSum('call_clicks'),
-      direction_requests: statSum('direction_requests'),
-      website_clicks: statSum('website_clicks'),
-      photo_views: statSum('images'),
-      impressions_total: statSum('business_impressions_desktop_maps') + statSum('business_impressions_desktop_search') + statSum('business_impressions_mobile_search'),
-      reviews: {
-        total: aggReviews.total || statSum('reviews'),
-        average: 0,
-        new_this_month: statSum('reviews')
+      gbp: gbpSnapshot,
+      geo: {
+        grids: geoGrids,
+        grid_count: geoGrids.length,
+        avg_arp: Math.round(geoAvgArp * 100) / 100,
+        avg_atrp: Math.round(geoAvgAtrp * 100) / 100,
+        avg_solv: Math.round(geoAvgSolv * 100) / 100
       },
-      prev: {
-        calls: statPrev('call_clicks'),
-        website_clicks: statPrev('website_clicks'),
-        impressions_total: statPrev('business_impressions_desktop_maps') + statPrev('business_impressions_desktop_search') + statPrev('business_impressions_mobile_search')
+      ai: {
+        platforms: aiPlatforms,
+        scans: aiScans,
+        platforms_checked: AI_PLATFORMS.length,
+        platforms_citing: aiPlatformsCiting,
+        total_keywords: scanKeywords.length,
+        total_scans: scanTasks.length,
+        completed_scans: completed.length
+      },
+      credits_used_estimate: totalDataPoints,
+      scan_summary: {
+        total_requested: scanTasks.length,
+        total_completed: completed.length,
+        total_failed: scanTasks.length - completed.length
       }
     };
   });
 
-  var aiFn = safe('dataforseo', async function() {
-    if (!dfseLogin || !dfsePw) {
-      warnings.push('DataForSEO: skipped (no credentials)');
-      return null;
-    }
-
-    if (aiQueries.length === 0) {
-      warnings.push('DataForSEO: no tracked queries configured');
-      return null;
-    }
-
-    var clientDomain = '';
-    if (config.gsc_property) {
-      clientDomain = config.gsc_property.replace('sc-domain:', '').replace('https://', '').replace('http://', '').split('/')[0];
-    }
-
-    // Hardcoded engines: Google AI Mode, Gemini, ChatGPT, Perplexity, Claude
-    // These are the 5 DataForSEO AI optimization endpoints we track
-    var engineChecks = [
-      { name: 'Google AI Mode', method: 'google_ai_mode' },
-      { name: 'Gemini', method: 'gemini_scraper' },
-      { name: 'ChatGPT', method: 'chatgpt_scraper' },
-      { name: 'Perplexity', method: 'perplexity_llm' },
-      { name: 'Claude', method: 'claude_llm' }
-    ];
-
-    // Check ALL tracked keywords across all engines (no cap)
-    var queriesToCheck = aiQueries;
-
-    // Run ALL engines + LLM Mentions in parallel
-    var parallelAi = await Promise.all([
-      Promise.all(engineChecks.map(async function(engine) {
-        var cited = false;
-        var context = null;
-        var citedQueries = [];
-
-        for (var qi = 0; qi < queriesToCheck.length; qi++) {
-          var q = queriesToCheck[qi];
-          try {
-            var result = await checkEngineVisibility(engine.method, q.query, clientDomain, dfseAuth());
-            if (result.cited) {
-              cited = true;
-              citedQueries.push(q.label || q.query);
-              if (!context && result.context) context = result.context;
-            }
-          } catch (e) {
-            warnings.push('DataForSEO ' + engine.name + ' "' + q.query + '": ' + e.message);
-          }
-        }
-
-        return {
-          name: engine.name,
-          cited: cited,
-          context: context || (cited ? 'Cited for: ' + citedQueries.join(', ') : null),
-          queries_checked: queriesToCheck.length,
-          queries_cited: citedQueries.length
-        };
-      })),
-      // LLM Mentions aggregated runs in parallel
-      (async function() {
-        try {
-          return await getLLMMentionsAggregated(clientDomain, dfseAuth());
-        } catch (e) {
-          warnings.push('LLM Mentions aggregated: ' + e.message);
-          return null;
-        }
-      })()
-    ]);
-    var engineResults = parallelAi[0];
-    var mentionsData = parallelAi[1];
-
-    return {
-      engines: engineResults,
-      engines_checked: engineResults.length,
-      engines_citing: engineResults.filter(function(e) { return e.cited; }).length,
-      ai_search_volume: mentionsData ? mentionsData.ai_search_volume : null,
-      ai_impressions: mentionsData ? mentionsData.impressions : null,
-      ai_mentions_count: mentionsData ? mentionsData.mentions : null,
-      citation_trend: []
-    };
-  });
-
+  // ── Tasks (unchanged) ──────────────────────────────────────────
   var taskFn = safe('tasks', async function() {
     var taskResp = await fetchT(sbUrl + '/rest/v1/checklist_items?client_slug=eq.' + clientSlug + '&select=status', { headers: sbHeaders() }, 10000);
     var tasks = await taskResp.json();
@@ -368,160 +481,30 @@ module.exports = async function handler(req, res) {
     };
   });
 
-  var geogridFn = safe('geogrids', async function() {
-    if (!lbmKey || !config.lbm_location_id) {
-      warnings.push('Geogrids: skipped (no LBM key or location)');
-      return null;
-    }
-    if (geogridKeywords.length === 0) {
-      warnings.push('Geogrids: no tracked keywords with track_geogrid enabled');
-      return null;
-    }
-
-    var lbmHeaders = { 'Authorization': lbmKey, 'Content-Type': 'application/json' };
-
-    // Step 1: Get location details for grid creation
-    var locResp = await fetchT('https://api.localbrandmanager.com/locations/' + config.lbm_location_id, { headers: lbmHeaders }, 10000);
-    var location = await locResp.json();
-    if (!location || !location.lat || !location.lng || !location.place_id) {
-      warnings.push('Geogrids: location missing lat/lng/place_id');
-      return null;
-    }
-
-    // Step 2: Create a 7x7 geogrid for each tracked keyword
-    var gridIds = [];
-    for (var ki = 0; ki < geogridKeywords.length; ki++) {
-      var kw = geogridKeywords[ki];
-      try {
-        var createResp = await fetchT('https://api.localbrandmanager.com/geogrids', {
-          method: 'POST', headers: lbmHeaders,
-          body: JSON.stringify({
-            search_term: kw.keyword,
-            grid_center_lat: location.lat,
-            grid_center_lng: location.lng,
-            grid_size: kw.geogrid_grid_size || 7,
-            grid_point_distance: kw.geogrid_point_distance || 1.0,
-            grid_distance_measure: 'miles',
-            business_place_id: location.place_id,
-            business_name: location.name,
-            business_store_code: location.store_code || '',
-            location_id: config.lbm_location_id
-          })
-        }, 10000);
-        var created = await createResp.json();
-        if (created && created.id) {
-          gridIds.push({ id: created.id, keyword: kw.keyword, label: kw.label || kw.keyword });
-        } else {
-          warnings.push('Geogrid create failed for "' + kw.keyword + '": ' + JSON.stringify(created).substring(0, 200));
-        }
-      } catch (e) {
-        warnings.push('Geogrid create error for "' + kw.keyword + '": ' + e.message);
-      }
-    }
-
-    if (gridIds.length === 0) {
-      warnings.push('Geogrids: no grids were created');
-      return null;
-    }
-
-    // Step 3: Poll until all grids finish (max 60s, check every 5s)
-    var maxWait = 60000;
-    var pollInterval = 5000;
-    var waited = 0;
-    var finishedGrids = {};
-
-    while (waited < maxWait && Object.keys(finishedGrids).length < gridIds.length) {
-      await new Promise(function(resolve) { setTimeout(resolve, pollInterval); });
-      waited += pollInterval;
-
-      try {
-        var pollResp = await fetchT('https://api.localbrandmanager.com/geogrids', { headers: lbmHeaders }, 15000);
-        var allGrids = await pollResp.json();
-        if (!Array.isArray(allGrids)) continue;
-
-        for (var gi = 0; gi < gridIds.length; gi++) {
-          var gid = gridIds[gi].id;
-          if (finishedGrids[gid]) continue;
-          var match = allGrids.find(function(g) { return g.id === gid; });
-          if (match && match.state === 'finished') {
-            finishedGrids[gid] = match;
-          } else if (match && match.state === 'failed') {
-            warnings.push('Geogrid failed for "' + gridIds[gi].keyword + '"');
-            finishedGrids[gid] = null; // mark as done but failed
-          }
-        }
-      } catch (e) {
-        warnings.push('Geogrid poll error: ' + e.message);
-      }
-    }
-
-    // Step 4: Build results from finished grids
-    var grids = [];
-    for (var fi = 0; fi < gridIds.length; fi++) {
-      var g = finishedGrids[gridIds[fi].id];
-      if (!g) {
-        if (!finishedGrids.hasOwnProperty(gridIds[fi].id)) {
-          warnings.push('Geogrid timeout for "' + gridIds[fi].keyword + '" (still processing after 60s)');
-        }
-        continue;
-      }
-      grids.push({
-        search_term: g.search_term,
-        label: gridIds[fi].label,
-        agr: g.agr,
-        atgr: g.atgr,
-        solv: g.solv,
-        grid_size: g.grid_size,
-        ranks: g.ranks,
-        grid_ranks_str: g.grid_ranks_str || null,
-        image_url: g.image_url || null,
-        headless_image_url: g.headless_image_url || null,
-        public_url: g.public_url || null,
-        grid_center_lat: g.grid_center_lat,
-        grid_center_lng: g.grid_center_lng,
-        created_at: g.created_at,
-        finished_at: g.finished_at
-      });
-    }
-
-    // Sort by SOLV descending (best performing terms first)
-    grids.sort(function(a, b) { return (b.solv || 0) - (a.solv || 0); });
-
-    // Compute averages
-    var avgAgr = grids.length > 0 ? grids.reduce(function(s, g) { return s + (g.agr || 0); }, 0) / grids.length : 0;
-    var avgAtgr = grids.length > 0 ? grids.reduce(function(s, g) { return s + (g.atgr || 0); }, 0) / grids.length : 0;
-    var avgSolv = grids.length > 0 ? grids.reduce(function(s, g) { return s + (g.solv || 0); }, 0) / grids.length : 0;
-
-    return {
-      grids: grids,
-      grid_count: grids.length,
-      grids_requested: gridIds.length,
-      avg_agr: Math.round(avgAgr * 100) / 100,
-      avg_atgr: Math.round(avgAtgr * 100) / 100,
-      avg_solv: Math.round(avgSolv * 1000) / 1000
-    };
-  });
-
-  // Fire all 5 data sources concurrently
-  var parallel = await Promise.all([gscFn, gbpFn, aiFn, taskFn, geogridFn]);
+  // Fire all data sources concurrently
+  var parallel = await Promise.all([gscFn, localFalconFn, taskFn]);
   var gscData = parallel[0];
-  var gbpData = parallel[1];
-  var aiData = parallel[2];
-  var taskData = parallel[3];
-  var geogridData = parallel[4];
+  var lfData = parallel[1];
+  var taskData = parallel[2];
+
+  // Extract sub-objects from LocalFalcon results
+  var gbpData = lfData ? lfData.gbp : null;
+  var geogridData = lfData ? lfData.geo : null;
+  var aiData = lfData ? lfData.ai : null;
 
   // Build citation_trend from historical snapshots
   if (aiData) {
     try {
       var histResp = await fetch(sbUrl + '/rest/v1/report_snapshots?client_slug=eq.' + clientSlug + '&select=report_month,ai_visibility&order=report_month.asc&limit=12', { headers: sbHeaders() });
       var histRows = await histResp.json();
+      aiData.citation_trend = [];
       if (Array.isArray(histRows)) {
         aiData.citation_trend = histRows.map(function(r) {
           var av = r.ai_visibility || {};
-          return { month: r.report_month.substring(0, 7), count: av.engines_citing || 0 };
+          return { month: r.report_month.substring(0, 7), count: av.platforms_citing || av.engines_citing || 0 };
         });
-        aiData.citation_trend.push({ month: reportMonth.substring(0, 7), count: aiData.engines_citing });
       }
+      aiData.citation_trend.push({ month: reportMonth.substring(0, 7), count: aiData.platforms_citing });
     } catch (e) { /* non-fatal */ }
   }
 
@@ -543,11 +526,11 @@ module.exports = async function handler(req, res) {
     gsc_ctr_prev: prevSnap ? prevSnap.gsc_ctr : null,
     gsc_avg_position_prev: prevSnap ? prevSnap.gsc_avg_position : null,
 
-    // GBP
-    gbp_calls: gbpData ? gbpData.calls : null,
-    gbp_direction_requests: gbpData ? gbpData.direction_requests : null,
-    gbp_website_clicks: gbpData ? gbpData.website_clicks : null,
-    gbp_photo_views: gbpData ? gbpData.photo_views : null,
+    // GBP (engagement metrics not available from LocalFalcon - require GBP Performance API)
+    gbp_calls: null,
+    gbp_direction_requests: null,
+    gbp_website_clicks: null,
+    gbp_photo_views: null,
     gbp_calls_prev: prevSnap ? prevSnap.gbp_calls : null,
     gbp_direction_requests_prev: prevSnap ? prevSnap.gbp_direction_requests : null,
     gbp_website_clicks_prev: prevSnap ? prevSnap.gbp_website_clicks : null,
@@ -565,9 +548,9 @@ module.exports = async function handler(req, res) {
     tasks_in_progress: taskData ? taskData.in_progress : 0,
     tasks_not_started: taskData ? taskData.not_started : 0,
 
-    // Detail JSON
+    // Detail JSON blobs
     gsc_detail: gscData ? { date_range: range, pages: gscData.pages, queries: gscData.queries } : {},
-    gbp_detail: gbpData ? { reviews: gbpData.reviews } : {},
+    gbp_detail: gbpData ? { rating: gbpData.rating, reviews: gbpData.reviews, name: gbpData.name, address: gbpData.address } : {},
     ai_visibility: aiData || {},
     neo_data: geogridData || {},
     deliverables: [],
@@ -577,12 +560,10 @@ module.exports = async function handler(req, res) {
   // ─── STEP 9: Upsert snapshot to Supabase ──────────────────────
   var snapshotId = null;
   try {
-    // Check if snapshot already exists for this month
     var existResp = await fetch(sbUrl + '/rest/v1/report_snapshots?client_slug=eq.' + clientSlug + '&report_month=eq.' + reportMonth + '&limit=1', { headers: sbHeaders() });
     var existing = await existResp.json();
 
     if (existing && existing.length > 0) {
-      // Update existing
       snapshotId = existing[0].id;
       snapshot.updated_at = new Date().toISOString();
       var updateResp = await fetch(sbUrl + '/rest/v1/report_snapshots?id=eq.' + snapshotId, {
@@ -590,7 +571,6 @@ module.exports = async function handler(req, res) {
       });
       if (!updateResp.ok) throw new Error('PATCH failed: ' + (await updateResp.text()));
     } else {
-      // Insert new
       var insertResp = await fetch(sbUrl + '/rest/v1/report_snapshots', {
         method: 'POST', headers: sbHeaders(), body: JSON.stringify(snapshot)
       });
@@ -606,9 +586,7 @@ module.exports = async function handler(req, res) {
   var highlights = [];
   if (anthropicKey) {
     try {
-      highlights = await generateHighlights(snapshot, prevSnap, practiceName, anthropicKey);
-      // Write highlights to Supabase
-      // Delete existing highlights for this month first
+      highlights = await generateHighlights(snapshot, prevSnap, practiceName, anthropicKey, geogridData, aiData);
       await fetch(sbUrl + '/rest/v1/report_highlights?client_slug=eq.' + clientSlug + '&report_month=eq.' + reportMonth, {
         method: 'DELETE', headers: sbHeaders()
       });
@@ -653,11 +631,19 @@ module.exports = async function handler(req, res) {
   if (resendKey) {
     try {
       var reviewUrl = 'https://clients.moonraker.ai/admin/reports';
+
+      // Build AI visibility summary line
       var aiSummary = '';
       if (aiData) {
-        aiSummary = aiData.engines_citing + ' of ' + aiData.engines_checked + ' AI engines citing';
-        if (aiData.ai_search_volume) aiSummary += ' | AI Search Volume: ' + aiData.ai_search_volume.toLocaleString();
-        if (aiData.ai_impressions) aiSummary += ' | Impressions: ' + aiData.ai_impressions.toLocaleString();
+        aiSummary = aiData.platforms_citing + ' of ' + aiData.platforms_checked + ' AI platforms citing';
+        var citingNames = aiData.platforms.filter(function(p) { return p.keywords_found > 0; }).map(function(p) { return p.platform; });
+        if (citingNames.length > 0) aiSummary += ' (' + citingNames.join(', ') + ')';
+      }
+
+      // Build geo summary line
+      var geoSummary = '';
+      if (geogridData && geogridData.grid_count > 0) {
+        geoSummary = geogridData.grid_count + ' terms | Avg ARP ' + geogridData.avg_arp + ' | SoLV ' + geogridData.avg_solv + '%';
       }
 
       var emailBody = '<div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;padding:24px">'
@@ -669,10 +655,11 @@ module.exports = async function handler(req, res) {
         + '<p style="color:#6B7599;margin:0 0 16px">Month ' + campaignMonth + ' report for <strong style="color:#1E2A5E">' + practiceName + '</strong> has been compiled.</p>'
         + '<table style="width:100%;border-collapse:collapse;margin:16px 0">'
         + (gscData ? '<tr><td style="padding:8px 0;color:#6B7599;border-bottom:1px solid #E2E8F0">GSC Clicks</td><td style="padding:8px 0;text-align:right;font-weight:600;color:#1E2A5E;border-bottom:1px solid #E2E8F0">' + gscData.clicks.toLocaleString() + '</td></tr>' : '')
-        + (gbpData ? '<tr><td style="padding:8px 0;color:#6B7599;border-bottom:1px solid #E2E8F0">GBP Calls</td><td style="padding:8px 0;text-align:right;font-weight:600;color:#1E2A5E;border-bottom:1px solid #E2E8F0">' + gbpData.calls + '</td></tr>' : '')
+        + (geoSummary ? '<tr><td style="padding:8px 0;color:#6B7599;border-bottom:1px solid #E2E8F0">Maps (Geogrids)</td><td style="padding:8px 0;text-align:right;font-weight:600;color:#1E2A5E;border-bottom:1px solid #E2E8F0">' + geoSummary + '</td></tr>' : '')
         + (aiSummary ? '<tr><td style="padding:8px 0;color:#6B7599;border-bottom:1px solid #E2E8F0">AI Visibility</td><td style="padding:8px 0;text-align:right;font-weight:600;color:#1E2A5E;border-bottom:1px solid #E2E8F0">' + aiSummary + '</td></tr>' : '')
-        + (geogridData ? '<tr><td style="padding:8px 0;color:#6B7599;border-bottom:1px solid #E2E8F0">Maps (Geogrids)</td><td style="padding:8px 0;text-align:right;font-weight:600;color:#1E2A5E;border-bottom:1px solid #E2E8F0">' + geogridData.grid_count + ' terms tracked | Avg AGR ' + geogridData.avg_agr + ' | SOLV ' + Math.round(geogridData.avg_solv * 100) + '%</td></tr>' : '')
+        + (gbpData ? '<tr><td style="padding:8px 0;color:#6B7599;border-bottom:1px solid #E2E8F0">GBP Rating</td><td style="padding:8px 0;text-align:right;font-weight:600;color:#1E2A5E;border-bottom:1px solid #E2E8F0">' + gbpData.rating + ' (' + gbpData.reviews + ' reviews)</td></tr>' : '')
         + '</table>'
+        + (lfData ? '<p style="color:#6B7599;font-size:12px;margin:12px 0 0">LocalFalcon: ' + lfData.scan_summary.total_completed + '/' + lfData.scan_summary.total_requested + ' scans completed | ~' + lfData.credits_used_estimate + ' credits used</p>' : '')
         + (errors.length > 0 ? '<p style="color:#EF4444;font-size:13px">Warnings: ' + errors.join('; ') + '</p>' : '')
         + '<a href="' + reviewUrl + '" style="display:inline-block;background:#00D47E;color:#fff;font-weight:600;padding:12px 24px;border-radius:8px;text-decoration:none;margin-top:8px">Review Report</a>'
         + '</div></div>';
@@ -712,9 +699,13 @@ module.exports = async function handler(req, res) {
     status: 'internal_review',
     data_sources: {
       gsc: gscData ? 'ok' : 'skipped',
-      gbp: gbpData ? 'ok' : 'skipped',
-      ai_visibility: aiData ? { engines_citing: aiData.engines_citing, engines_checked: aiData.engines_checked, ai_search_volume: aiData.ai_search_volume, ai_impressions: aiData.ai_impressions } : 'skipped',
-      geogrids: geogridData ? { grid_count: geogridData.grid_count, avg_agr: geogridData.avg_agr, avg_solv: geogridData.avg_solv } : 'skipped',
+      localfalcon: lfData ? {
+        geo_grids: geogridData ? geogridData.grid_count + ' grids, avg ARP ' + geogridData.avg_arp + ', SoLV ' + geogridData.avg_solv + '%' : 'none',
+        ai_platforms_citing: aiData ? aiData.platforms_citing + '/' + aiData.platforms_checked : 'none',
+        scans: lfData.scan_summary,
+        credits_estimate: lfData.credits_used_estimate
+      } : 'skipped',
+      gbp: gbpData ? { rating: gbpData.rating, reviews: gbpData.reviews, note: 'engagement metrics require GBP Performance API' } : 'skipped',
       tasks: taskData ? 'ok' : 'skipped'
     },
     highlights_count: highlights.length,
@@ -764,233 +755,7 @@ async function getGoogleAccessToken(saJson) {
     }
     return tokenData.access_token;
   } catch (e) {
-    // Return error message so caller can surface it
     return { error: e.message || String(e) };
-  }
-}
-
-
-// ═══════════════════════════════════════════════════════════════════
-// Helper: Check AI engine visibility for a query
-// ═══════════════════════════════════════════════════════════════════
-async function checkEngineVisibility(method, query, clientDomain, authHeader) {
-  var baseUrl = 'https://api.dataforseo.com/v3';
-  var headers = { 'Authorization': authHeader, 'Content-Type': 'application/json' };
-  var cited = false;
-  var context = null;
-  var TIMEOUT = 30000; // 30s per engine call
-
-  async function timedFetch(url, opts) {
-    var controller = new AbortController();
-    var timer = setTimeout(function() { controller.abort(); }, TIMEOUT);
-    try {
-      var r = await fetch(url, Object.assign({}, opts, { signal: controller.signal }));
-      clearTimeout(timer);
-      return r;
-    } catch (e) {
-      clearTimeout(timer);
-      if (e.name === 'AbortError') throw new Error('Timeout after ' + TIMEOUT + 'ms');
-      throw e;
-    }
-  }
-
-  if (method === 'google_ai_mode') {
-    var resp = await timedFetch(baseUrl + '/serp/google/ai_mode/live/advanced', {
-      method: 'POST', headers: headers, body: JSON.stringify([{ keyword: query, location_code: 2840, language_code: 'en' }])
-    });
-    var data = await resp.json();
-    var task = data.tasks && data.tasks[0];
-    if (task && task.result && task.result[0]) {
-      var items = task.result[0].items || [];
-      for (var i = 0; i < items.length; i++) {
-        var refs = items[i].references || [];
-        for (var j = 0; j < refs.length; j++) {
-          if (refs[j].domain && refs[j].domain.indexOf(clientDomain) !== -1) {
-            cited = true;
-            context = 'Referenced in Google AI Mode for "' + query + '" (position ' + (j + 1) + ' of ' + refs.length + ')';
-            break;
-          }
-        }
-        // Also check nested items
-        var nested = items[i].items || [];
-        for (var n = 0; n < nested.length; n++) {
-          var nRefs = nested[n].references || [];
-          for (var nr = 0; nr < nRefs.length; nr++) {
-            if (nRefs[nr].domain && nRefs[nr].domain.indexOf(clientDomain) !== -1) {
-              cited = true;
-              if (!context) context = 'Referenced in Google AI Mode for "' + query + '"';
-              break;
-            }
-          }
-        }
-        if (cited) break;
-      }
-    }
-  }
-
-  else if (method === 'gemini_scraper') {
-    var resp = await timedFetch(baseUrl + '/ai_optimization/gemini/llm_scraper/live/advanced', {
-      method: 'POST', headers: headers, body: JSON.stringify([{ keyword: query, location_code: 2840, language_code: 'en' }])
-    });
-    var data = await resp.json();
-    var task = data.tasks && data.tasks[0];
-    if (task && task.result && task.result[0]) {
-      var items = task.result[0].items || [];
-      for (var i = 0; i < items.length; i++) {
-        var md = items[i].markdown || items[i].text || '';
-        if (md.toLowerCase().indexOf(clientDomain) !== -1) {
-          cited = true;
-          // Extract context around the mention
-          var idx = md.toLowerCase().indexOf(clientDomain);
-          var start = Math.max(0, idx - 50);
-          var end = Math.min(md.length, idx + clientDomain.length + 80);
-          context = 'Gemini: "...' + md.substring(start, end).replace(/\n/g, ' ').trim() + '..."';
-          break;
-        }
-      }
-    }
-  }
-
-  else if (method === 'chatgpt_scraper') {
-    var resp = await timedFetch(baseUrl + '/ai_optimization/chat_gpt/llm_scraper/live/advanced', {
-      method: 'POST', headers: headers, body: JSON.stringify([{ keyword: query, location_code: 2840, language_code: 'en' }])
-    });
-    var data = await resp.json();
-    var task = data.tasks && data.tasks[0];
-    if (task && task.result && task.result[0]) {
-      var items = task.result[0].items || [];
-      for (var i = 0; i < items.length; i++) {
-        var md = items[i].markdown || items[i].text || '';
-        if (md.toLowerCase().indexOf(clientDomain) !== -1) {
-          cited = true;
-          var idx = md.toLowerCase().indexOf(clientDomain);
-          var start = Math.max(0, idx - 50);
-          var end = Math.min(md.length, idx + clientDomain.length + 80);
-          context = 'ChatGPT: "...' + md.substring(start, end).replace(/\n/g, ' ').trim() + '..."';
-          break;
-        }
-      }
-    }
-  }
-
-  else if (method === 'perplexity_llm') {
-    var resp = await timedFetch(baseUrl + '/ai_optimization/perplexity/llm_responses/live', {
-      method: 'POST', headers: headers, body: JSON.stringify([{
-        user_prompt: query, model_name: 'sonar', web_search: true, max_output_tokens: 800
-      }])
-    });
-    var data = await resp.json();
-    var task = data.tasks && data.tasks[0];
-    if (task && task.result && task.result[0]) {
-      var items = task.result[0].items || [];
-      for (var i = 0; i < items.length; i++) {
-        // Check text
-        var text = '';
-        var sections = items[i].sections || [];
-        for (var s = 0; s < sections.length; s++) {
-          text += (sections[s].text || '') + ' ';
-          // Check annotations
-          var annots = sections[s].annotations || [];
-          for (var a = 0; a < annots.length; a++) {
-            if (annots[a].url && annots[a].url.indexOf(clientDomain) !== -1) {
-              cited = true;
-              context = 'Cited by Perplexity with direct link to ' + annots[a].url.substring(0, 80);
-              break;
-            }
-          }
-          if (cited) break;
-        }
-        if (!cited && text.toLowerCase().indexOf(clientDomain) !== -1) {
-          cited = true;
-          context = 'Mentioned in Perplexity response for "' + query + '"';
-        }
-        if (cited) break;
-      }
-    }
-  }
-
-  else if (method === 'claude_llm') {
-    var resp = await timedFetch(baseUrl + '/ai_optimization/claude/llm_responses/live', {
-      method: 'POST', headers: headers, body: JSON.stringify([{
-        user_prompt: query, model_name: 'claude-haiku-4-5', web_search: true, max_output_tokens: 800
-      }])
-    });
-    var data = await resp.json();
-    var task = data.tasks && data.tasks[0];
-    if (task && task.result && task.result[0]) {
-      var items = task.result[0].items || [];
-      for (var i = 0; i < items.length; i++) {
-        // Claude returns sections[].text + sections[].annotations (not top-level text)
-        var sections = items[i].sections || [];
-        for (var s = 0; s < sections.length; s++) {
-          var sText = sections[s].text || '';
-          if (sText.toLowerCase().indexOf(clientDomain) !== -1) {
-            cited = true;
-            context = 'Mentioned in Claude response for "' + query + '"';
-            break;
-          }
-          var annots = sections[s].annotations || [];
-          for (var a = 0; a < annots.length; a++) {
-            if (annots[a].url && annots[a].url.indexOf(clientDomain) !== -1) {
-              cited = true;
-              context = 'Cited by Claude with link to ' + annots[a].url.substring(0, 80);
-              break;
-            }
-          }
-          if (cited) break;
-        }
-        // Fallback: also check top-level text/markdown for backward compat
-        if (!cited) {
-          var text = items[i].text || items[i].markdown || '';
-          if (text.toLowerCase().indexOf(clientDomain) !== -1) {
-            cited = true;
-            context = 'Mentioned in Claude response for "' + query + '"';
-          }
-        }
-        if (cited) break;
-      }
-    }
-  }
-
-  return { cited: cited, context: context };
-}
-
-
-// ═══════════════════════════════════════════════════════════════════
-// Helper: LLM Mentions Aggregated Metrics
-// ═══════════════════════════════════════════════════════════════════
-async function getLLMMentionsAggregated(clientDomain, authHeader) {
-  var controller = new AbortController();
-  var timer = setTimeout(function() { controller.abort(); }, 20000);
-  try {
-    var resp = await fetch('https://api.dataforseo.com/v3/ai_optimization/llm_mentions/aggregated_metrics/live', {
-      method: 'POST',
-      headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify([{
-        language_code: 'en',
-        location_code: 2840,
-        platform: 'google',
-        target: [{ domain: clientDomain, search_filter: 'include', search_scope: ['sources'] }]
-      }])
-    });
-    clearTimeout(timer);
-    var data = await resp.json();
-    var task = data.tasks && data.tasks[0];
-    if (task && task.result && task.result[0]) {
-      var total = task.result[0].total || {};
-      var platform = (total.platform && total.platform[0]) || {};
-      return {
-        mentions: platform.mentions || 0,
-        ai_search_volume: platform.ai_search_volume || 0,
-        impressions: platform.impressions || 0
-      };
-    }
-    return null;
-  } catch (e) {
-    clearTimeout(timer);
-    if (e.name === 'AbortError') throw new Error('LLM Mentions timeout after 20s');
-    throw e;
   }
 }
 
@@ -998,7 +763,7 @@ async function getLLMMentionsAggregated(clientDomain, authHeader) {
 // ═══════════════════════════════════════════════════════════════════
 // Helper: Generate highlights via Claude
 // ═══════════════════════════════════════════════════════════════════
-async function generateHighlights(snapshot, prevSnap, practiceName, apiKey) {
+async function generateHighlights(snapshot, prevSnap, practiceName, apiKey, geogridData, aiData) {
   var metricsContext = 'Practice: ' + practiceName + '\nCampaign Month: ' + snapshot.campaign_month + '\n\n';
 
   if (snapshot.gsc_clicks !== null) {
@@ -1006,34 +771,32 @@ async function generateHighlights(snapshot, prevSnap, practiceName, apiKey) {
     if (snapshot.gsc_clicks_prev !== null) metricsContext += ' (prev: ' + snapshot.gsc_clicks_prev + ' clicks)';
     metricsContext += '\n';
   }
-  if (snapshot.gbp_calls !== null) {
-    metricsContext += 'GBP: ' + snapshot.gbp_calls + ' calls, ' + snapshot.gbp_direction_requests + ' directions, ' + snapshot.gbp_website_clicks + ' website clicks';
-    if (snapshot.gbp_calls_prev !== null) metricsContext += ' (prev: ' + snapshot.gbp_calls_prev + ' calls)';
-    metricsContext += '\n';
+
+  var gbpDetail = snapshot.gbp_detail || {};
+  if (gbpDetail.rating) {
+    metricsContext += 'GBP: ' + gbpDetail.rating + ' rating, ' + gbpDetail.reviews + ' reviews\n';
   }
 
-  var ai = snapshot.ai_visibility || {};
-  if (ai.engines_checked) {
-    metricsContext += 'AI Visibility: ' + ai.engines_citing + ' of ' + ai.engines_checked + ' engines citing';
-    if (ai.ai_search_volume) metricsContext += ', AI Search Volume: ' + ai.ai_search_volume;
-    if (ai.ai_impressions) metricsContext += ', Impressions: ' + ai.ai_impressions;
-    metricsContext += '\n';
-    var engines = ai.engines || [];
-    for (var i = 0; i < engines.length; i++) {
-      metricsContext += '  ' + engines[i].name + ': ' + (engines[i].cited ? 'CITED' : 'not cited');
-      if (engines[i].context) metricsContext += ' - ' + engines[i].context;
+  if (aiData && aiData.platforms_checked) {
+    metricsContext += '\nAI Visibility (via LocalFalcon - checks if the practice is cited by each AI platform):\n';
+    metricsContext += 'Summary: ' + aiData.platforms_citing + ' of ' + aiData.platforms_checked + ' AI platforms citing the practice\n';
+    var platforms = aiData.platforms || [];
+    for (var i = 0; i < platforms.length; i++) {
+      var p = platforms[i];
+      metricsContext += '  ' + p.platform + ': ' + p.keywords_found + '/' + p.keywords_checked + ' keywords found';
+      if (p.avg_solv > 0) metricsContext += ', SoLV ' + p.avg_solv + '%';
+      if (p.keywords.length > 0) metricsContext += ' (found for: ' + p.keywords.join(', ') + ')';
       metricsContext += '\n';
     }
   }
 
-  metricsContext += 'Tasks: ' + snapshot.tasks_complete + '/' + snapshot.tasks_total + ' complete, ' + snapshot.tasks_in_progress + ' in progress\n';
+  metricsContext += '\nTasks: ' + snapshot.tasks_complete + '/' + snapshot.tasks_total + ' complete, ' + snapshot.tasks_in_progress + ' in progress\n';
 
-  var neo = snapshot.neo_data || {};
-  if (neo.grids && neo.grids.length > 0) {
-    metricsContext += '\nMaps/Geogrid Performance (' + neo.grid_count + ' terms tracked, avg AGR ' + neo.avg_agr + ', avg SOLV ' + Math.round(neo.avg_solv * 100) + '%):\n';
-    for (var gi = 0; gi < neo.grids.length; gi++) {
-      var grid = neo.grids[gi];
-      metricsContext += '  "' + grid.search_term + '": AGR ' + grid.agr + ', ATGR ' + grid.atgr + ', SOLV ' + Math.round((grid.solv || 0) * 100) + '%, ' + grid.grid_size + 'x' + grid.grid_size + ' grid\n';
+  if (geogridData && geogridData.grids && geogridData.grids.length > 0) {
+    metricsContext += '\nGoogle Maps Geogrid Performance (' + geogridData.grid_count + ' terms, avg ARP ' + geogridData.avg_arp + ', avg SoLV ' + geogridData.avg_solv + '%):\n';
+    for (var gi = 0; gi < geogridData.grids.length; gi++) {
+      var grid = geogridData.grids[gi];
+      metricsContext += '  "' + grid.keyword + '": ARP ' + grid.arp + ', ATRP ' + grid.atrp + ', SoLV ' + grid.solv + '%, found in ' + grid.found_in + '/' + grid.data_points_total + ' grid cells\n';
     }
   }
 
@@ -1043,7 +806,7 @@ async function generateHighlights(snapshot, prevSnap, practiceName, apiKey) {
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1000,
-      messages: [{ role: 'user', content: 'Generate exactly 3 report highlights for a client\'s monthly campaign report. Each highlight should be a win or milestone.\n\nMetrics:\n' + metricsContext + '\n\nReturn ONLY a JSON array (no markdown, no backticks) with 3 objects, each having:\n- icon: one of "chart-up", "phone", "bot", "target", "globe", "users", "check", "map-pin"\n- headline: short punchy headline (max 8 words, no em dashes)\n- body: 1-2 sentence explanation with specific numbers. AGR = Average Grid Rank (lower is better, 1 is top position). SOLV = Share of Local Voice (higher is better, 100% means appearing in every grid cell).\n- metric_ref: the primary metric referenced (e.g. "gsc_clicks", "gbp_calls", "ai_visibility", "geogrids")\n- highlight_type: "win" or "milestone"\n\nPrioritize AI visibility data and geogrid/maps performance when available. Always include concrete numbers.' }]
+      messages: [{ role: 'user', content: 'Generate exactly 3 report highlights for a client\'s monthly campaign report. Each highlight should be a win or milestone.\n\nMetrics:\n' + metricsContext + '\n\nReturn ONLY a JSON array (no markdown, no backticks) with 3 objects, each having:\n- icon: one of "chart-up", "phone", "bot", "target", "globe", "users", "check", "map-pin"\n- headline: short punchy headline (max 8 words, no em dashes)\n- body: 1-2 sentence explanation with specific numbers. ARP = Average Rank Position (lower is better, 1 is top). ATRP = Avg Top Rank Position. SoLV = Share of Local Voice (higher is better, 100% = appearing everywhere in the grid). For AI platforms, "found in X/Y grid cells" means the practice was cited at that many geographic check points.\n- metric_ref: the primary metric referenced (e.g. "gsc_clicks", "ai_visibility", "geogrids", "gbp_rating")\n- highlight_type: "win" or "milestone"\n\nPrioritize AI visibility and geogrid performance when available. Always include concrete numbers.' }]
     })
   });
 
@@ -1055,7 +818,6 @@ async function generateHighlights(snapshot, prevSnap, practiceName, apiKey) {
     }
   }
 
-  // Parse JSON, strip any markdown fencing
   text = text.replace(/```json/g, '').replace(/```/g, '').trim();
   var parsed = JSON.parse(text);
 
@@ -1072,5 +834,3 @@ async function generateHighlights(snapshot, prevSnap, practiceName, apiKey) {
     };
   });
 }
-
-
