@@ -3,10 +3,10 @@
 // generates highlights via Claude, and sends team notification via Resend.
 //
 // Sources:
-//   1. Google Search Console  (via Google API + service account)
-//   2. LocalFalcon            (geogrids on Google Maps + AI visibility across 5 AI platforms)
-//   3. Supabase               (task progress from checklist_items)
-//   4. Supabase               (previous month snapshot for deltas)
+//   1. Google Search Console (via Google API + service account)
+//   2. LocalFalcon           (geo-grid Maps + AI visibility across 7 platforms)
+//   3. Supabase              (task progress from checklist_items)
+//   4. Supabase              (previous month snapshot for deltas)
 //
 // Outputs:
 //   - report_snapshots row (status: internal_review)
@@ -74,7 +74,6 @@ module.exports = async function handler(req, res) {
     catch (e) { errors.push(label + ': ' + (e.message || String(e))); return null; }
   }
 
-  // Fetch with timeout (AbortController)
   async function fetchT(url, opts, timeoutMs) {
     timeoutMs = timeoutMs || 25000;
     var controller = new AbortController();
@@ -109,7 +108,6 @@ module.exports = async function handler(req, res) {
   var range = monthRange(reportMonth);
   var practiceName = contact.practice_name || (contact.first_name + ' ' + contact.last_name).trim();
 
-  // Calculate campaign month number
   var campaignMonth = 1;
   if (contact.campaign_start) {
     var csDate = new Date(contact.campaign_start + 'T00:00:00Z');
@@ -118,7 +116,7 @@ module.exports = async function handler(req, res) {
     if (campaignMonth < 1) campaignMonth = 1;
   }
 
-  // ─── STEP 1b: Load tracked keywords (source of truth) ─────────
+  // ─── STEP 1b: Load tracked keywords ───────────────────────────
   var trackedKeywords = [];
   try {
     var kwResp = await fetch(sbUrl + '/rest/v1/tracked_keywords?client_slug=eq.' + clientSlug + '&active=eq.true&order=priority.asc,keyword.asc', { headers: sbHeaders() });
@@ -128,19 +126,18 @@ module.exports = async function handler(req, res) {
     }
   } catch (e) { /* non-fatal */ }
 
-  // Build unified query list (from tracked_keywords or report_configs fallback)
+  // Build unified keyword list (from tracked_keywords or report_configs fallback)
   var scanKeywords = [];
   if (trackedKeywords.length > 0) {
     trackedKeywords.forEach(function(kw) {
-      if (kw.track_geogrid || kw.track_ai_visibility) {
-        scanKeywords.push({
-          keyword: kw.keyword,
-          label: kw.label || kw.keyword,
-          track_geogrid: kw.track_geogrid,
-          track_ai_visibility: kw.track_ai_visibility,
-          grid_size: kw.geogrid_grid_size || 7
-        });
-      }
+      scanKeywords.push({
+        keyword: kw.keyword,
+        label: kw.label || kw.keyword,
+        track_geogrid: kw.track_geogrid,
+        track_ai_visibility: kw.track_ai_visibility,
+        grid_size: kw.geogrid_grid_size || 7,
+        point_distance: kw.geogrid_point_distance || 1.0
+      });
     });
   } else if (config.tracked_queries && config.tracked_queries.length > 0) {
     config.tracked_queries.forEach(function(q) {
@@ -149,7 +146,8 @@ module.exports = async function handler(req, res) {
         label: q.label || q.query,
         track_geogrid: true,
         track_ai_visibility: true,
-        grid_size: 7
+        grid_size: 7,
+        point_distance: 1.0
       });
     });
   }
@@ -162,9 +160,9 @@ module.exports = async function handler(req, res) {
     return (rows && rows.length > 0) ? rows[0] : null;
   });
 
-  // ─── STEPS 3-6: Pull all data sources IN PARALLEL ──────────────
+  // ─── STEPS 3-5: Pull all data sources IN PARALLEL ─────────────
 
-  // ── GSC (unchanged) ────────────────────────────────────────────
+  // --- 3. GSC (unchanged) ---
   var gscFn = safe('gsc', async function() {
     if (!googleSA || !config.gsc_property) {
       warnings.push('GSC: skipped (no credentials or property configured)');
@@ -200,34 +198,34 @@ module.exports = async function handler(req, res) {
     };
   });
 
-  // ── LocalFalcon: Geogrids + AI Visibility (replaces LBM + DataForSEO) ──
+  // --- 4. LocalFalcon: Maps + AI visibility (replaces LBM + DataForSEO) ---
   var localFalconFn = safe('localfalcon', async function() {
     if (!lfKey) {
       warnings.push('LocalFalcon: skipped (no API key)');
       return null;
     }
-
-    var placeId = config.localfalcon_place_id;
-    if (!placeId) {
-      warnings.push('LocalFalcon: skipped (no localfalcon_place_id configured in report_configs)');
+    if (!config.localfalcon_place_id) {
+      warnings.push('LocalFalcon: skipped (no localfalcon_place_id on report_config)');
       return null;
     }
-
     if (scanKeywords.length === 0) {
       warnings.push('LocalFalcon: no tracked keywords configured');
       return null;
     }
 
-    // Step 1: Look up saved location for coordinates + GBP snapshot
+    var placeId = config.localfalcon_place_id;
+
+    // Step 1: Get location lat/lng from LocalFalcon saved locations
     var locResp = await fetchT('https://api.localfalcon.com/v1/locations/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: 'api_key=' + lfKey + '&query=' + encodeURIComponent(placeId) + '&limit=5'
     }, 15000);
     var locData = await locResp.json();
-    var locations = (locData.data && locData.data.locations) || [];
-    var location = locations.find(function(l) { return l.place_id === placeId; });
-
+    var location = null;
+    if (locData.success && locData.data && locData.data.locations) {
+      location = locData.data.locations.find(function(l) { return l.place_id === placeId; });
+    }
     if (!location) {
       warnings.push('LocalFalcon: place_id ' + placeId + ' not found in saved locations');
       return null;
@@ -236,239 +234,174 @@ module.exports = async function handler(req, res) {
     var lat = location.lat;
     var lng = location.lng;
 
-    // GBP snapshot from location data (rating + reviews - engagement metrics not available from LF)
-    var gbpSnapshot = {
-      rating: parseFloat(location.rating) || 0,
-      reviews: parseInt(location.reviews) || 0,
-      name: location.name,
-      address: location.address,
-      phone: location.phone || null,
-      categories: location.categories || {},
-      note: 'GBP engagement metrics (calls, directions, website clicks) require a separate GBP Performance API integration'
-    };
-
-    // Step 2: Build scan tasks
-    // Google Maps: 7x7 grid, 5mi radius (49 data points per scan)
-    // AI platforms: 3x3 grid, 5mi radius (9 data points per scan - AI answers less geographically granular)
-    var GEO_PLATFORMS = ['google'];
+    // Step 2: Build scan matrix (keyword x platform)
+    var MAPS_PLATFORMS = ['google', 'apple'];
     var AI_PLATFORMS = ['chatgpt', 'gemini', 'grok', 'gaio', 'aimode'];
-    var GEO_GRID_SIZE = '7';
-    var AI_GRID_SIZE = '3';
-    var SCAN_RADIUS = '5';
 
-    var scanTasks = [];
-    scanKeywords.forEach(function(kw) {
-      if (kw.track_geogrid) {
-        GEO_PLATFORMS.forEach(function(platform) {
-          scanTasks.push({
-            keyword: kw.keyword,
-            label: kw.label,
-            platform: platform,
-            type: 'geo',
-            grid_size: String(kw.grid_size || GEO_GRID_SIZE)
-          });
-        });
-      }
-      if (kw.track_ai_visibility) {
-        AI_PLATFORMS.forEach(function(platform) {
-          scanTasks.push({
-            keyword: kw.keyword,
-            label: kw.label,
-            platform: platform,
-            type: 'ai',
-            grid_size: AI_GRID_SIZE
-          });
-        });
-      }
-    });
+    var scanQueue = [];
+    for (var ki = 0; ki < scanKeywords.length; ki++) {
+      var kw = scanKeywords[ki];
+      var platforms = [];
+      if (kw.track_geogrid) platforms = platforms.concat(MAPS_PLATFORMS);
+      if (kw.track_ai_visibility) platforms = platforms.concat(AI_PLATFORMS);
+      // Deduplicate
+      platforms = platforms.filter(function(p, i, a) { return a.indexOf(p) === i; });
 
-    // Step 3: Fire all scans with eager=true (returns within 20s with report_key)
-    var SCAN_TIMEOUT = 25000;
-    var scanPromises = scanTasks.map(function(task) {
-      return fetchT('https://api.localfalcon.com/v2/run-scan/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'api_key=' + lfKey
-          + '&place_id=' + encodeURIComponent(placeId)
-          + '&keyword=' + encodeURIComponent(task.keyword)
-          + '&lat=' + lat
-          + '&lng=' + lng
-          + '&grid_size=' + task.grid_size
-          + '&radius=' + SCAN_RADIUS
-          + '&measurement=mi'
-          + '&platform=' + task.platform
-          + '&eager=true'
-      }, SCAN_TIMEOUT).then(function(r) { return r.json(); }).then(function(data) {
-        return { task: task, data: data };
-      });
-    });
+      for (var pi = 0; pi < platforms.length; pi++) {
+        var platform = platforms[pi];
+        var isAi = AI_PLATFORMS.indexOf(platform) !== -1;
 
-    var scanResults = await Promise.allSettled(scanPromises);
+        // AI platforms: 3x3 grid, 2mi radius (less geo-sensitive, conserve credits)
+        // Maps platforms: use configured grid size; radius = ((size-1)/2) * point_distance
+        var gridSize = isAi ? '3' : String(kw.grid_size || 7);
+        var radius = isAi ? '2' : String(((kw.grid_size || 7) - 1) / 2 * (kw.point_distance || 1.0));
 
-    // Step 4: Collect report_keys that need polling (202 = still processing)
-    var completed = [];
-    var pendingPolls = [];
-
-    scanResults.forEach(function(result, idx) {
-      if (result.status === 'rejected') {
-        warnings.push('LocalFalcon scan failed (' + scanTasks[idx].platform + '/"' + scanTasks[idx].keyword + '"): ' + (result.reason ? result.reason.message : 'unknown'));
-        return;
-      }
-      var r = result.value;
-      if (r.data.success && r.data.data && r.data.data.report_key) {
-        // Completed immediately
-        completed.push({ task: r.task, report: r.data.data });
-      } else if (r.data.code === 202 && r.data.data && r.data.data.report_key) {
-        // Still processing, need to poll
-        pendingPolls.push({ task: r.task, report_key: r.data.data.report_key });
-      } else if (r.data.success === false) {
-        warnings.push('LocalFalcon scan error (' + r.task.platform + '/"' + r.task.keyword + '"): ' + (r.data.message || JSON.stringify(r.data).substring(0, 200)));
-      }
-    });
-
-    // Step 5: Poll pending scans (batch poll every 5s, max 90s total)
-    if (pendingPolls.length > 0) {
-      var POLL_INTERVAL = 5000;
-      var MAX_POLL_TIME = 90000;
-      var waited = 0;
-      var remaining = pendingPolls.slice();
-
-      while (remaining.length > 0 && waited < MAX_POLL_TIME) {
-        await new Promise(function(resolve) { setTimeout(resolve, POLL_INTERVAL); });
-        waited += POLL_INTERVAL;
-
-        var pollBatch = remaining.slice();
-        remaining = [];
-
-        var pollResults = await Promise.allSettled(pollBatch.map(function(item) {
-          return fetchT('https://api.localfalcon.com/v1/reports/' + item.report_key + '/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'api_key=' + lfKey + '&report_key=' + item.report_key
-          }, 15000).then(function(r) { return r.json(); }).then(function(data) {
-            return { task: item.task, report_key: item.report_key, data: data };
-          });
-        }));
-
-        pollResults.forEach(function(pr) {
-          if (pr.status === 'rejected') {
-            warnings.push('LocalFalcon poll failed: ' + (pr.reason ? pr.reason.message : 'unknown'));
-            return;
-          }
-          var r = pr.value;
-          if (r.data.code === 202) {
-            // Still processing, keep polling
-            remaining.push({ task: r.task, report_key: r.report_key });
-          } else if (r.data.success && r.data.data) {
-            completed.push({ task: r.task, report: r.data.data });
-          } else {
-            warnings.push('LocalFalcon poll error (' + r.task.platform + '/"' + r.task.keyword + '"): ' + (r.data.message || 'unknown'));
-          }
-        });
-      }
-
-      if (remaining.length > 0) {
-        remaining.forEach(function(item) {
-          warnings.push('LocalFalcon scan timeout (' + item.task.platform + '/"' + item.task.keyword + '"): still processing after ' + (MAX_POLL_TIME / 1000) + 's');
+        scanQueue.push({
+          keyword: kw.keyword,
+          label: kw.label,
+          platform: platform,
+          gridSize: gridSize,
+          radius: radius,
+          isAi: isAi
         });
       }
     }
 
-    // Step 6: Split results into geo grids and AI scans
-    var geoGrids = [];
-    var aiScans = [];
+    if (scanQueue.length === 0) {
+      warnings.push('LocalFalcon: no scans to run (no keywords with tracking enabled)');
+      return null;
+    }
 
-    completed.forEach(function(item) {
-      var report = item.report;
+    // Step 3: Run all scans in parallel batches (max 10 concurrent to respect rate limits)
+    var BATCH_SIZE = 10;
+    var allResults = [];
+
+    for (var bi = 0; bi < scanQueue.length; bi += BATCH_SIZE) {
+      var batch = scanQueue.slice(bi, bi + BATCH_SIZE);
+      var batchResults = await Promise.all(batch.map(function(scan) {
+        return runLocalFalconScan(lfKey, placeId, scan.keyword, lat, lng, scan.gridSize, scan.radius, 'mi', scan.platform)
+          .then(function(result) {
+            return {
+              keyword: scan.keyword,
+              label: scan.label,
+              platform: scan.platform,
+              isAi: scan.isAi,
+              result: result
+            };
+          })
+          .catch(function(err) {
+            warnings.push('LF scan ' + scan.platform + '/"' + scan.keyword + '": ' + err.message);
+            return null;
+          });
+      }));
+      allResults = allResults.concat(batchResults.filter(function(r) { return r !== null; }));
+    }
+
+    // Step 4: Organize results into maps vs AI buckets
+    var mapsResults = {};
+    var aiResults = {};
+    MAPS_PLATFORMS.forEach(function(p) { mapsResults[p] = []; });
+    AI_PLATFORMS.forEach(function(p) { aiResults[p] = []; });
+
+    allResults.forEach(function(item) {
+      var r = item.result;
+      if (!r) return;
       var entry = {
-        keyword: item.task.keyword,
-        label: item.task.label,
-        platform: item.task.platform,
-        report_key: report.report_key || null,
-        arp: parseFloat(report.arp) || 0,
-        atrp: parseFloat(report.atrp) || 0,
-        solv: parseFloat(report.solv) || 0,
-        grid_size: report.grid_size || item.task.grid_size,
-        data_points_total: parseInt(report.points || report.data_points) || 0,
-        found_in: parseInt(report.found_in) || 0,
-        image_url: report.image || null,
-        heatmap_url: report.heatmap || null,
-        pdf_url: report.pdf || null,
-        public_url: report.public_url || null
+        keyword: item.keyword,
+        label: item.label,
+        arp: parseFloat(r.arp) || 0,
+        atrp: parseFloat(r.atrp) || 0,
+        solv: parseFloat(r.solv) || 0,
+        found_in: parseInt(r.found_in) || 0,
+        data_points: parseInt(r.data_points || r.points) || 0,
+        grid_size: r.grid_size,
+        report_key: r.report_key,
+        image_url: r.image || null,
+        heatmap_url: r.heatmap || null,
+        public_url: r.public_url || null,
+        pdf_url: r.pdf || null
       };
 
-      if (item.task.type === 'geo') {
-        geoGrids.push(entry);
+      if (item.isAi) {
+        if (aiResults[item.platform]) aiResults[item.platform].push(entry);
       } else {
-        aiScans.push(entry);
+        if (mapsResults[item.platform]) mapsResults[item.platform].push(entry);
       }
     });
 
-    // Sort geo grids by SoLV descending (best performing first)
-    geoGrids.sort(function(a, b) { return b.solv - a.solv; });
+    // Step 5: Compute summaries
 
-    // Compute geo grid averages
-    var geoAvgArp = geoGrids.length > 0 ? geoGrids.reduce(function(s, g) { return s + g.arp; }, 0) / geoGrids.length : 0;
-    var geoAvgAtrp = geoGrids.length > 0 ? geoGrids.reduce(function(s, g) { return s + g.atrp; }, 0) / geoGrids.length : 0;
-    var geoAvgSolv = geoGrids.length > 0 ? geoGrids.reduce(function(s, g) { return s + g.solv; }, 0) / geoGrids.length : 0;
+    // Maps summary (all google + apple grids)
+    var allMapGrids = [];
+    Object.keys(mapsResults).forEach(function(p) {
+      mapsResults[p].forEach(function(g) { allMapGrids.push(g); });
+    });
+    var mapsAvgArp = allMapGrids.length > 0 ? allMapGrids.reduce(function(s, g) { return s + g.arp; }, 0) / allMapGrids.length : 0;
+    var mapsAvgSolv = allMapGrids.length > 0 ? allMapGrids.reduce(function(s, g) { return s + g.solv; }, 0) / allMapGrids.length : 0;
 
-    // Build AI visibility summary per platform
-    var aiPlatformSummary = {};
-    AI_PLATFORMS.forEach(function(p) { aiPlatformSummary[p] = { platform: p, scans: 0, keywords_found: 0, keywords_checked: 0, avg_solv: 0, keywords: [] }; });
+    // AI summary: per-platform, is the business cited for ANY keyword?
+    var aiEngines = AI_PLATFORMS.map(function(platform) {
+      var scans = aiResults[platform] || [];
+      var cited = scans.some(function(s) { return s.found_in > 0 || s.solv > 0; });
+      var citedKeywords = scans.filter(function(s) { return s.found_in > 0 || s.solv > 0; }).map(function(s) { return s.label; });
+      var bestSolv = scans.length > 0 ? Math.max.apply(null, scans.map(function(s) { return s.solv; })) : 0;
+      var avgSolv = scans.length > 0 ? scans.reduce(function(s, g) { return s + g.solv; }, 0) / scans.length : 0;
 
-    aiScans.forEach(function(scan) {
-      var ps = aiPlatformSummary[scan.platform];
-      if (!ps) return;
-      ps.scans++;
-      ps.keywords_checked++;
-      if (scan.found_in > 0) {
-        ps.keywords_found++;
-        ps.keywords.push(scan.label);
+      var platformNames = {
+        chatgpt: 'ChatGPT', gemini: 'Gemini', grok: 'Grok',
+        gaio: 'Google AI Overviews', aimode: 'Google AI Mode'
+      };
+
+      var context = null;
+      if (cited) {
+        context = 'Visible in ' + platformNames[platform] + ' for: ' + citedKeywords.join(', ') + ' (best SoLV: ' + Math.round(bestSolv * 10) / 10 + '%)';
       }
+
+      return {
+        name: platformNames[platform] || platform,
+        platform: platform,
+        cited: cited,
+        context: context,
+        queries_checked: scans.length,
+        queries_cited: citedKeywords.length,
+        avg_solv: Math.round(avgSolv * 100) / 100,
+        best_solv: Math.round(bestSolv * 100) / 100,
+        scans: scans
+      };
     });
 
-    // Compute per-platform avg SoLV
-    Object.keys(aiPlatformSummary).forEach(function(p) {
-      var platformScans = aiScans.filter(function(s) { return s.platform === p; });
-      if (platformScans.length > 0) {
-        aiPlatformSummary[p].avg_solv = Math.round(platformScans.reduce(function(s, sc) { return s + sc.solv; }, 0) / platformScans.length * 100) / 100;
-      }
-    });
+    var enginesCiting = aiEngines.filter(function(e) { return e.cited; }).length;
 
-    var aiPlatforms = Object.values(aiPlatformSummary);
-    var aiPlatformsCiting = aiPlatforms.filter(function(p) { return p.keywords_found > 0; }).length;
-
-    // Credit usage estimate
-    var totalDataPoints = completed.reduce(function(s, c) { return s + (c.report ? (parseInt(c.report.points || c.report.data_points) || 0) : 0); }, 0);
+    // GBP basics from location data (rating + reviews - all LF gives us)
+    var gbpBasics = {
+      rating: parseFloat(location.rating) || 0,
+      reviews: parseInt(location.reviews) || 0,
+      name: location.name,
+      address: location.address,
+      phone: location.phone || null
+    };
 
     return {
-      gbp: gbpSnapshot,
-      geo: {
-        grids: geoGrids,
-        grid_count: geoGrids.length,
-        avg_arp: Math.round(geoAvgArp * 100) / 100,
-        avg_atrp: Math.round(geoAvgAtrp * 100) / 100,
-        avg_solv: Math.round(geoAvgSolv * 100) / 100
+      location: gbpBasics,
+      maps: {
+        platforms: mapsResults,
+        grids: allMapGrids,
+        grid_count: allMapGrids.length,
+        avg_arp: Math.round(mapsAvgArp * 100) / 100,
+        avg_solv: Math.round(mapsAvgSolv * 100) / 100
       },
       ai: {
-        platforms: aiPlatforms,
-        scans: aiScans,
-        platforms_checked: AI_PLATFORMS.length,
-        platforms_citing: aiPlatformsCiting,
-        total_keywords: scanKeywords.length,
-        total_scans: scanTasks.length,
-        completed_scans: completed.length
+        engines: aiEngines,
+        engines_checked: AI_PLATFORMS.length,
+        engines_citing: enginesCiting,
+        citation_trend: []
       },
-      credits_used_estimate: totalDataPoints,
-      scan_summary: {
-        total_requested: scanTasks.length,
-        total_completed: completed.length,
-        total_failed: scanTasks.length - completed.length
-      }
+      scans_run: allResults.length,
+      scans_requested: scanQueue.length
     };
   });
 
-  // ── Tasks (unchanged) ──────────────────────────────────────────
+  // --- 5. Tasks (unchanged) ---
   var taskFn = safe('tasks', async function() {
     var taskResp = await fetchT(sbUrl + '/rest/v1/checklist_items?client_slug=eq.' + clientSlug + '&select=status', { headers: sbHeaders() }, 10000);
     var tasks = await taskResp.json();
@@ -487,9 +420,9 @@ module.exports = async function handler(req, res) {
   var lfData = parallel[1];
   var taskData = parallel[2];
 
-  // Extract sub-objects from LocalFalcon results
-  var gbpData = lfData ? lfData.gbp : null;
-  var geogridData = lfData ? lfData.geo : null;
+  // Extract sub-sections from LocalFalcon data
+  var gbpData = lfData ? lfData.location : null;
+  var geogridData = lfData ? lfData.maps : null;
   var aiData = lfData ? lfData.ai : null;
 
   // Build citation_trend from historical snapshots
@@ -497,14 +430,13 @@ module.exports = async function handler(req, res) {
     try {
       var histResp = await fetch(sbUrl + '/rest/v1/report_snapshots?client_slug=eq.' + clientSlug + '&select=report_month,ai_visibility&order=report_month.asc&limit=12', { headers: sbHeaders() });
       var histRows = await histResp.json();
-      aiData.citation_trend = [];
       if (Array.isArray(histRows)) {
         aiData.citation_trend = histRows.map(function(r) {
           var av = r.ai_visibility || {};
-          return { month: r.report_month.substring(0, 7), count: av.platforms_citing || av.engines_citing || 0 };
+          return { month: r.report_month.substring(0, 7), count: av.engines_citing || 0 };
         });
+        aiData.citation_trend.push({ month: reportMonth.substring(0, 7), count: aiData.engines_citing });
       }
-      aiData.citation_trend.push({ month: reportMonth.substring(0, 7), count: aiData.platforms_citing });
     } catch (e) { /* non-fatal */ }
   }
 
@@ -526,7 +458,9 @@ module.exports = async function handler(req, res) {
     gsc_ctr_prev: prevSnap ? prevSnap.gsc_ctr : null,
     gsc_avg_position_prev: prevSnap ? prevSnap.gsc_avg_position : null,
 
-    // GBP (engagement metrics not available from LocalFalcon - require GBP Performance API)
+    // GBP - performance metrics (calls, directions, clicks) not available from LocalFalcon.
+    // Basic location data (rating, reviews) stored in gbp_detail JSON.
+    // To restore call/direction data, add direct GBP API integration.
     gbp_calls: null,
     gbp_direction_requests: null,
     gbp_website_clicks: null,
@@ -536,7 +470,7 @@ module.exports = async function handler(req, res) {
     gbp_website_clicks_prev: prevSnap ? prevSnap.gbp_website_clicks : null,
     gbp_photo_views_prev: prevSnap ? prevSnap.gbp_photo_views : null,
 
-    // CORE scores (carry forward from previous or null)
+    // CORE scores (carry forward)
     score_credibility: prevSnap ? prevSnap.score_credibility : null,
     score_optimization: prevSnap ? prevSnap.score_optimization : null,
     score_reputation: prevSnap ? prevSnap.score_reputation : null,
@@ -550,9 +484,45 @@ module.exports = async function handler(req, res) {
 
     // Detail JSON blobs
     gsc_detail: gscData ? { date_range: range, pages: gscData.pages, queries: gscData.queries } : {},
-    gbp_detail: gbpData ? { rating: gbpData.rating, reviews: gbpData.reviews, name: gbpData.name, address: gbpData.address } : {},
-    ai_visibility: aiData || {},
-    neo_data: geogridData || {},
+    gbp_detail: gbpData ? { rating: gbpData.rating, reviews: gbpData.reviews, name: gbpData.name, address: gbpData.address, phone: gbpData.phone } : {},
+
+    // AI visibility (backward-compatible structure + new LocalFalcon data)
+    ai_visibility: aiData ? {
+      engines: aiData.engines.map(function(e) {
+        return { name: e.name, platform: e.platform, cited: e.cited, context: e.context, queries_checked: e.queries_checked, queries_cited: e.queries_cited, avg_solv: e.avg_solv, best_solv: e.best_solv };
+      }),
+      engines_checked: aiData.engines_checked,
+      engines_citing: aiData.engines_citing,
+      citation_trend: aiData.citation_trend,
+      keyword_breakdown: buildAiKeywordBreakdown(aiData.engines)
+    } : {},
+
+    // Geo-grid / Maps data (backward-compat field name + new LF structure)
+    neo_data: geogridData ? {
+      grids: geogridData.grids.map(function(g) {
+        return {
+          search_term: g.keyword,
+          label: g.label,
+          agr: g.arp,       // backward compat alias
+          atgr: g.atrp,     // backward compat alias
+          arp: g.arp,
+          atrp: g.atrp,
+          solv: g.solv,
+          grid_size: g.grid_size,
+          image_url: g.image_url,
+          heatmap_url: g.heatmap_url,
+          public_url: g.public_url,
+          pdf_url: g.pdf_url,
+          report_key: g.report_key
+        };
+      }),
+      platforms: geogridData.platforms,
+      grid_count: geogridData.grid_count,
+      avg_agr: geogridData.avg_arp,     // backward compat alias
+      avg_arp: geogridData.avg_arp,
+      avg_solv: geogridData.avg_solv
+    } : {},
+
     deliverables: [],
     notes: ''
   };
@@ -586,7 +556,7 @@ module.exports = async function handler(req, res) {
   var highlights = [];
   if (anthropicKey) {
     try {
-      highlights = await generateHighlights(snapshot, prevSnap, practiceName, anthropicKey, geogridData, aiData);
+      highlights = await generateHighlights(snapshot, prevSnap, practiceName, anthropicKey);
       await fetch(sbUrl + '/rest/v1/report_highlights?client_slug=eq.' + clientSlug + '&report_month=eq.' + reportMonth, {
         method: 'DELETE', headers: sbHeaders()
       });
@@ -632,18 +602,16 @@ module.exports = async function handler(req, res) {
     try {
       var reviewUrl = 'https://clients.moonraker.ai/admin/reports';
 
-      // Build AI visibility summary line
       var aiSummary = '';
       if (aiData) {
-        aiSummary = aiData.platforms_citing + ' of ' + aiData.platforms_checked + ' AI platforms citing';
-        var citingNames = aiData.platforms.filter(function(p) { return p.keywords_found > 0; }).map(function(p) { return p.platform; });
-        if (citingNames.length > 0) aiSummary += ' (' + citingNames.join(', ') + ')';
+        aiSummary = aiData.engines_citing + ' of ' + aiData.engines_checked + ' AI platforms citing';
+        var citedNames = aiData.engines.filter(function(e) { return e.cited; }).map(function(e) { return e.name; });
+        if (citedNames.length > 0) aiSummary += ' (' + citedNames.join(', ') + ')';
       }
 
-      // Build geo summary line
-      var geoSummary = '';
+      var mapsSummary = '';
       if (geogridData && geogridData.grid_count > 0) {
-        geoSummary = geogridData.grid_count + ' terms | Avg ARP ' + geogridData.avg_arp + ' | SoLV ' + geogridData.avg_solv + '%';
+        mapsSummary = geogridData.grid_count + ' grids | Avg ARP ' + geogridData.avg_arp + ' | SoLV ' + geogridData.avg_solv + '%';
       }
 
       var emailBody = '<div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;padding:24px">'
@@ -655,11 +623,10 @@ module.exports = async function handler(req, res) {
         + '<p style="color:#6B7599;margin:0 0 16px">Month ' + campaignMonth + ' report for <strong style="color:#1E2A5E">' + practiceName + '</strong> has been compiled.</p>'
         + '<table style="width:100%;border-collapse:collapse;margin:16px 0">'
         + (gscData ? '<tr><td style="padding:8px 0;color:#6B7599;border-bottom:1px solid #E2E8F0">GSC Clicks</td><td style="padding:8px 0;text-align:right;font-weight:600;color:#1E2A5E;border-bottom:1px solid #E2E8F0">' + gscData.clicks.toLocaleString() + '</td></tr>' : '')
-        + (geoSummary ? '<tr><td style="padding:8px 0;color:#6B7599;border-bottom:1px solid #E2E8F0">Maps (Geogrids)</td><td style="padding:8px 0;text-align:right;font-weight:600;color:#1E2A5E;border-bottom:1px solid #E2E8F0">' + geoSummary + '</td></tr>' : '')
+        + (gbpData ? '<tr><td style="padding:8px 0;color:#6B7599;border-bottom:1px solid #E2E8F0">GBP Rating</td><td style="padding:8px 0;text-align:right;font-weight:600;color:#1E2A5E;border-bottom:1px solid #E2E8F0">' + gbpData.rating + ' stars (' + gbpData.reviews + ' reviews)</td></tr>' : '')
         + (aiSummary ? '<tr><td style="padding:8px 0;color:#6B7599;border-bottom:1px solid #E2E8F0">AI Visibility</td><td style="padding:8px 0;text-align:right;font-weight:600;color:#1E2A5E;border-bottom:1px solid #E2E8F0">' + aiSummary + '</td></tr>' : '')
-        + (gbpData ? '<tr><td style="padding:8px 0;color:#6B7599;border-bottom:1px solid #E2E8F0">GBP Rating</td><td style="padding:8px 0;text-align:right;font-weight:600;color:#1E2A5E;border-bottom:1px solid #E2E8F0">' + gbpData.rating + ' (' + gbpData.reviews + ' reviews)</td></tr>' : '')
+        + (mapsSummary ? '<tr><td style="padding:8px 0;color:#6B7599;border-bottom:1px solid #E2E8F0">Maps (LocalFalcon)</td><td style="padding:8px 0;text-align:right;font-weight:600;color:#1E2A5E;border-bottom:1px solid #E2E8F0">' + mapsSummary + '</td></tr>' : '')
         + '</table>'
-        + (lfData ? '<p style="color:#6B7599;font-size:12px;margin:12px 0 0">LocalFalcon: ' + lfData.scan_summary.total_completed + '/' + lfData.scan_summary.total_requested + ' scans completed | ~' + lfData.credits_used_estimate + ' credits used</p>' : '')
         + (errors.length > 0 ? '<p style="color:#EF4444;font-size:13px">Warnings: ' + errors.join('; ') + '</p>' : '')
         + '<a href="' + reviewUrl + '" style="display:inline-block;background:#00D47E;color:#fff;font-weight:600;padding:12px 24px;border-radius:8px;text-decoration:none;margin-top:8px">Review Report</a>'
         + '</div></div>';
@@ -699,15 +666,21 @@ module.exports = async function handler(req, res) {
     status: 'internal_review',
     data_sources: {
       gsc: gscData ? 'ok' : 'skipped',
-      localfalcon: lfData ? {
-        geo_grids: geogridData ? geogridData.grid_count + ' grids, avg ARP ' + geogridData.avg_arp + ', SoLV ' + geogridData.avg_solv + '%' : 'none',
-        ai_platforms_citing: aiData ? aiData.platforms_citing + '/' + aiData.platforms_checked : 'none',
-        scans: lfData.scan_summary,
-        credits_estimate: lfData.credits_used_estimate
+      gbp: gbpData ? { rating: gbpData.rating, reviews: gbpData.reviews, note: 'Basic location data only (LF). Call/direction metrics require direct GBP API.' } : 'skipped',
+      ai_visibility: aiData ? {
+        engines_citing: aiData.engines_citing,
+        engines_checked: aiData.engines_checked,
+        platforms: aiData.engines.map(function(e) { return { name: e.name, cited: e.cited, avg_solv: e.avg_solv }; })
       } : 'skipped',
-      gbp: gbpData ? { rating: gbpData.rating, reviews: gbpData.reviews, note: 'engagement metrics require GBP Performance API' } : 'skipped',
+      maps: geogridData ? {
+        grid_count: geogridData.grid_count,
+        avg_arp: geogridData.avg_arp,
+        avg_solv: geogridData.avg_solv,
+        platforms: Object.keys(geogridData.platforms).map(function(p) { return { platform: p, keywords: geogridData.platforms[p].length }; })
+      } : 'skipped',
       tasks: taskData ? 'ok' : 'skipped'
     },
+    localfalcon_stats: lfData ? { scans_run: lfData.scans_run, scans_requested: lfData.scans_requested } : null,
     highlights_count: highlights.length,
     notification_sent: notificationSent,
     errors: errors,
@@ -717,7 +690,113 @@ module.exports = async function handler(req, res) {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Helper: Google Service Account JWT → Access Token
+// Helper: Run a single LocalFalcon scan
+// POST /v2/run-scan/ - blocks until complete (eager=false default)
+// ═══════════════════════════════════════════════════════════════════
+async function runLocalFalconScan(apiKey, placeId, keyword, lat, lng, gridSize, radius, measurement, platform) {
+  var TIMEOUT = 120000; // 120s per scan
+  var controller = new AbortController();
+  var timer = setTimeout(function() { controller.abort(); }, TIMEOUT);
+
+  try {
+    var body = 'api_key=' + encodeURIComponent(apiKey)
+      + '&place_id=' + encodeURIComponent(placeId)
+      + '&keyword=' + encodeURIComponent(keyword)
+      + '&lat=' + encodeURIComponent(lat)
+      + '&lng=' + encodeURIComponent(lng)
+      + '&grid_size=' + encodeURIComponent(gridSize)
+      + '&radius=' + encodeURIComponent(radius)
+      + '&measurement=' + encodeURIComponent(measurement)
+      + '&platform=' + encodeURIComponent(platform);
+
+    var resp = await fetch('https://api.localfalcon.com/v2/run-scan/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      signal: controller.signal,
+      body: body
+    });
+    clearTimeout(timer);
+
+    var data = await resp.json();
+
+    // Handle 202 (still processing) - poll until complete
+    if (data.code === 202 && data.data && data.data.report_key) {
+      return await pollScanResult(apiKey, data.data.report_key);
+    }
+
+    if (!data.success) {
+      throw new Error((data.message || 'Scan failed') + ' (code ' + data.code + ')');
+    }
+
+    return data.data;
+  } catch (e) {
+    clearTimeout(timer);
+    if (e.name === 'AbortError') throw new Error('Scan timeout 120s (' + platform + '/' + keyword + ')');
+    throw e;
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// Helper: Poll for scan result (when async/202)
+// ═══════════════════════════════════════════════════════════════════
+async function pollScanResult(apiKey, reportKey) {
+  var maxWait = 90000;
+  var pollInterval = 5000;
+  var waited = 0;
+
+  while (waited < maxWait) {
+    await new Promise(function(resolve) { setTimeout(resolve, pollInterval); });
+    waited += pollInterval;
+
+    var resp = await fetch('https://api.localfalcon.com/v1/reports/' + reportKey + '/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'api_key=' + encodeURIComponent(apiKey)
+    });
+    var data = await resp.json();
+
+    if (data.code === 200 && data.success && data.data) {
+      return data.data;
+    }
+    if (data.code === 202) {
+      continue; // Still processing
+    }
+    if (data.code >= 400) {
+      throw new Error('Poll error: ' + (data.message || 'code ' + data.code));
+    }
+  }
+
+  throw new Error('Poll timeout after ' + (maxWait / 1000) + 's for report ' + reportKey);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// Helper: Build per-keyword AI breakdown from engine results
+// Pivots from per-engine → per-keyword for the report template
+// ═══════════════════════════════════════════════════════════════════
+function buildAiKeywordBreakdown(engines) {
+  var keywordMap = {};
+  engines.forEach(function(engine) {
+    (engine.scans || []).forEach(function(scan) {
+      if (!keywordMap[scan.keyword]) {
+        keywordMap[scan.keyword] = { keyword: scan.keyword, label: scan.label, platforms: {} };
+      }
+      keywordMap[scan.keyword].platforms[engine.platform] = {
+        cited: scan.found_in > 0 || scan.solv > 0,
+        solv: scan.solv,
+        arp: scan.arp,
+        found_in: scan.found_in,
+        data_points: scan.data_points
+      };
+    });
+  });
+  return Object.values(keywordMap);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// Helper: Google Service Account JWT -> Access Token
 // ═══════════════════════════════════════════════════════════════════
 async function getGoogleAccessToken(saJson) {
   try {
@@ -763,7 +842,7 @@ async function getGoogleAccessToken(saJson) {
 // ═══════════════════════════════════════════════════════════════════
 // Helper: Generate highlights via Claude
 // ═══════════════════════════════════════════════════════════════════
-async function generateHighlights(snapshot, prevSnap, practiceName, apiKey, geogridData, aiData) {
+async function generateHighlights(snapshot, prevSnap, practiceName, apiKey) {
   var metricsContext = 'Practice: ' + practiceName + '\nCampaign Month: ' + snapshot.campaign_month + '\n\n';
 
   if (snapshot.gsc_clicks !== null) {
@@ -772,31 +851,42 @@ async function generateHighlights(snapshot, prevSnap, practiceName, apiKey, geog
     metricsContext += '\n';
   }
 
-  var gbpDetail = snapshot.gbp_detail || {};
-  if (gbpDetail.rating) {
-    metricsContext += 'GBP: ' + gbpDetail.rating + ' rating, ' + gbpDetail.reviews + ' reviews\n';
+  var gbpD = snapshot.gbp_detail || {};
+  if (gbpD.rating) {
+    metricsContext += 'GBP: ' + gbpD.rating + ' rating (' + gbpD.reviews + ' reviews)\n';
   }
 
-  if (aiData && aiData.platforms_checked) {
-    metricsContext += '\nAI Visibility (via LocalFalcon - checks if the practice is cited by each AI platform):\n';
-    metricsContext += 'Summary: ' + aiData.platforms_citing + ' of ' + aiData.platforms_checked + ' AI platforms citing the practice\n';
-    var platforms = aiData.platforms || [];
-    for (var i = 0; i < platforms.length; i++) {
-      var p = platforms[i];
-      metricsContext += '  ' + p.platform + ': ' + p.keywords_found + '/' + p.keywords_checked + ' keywords found';
-      if (p.avg_solv > 0) metricsContext += ', SoLV ' + p.avg_solv + '%';
-      if (p.keywords.length > 0) metricsContext += ' (found for: ' + p.keywords.join(', ') + ')';
+  var ai = snapshot.ai_visibility || {};
+  if (ai.engines_checked) {
+    metricsContext += '\nAI Visibility: ' + ai.engines_citing + ' of ' + ai.engines_checked + ' AI platforms citing\n';
+    var engines = ai.engines || [];
+    for (var i = 0; i < engines.length; i++) {
+      metricsContext += '  ' + engines[i].name + ': ' + (engines[i].cited ? 'VISIBLE' : 'not visible');
+      if (engines[i].avg_solv) metricsContext += ' (avg SoLV: ' + engines[i].avg_solv + '%)';
+      if (engines[i].context) metricsContext += ' - ' + engines[i].context;
       metricsContext += '\n';
+    }
+    var kwBreakdown = ai.keyword_breakdown || [];
+    if (kwBreakdown.length > 0) {
+      metricsContext += '\nPer-keyword AI coverage:\n';
+      kwBreakdown.forEach(function(kw) {
+        var platforms = Object.keys(kw.platforms || {});
+        var citedIn = platforms.filter(function(p) { return kw.platforms[p].cited; });
+        metricsContext += '  "' + kw.label + '": cited in ' + citedIn.length + '/' + platforms.length + ' platforms';
+        if (citedIn.length > 0) metricsContext += ' (' + citedIn.join(', ') + ')';
+        metricsContext += '\n';
+      });
     }
   }
 
   metricsContext += '\nTasks: ' + snapshot.tasks_complete + '/' + snapshot.tasks_total + ' complete, ' + snapshot.tasks_in_progress + ' in progress\n';
 
-  if (geogridData && geogridData.grids && geogridData.grids.length > 0) {
-    metricsContext += '\nGoogle Maps Geogrid Performance (' + geogridData.grid_count + ' terms, avg ARP ' + geogridData.avg_arp + ', avg SoLV ' + geogridData.avg_solv + '%):\n';
-    for (var gi = 0; gi < geogridData.grids.length; gi++) {
-      var grid = geogridData.grids[gi];
-      metricsContext += '  "' + grid.keyword + '": ARP ' + grid.arp + ', ATRP ' + grid.atrp + ', SoLV ' + grid.solv + '%, found in ' + grid.found_in + '/' + grid.data_points_total + ' grid cells\n';
+  var neo = snapshot.neo_data || {};
+  if (neo.grids && neo.grids.length > 0) {
+    metricsContext += '\nMaps/Geogrid Performance (Google + Apple Maps, ' + neo.grid_count + ' grids, avg ARP ' + neo.avg_arp + ', avg SoLV ' + neo.avg_solv + '%):\n';
+    for (var gi = 0; gi < neo.grids.length; gi++) {
+      var grid = neo.grids[gi];
+      metricsContext += '  "' + grid.search_term + '": ARP ' + grid.arp + ', ATRP ' + grid.atrp + ', SoLV ' + Math.round((grid.solv || 0) * 100) / 100 + '%, ' + grid.grid_size + 'x' + grid.grid_size + ' grid\n';
     }
   }
 
@@ -806,7 +896,7 @@ async function generateHighlights(snapshot, prevSnap, practiceName, apiKey, geog
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1000,
-      messages: [{ role: 'user', content: 'Generate exactly 3 report highlights for a client\'s monthly campaign report. Each highlight should be a win or milestone.\n\nMetrics:\n' + metricsContext + '\n\nReturn ONLY a JSON array (no markdown, no backticks) with 3 objects, each having:\n- icon: one of "chart-up", "phone", "bot", "target", "globe", "users", "check", "map-pin"\n- headline: short punchy headline (max 8 words, no em dashes)\n- body: 1-2 sentence explanation with specific numbers. ARP = Average Rank Position (lower is better, 1 is top). ATRP = Avg Top Rank Position. SoLV = Share of Local Voice (higher is better, 100% = appearing everywhere in the grid). For AI platforms, "found in X/Y grid cells" means the practice was cited at that many geographic check points.\n- metric_ref: the primary metric referenced (e.g. "gsc_clicks", "ai_visibility", "geogrids", "gbp_rating")\n- highlight_type: "win" or "milestone"\n\nPrioritize AI visibility and geogrid performance when available. Always include concrete numbers.' }]
+      messages: [{ role: 'user', content: 'Generate exactly 3 report highlights for a client\'s monthly campaign report. Each highlight should be a win or milestone.\n\nMetrics:\n' + metricsContext + '\n\nReturn ONLY a JSON array (no markdown, no backticks) with 3 objects, each having:\n- icon: one of "chart-up", "phone", "bot", "target", "globe", "users", "check", "map-pin"\n- headline: short punchy headline (max 8 words, no em dashes)\n- body: 1-2 sentence explanation with specific numbers. ARP = Average Rank Position (lower is better, 1 is top). ATRP = Average Top Rank Position. SoLV = Share of Local Voice (higher is better, 100% means top position everywhere in the grid).\n- metric_ref: the primary metric referenced (e.g. "gsc_clicks", "gbp_rating", "ai_visibility", "maps_geogrid")\n- highlight_type: "win" or "milestone"\n\nPrioritize AI visibility data and geogrid/maps performance when available. Always include concrete numbers.' }]
     })
   });
 
