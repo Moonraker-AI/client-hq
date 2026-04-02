@@ -712,7 +712,12 @@ a:hover { color: var(--color-primary-hover); }
         if (es.fathom && es.fathom.length) badges.push('&#127908; ' + (p.enrichment_data && p.enrichment_data.calls ? p.enrichment_data.calls.length : 0));
         if (es.entity_audit) badges.push('&#128202; Audit');
         if (es.website) badges.push('&#127760; Site');
-        html += '<span style="font-size:.72rem;color:var(--color-muted);">' + (badges.length ? badges.join(' &middot; ') : 'No data found') + '</span>';
+        html += '<span style="font-size:.72rem;color:var(--color-muted);margin-right:.5rem;">' + (badges.length ? badges.join(' &middot; ') : 'No data') + '</span>';
+        html += '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();generateProposal(\'' + p.id + '\',this)">&#9889; Generate</button>';
+      } else if (p.status === 'generating') {
+        html += '<span class="tag tag-enriching" style="gap:.35rem;"><span class="dot-pulse"></span>Generating...</span>';
+      } else if (p.status === 'ready') {
+        html += '<span class="tag tag-ready">Ready to send</span>';
       }
       if (p.proposal_url) html += ' <a href="' + esc(p.proposal_url) + '?preview=true" target="_blank" class="btn btn-ghost btn-sm" title="Preview (no tracking)" onclick="event.stopPropagation()">&#128065;</a>';
       html += '</td>';
@@ -747,6 +752,31 @@ a:hover { color: var(--color-primary-hover); }
   document.getElementById('newProposalModal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
   });
+
+  // Generate a proposal (after enrichment)
+  window.generateProposal = async function(proposalId, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="dot-pulse"></span> Generating...';
+    try {
+      var resp = await fetch('/api/generate-proposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proposal_id: proposalId })
+      });
+      var data = await resp.json();
+      if (data.ok) {
+        await loadData();
+      } else {
+        alert('Generation failed: ' + (data.error || 'Unknown error'));
+        btn.disabled = false;
+        btn.innerHTML = '&#9889; Generate';
+      }
+    } catch(e) {
+      alert('Generation error: ' + e.message);
+      btn.disabled = false;
+      btn.innerHTML = '&#9889; Generate';
+    }
+  };
 
   // Enrich a proposal
   window.enrichProposal = async function(proposalId, btn) {
