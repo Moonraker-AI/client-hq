@@ -243,6 +243,14 @@ strong{font-weight:600;color:var(--color-heading)}
       }
       document.getElementById('loadingState').style.display = 'none';
       document.getElementById('mainContent').style.display = 'block';
+      // Auto-select plan from URL param (e.g. ?plan=annual)
+      var urlPlan = new URLSearchParams(window.location.search).get('plan');
+      if (urlPlan) {
+        var termCard = document.querySelector('#termOptions .option-card[data-term="' + urlPlan + '"]');
+        if (termCard && termCard.style.display !== 'none') {
+          selectTerm(urlPlan);
+        }
+      }
     }).catch(function(err) {
       console.error('Init error:', err);
       document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">Unable to load. Please refresh.</p>';
