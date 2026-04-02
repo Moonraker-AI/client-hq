@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Onboarding - Moonraker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root, [data-theme="light"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00b86c;
+  --color-primary-light: #B4EEE0;
+  --color-primary-subtle: #DDF8F2;
+  --color-bg: #F7FDFB;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F0FAF5;
+  --color-border: #E2E8F0;
+  --color-heading: #1E2A5E;
+  --color-body: #333F70;
+  --color-muted: #6B7599;
+  --color-navy: #141C3A;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+}
+[data-theme="dark"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00f598;
+  --color-primary-light: #1A4A38;
+  --color-primary-subtle: #0D2E22;
+  --color-surface-alt: #0A1A12;
+  --color-bg: #080F0B;
+  --color-surface: #0E1A14;
+  --color-border: #1E3530;
+  --color-heading: #E8F5EF;
+  --color-body: #C8D8D0;
+  --color-muted: #5A7A6E;
+  --color-navy: #0A1630;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #FF6B6B;
+  --color-info: #60A5FA;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.7; -webkit-font-smoothing: antialiased;  }
+h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.15; }
+h1 { font-size: 2.25rem; letter-spacing: -0.02em; }
+h2 { font-size: 1.75rem; margin-bottom: .75rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1.1rem; }
+p { margin-bottom: 1rem; }
+a { color: var(--color-primary); text-decoration: none; transition: color .2s; }
+a:hover { color: var(--color-primary-hover); }
+strong { font-weight: 600; color: var(--color-heading); }
+
+/* Header */
+.header { background: var(--color-navy); padding: 1.25rem 0; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; top: -60%; right: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(0,212,126,.08) 0%, transparent 70%); pointer-events: none; }
+.header-inner { max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; }
+.header img { height: 32px; }
+.header-meta { text-align: right; }
+.header-meta p { margin: 0; font-size: .75rem; color: rgba(232,245,239,.45); }
+.header-meta .name { color: #E8F5EF; font-weight: 600; font-size: .875rem; }
+
+.theme-toggle { position: fixed; top: 1rem; right: 1rem; z-index: 200; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all .25s ease; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.theme-toggle:hover { border-color: var(--color-primary); }
+
+/* Layout */
+.onboarding-layout { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 80px); }
+@media (max-width: 900px) { .onboarding-layout { grid-template-columns: 1fr; } }
+
+/* Sidebar */
+.sidebar { background: var(--color-surface); border-right: 1px solid var(--color-border); padding: 2rem 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+@media (max-width: 900px) { .sidebar { position: relative; height: auto; border-right: none; border-bottom: 1px solid var(--color-border); padding: 1rem 0; } }
+.sidebar-header { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid var(--color-border); margin-bottom: 1rem; }
+.sidebar-header h3 { font-size: 1rem; margin-bottom: .25rem; }
+.sidebar-progress { font-size: .75rem; color: var(--color-muted); }
+.sidebar-progress-bar { height: 4px; background: var(--color-border); border-radius: 2px; margin-top: .5rem; overflow: hidden; }
+.sidebar-progress-fill { height: 100%; background: var(--color-primary); border-radius: 2px; transition: width .5s ease; }
+
+.step-nav { list-style: none; padding: 0 .75rem; }
+@media (max-width: 900px) { .step-nav { display: flex; overflow-x: auto; gap: .25rem; padding: 0 1rem; } }
+.step-nav-item { display: flex; align-items: center; gap: .75rem; padding: .75rem; border-radius: 10px; cursor: pointer; transition: all .2s; margin-bottom: 2px; font-size: .875rem; color: var(--color-muted); position: relative; }
+@media (max-width: 900px) { .step-nav-item { flex-shrink: 0; white-space: nowrap; font-size: .8125rem; padding: .5rem .75rem; } }
+.step-nav-item:hover { background: var(--color-primary-subtle); color: var(--color-heading); }
+.step-nav-item.active { background: var(--color-primary-subtle); color: var(--color-primary); font-weight: 600; }
+.step-nav-item.complete { color: var(--color-success); }
+.step-nav-item.complete .step-num { background: var(--color-success); color: #fff; border-color: var(--color-success); }
+.step-nav-item.active .step-num { background: #fff; color: var(--color-primary); border-color: var(--color-primary); border-width: 2px; }
+.step-num { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; flex-shrink: 0; transition: all .2s; }
+.step-label { line-height: 1.3; }
+@media (max-width: 900px) { .step-label { display: none; } }
+
+/* Main content */
+.main-content { padding: 3rem 4rem; max-width: 960px; margin: 0 auto; }
+@media (max-width: 900px) { .main-content { padding: 1.5rem; } }
+
+.step-panel { display: none; animation: fadeIn .4s ease; }
+.step-panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.step-badge { display: inline-block; background: var(--color-primary-subtle); color: var(--color-primary); font-weight: 600; font-size: .7rem; padding: .3rem .75rem; border-radius: 100px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: .75rem; }
+
+/* Step navigation buttons */
+.step-actions { display: flex; gap: 1rem; margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--color-border); }
+.btn { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .9375rem; padding: .75rem 1.75rem; border-radius: 10px; border: none; cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: .5rem; }
+.btn-primary { background: var(--color-primary); color: #fff; }
+.btn-primary:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.btn-outline { background: transparent; color: var(--color-muted); border: 1px solid var(--color-border); }
+.btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.btn-success { background: var(--color-success); color: #fff; }
+
+/* CSA styles */
+.csa-document { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 2.5rem; margin: 1.5rem 0; max-height: 500px; overflow-y: auto; font-size: .875rem; line-height: 1.8; }
+.csa-document h4 { font-size: 1rem; margin: 1.5rem 0 .5rem; color: var(--color-heading); }
+.csa-document h4:first-child { margin-top: 0; }
+.csa-document p { margin-bottom: .75rem; font-size: .875rem; }
+.csa-document ul { margin: 0 0 1rem 1.5rem; font-size: .875rem; }
+.csa-document ul li { margin-bottom: .25rem; }
+.csa-document .csa-header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--color-border); }
+.csa-document .csa-header h3 { font-size: 1.25rem; margin-bottom: .5rem; }
+.csa-document .dynamic-field { background: var(--color-primary-subtle); padding: .15rem .5rem; border-radius: 4px; font-weight: 600; color: var(--color-primary); }
+.csa-document .section-label { font-size: .7rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); margin-bottom: .25rem; display: block; }
+
+.signature-block { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 2rem; margin-top: 1.5rem; }
+.signature-block h3 { margin-bottom: 1rem; }
+.sig-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+@media (max-width: 600px) { .sig-row { grid-template-columns: 1fr; } }
+.sig-field label { display: block; font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); margin-bottom: .35rem; }
+.sig-field input { width: 100%; font-family: 'Inter', sans-serif; font-size: .9375rem; padding: .6rem .85rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-heading); transition: border-color .2s; }
+.sig-field input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(0,212,126,.12); }
+.sig-field input[readonly] { background: var(--color-surface-alt); color: var(--color-muted); }
+.sig-consent { display: flex; align-items: flex-start; gap: .75rem; margin: 1.25rem 0; font-size: .875rem; }
+.sig-consent input[type="checkbox"] { margin-top: .3rem; width: 18px; height: 18px; accent-color: var(--color-primary); flex-shrink: 0; }
+
+/* Embed container */
+.embed-container { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; margin: 1.5rem 0; }
+.embed-container iframe { width: 100%; border: none; display: block; }
+.embed-note { font-size: .8125rem; color: var(--color-muted); margin-top: .75rem; padding: .75rem 1rem; background: var(--color-surface-alt); border-radius: 8px; }
+
+/* Placeholder step */
+.placeholder-step { text-align: center; padding: 4rem 2rem; }
+.placeholder-icon { font-size: 3rem; margin-bottom: 1rem; opacity: .6; }
+.placeholder-step p { color: var(--color-muted); max-width: 400px; margin: 0 auto; }
+
+/* Status badges */
+.status-complete { display: inline-flex; align-items: center; gap: .35rem; background: rgba(0,212,126,.1); color: var(--color-success); font-size: .8125rem; font-weight: 600; padding: .35rem .85rem; border-radius: 8px; }
+.status-signed { background: rgba(0,212,126,.1); color: var(--color-success); border: 1px solid rgba(0,212,126,.2); border-radius: 12px; padding: 1.5rem; text-align: center; margin: 1.5rem 0; }
+.status-signed h4 { color: var(--color-success); margin-bottom: .25rem; }
+
+
+/* Form elements */
+.form-section { margin-bottom: 2.5rem; }
+.form-section h3 { margin-bottom: 1rem; padding-bottom: .5rem; border-bottom: 1px solid var(--color-border); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.form-row.three-col { grid-template-columns: 1fr 1fr 1fr; }
+@media (max-width: 640px) { .form-row, .form-row.three-col { grid-template-columns: 1fr; } }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); margin-bottom: .35rem; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; font-family: 'Inter', sans-serif; font-size: .9375rem; padding: .6rem .85rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-heading); transition: border-color .2s; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(0,212,126,.12); }
+.form-group textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+.form-group select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7599' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .75rem center; padding-right: 2.5rem; }
+.form-group .help-text { font-size: .75rem; color: var(--color-muted); margin-top: .25rem; }
+.form-group .prefilled { font-size: .7rem; color: var(--color-primary); margin-top: .2rem; }
+.radio-group { display: flex; gap: 1rem; flex-wrap: wrap; }
+.radio-option { display: flex; align-items: center; gap: .5rem; padding: .5rem 1rem; border: 1px solid var(--color-border); border-radius: 8px; cursor: pointer; transition: all .2s; font-size: .875rem; }
+.radio-option:hover { border-color: var(--color-primary); }
+.radio-option input[type="radio"] { accent-color: var(--color-primary); }
+.radio-option.selected { border-color: var(--color-primary); background: var(--color-primary-subtle); }
+.social-row { display: flex; align-items: center; gap: 1rem; padding: .75rem 0; border-bottom: 1px solid var(--color-border); }
+.social-row:last-child { border-bottom: none; }
+.social-platform { font-weight: 600; font-size: .875rem; color: var(--color-heading); min-width: 180px; width: 180px; flex-shrink: 0; }
+.social-row input { flex: 1; font-family: 'Inter', sans-serif; font-size: .875rem; padding: .5rem .75rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-heading); }
+.social-row input:focus { outline: none; border-color: var(--color-primary); }
+.social-row select { font-family: 'Inter', sans-serif; font-size: .8125rem; padding: .4rem .6rem; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); color: var(--color-heading); min-width: 130px; }
+.drive-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 2rem; text-align: center; margin: 1.5rem 0; }
+.drive-card .drive-icon { font-size: 3rem; margin-bottom: .75rem; }
+.drive-card h4 { margin-bottom: .5rem; }
+.drive-card a { font-weight: 600; }
+.save-note { font-size: .8125rem; color: var(--color-success); margin-top: .75rem; display: none; }
+.save-note.visible { display: block; }
+.autosave-status { font-size: .75rem; color: var(--color-muted); display: inline-flex; align-items: center; gap: .35rem; margin-left: 1rem; opacity: 0; transition: opacity .3s ease; vertical-align: middle; }
+.autosave-status.visible { opacity: 1; }
+.autosave-status.saving { color: var(--color-warning); }
+.autosave-status.saved { color: var(--color-success); }
+.autosave-status.error { color: var(--color-danger); }
+.autosave-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* Loading */
+.loading-state { text-align: center; padding: 6rem 2rem; }
+.loading-spinner { width: 36px; height: 36px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 1rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Footer */
+.footer-bar { padding: 1.5rem 2rem; text-align: center; font-size: .75rem; color: var(--color-muted); border-top: 1px solid var(--color-border); }
+
+/* Print */
+@media print { .sidebar, .theme-toggle, .step-actions { display: none !important; } .onboarding-layout { grid-template-columns: 1fr; } .csa-document { max-height: none; overflow: visible; } }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
+
+<div class="header">
+  <div class="header-inner">
+    <a href="/"><img src="/assets/logo.png" alt="Moonraker"></a>
+    <div class="header-meta">
+      <p class="name" id="headerName">Onboarding</p>
+      <p>Confidential</p>
+    </div>
+  </div>
+</div>
+
+<div id="loadingState" class="loading-state">
+  <div class="loading-spinner"></div>
+  <p style="color:var(--color-muted)">Loading your onboarding...</p>
+</div>
+
+<div id="mainApp" class="onboarding-layout" style="display:none;">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h3>Getting Started</h3>
+      <div class="sidebar-progress"><span id="progressLabel">0 of 8 complete</span></div>
+      <div class="sidebar-progress-bar"><div class="sidebar-progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+    <ul class="step-nav" id="stepNav"></ul>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+
+    <!-- STEP 1: Confirm Info -->
+    <div class="step-panel" data-step="confirm_info">
+      <span class="step-badge">Step 1 of 8</span>
+      <h1>Confirm Your Info <span class="autosave-status" id="ci_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
+      <p style="color:var(--color-muted)">We have gathered some details about your practice. Please review and correct anything that needs updating.</p>
+
+      <div class="form-section">
+        <h3>Contact</h3>
+        <div class="form-row">
+          <div class="form-group"><label>First Name</label><input type="text" id="ci_first_name"></div>
+          <div class="form-group"><label>Last Name</label><input type="text" id="ci_last_name"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Credentials / Suffixes</label><input type="text" id="ci_credentials" placeholder="e.g. LCSW, Psy.D., LMFT"></div>
+          <div class="form-group"><label>Email</label><input type="email" id="ci_email"></div>
+        </div>
+        <div class="form-group"><label>Phone</label><input type="tel" id="ci_phone"></div>
+      </div>
+
+      <div class="form-section">
+        <h3>Practice</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Practice Name</label><input type="text" id="ci_practice_name"></div>
+          <div class="form-group"><label>Legal Business Name (if different)</label><input type="text" id="ci_legal_business_name"></div>
+        </div>
+        <div class="form-group"><label>Website URL</label><input type="url" id="ci_website_url" placeholder="https://"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Team Size</label>
+            <select id="ci_team_size"><option value="">Select...</option><option value="solo">Solo Practice</option><option value="group">Group Practice</option></select>
+          </div>
+          <div class="form-group"><label>Service Delivery</label>
+            <select id="ci_service_delivery"><option value="">Select...</option><option value="in-person">In-Person Only</option><option value="virtual">Virtual Only</option><option value="in-person and virtual">Both In-Person and Virtual</option></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Address</h3>
+        <div class="form-group"><label>Street Address</label><input type="text" id="ci_address_line1"></div>
+        <div class="form-group"><label>Suite / Unit (optional)</label><input type="text" id="ci_address_line2"></div>
+        <div class="form-row three-col">
+          <div class="form-group"><label>City</label><input type="text" id="ci_city"></div>
+          <div class="form-group"><label>State / Province</label><input type="text" id="ci_state_province"></div>
+          <div class="form-group"><label>Postal Code</label><input type="text" id="ci_postal_code"></div>
+        </div>
+        <div class="form-group"><label>Country</label><input type="text" id="ci_country"></div>
+      </div>
+
+      <div class="step-actions">
+        <span></span>
+        <button class="btn btn-primary" onclick="completeAndAdvance('confirm_info', 1)">Continue: Sign Agreement &#8594;</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Sign Agreement -->
+    <div class="step-panel" data-step="sign_agreement">
+      <span class="step-badge">Step 2 of 8</span>
+      <h1>Client Service Agreement</h1>
+      <p style="color:var(--color-muted)">Please review the agreement below, then sign at the bottom to confirm.</p>
+
+      <div id="csaAlreadySigned" style="display:none;">
+        <div class="status-signed">
+          <h4>&#10003; Agreement Signed</h4>
+          <p style="margin:0;font-size:.875rem;" id="signedDetails"></p>
+        </div>
+      </div>
+
+      <div id="csaContent">
+        <div class="csa-document" id="csaDocument"></div>
+
+        <div class="signature-block" id="signatureBlock">
+          <h3>Sign Below</h3>
+          <div class="sig-row">
+            <div class="sig-field">
+              <label>Full Name</label>
+              <input type="text" id="sigName" placeholder="Your full name">
+            </div>
+            <div class="sig-field">
+              <label>Title</label>
+              <input type="text" id="sigTitle" placeholder="e.g. Owner, Clinical Director">
+            </div>
+          </div>
+          <div class="sig-row">
+            <div class="sig-field">
+              <label>Email</label>
+              <input type="email" id="sigEmail" placeholder="Your email address">
+            </div>
+            <div class="sig-field">
+              <label>Date</label>
+              <input type="text" id="sigDate" readonly>
+            </div>
+          </div>
+          <div class="sig-consent">
+            <input type="checkbox" id="sigConsent">
+            <label for="sigConsent">I have read and agree to the terms of this Client Service Agreement. I understand that this constitutes a legally binding agreement between my practice and Moonraker.AI, LLC.</label>
+          </div>
+          <button class="btn btn-primary" id="signBtn" disabled onclick="signAgreement()">Sign Agreement</button>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn btn-outline" onclick="goToStep(0)">&#8592; Back</button>
+        <button class="btn btn-primary" onclick="goToStep(2)">Next: Book Your Call &#8594;</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Book Intro Call -->
+    <div class="step-panel" data-step="book_intro_call">
+      <span class="step-badge">Step 3 of 8</span>
+      <h1>Book Your Intro Call</h1>
+      <p style="color:var(--color-muted)">Schedule your intro call with Scott. This is your kickoff conversation where you will cover campaign goals, review your audit findings, walk through onboarding details, and schedule your follow-up check-in calls together.</p>
+
+
+      <div class="form-section" style="margin-bottom:1.5rem;">
+        <div style="background:var(--color-primary-subtle);border:1px solid rgba(0,212,126,.2);border-radius:12px;padding:1.25rem 1.5rem;">
+          <h3 style="font-size:1rem;margin-bottom:.75rem;color:var(--color-heading);">What to Expect on Your Intro Call</h3>
+          <p style="font-size:.875rem;color:var(--color-body);margin-bottom:1rem;">Your intro call with Scott is a collaborative kickoff where we align on your campaign strategy and make sure everything is set up for success. Here is what we will cover together:</p>
+
+          <div style="display:grid;gap:.6rem;margin-bottom:1rem;">
+            <div style="display:flex;gap:.6rem;align-items:flex-start;"><span style="color:var(--color-primary);font-weight:600;">1.</span><div><strong>Verify Platform Access</strong> <span style="color:var(--color-muted);font-size:.8rem;">- Confirm we have access to your website, Google Search Console, Analytics, and GBP</span></div></div>
+            <div style="display:flex;gap:.6rem;align-items:flex-start;"><span style="color:var(--color-primary);font-weight:600;">2.</span><div><strong>Pick Your Target Keywords</strong> <span style="color:var(--color-muted);font-size:.8rem;">- Together we will select up to 5 keywords and target pages for your campaign</span></div></div>
+            <div style="display:flex;gap:.6rem;align-items:flex-start;"><span style="color:var(--color-primary);font-weight:600;">3.</span><div><strong>Review Social Profiles and Google Marketing Account</strong> <span style="color:var(--color-muted);font-size:.8rem;">- We will audit your existing socials, review your dedicated marketing account and discuss our Rising Tide strategy</span></div></div>
+            <div style="display:flex;gap:.6rem;align-items:flex-start;"><span style="color:var(--color-primary);font-weight:600;">4.</span><div><strong>Check Booking Calendar</strong> <span style="color:var(--color-muted);font-size:.8rem;">- Confirm your booking calendar exists and is configured properly on your site</span></div></div>
+            <div style="display:flex;gap:.6rem;align-items:flex-start;"><span style="color:var(--color-primary);font-weight:600;">5.</span><div><strong>Lead Attribution Setup</strong> <span style="color:var(--color-muted);font-size:.8rem;">- We will add "How did you hear about us?" + AI Search option to your contact forms and booking</span></div></div>
+          </div>
+
+          <div style="background:var(--color-surface);border-radius:8px;padding:.85rem 1rem;border:1px solid var(--color-border);">
+            <h4 style="font-size:.85rem;margin-bottom:.5rem;color:var(--color-heading);">What to Expect Going Forward</h4>
+            <div style="display:grid;gap:.35rem;font-size:.82rem;color:var(--color-body);">
+              <div>&#8226; Content feedback turnaround: approximately 1 week</div>
+              <div>&#8226; Our response time: within 48 hours</div>
+              <div>&#8226; Initial buildout target: 4-6 weeks to complete core deliverables</div>
+              <div>&#8226; We handle all site content updates within our scope of work</div>
+              <div>&#8226; Changes to your business name, address, or phone after buildout: $300 one-time NAP update</div>
+              <div>&#8226; Additional pages beyond the initial 5: $300 per page</div>
+              <div>&#8226; WordPress plugins, email campaigns, and EHR integrations are outside our scope</div>
+            </div>
+          </div>
+
+          <div style="background:var(--color-surface);border-radius:8px;padding:.85rem 1rem;border:1px solid var(--color-border);margin-top:.75rem;display:flex;align-items:center;gap:1rem;">
+            <div style="width:36px;height:36px;border-radius:8px;background:#0F9D58;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke="white" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div style="flex:1;">
+              <strong style="font-size:.85rem;color:var(--color-heading);">Client Tracking Sheet</strong>
+              <p style="font-size:.78rem;color:var(--color-muted);margin:0;">Need a way to track where your leads are coming from? We have a free spreadsheet template you can use to log new client inquiries and attribute them to specific marketing channels.</p>
+            </div>
+            <a href="https://docs.google.com/spreadsheets/d/1N6gkmiJPAJsEMxmZG-4dfabiii7CoNCfrUDi6l1-txc/edit?gid=1346489400#gid=1346489400" target="_blank" class="btn btn-primary btn-sm" style="flex-shrink:0;white-space:nowrap;">Open Sheet</a>
+          </div>
+        </div>
+      </div>
+      <div id="callAlreadyBooked" class="status-signed" style="display:none;">
+        <h4>&#10003; Call Booked</h4>
+        <p style="margin:0;font-size:.875rem;">Your intro call is scheduled. We will send a confirmation email with details.</p>
+      </div>
+
+      <div id="calendarEmbed">
+        <div class="embed-container">
+          <iframe src="https://msg.moonraker.ai/widget/booking/ouIbhSjJ3q2VTR8U0g8z" style="height:700px;" scrolling="no"></iframe>
+        </div>
+        <div class="embed-note">After booking, click the button below to mark this step complete.</div>
+        <button class="btn btn-success" style="margin-top:1rem;" onclick="completeStep('book_intro_call')">I've Booked My Call &#10003;</button>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn btn-outline" onclick="goToStep(1)">&#8592; Back</button>
+        <button class="btn btn-primary" onclick="goToStep(3)">Next: Connect Accounts &#8594;</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Connect Accounts (Leadsie) -->
+    <div class="step-panel" data-step="connect_accounts">
+      <span class="step-badge">Step 4 of 8</span>
+      <h1>Connect Your Accounts</h1>
+      <p style="color:var(--color-muted)">We use a secure tool called Leadsie to connect to your website and Google properties. Click through the steps below to grant access to your accounts. This process takes about 5 minutes.</p>
+
+      <div id="accessAlreadyDone" class="status-signed" style="display:none;">
+        <h4>&#10003; Access Granted</h4>
+        <p style="margin:0;font-size:.875rem;">We have received your access grants. Our team will confirm everything is connected.</p>
+      </div>
+
+      <div id="leadsieEmbed">
+        <div class="embed-container">
+          <iframe src="https://app.leadsie.com/embed/connect/to/digital-access-partners/core-marketing-system" scrolling="auto" style="height:1000px;"></iframe>
+        </div>
+        <div class="embed-note">
+          <strong>Having trouble with Leadsie?</strong> No worries. You can grant access manually using these video walkthroughs:
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.75rem;">
+            <a href="https://customer-dmmj9ibzv6vjzqlm.cloudflarestream.com/f607674dec2c6566cd6b422e251929e9/watch" target="_blank" style="display:flex;align-items:center;gap:.6rem;padding:.6rem .85rem;background:var(--color-bg);border:1px solid var(--color-border);border-radius:8px;font-size:.8125rem;font-weight:500;color:var(--color-heading);text-decoration:none;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--color-primary)'" onmouseout="this.style.borderColor='var(--color-border)'"><img src="https://cdn.simpleicons.org/wordpress/21759B" alt="" style="width:18px;height:18px;flex-shrink:0;"> WordPress</a>
+            <a href="https://customer-dmmj9ibzv6vjzqlm.cloudflarestream.com/168cb629a4c9d181d5086ce445a13007/watch" target="_blank" style="display:flex;align-items:center;gap:.6rem;padding:.6rem .85rem;background:var(--color-bg);border:1px solid var(--color-border);border-radius:8px;font-size:.8125rem;font-weight:500;color:var(--color-heading);text-decoration:none;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--color-primary)'" onmouseout="this.style.borderColor='var(--color-border)'"><img src="https://cdn.simpleicons.org/squarespace/7B7B7B" alt="" style="width:18px;height:18px;flex-shrink:0;"> Squarespace</a>
+            <a href="https://customer-dmmj9ibzv6vjzqlm.cloudflarestream.com/198ae2d09c7296e1152e35291606d21a/watch" target="_blank" style="display:flex;align-items:center;gap:.6rem;padding:.6rem .85rem;background:var(--color-bg);border:1px solid var(--color-border);border-radius:8px;font-size:.8125rem;font-weight:500;color:var(--color-heading);text-decoration:none;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--color-primary)'" onmouseout="this.style.borderColor='var(--color-border)'"><img src="https://cdn.simpleicons.org/wix/0C6EFC" alt="" style="width:18px;height:18px;flex-shrink:0;"> Wix</a>
+            <a href="https://customer-dmmj9ibzv6vjzqlm.cloudflarestream.com/9e696e8222b130283ddb8ed50a77fbe3/watch" target="_blank" style="display:flex;align-items:center;gap:.6rem;padding:.6rem .85rem;background:var(--color-bg);border:1px solid var(--color-border);border-radius:8px;font-size:.8125rem;font-weight:500;color:var(--color-heading);text-decoration:none;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--color-primary)'" onmouseout="this.style.borderColor='var(--color-border)'"><img src="https://cdn.simpleicons.org/googlemaps/4285F4" alt="" style="width:18px;height:18px;flex-shrink:0;"> Google Business Profile</a>
+            <a href="https://customer-dmmj9ibzv6vjzqlm.cloudflarestream.com/18faebd5ab78038f054f6ebfbd50d259/watch" target="_blank" style="display:flex;align-items:center;gap:.6rem;padding:.6rem .85rem;background:var(--color-bg);border:1px solid var(--color-border);border-radius:8px;font-size:.8125rem;font-weight:500;color:var(--color-heading);text-decoration:none;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--color-primary)'" onmouseout="this.style.borderColor='var(--color-border)'"><img src="https://cdn.simpleicons.org/googlesearchconsole/458CF5" alt="" style="width:18px;height:18px;flex-shrink:0;"> Google Search Console</a>
+            <a href="https://customer-dmmj9ibzv6vjzqlm.cloudflarestream.com/e0a9b61076be15a379a032a39e380dc7/watch" target="_blank" style="display:flex;align-items:center;gap:.6rem;padding:.6rem .85rem;background:var(--color-bg);border:1px solid var(--color-border);border-radius:8px;font-size:.8125rem;font-weight:500;color:var(--color-heading);text-decoration:none;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--color-primary)'" onmouseout="this.style.borderColor='var(--color-border)'"><img src="https://cdn.simpleicons.org/googleanalytics/E37400" alt="" style="width:18px;height:18px;flex-shrink:0;"> Google Analytics</a>
+            <a href="https://customer-dmmj9ibzv6vjzqlm.cloudflarestream.com/6f2da151c2166021217e40d76eaddcef/watch" target="_blank" style="display:flex;align-items:center;gap:.6rem;padding:.6rem .85rem;background:var(--color-bg);border:1px solid var(--color-border);border-radius:8px;font-size:.8125rem;font-weight:500;color:var(--color-heading);text-decoration:none;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--color-primary)'" onmouseout="this.style.borderColor='var(--color-border)'"><img src="https://cdn.simpleicons.org/googletagmanager/246FDB" alt="" style="width:18px;height:18px;flex-shrink:0;"> Google Tag Manager</a>
+          </div>
+          <p style="margin:.75rem 0 0;font-size:.8125rem;">Or email us at <a href="mailto:support@moonraker.ai">support@moonraker.ai</a> and we will help you through it.</p>
+        </div>
+        <button class="btn btn-success" style="margin-top:1rem;" onclick="completeStep('connect_accounts')">Access Granted &#10003;</button>
+        <button class="btn btn-outline" style="margin-top:1rem;margin-left:.75rem;" onclick="document.getElementById('accessIssuePanel').style.display = document.getElementById('accessIssuePanel').style.display === 'none' ? 'block' : 'none'">I'm Having Issues</button>
+
+        <div id="accessIssuePanel" style="display:none;margin-top:1.25rem;background:var(--color-surface);border:1px solid var(--color-warning);border-radius:12px;padding:1.25rem;">
+          <h4 style="font-size:.9rem;margin-bottom:.5rem;color:var(--color-heading);">No problem - let us know what's going on</h4>
+          <p style="font-size:.8125rem;color:var(--color-muted);margin-bottom:.75rem;">Describe the issue below and we will troubleshoot it together on your intro call. Common issues include not knowing which Google account is connected, website login problems, or Leadsie not loading properly.</p>
+          <textarea id="access_issue_notes" style="width:100%;min-height:100px;padding:.75rem;border:1px solid var(--color-border);border-radius:8px;font-family:inherit;font-size:.875rem;background:var(--color-bg);color:var(--color-body);resize:vertical;" placeholder="e.g. I'm not sure which Google account my website is connected to..."></textarea>
+          <button class="btn btn-primary" style="margin-top:.75rem;" onclick="saveAccessIssue()">Save and Continue &#8594;</button>
+          <div class="autosave-status" id="access_issue_saved" style="margin-top:.5rem;"><span class="autosave-dot"></span> <span class="autosave-text"></span></div>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn btn-outline" onclick="goToStep(2)">&#8592; Back</button>
+        <button class="btn btn-primary" onclick="goToStep(4)">Next: Practice Details &#8594;</button>
+      </div>
+    </div>
+
+    <!-- STEP 5: Practice Details -->
+    <div class="step-panel" data-step="practice_details">
+      <span class="step-badge">Step 5 of 8</span>
+      <h1>Practice &amp; Clinical Details <span class="autosave-status" id="pd_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
+      <p style="color:var(--color-muted)">This information helps us build your service pages, write content in your voice, and target the right audience. Separate multiple items with commas.</p>
+
+      <div class="form-section">
+        <h3>Clinical Focus</h3>
+        <div class="form-group"><label>Specialties</label><input type="text" id="pd_specialties" placeholder="e.g. Anxiety, Trauma, PTSD, Couples"><div class="help-text">Separate with commas</div></div>
+        <div class="form-group"><label>Modalities / Treatment Approaches</label><input type="text" id="pd_modalities" placeholder="e.g. EMDR, CBT, Gottman, Somatic Experiencing"><div class="help-text">Separate with commas</div></div>
+        <div class="form-group"><label>Populations Treated</label><input type="text" id="pd_populations" placeholder="e.g. Adults, Teens, Couples, First Responders"><div class="help-text">Separate with commas</div></div>
+      </div>
+
+      <div class="form-section">
+        <h3>Business Details</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Average Session Cost</label><input type="text" id="pd_session_cost" placeholder="e.g. $175"></div>
+          <div class="form-group"><label>Session Frequency</label><input type="text" id="pd_session_frequency" placeholder="e.g. Weekly, Bi-weekly"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Insurance or Private Pay?</label>
+            <select id="pd_insurance"><option value="">Select...</option><option value="private_pay">Private Pay Only</option><option value="insurance">Insurance</option><option value="hybrid">Both Insurance and Private Pay</option></select>
+          </div>
+          <div class="form-group"><label>Insurance Panels (if applicable)</label><input type="text" id="pd_insurance_panels" placeholder="e.g. Aetna, Blue Cross, Cigna"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>States / Provinces Licensed In</label><input type="text" id="pd_licensed_states" placeholder="e.g. NY, PA, CA"><div class="help-text">Separate with commas</div></div>
+          <div class="form-group"><label>Number of Therapists</label><input type="number" id="pd_num_therapists" min="1" placeholder="1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Offer Free Consultation?</label>
+            <select id="pd_offers_consultation"><option value="">Select...</option><option value="true">Yes</option><option value="false">No</option></select>
+          </div>
+          <div class="form-group"><label>Consultation Length</label><input type="text" id="pd_consultation_length" placeholder="e.g. 15 minutes, 20 minutes"></div>
+        </div>
+        <div class="form-group"><label>Booking URL or Method</label><input type="url" id="pd_booking_url" placeholder="https://..."><div class="help-text">Link to your booking page, SimplePractice portal, etc.</div></div>
+      </div>
+
+      <div class="form-section">
+        <h3>Campaign &amp; Content Strategy</h3>
+        <div class="form-group"><label>Primary Campaign Objective</label><textarea id="pd_campaign_objectives" placeholder="e.g. Increase visibility for private pay clients, grow group practice, establish AI presence..."></textarea></div>
+        <div class="form-row">
+          <div class="form-group"><label>Current Weekly Caseload</label><input type="text" id="pd_current_caseload" placeholder="e.g. 15 clients/week"></div>
+          <div class="form-group"><label>Target Weekly Caseload</label><input type="text" id="pd_target_caseload" placeholder="e.g. 25 clients/week"></div>
+        </div>
+        <div class="form-group"><label>Top 5 Target Keywords / Services</label><input type="text" id="pd_target_keywords" placeholder="e.g. anxiety therapy Austin, EMDR Austin, trauma therapist near me"><div class="help-text">Separate with commas</div></div>
+        <div class="form-group"><label>Anything to Completely Omit from Content?</label><input type="text" id="pd_content_to_omit" placeholder="e.g. Do not mention specific insurance providers, do not use the word 'fix'"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Pronoun Usage in Content</label>
+            <select id="pd_pronoun_usage"><option value="">Select...</option><option value="I/my">I / My (solo voice)</option><option value="we/our">We / Our (team voice)</option></select>
+          </div>
+          <div class="form-group"><label>Content Approval Preference</label>
+            <select id="pd_content_approval"><option value="">Select...</option><option value="review_all">Review everything before publishing</option><option value="trust_team">Trust the team to publish</option></select>
+          </div>
+        </div>
+        <div class="form-group"><label>Links to Existing Writing / Brand Voice Samples</label><textarea id="pd_brand_voice_sources" placeholder="Link to blog posts, articles, or other writing that reflects your voice. One per line." style="min-height:80px;"></textarea></div>
+        <div class="form-group"><label>Other Marketing Currently Running</label><input type="text" id="pd_current_marketing" placeholder="e.g. Google Ads, Psychology Today, Instagram"></div>
+      </div>
+
+      <div class="form-section">
+        <h3>Ideal Client &amp; Differentiators</h3>
+        <div class="form-group"><label>Describe Your Ideal Client</label><textarea id="pd_ideal_client" placeholder="Who is the person you most want to work with? What are they going through?"></textarea></div>
+        <div class="form-group"><label>Why Do Clients Choose You Over Competitors?</label><textarea id="pd_differentiators" placeholder="What makes your practice unique? Special training, approach, population focus?"></textarea></div>
+        <div class="form-group"><label>What Can Clients Expect About Your Intake Process?</label><textarea id="pd_intake_process" placeholder="Walk us through what happens when a new client reaches out..."></textarea></div>
+        <div class="form-group"><label>What Can Clients Expect After Care is Established?</label><textarea id="pd_after_care" placeholder="Session cadence, communication between sessions, treatment planning..."></textarea></div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn btn-outline" onclick="goToStep(3)">&#8592; Back</button>
+        <button class="btn btn-primary" onclick="completeAndAdvance('practice_details', 5)">Continue: Bio Materials &#8594;</button>
+      </div>
+    </div>
+
+    <!-- STEP 6: Bio Materials -->
+    <div class="step-panel" data-step="bio_materials">
+      <span class="step-badge">Step 6 of 8</span>
+      <h1>Bio Page Materials <span class="autosave-status" id="bio_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
+      <p style="color:var(--color-muted)">We build a detailed bio page for each therapist at your practice. This info feeds directly into your bio page, schema markup, and AI visibility. Start with the primary therapist and we can add more later.</p>
+
+      <div class="form-section">
+        <h3>Primary Therapist</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Full Name</label><input type="text" id="bio_name"></div>
+          <div class="form-group"><label>Credentials</label><input type="text" id="bio_credentials" placeholder="e.g. PhD, LCSW, LMFT"></div>
+        </div>
+        <div class="form-group"><label>NPI Number (US) or Registration Number</label><input type="text" id="bio_npi" placeholder="e.g. 1234567890"><div class="help-text">We use this to verify your profile in the NPI Registry and add it to schema</div></div>
+        <div class="form-group"><label>Professional Bio</label><textarea id="bio_professional_bio" style="min-height:120px" placeholder="A narrative description of your background, approach, and what drives your work. This becomes the main content of your bio page."></textarea></div>
+        <div class="form-group"><label>Clinical Approach Keywords</label><input type="text" id="bio_clinical_approach" placeholder="e.g. trauma-informed, attachment-based, holistic, mind-body"><div class="help-text">How you describe your therapeutic style, separated with commas</div></div>
+      </div>
+
+      <div class="form-section" style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:1.5rem;margin-bottom:2rem;">
+        <h4 style="margin:0 0 .75rem;">How We Verify Your Credentials</h4>
+        <p style="font-size:.875rem;color:var(--color-body);margin-bottom:.5rem;">AI systems and search engines need verifiable evidence. Here is what works best, in order of strength:</p>
+        <p style="font-size:.875rem;margin-bottom:.35rem;"><strong style="color:var(--color-success);">Best:</strong> A link to your public profile on the issuing organization's website (e.g. your EMDRIA profile page, your state license board lookup, your NPI Registry entry). This is the strongest proof because it comes directly from the source.</p>
+        <p style="font-size:.875rem;margin-bottom:.35rem;"><strong style="color:var(--color-warning);">Good:</strong> A unique image of your actual diploma, license certificate, or certification document. Universities and programs may not have public directories, so a photo of the document itself is the next best thing.</p>
+        <p style="font-size:.875rem;margin-bottom:0;"><strong style="color:var(--color-info);">Helpful:</strong> A link to the landing page of a program or training (e.g. a CE course). Even if it does not prove your attendance, it shows AI that the program is real and you are referencing legitimate training.</p>
+      </div>
+
+      <div class="form-section">
+        <h3>Education &amp; Licenses</h3>
+        <div class="form-group"><label>Education (Institution, Degree, Year)</label><textarea id="bio_education" placeholder="e.g. University of Michigan, MSW, 2015&#10;Columbia University, BA Psychology, 2012"></textarea><div class="help-text">One per line</div></div>
+        <div class="form-group"><label>License Details (State, Type, Number, Verification URL)</label><textarea id="bio_licenses" placeholder="e.g. NY, LCSW, 123456, https://verify.op.nysed.gov/...&#10;PA, LCSW, 789012, https://www.pals.pa.gov/..."></textarea><div class="help-text">One per line. Include the URL where the license can be verified online</div></div>
+        <div class="form-group"><label>Board Certifications</label><textarea id="bio_certifications" placeholder="e.g. EMDRIA Certified EMDR Therapist, https://emdria.org/verify/...&#10;Gottman Level 3 Trained"></textarea><div class="help-text">One per line. Include verification URLs when available</div></div>
+      </div>
+
+      <div class="form-section">
+        <h3>Professional Affiliations</h3>
+        <div class="form-group"><label>Associations / Organizations</label><textarea id="bio_associations" placeholder="e.g. American Psychological Association (APA)&#10;EMDRIA&#10;National Register of Health Service Psychologists"></textarea><div class="help-text">One per line</div></div>
+        <div class="form-group"><label>Awards &amp; Recognitions</label><input type="text" id="bio_awards" placeholder="Any awards, recognitions, or media features"></div>
+      </div>
+
+      <div class="form-section">
+        <h3>Media &amp; Publications</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;">Have you been featured anywhere? Books, podcasts, webinars, YouTube videos, news articles, blog features - any third-party media helps AI systems recognize you as an authority.</p>
+        <div class="form-group"><label>Media Appearances &amp; Features</label><textarea id="bio_media" style="min-height:100px;" placeholder="e.g. Guest on The Therapy Chat Podcast, Episode 142, https://...&#10;Featured in Psychology Today article on EMDR, https://...&#10;Speaker at EMDRIA 2025 Conference&#10;Chapter contributor: Healing Trauma in First Responders (2024)"></textarea><div class="help-text">One per line. Include links where available.</div></div>
+      </div>
+
+
+
+      <div class="step-actions">
+        <button class="btn btn-outline" onclick="goToStep(4)">&#8592; Back</button>
+        <button class="btn btn-primary" onclick="completeAndAdvance('bio_materials', 6)">Continue: Social Profiles &#8594;</button>
+      </div>
+    </div>
+
+    <!-- STEP 7: Social Profiles -->
+    <div class="step-panel" data-step="social_profiles">
+      <span class="step-badge">Step 7 of 8</span>
+      <h1>Social Profiles <span class="autosave-status" id="sp_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
+      <p style="color:var(--color-muted)">Google crawls social profiles to verify your practice is tied to a real person. We build out 9 interconnected profiles as part of our Rising Tide strategy. Please share any existing profile URLs below.</p>
+
+      <div class="form-section">
+        <h3>Existing Profiles</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:1rem;">Enter the URL for any profiles that already exist. Leave blank if you do not have one yet.</p>
+        <div id="socialProfilesList">
+          <div class="social-row"><span class="social-platform">YouTube</span><input type="url" id="sp_youtube" placeholder="https://youtube.com/@..."></div>
+          <div class="social-row"><span class="social-platform">LinkedIn</span><input type="url" id="sp_linkedin" placeholder="https://linkedin.com/company/..."></div>
+          <div class="social-row"><span class="social-platform">Facebook</span><input type="url" id="sp_facebook" placeholder="https://facebook.com/..."></div>
+          <div class="social-row"><span class="social-platform">Instagram</span><input type="url" id="sp_instagram" placeholder="https://instagram.com/..."></div>
+          <div class="social-row"><span class="social-platform">Quora</span><input type="url" id="sp_quora" placeholder="https://quora.com/..."></div>
+          <div class="social-row"><span class="social-platform">Pinterest</span><input type="url" id="sp_pinterest" placeholder="https://pinterest.com/..."></div>
+          <div class="social-row"><span class="social-platform">TikTok</span><input type="url" id="sp_tiktok" placeholder="https://tiktok.com/@..."></div>
+          <div class="social-row"><span class="social-platform">X</span><input type="url" id="sp_x" placeholder="https://x.com/..."></div>
+        </div>
+      </div>
+
+
+      <div class="form-section" style="margin-top:1.5rem;">
+        <h3>Platform Access for Your Campaign</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:.5rem;">We need admin access to the following business pages and accounts to manage your Rising Tide social strategy. Because these are tied to your personal profiles on each platform, only you can grant access.</p>
+        <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:1rem;">Each walkthrough covers how to create the page if you don't have one yet, and how to grant us admin access. Completing these before your intro call will save significant time.</p>
+
+        <div style="display:grid;gap:.65rem;">
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:.85rem 1rem;display:flex;align-items:center;gap:.85rem;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#0077B5;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            </div>
+            <div style="flex:1;"><strong style="font-size:.88rem;">LinkedIn Business Page</strong><br><span style="font-size:.78rem;color:var(--color-muted);">Create or grant admin access via your personal LinkedIn profile</span></div>
+            <a href="https://www.loom.com/share/7d44987ce6fd4a95a69f9e4a22f8bd29" target="_blank" class="btn btn-outline btn-sm" style="flex-shrink:0;">Watch Walkthrough</a>
+          </div>
+
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:.85rem 1rem;display:flex;align-items:center;gap:.85rem;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#1877F2;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            </div>
+            <div style="flex:1;"><strong style="font-size:.88rem;">Facebook Business Page</strong><br><span style="font-size:.78rem;color:var(--color-muted);">Create or grant admin access via your personal Facebook profile</span></div>
+            <a href="https://www.loom.com/share/f2f6da6de7fc40be9b4d353589f8e5df" target="_blank" class="btn btn-outline btn-sm" style="flex-shrink:0;">Watch Walkthrough</a>
+          </div>
+
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:.85rem 1rem;display:flex;align-items:center;gap:.85rem;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#B92B27;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <img src="https://cdn.simpleicons.org/quora/FFFFFF" alt="" style="width:20px;height:20px;">
+            </div>
+            <div style="flex:1;"><strong style="font-size:.88rem;">Quora Space</strong><br><span style="font-size:.78rem;color:var(--color-muted);">Create from your own device, then share the link so we can be invited as admin</span></div>
+            <a href="https://www.loom.com/share/e0333b3a3a924f4486095ae490263c04" target="_blank" class="btn btn-outline btn-sm" style="flex-shrink:0;">Watch Walkthrough</a>
+          </div>
+
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:.85rem 1rem;display:flex;align-items:center;gap:.85rem;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#4285F4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.372 0 0 5.373 0 12s5.372 12 12 12c6.627 0 12-5.373 12-12S18.627 0 12 0zm.14 19.018c-3.868 0-7-3.14-7-7.018s3.132-7.018 7-7.018c1.89 0 3.47.697 4.682 1.829l-1.974 1.978c-.517-.49-1.42-1.06-2.708-1.06-2.31 0-4.187 1.916-4.187 4.271 0 2.355 1.877 4.271 4.187 4.271 2.7 0 3.71-1.938 3.868-2.942h-3.868v-2.585h6.447c.068.39.117.78.117 1.297 0 4.072-2.72 6.977-6.564 6.977z"/></svg>
+            </div>
+            <div style="flex:1;"><strong style="font-size:.88rem;">Google Marketing Account</strong><br><span style="font-size:.78rem;color:var(--color-muted);">A dedicated Google account for your marketing. Create via Workspace (marketing@practicename.com) or Gmail (practicemarketing@gmail.com). Share the email and password with us.</span></div>
+            <a href="https://www.loom.com/share/08764310140945849d1759dfab778c4e" target="_blank" class="btn btn-outline btn-sm" style="flex-shrink:0;">Watch Walkthrough</a>
+          </div>
+
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:.85rem 1rem;display:flex;align-items:center;gap:.85rem;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#FF0000;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            </div>
+            <div style="flex:1;"><strong style="font-size:.88rem;">YouTube Channel</strong><br><span style="font-size:.78rem;color:var(--color-muted);">If you have a channel, invite us as Manager using your Google marketing account. If not, the walkthrough covers setup.</span></div>
+            <a href="https://www.loom.com/share/4cd110ef6ed84e918ed5c360382409e3" target="_blank" class="btn btn-outline btn-sm" style="flex-shrink:0;">Watch Walkthrough</a>
+          </div>
+        </div>
+      </div>
+      <div class="form-section">
+        <h3>Platforms to Skip</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;">Some clients prefer to omit certain platforms for personal reasons. Let us know if there are any you would like us to skip.</p>
+        <div class="form-group"><label>Platforms to Omit (optional)</label><input type="text" id="sp_omit" placeholder="e.g. TikTok, X"><div class="help-text">We will not create profiles on these platforms</div></div>
+      </div>
+
+      <div class="form-section">
+        <h3>Directories &amp; Listings</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:1rem;">Directory profiles are a key part of your credibility and visibility. Enter the URL for any listings you already have. Leave blank if you are not on a platform yet.</p>
+
+        <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Google &amp; Major Directories</h4>
+        <div class="social-row"><span class="social-platform">Google Business Profile</span><input type="url" id="sp_gbp" placeholder="https://google.com/maps/place/..."></div>
+        <div class="social-row"><span class="social-platform">Psychology Today</span><input type="url" id="sp_psychtoday" placeholder="https://psychologytoday.com/us/therapists/..."></div>
+        <div class="social-row"><span class="social-platform">Yelp</span><input type="url" id="dir_yelp" placeholder="https://yelp.com/biz/..."></div>
+
+        <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Therapy Directories</h4>
+        <div class="social-row"><span class="social-platform">GoodTherapy</span><input type="url" id="dir_goodtherapy" placeholder="https://goodtherapy.org/therapists/profile/..."></div>
+        <div class="social-row"><span class="social-platform">TherapyDen</span><input type="url" id="dir_therapyden" placeholder="https://therapyden.com/therapist/..."></div>
+        <div class="social-row"><span class="social-platform">Zencare</span><input type="url" id="dir_zencare" placeholder="https://zencare.co/therapist/..."></div>
+        <div class="social-row"><span class="social-platform">Theravive</span><input type="url" id="dir_theravive" placeholder="https://theravive.com/..."></div>
+        <div class="social-row"><span class="social-platform">Monarch</span><input type="url" id="dir_monarch" placeholder="https://monarchmh.com/..."></div>
+        <div class="social-row"><span class="social-platform">Open Path</span><input type="url" id="dir_openpath" placeholder="https://openpathcollective.org/..."></div>
+        <div class="social-row"><span class="social-platform">Inclusive Therapists</span><input type="url" id="dir_inclusive" placeholder="https://inclusivetherapists.com/..."></div>
+        <div class="social-row"><span class="social-platform">Network Therapy</span><input type="url" id="dir_networktherapy" placeholder="https://networktherapy.com/..."></div>
+
+        <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Insurance &amp; Marketplace Platforms</h4>
+        <div class="social-row"><span class="social-platform">Headway</span><input type="url" id="dir_headway" placeholder="https://headway.co/providers/..."></div>
+        <div class="social-row"><span class="social-platform">Alma</span><input type="url" id="dir_alma" placeholder="https://helloalma.com/providers/..."></div>
+        <div class="social-row"><span class="social-platform">Zocdoc</span><input type="url" id="dir_zocdoc" placeholder="https://zocdoc.com/doctor/..."></div>
+        <div class="social-row"><span class="social-platform">Grow Therapy</span><input type="url" id="dir_growtherapy" placeholder="https://growtherapy.com/provider/..."></div>
+        <div class="social-row"><span class="social-platform">SonderMind</span><input type="url" id="dir_sondermind" placeholder="https://sondermind.com/providers/..."></div>
+
+        <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Specialty &amp; Community Directories</h4>
+        <div class="social-row"><span class="social-platform">EMDRIA</span><input type="url" id="dir_emdria" placeholder="https://emdria.org/find-an-emdr-therapist/..."></div>
+        <div class="social-row"><span class="social-platform">IFS Institute</span><input type="url" id="dir_ifs" placeholder="https://ifs-institute.com/..."></div>
+        <div class="social-row"><span class="social-platform">AAMFT Locator</span><input type="url" id="dir_aamft" placeholder="https://aamft.org/..."></div>
+        <div class="social-row"><span class="social-platform">Therapy for Black Girls</span><input type="url" id="dir_tfbg" placeholder="https://therapyforblackgirls.com/..."></div>
+        <div class="social-row"><span class="social-platform">Latinx Therapy</span><input type="url" id="dir_latinx" placeholder="https://latinxtherapy.com/..."></div>
+        <div class="social-row"><span class="social-platform">Asian MH Collective</span><input type="url" id="dir_amhc" placeholder="https://asianmhc.org/..."></div>
+
+        <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Canadian Directories</h4>
+        <div class="social-row"><span class="social-platform">eMentalHealth</span><input type="url" id="dir_ementalhealth" placeholder="https://ementalhealth.ca/..."></div>
+        <div class="social-row"><span class="social-platform">First Session</span><input type="url" id="dir_firstsession" placeholder="https://firstsession.com/..."></div>
+
+        <h4 style="font-size:.9rem;margin:1.5rem 0 .5rem;color:var(--color-heading);">Other Directories</h4>
+        <p style="color:var(--color-muted);font-size:.8125rem;margin-bottom:.75rem;">Any directories not listed above? Add them here, one per line with the directory name and your profile URL.</p>
+        <div class="form-group"><textarea id="dir_other" style="min-height:80px;" placeholder="e.g. AASECT Directory, https://aasect.org/referral-directory/...&#10;National Register, https://findapsychologist.org/...&#10;SE Directory, https://directory.traumahealing.org/..."></textarea></div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn btn-outline" onclick="goToStep(5)">&#8592; Back</button>
+        <button class="btn btn-primary" onclick="completeAndAdvance('social_profiles', 7)">Continue: Google Drive &#8594;</button>
+      </div>
+    </div>
+
+    <!-- STEP 8: Google Drive -->
+    <div class="step-panel" data-step="checkins_and_drive">
+      <span class="step-badge">Step 8 of 8</span>
+      <h1>Your Google Drive Folder</h1>
+      <p style="color:var(--color-muted)">Your shared Google Drive folder is where you can upload creative assets, documents, and images for your campaign. We check this folder regularly.</p>
+
+      <div id="driveFolderSection">
+        <a id="driveFolderLink" href="#" target="_blank" class="drive-card" style="margin-bottom:2rem;display:block;text-decoration:none;cursor:pointer;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 28px rgba(0,0,0,.07)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" alt="Google Drive" style="width:48px;height:48px;margin:0 auto .75rem;display:block;">
+          <h4>Open Your Shared Folder</h4>
+          <p style="color:var(--color-muted);font-size:.875rem;margin:0;">Tap here to open your shared Google Drive folder</p>
+        </a>
+      </div>
+
+      <div class="form-section">
+        <h3>What to Upload</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;">The more materials you provide, the stronger your campaign will be. Here is what helps most:</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0;">
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1.25rem;">
+            <strong style="display:block;margin-bottom:.35rem;">&#128247; Headshots &amp; Photos</strong>
+            <p style="font-size:.8125rem;color:var(--color-muted);margin:0;">Professional headshot for your bio page, team photos, office photos. Real images build trust with clients and AI systems.</p>
+          </div>
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1.25rem;">
+            <strong style="display:block;margin-bottom:.35rem;">&#127891; Diplomas &amp; Licenses</strong>
+            <p style="font-size:.8125rem;color:var(--color-muted);margin:0;">Photos of diplomas, license certificates, and certifications. These serve as visual verification on your bio page.</p>
+          </div>
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1.25rem;">
+            <strong style="display:block;margin-bottom:.35rem;">&#127912; Logos &amp; Branding</strong>
+            <p style="font-size:.8125rem;color:var(--color-muted);margin:0;">Practice logo, brand colors, any existing design assets you would like us to incorporate.</p>
+          </div>
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1.25rem;">
+            <strong style="display:block;margin-bottom:.35rem;">&#128196; Documents</strong>
+            <p style="font-size:.8125rem;color:var(--color-muted);margin:0;">Endorsement letters, media features, published articles, or any other materials that showcase your expertise.</p>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-success" onclick="completeStep('checkins_and_drive')">Complete Onboarding &#10003;</button>
+
+      <div class="step-actions">
+        <button class="btn btn-outline" onclick="goToStep(6)">&#8592; Back</button>
+        <a href="" id="dashboardLink" class="btn btn-primary">Go to Dashboard &#8594;</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer-bar" id="footerBar">Confidential &middot; &copy; 2026 Moonraker AI &middot; <a href="https://moonraker.ai">moonraker.ai</a></div>
+
+<script src="https://msg.moonraker.ai/js/form_embed.js" type="text/javascript"></script>
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // CONFIG
+  // ============================================================
+  var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
+
+  var pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
+  var CLIENT_SLUG = pathParts[0] || '';
+
+  if (!CLIENT_SLUG) { document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">No client specified.</p>'; return; }
+
+  var STEPS = [
+    { key: 'confirm_info', label: 'Confirm Info', num: 1 },
+    { key: 'sign_agreement', label: 'Sign Agreement', num: 2 },
+    { key: 'book_intro_call', label: 'Book Intro Call', num: 3 },
+    { key: 'connect_accounts', label: 'Connect Accounts', num: 4 },
+    { key: 'practice_details', label: 'Practice Details', num: 5 },
+    { key: 'bio_materials', label: 'Bio Materials', num: 6 },
+    { key: 'social_profiles', label: 'Social Profiles', num: 7 },
+    { key: 'checkins_and_drive', label: 'Google Drive', num: 8 }
+  ];
+
+  var contact = null;
+  var stepData = {};
+  var currentStep = 0;
+
+  // ============================================================
+  // SUPABASE
+  // ============================================================
+  function sbHeaders() { return { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Accept': 'application/json', 'Content-Type': 'application/json' }; }
+
+  function sbFetch(table, query) {
+    return fetch(SB_URL + '/rest/v1/' + table + '?' + query, { headers: sbHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  }
+
+  function sbPatch(table, query, body) {
+    var h = sbHeaders();
+    h['Prefer'] = 'return=representation';
+    return fetch(SB_URL + '/rest/v1/' + table + '?' + query, { method: 'PATCH', headers: h, body: JSON.stringify(body) })
+      .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  }
+
+  function sbPost(table, body) {
+    var h = sbHeaders();
+    h['Prefer'] = 'return=representation';
+    return fetch(SB_URL + '/rest/v1/' + table, { method: 'POST', headers: h, body: JSON.stringify(body) })
+      .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  }
+
+  // Route through /api/action (uses service role key, bypasses RLS)
+  function apiAction(action, table, filters, data) {
+    return fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: action, table: table, filters: filters || undefined, data: data })
+    }).then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  }
+
+  // ============================================================
+  // STEP NAVIGATION
+  // ============================================================
+  function buildNav() {
+    var nav = document.getElementById('stepNav');
+    nav.innerHTML = '';
+    STEPS.forEach(function(s, i) {
+      var status = stepData[s.key] || 'pending';
+      var cls = 'step-nav-item';
+      if (i === currentStep) cls += ' active';
+      if (status === 'complete') cls += ' complete';
+      var icon = status === 'complete' ? '&#10003;' : s.num;
+      var li = document.createElement('li');
+      li.className = cls;
+      li.innerHTML = '<span class="step-num">' + icon + '</span><span class="step-label">' + s.label + '</span>';
+      li.onclick = function() { goToStep(i); };
+      nav.appendChild(li);
+    });
+    updateProgress();
+  }
+
+  function updateProgress() {
+    var done = 0;
+    STEPS.forEach(function(s) { if (stepData[s.key] === 'complete') done++; });
+    document.getElementById('progressLabel').textContent = done + ' of ' + STEPS.length + ' complete';
+    document.getElementById('progressFill').style.width = ((done / STEPS.length) * 100) + '%';
+  }
+
+  window.goToStep = function(idx) {
+    if (idx < 0 || idx >= STEPS.length) return;
+    currentStep = idx;
+    document.querySelectorAll('.step-panel').forEach(function(p, i) {
+      p.classList.toggle('active', i === idx);
+    });
+    buildNav();
+    window.scrollTo(0, 0);
+  };
+
+  // ============================================================
+  // COMPLETE A STEP
+  // ============================================================
+  window.completeStep = function(stepKey) {
+    stepData[stepKey] = 'complete';
+    buildNav();
+
+    // Update Supabase
+    sbPatch('onboarding_steps', 'contact_id=eq.' + contact.id + '&step_key=eq.' + stepKey,
+      { status: 'complete', completed_at: new Date().toISOString() }
+    ).then(function() {
+      console.log('Step saved:', stepKey);
+    }).catch(function(err) {
+      console.error('Failed to save step:', err);
+    });
+
+    // Update UI for embed steps - show completion banner (keep content visible)
+    if (stepKey === 'book_intro_call') {
+      document.getElementById('callAlreadyBooked').style.display = 'block';
+    }
+    if (stepKey === 'connect_accounts') {
+      document.getElementById('accessAlreadyDone').style.display = 'block';
+    }
+  };
+
+  // ============================================================
+  // COMPLETE AND ADVANCE (save + mark complete + go to next step)
+  // ============================================================
+  window.completeAndAdvance = function(stepKey, nextStepIndex) {
+    var saveFns = {
+      'confirm_info': saveConfirmInfo,
+      'practice_details': savePracticeDetails,
+      'bio_materials': saveBioMaterials,
+      'social_profiles': saveSocialProfiles
+    };
+    var fn = saveFns[stepKey];
+    if (fn) {
+      fn().then(function() {
+        completeStep(stepKey);
+        goToStep(nextStepIndex);
+      }).catch(function(err) {
+        console.error('Save failed:', err);
+        // Still advance even if save fails - autosave will retry
+        completeStep(stepKey);
+        goToStep(nextStepIndex);
+      });
+    } else {
+      completeStep(stepKey);
+      goToStep(nextStepIndex);
+    }
+  };
+
+  // ============================================================
+  // SAVE ACCESS ISSUE NOTES
+  // ============================================================
+  window.saveAccessIssue = function() {
+    var notes = document.getElementById('access_issue_notes').value.trim();
+    if (!notes) { alert('Please describe the issue so we can help on your call.'); return; }
+    // Save notes to onboarding_steps for connect_accounts
+    sbPatch('onboarding_steps', 'contact_id=eq.' + contact.id + '&step_key=eq.connect_accounts',
+      { status: 'in_progress', notes: notes }
+    ).then(function() {
+      stepData['connect_accounts'] = 'in_progress';
+      buildNav();
+      showAutoSave('access_issue_saved', 'saved');
+      // Advance to next step after brief delay
+      setTimeout(function() { goToStep(4); }, 800);
+    }).catch(function(err) {
+      console.error('Failed to save issue notes:', err);
+      showAutoSave('access_issue_saved', 'error');
+    });
+  };
+
+  // ============================================================
+  // AUTOSAVE SYSTEM
+  // ============================================================
+  var autoSaveTimers = {};
+
+  function showAutoSave(statusId, state) {
+    var el = document.getElementById(statusId);
+    if (!el) return;
+    var textEl = el.querySelector('.autosave-text');
+    el.className = 'autosave-status visible ' + state;
+    if (state === 'saving') { textEl.textContent = 'Saving...'; }
+    else if (state === 'saved') { textEl.textContent = 'Saved'; setTimeout(function() { el.classList.remove('visible'); }, 2500); }
+    else if (state === 'error') { textEl.textContent = 'Save failed'; setTimeout(function() { el.classList.remove('visible'); }, 4000); }
+  }
+
+  function setupAutosave(panelSelector, saveFn, statusId, delay) {
+    var panel = document.querySelector(panelSelector);
+    if (!panel) return;
+    var inputs = panel.querySelectorAll('input, textarea, select');
+    inputs.forEach(function(input) {
+      var eventType = (input.tagName === 'SELECT') ? 'change' : 'input';
+      input.addEventListener(eventType, function() {
+        if (autoSaveTimers[statusId]) clearTimeout(autoSaveTimers[statusId]);
+        showAutoSave(statusId, 'saving');
+        autoSaveTimers[statusId] = setTimeout(function() {
+          saveFn().then(function() {
+            showAutoSave(statusId, 'saved');
+          }).catch(function() {
+            showAutoSave(statusId, 'error');
+          });
+        }, delay || 1500);
+      });
+    });
+  }
+
+  // ============================================================
+  // CSA RENDERING
+  // ============================================================
+  function renderCSA() {
+    var clientName = (contact.first_name || '') + ' ' + (contact.last_name || '');
+    if (contact.credentials) clientName += ', ' + contact.credentials;
+    var practiceName = contact.practice_name || 'the Client';
+    var addr = [contact.practice_address_line1, contact.city, contact.state_province, contact.postal_code, contact.country].filter(Boolean).join(', ');
+    var planLabel = 'Per-location CORE Marketing Campaign';
+    if (contact.plan_type === 'annual') planLabel = '12-Month CORE Marketing Campaign';
+    else if (contact.plan_type === 'quarterly') planLabel = '3-Month CORE Marketing Campaign';
+    else if (contact.plan_type === 'monthly') planLabel = 'Month-to-Month CORE Marketing Campaign';
+
+    var html = '<div class="csa-header">' +
+      '<h3>Moonraker Client Service Agreement</h3>' +
+      '<p style="margin:0;font-size:.875rem;color:var(--color-muted)">This Client Service Agreement ("the Agreement") is entered into between:</p>' +
+      '<p style="margin:.5rem 0 0;font-size:.875rem;"><strong>Moonraker.AI, LLC</strong>, a Massachusetts limited liability company, located at 119 Oliver St, Easthampton, MA 01027 ("Moonraker")</p>' +
+      '<p style="margin:.25rem 0 0;font-size:.875rem;">and</p>' +
+      '<p style="margin:.25rem 0 0;font-size:.875rem;"><strong><span class="dynamic-field">' + practiceName + '</span></strong>' + (addr ? ', ' + addr : '') + ' ("the Client")</p>' +
+      '<p style="margin:.75rem 0 0;font-size:.8125rem;color:var(--color-muted);">Plan: <span class="dynamic-field">' + planLabel + '</span></p>' +
+      '</div>';
+
+    html += '<h4>Purpose of the Agreement</h4>' +
+      '<p>The purpose of the Agreement is to set a clear, mutual understanding between Moonraker and the Client regarding the scope, objectives, and deliverables of the digital marketing services provided by Moonraker to the Client ("the Services"). It outlines the details of the Services, while also specifying the Client\'s responsibilities. The Agreement is essential to ensure that both parties are aligned on the goals, timelines, and measurable outcomes of the Services, thus minimizing misunderstandings and setting a clear path for collaboration and success.</p>';
+
+    html += '<h4>Scope of Services and Limitations</h4>' +
+      '<p>Moonraker is your dedicated marketing and SEO team, and our mission is simple: to help potential clients find your practice when they\'re searching for the support you provide. To ensure there is clarity on what\'s included in our partnership, it\'s important to note what Moonraker does and doesn\'t handle. The sections below outline exactly what services Moonraker provides, what falls outside our expertise, and how we\'ll work together when questions arise.</p>';
+
+    html += '<h4>What Moonraker DOES Provide</h4>' +
+      '<ul><li>Digital marketing strategy</li><li>Initial campaign setup and configuration</li><li>Technical website optimization</li><li>Search Engine Optimization (SEO) and Answer Engine Optimization (AEO)</li></ul>' +
+      '<p>The complete scope of your specific project is outlined in the Statement of Work section of this Agreement.</p>';
+
+    html += '<h4>What Moonraker Does NOT Provide</h4>' +
+      '<p><strong>Website Infrastructure and Hosting:</strong> Website hosting services or server management, ongoing security monitoring, patches, or updates, SSL certificate management, website backups, DNS or domain management, ongoing website maintenance beyond SEO-related updates, or installation and management of website plugins that fall outside our immediate SEO work.</p>' +
+      '<p><strong>Third-Party Platform Management:</strong> Ongoing management, technical support, or troubleshooting for third-party platforms, including: Electronic Health Records (EHR) systems, booking and scheduling platforms, CRM systems, email marketing platforms, payment processing systems, communication tools, practice management software, and any other third-party applications or services.</p>' +
+      '<p><em>Important Clarification:</em> When we perform initial setup or configuration of platforms like your booking calendar and communication tools as part of your Statement of Work, this is a one-time implementation. Ongoing management, updates, troubleshooting, or monitoring of these platforms is not included unless explicitly stated in your monthly deliverables.</p>' +
+      '<p><strong>HIPAA Compliance and Regulatory Consulting:</strong> Moonraker does not provide legal, compliance, or regulatory consulting services of any kind, including HIPAA compliance guidance or auditing, healthcare regulatory compliance advice, data privacy regulation guidance (GDPR, CCPA, etc.), professional licensing requirements, industry-specific compliance standards, or Business Associate Agreement (BAA) consulting beyond marketing services.</p>';
+
+    html += '<h4>The Gray Area (When We\'ll Still Help)</h4>' +
+      '<p><strong>We WILL:</strong> Answer questions about tools and integrations we installed (even months after setup), help troubleshoot tracking codes or analytics we implemented, guide you through basic fixes for marketing-related issues, point you toward the right resources or vendors for issues we can\'t handle, and provide reasonable support for minor issues related to our initial work.</p>' +
+      '<p><strong>We WON\'T:</strong> Act as ongoing technical support for your EHR or booking platform, monitor your website for security vulnerabilities or breaches, provide general IT support for technology issues, take responsibility for third-party platform outages or functionality issues, guarantee the ongoing functionality of platforms we don\'t control, or install and manage website plugins that fall outside our immediate SEO work.</p>' +
+      '<p>If you\'re ever unsure whether something falls within our scope, just ask. We\'ll give you a clear, honest answer and point you in the right direction if it\'s outside our expertise.</p>';
+
+    html += '<h4>Your Responsibilities as the Client</h4>' +
+      '<p><strong>Platform Selection and Management:</strong> Selecting appropriate third-party service providers and platforms, ensuring all third-party platforms meet your compliance and security requirements, managing user access, permissions, and security settings for all platforms, and reviewing platform terms of service and privacy policies.</p>' +
+      '<p><strong>Compliance and Regulatory Matters:</strong> Ensuring your business operations, website, and third-party platforms comply with applicable laws and regulations (HIPAA, state regulations, etc.), consulting with legal or compliance professionals when guidance is needed, and implementing required privacy policies, terms of service, and consent mechanisms on your website.</p>' +
+      '<p><strong>Data and Security Management:</strong> Monitoring for and responding to security incidents or data breaches, maintaining backups of all data and systems, coordinating with third-party platform vendors for support and issue resolution, and implementing appropriate security measures to protect client data.</p>' +
+      '<p><strong>Website and Infrastructure:</strong> Maintaining website hosting, security updates, and backups, ensuring your website platform and plugins stay updated, and managing domain registration and DNS settings.</p>';
+
+    html += '<h4>Limited Warranties for Integration Work</h4>' +
+      '<p><strong>Our Responsibility:</strong> Correct technical implementation of the integration at the time of installation, following industry best practices for implementation, testing the integration to ensure it works at the time of setup, and providing documentation or basic guidance on how the integration functions.</p>' +
+      '<p><strong>Our Limitations:</strong> We make no warranties regarding the security, compliance, or ongoing performance of third-party platforms. We are not responsible for changes made by third-party platform providers after our initial implementation, issues caused by platform updates, service outages, or policy changes, or compliance violations related to your selection or use of third-party platforms.</p>' +
+      '<p><strong>Your Responsibility:</strong> Vetting and selecting platforms that meet your specific compliance requirements, understanding how platforms handle, store, and process data, monitoring integrations for ongoing functionality, and contacting platform vendors directly for platform-specific technical issues or support.</p>';
+
+    html += '<h4>Liability and Indemnification</h4>' +
+      '<p>You acknowledge and agree that Moonraker is not responsible or liable for: security breaches, data breaches, or compliance violations involving your website, third-party platforms, or systems (unless directly and solely caused by Moonraker\'s proven negligence in performing services within our stated scope); your failure to maintain compliance with applicable laws and regulations; issues arising from third-party platforms, services, or vendors that you selected or use; or modifications made to your website, integrations, or third-party platforms by you or other parties after Moonraker\'s initial implementation.</p>' +
+      '<p>The Client agrees to indemnify and hold Moonraker harmless from any claims, damages, losses, or expenses (including attorney fees) arising from or related to: security breaches, data breaches, or compliance violations involving the Client\'s website, third-party platforms, or systems; the Client\'s failure to maintain compliance with applicable laws and regulations; issues arising from third-party platforms, services, or vendors selected or used by the Client; or any modifications made to the website or third-party integrations by the Client or other parties after Moonraker\'s initial implementation.</p>' +
+      '<p>Moonraker maintains appropriate professional liability insurance and takes full responsibility for work performed within our defined scope of services.</p>';
+
+    html += '<h4>Clarification Requests</h4>' +
+      '<p>If the Client is uncertain whether a requested service falls within Moonraker\'s scope of work, the Client agrees to submit a written request for clarification prior to assuming such services are included. Moonraker will respond in writing within 2 business days to confirm whether the requested service is included or would constitute additional work requiring a separate agreement and fees.</p>';
+
+    html += '<h4>Ownership</h4>' +
+      '<p>The Client represents and warrants to Moonraker that the Client owns and/or has a legitimate legal license to use for business purposes, all photos, text, artwork, graphics, designs, trademarks, and other materials provided by the Client for Moonraker\'s use, including on the Website, and that the Client has obtained all waivers, authorizations, and other documentation that may be appropriate to evidence such Ownership. The Client shall indemnify and hold Moonraker harmless from all losses and claims, including attorney fees and legal expenses, that may result by reason of claims by third parties related to such materials.</p>';
+
+    html += '<h4>Alteration</h4>' +
+      '<p>Terms of this agreement are renegotiable after 90 days. After 12 months, Moonraker rates are subject to change for all services. In the event that the scope of work is required to change due to any of the agreed upon terms in this contract before or after the end of this agreement, Moonraker reserves the right to cancel or renegotiate this Agreement and the Client reserves the right to accept or reject the new terms provided. Any alteration that takes place prior will be agreed upon by both Moonraker and the Client, and new paperwork will be issued for handling in addition to the new rates applied after the alteration.</p>';
+
+    html += '<h4>Intellectual Property</h4>' +
+      '<p><strong>Client Ownership of Deliverables:</strong> Upon completion of the Services and receipt of full payment, the Client shall own all tangible work product and deliverables created specifically for the Client, including but not limited to: the Client\'s website, Google Business Profile, content created for the Client, and data/analytics reports provided to the Client. The Client may continue to use, modify, and maintain these deliverables without additional consent or compensation from Moonraker.</p>' +
+      '<p><strong>Moonraker\'s Proprietary Methods:</strong> Moonraker retains all ownership and intellectual property rights to its proprietary processes, methodologies, tools, software, frameworks, and strategic approaches used in delivering the Services. These proprietary methods represent Moonraker\'s competitive advantage and trade secrets.</p>';
+
+    html += '<h4>Mutual Confidentiality</h4>' +
+      '<p>Moonraker will not directly share or divulge any type of proprietary or private information of the Client\'s in any form. Moonraker will protect such information and treat it as strictly confidential. This provision shall continue to be effective until the end of the Agreement. The Client shall not at any time or in any manner, either directly or indirectly, use for the personal benefit of the Client, or divulge, or otherwise communicate in any manner any information that is proprietary to Moonraker as it relates to Moonraker\'s proprietary strategy and structure of the Services. Both parties shall continue to hold each other in good faith after the termination of the Agreement.</p>';
+
+    html += '<h4>Independent Contractor</h4>' +
+      '<p>Moonraker is an independent contractor with respect to its relationship to the Client. Moonraker shall not be deemed, for any purpose, an employee of the Client.</p>';
+
+    html += '<h4>Warranty</h4>' +
+      '<p>Moonraker represents and warrants that it has the unencumbered right and power to enter into and perform the Agreement and that Moonraker is not aware of any claims or basis for claims of infringement of any patent, trademark, copyright, trade secret, or contractual or other proprietary rights of third parties in or to any materials included by Moonraker in the Services or trade names related to the Services.</p>';
+
+    html += '<h4>Limitation of Liability</h4>' +
+      '<p>Under no circumstances shall either party be liable to the other party or any third party for indirect incidental, consequential, special, or exemplary damages (even if that party has been advised of the possibility of such damages), arising from any provision of the Agreement. This includes, but is not limited to, loss of revenue or anticipated profit or lost business, costs of delay or failure of delivery, or liabilities to third parties arising from any source. Interruptions to the Services such as acts of God, war, fire, law, restrictions, and other causes are not at the fault of either the Client or Moonraker at any time.</p>';
+
+    html += '<h4>Indemnity</h4>' +
+      '<p>Each party agrees to defend, indemnify, and hold harmless the other party and its business partners from any and all third party claims, demands, liabilities, costs and expenses, including reasonable attorney fees, costs and expenses resulting from the indemnifying party\'s material breach of any duty, representation, or warranty under this agreement.</p>';
+
+    html += '<h4>Legal Notice</h4>' +
+      '<p>Neither Moonraker nor any of its employees or agents warrants that the functions contained in the Services will be uninterrupted or error-free. The entire risk as to the quality and performance is with the Client. In no event will Moonraker be liable to the Client or any third party for any claimed damages, including those resulting from service interruptions caused by Acts of God, the Hosting Service or any other circumstances beyond Moonraker\'s reasonable control; any lost profits, lost savings or other incidental, consequential, punitive, or special damages arising out of the operation of or inability to operate the Services; or failure of any service provider, telecommunications carrier, Internet backbone, Internet servers, or the Client\'s site visitor\'s computer or Internet software.</p>';
+
+    html += '<h4>Account Access</h4>' +
+      '<p><strong>Client Ownership:</strong> The Client retains primary ownership and control of all accounts, profiles, and digital assets. The Client agrees to grant Moonraker administrator-level access necessary to perform the Services as outlined in this Agreement.</p>' +
+      '<p><strong>Access Requirements:</strong> The Client shall provide and maintain administrator-level access for Moonraker to all relevant accounts and platforms required to deliver the Services. This access must remain active and uninterrupted throughout the duration of the contract.</p>' +
+      '<p><strong>Access Stability:</strong> Both parties agree not to modify login credentials, revoke access, or change account permissions without prior written notice to the other party. If a password change or access modification is required for security or operational reasons, the initiating party shall provide written notice at least 48 hours in advance when feasible.</p>' +
+      '<p><strong>Third-Party Access:</strong> The Client agrees to notify Moonraker in writing before granting account access to any third parties, including other agencies, contractors, consultants, employees, or vendors who will have access to accounts where Moonraker is actively providing Services.</p>' +
+      '<p><strong>Service Interference:</strong> If the Client or any third party granted access by the Client takes actions that interfere with Moonraker\'s ability to perform the Services (including but not limited to: modifying code, changing configurations, altering strategies, or revoking necessary permissions), the Client assumes full responsibility for any resulting issues. Moonraker shall not be held liable for outcomes resulting from such interference.</p>';
+
+    html += '<h4>Communication</h4>' +
+      '<p>Within the duration of the Agreement, Moonraker will make every effort to reply to inquiries within 24-72 hours except where the Client has been previously notified of a period of limited availability. Moonraker will respond in good faith but cannot guarantee any specific action within a given time frame. The Services will be provided in a timely and professional manner.</p>';
+
+    html += '<h4>Ethics</h4>' +
+      '<p>Moonraker will conduct services so long as the Client\'s requests remain ethical. Any requests to provide black hat or otherwise questionable tactics in relation to a service Moonraker delivers may result in the immediate cancellation of the Agreement. The Client acknowledges that Moonraker has educated them on any services that they are requesting which may be illegal or unethical.</p>';
+
+    html += '<h4>Termination</h4>' +
+      '<p>Moonraker may terminate the contract if the Client violates any ethical or legal standards. Unless otherwise terminated, the Agreement will terminate upon completion of the Services.</p>';
+
+    html += '<h4>Termination on Default</h4>' +
+      '<p>If the Client defaults by failing to substantially perform any provision, term, or condition of the Agreement (including failure to make monetary payment when due), Moonraker may terminate the Agreement by providing notice to the defaulting party. The notice shall describe the nature of the default. The Client shall have 15 days from the effective date of such notice to cure the default(s). Unless waived by the party providing the notice, the failure to cure the default(s) within such a time period shall result in the termination of the Agreement. Moonraker is owed in full for any type of Termination on Default, and the Client agrees to remedy Moonraker for all costs agreed upon in this agreement in full.</p>';
+
+    html += '<h4>Governing Forum</h4>' +
+      '<p>The Agreement shall be construed in accordance with the internal laws of Hampshire County, in the State of Massachusetts, without regard to conflict of laws rules. Venue shall be in a court of competent jurisdiction in the State of Massachusetts, and both parties expressly consent to jurisdiction in such courts. All and any disputes will be settled through mediation.</p>';
+
+    html += '<h4>Complete Contract / Amendment</h4>' +
+      '<p>The Agreement supersedes all prior agreements and understandings between the parties for performance of the Services, and constitutes the complete agreement and understanding between the parties. The parties may amend the Agreement in a written document signed by both parties. All prices specified in this contract will be honored for 12 months after both parties sign this contract. Continuation of the Services after that time will require a new agreement.</p>';
+
+    html += '<h4>Payment Terms</h4>' +
+      '<p>All payments shall be made digitally using Moonraker\'s digital payment processing of choice. If the Services are paid for digitally via credit card or eChecks, processing and service fees from the transaction will be passed on to the Client. If payment is not made in full, Moonraker retains full ownership of content not provided by the Client, and shall not be required to release any property until Moonraker is fully compensated for the Services. The Client is responsible for all third party fees and costs associated with the Services in addition to Moonraker\'s fees for the Services. Any technology paid for by Moonraker will be removed and/or cease to function at the end of the Agreement if the Client doesn\'t purchase said technology from Moonraker or a third party. All payments are final.</p>';
+
+    html += '<h4>Service Fees</h4>' +
+      '<p>All fees for the Services must be paid in full at the start of the scheduled payment term, known as the Effective Date. The Effective Date of the Services is the date when payment is processed. Fees are determined by the campaign scope and payment term chosen by the Client. The Client\'s chosen plan and payment term are recorded in Moonraker\'s client management system. If payment is not received by the Effective Date, Moonraker reserves the right to withhold any Services for which payment is due.</p>';
+
+    html += '<h4>Performance Guarantee</h4>' +
+      '<p>Moonraker will provide a performance guarantee when the Client selects a 12-month payment term. This guarantee may include, for example, a specific increase in website traffic or a designated number of booked consultation calls. The specific performance goal will be determined collaboratively by Moonraker and the Client and confirmed in writing. To accurately track performance against the guarantee, the Client agrees to grant Moonraker access to relevant systems, such as website analytics and booking platforms. Should Moonraker fail to help the Client achieve the established goal by the end of the 12-month term, Moonraker will continue providing the Services at no cost until the goal is met.</p>';
+
+    html += '<h4>Additional Fees</h4>' +
+      '<p>Any additional services requested by the Client that are not included in the Agreement will result in additional fees decided on by Moonraker. An excessive amount of work orders from the Client in relation to the Services may result in additional fees from Moonraker, including but not limited to the need to have additional work completed, multiple revisions, extensions of the Services, or additional purchase of resources.</p>';
+
+    html += '<h4>Cancellation of Services</h4>' +
+      '<p>The Client may cancel services in writing at any time. Moonraker will deactivate billing and complete all deliverables for the current billing cycle before initiating the Client offboarding process.</p>';
+
+    html += '<h4>Refund Policy</h4>' +
+      '<p>The Client acknowledges and agrees that no refunds will be provided by Moonraker for any work that has been completed in accordance with the Agreement. All payments made to Moonraker are final and non-refundable, regardless of the Client\'s satisfaction with the outcomes of the Services rendered.</p>';
+
+    html += '<h4>Statement of Work</h4>' +
+      '<p>The following services are included in your <span class="dynamic-field">' + planLabel + '</span>:</p>' +
+      '<ul>' +
+      '<li>Project setup, tracking, and baseline reporting</li>' +
+      '<li>Google Assets configuration (GBP, GA4, GSC, GTM)</li>' +
+      '<li>Keyword and entities research</li>' +
+      '<li>Website speed, security, and technical optimization</li>' +
+      '<li>Conversion rate optimization (Hero section)</li>' +
+      '<li>Up to 5 new and optimized website pages with custom HTML and schema</li>' +
+      '<li>Bio page creation for each therapist</li>' +
+      '<li>General FAQ page</li>' +
+      '<li>Google Business Profile optimization</li>' +
+      '<li>Citation audit and directory listings management (15 citations + 5 data aggregators)</li>' +
+      '<li>Press release syndication (1 included, additional at $300/ea)</li>' +
+      '<li>LiveDrive local signal deployment</li>' +
+      '<li>Rising Tide social profile buildout and content distribution</li>' +
+      '<li>2 posts per month on 4 platforms (GBP, Facebook, LinkedIn, Quora)</li>' +
+      '<li>NEO image creation and distribution</li>' +
+      '<li>Monthly campaign reporting with AI-powered insights</li>' +
+      '</ul>';
+
+    html += '<h4>Campaign Communications</h4>' +
+      '<p><strong>Month 1:</strong> Reporting on all completed deliverables as the campaign is launched, content approval request, and weekly campaign updates.</p>' +
+      '<p><strong>Month 2 Onward:</strong> Automated monthly reporting on analytics and deliverables, with the ability to chat with your results for deeper insights.</p>';
+
+    html += '<h4>Client Responsibilities</h4>' +
+      '<ul>' +
+      '<li><strong>Complete Campaign Onboarding:</strong> The Client agrees to provide all requested information in the Client Onboarding dashboard in a thorough and exhaustive manner so that Moonraker can launch the Services without delay.</li>' +
+      '<li><strong>Provide Access to Website and Google Properties:</strong> The Client agrees to provide access to their website, Google Business Profile (GBP) listing and other Google properties including Google Analytics (GA4), Google Search Console (GSC), and Google Tag Manager (GTM), if available.</li>' +
+      '<li><strong>Provide Access to Historical SEO Data and Tools:</strong> The Client agrees to provide access to previous SEO tools or accounts for Moonraker to analyze past performance and make informed strategy decisions.</li>' +
+      '<li><strong>Approve Campaign Content in a Timely Manner:</strong> The Client will respond to content approval requests from Moonraker within 48 hours, either with approval or a request for updates. If the Client does not respond within 7 days, Moonraker may go ahead and publish updates on the Client\'s behalf. Changes can still be made after content goes live.</li>' +
+      '</ul>';
+
+    document.getElementById('csaDocument').innerHTML = html;
+
+    // Pre-fill signature fields
+    document.getElementById('sigName').value = clientName.replace(/,.*/, '').trim();
+    document.getElementById('sigEmail').value = contact.email || '';
+    document.getElementById('sigDate').value = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    // Enable sign button when consent is checked
+    document.getElementById('sigConsent').addEventListener('change', function() {
+      var name = document.getElementById('sigName').value.trim();
+      document.getElementById('signBtn').disabled = !(this.checked && name.length > 1);
+    });
+    document.getElementById('sigName').addEventListener('input', function() {
+      var consent = document.getElementById('sigConsent').checked;
+      document.getElementById('signBtn').disabled = !(consent && this.value.trim().length > 1);
+    });
+  }
+
+  // ============================================================
+  // SIGN AGREEMENT
+  // ============================================================
+  window.signAgreement = function() {
+    var btn = document.getElementById('signBtn');
+    btn.disabled = true;
+    btn.textContent = 'Signing...';
+
+    var docHTML = document.getElementById('csaDocument').innerHTML;
+    var signerName = document.getElementById('sigName').value.trim();
+    var signerTitle = document.getElementById('sigTitle').value.trim();
+    var signerEmail = document.getElementById('sigEmail').value.trim();
+    var signedAt = new Date().toISOString();
+    var planType = contact.plan_type || 'standard';
+    var planAmount = contact.plan_amount_cents || 0;
+
+    var record = {
+      contact_id: contact.id,
+      agreement_type: 'csa',
+      agreement_version: '2026-03',
+      document_html: docHTML,
+      signer_name: signerName,
+      signer_email: signerEmail,
+      signer_title: signerTitle,
+      signed_at: signedAt,
+      ip_address: null,
+      plan_details: { plan_type: planType, amount_cents: planAmount, campaign_start: contact.campaign_start, campaign_end: contact.campaign_end }
+    };
+
+    sbPost('signed_agreements', record).then(function() {
+      // Mark step complete
+      stepData['sign_agreement'] = 'complete';
+      buildNav();
+
+      // Update onboarding_steps
+      sbPatch('onboarding_steps', 'contact_id=eq.' + contact.id + '&step_key=eq.sign_agreement',
+        { status: 'complete', completed_at: signedAt });
+
+      // Update contact record
+      sbPatch('contacts', 'id=eq.' + contact.id,
+        { agreement_signed: true, agreement_signed_at: signedAt });
+
+      // Show signed state (keep agreement visible for reference)
+      document.getElementById('csaAlreadySigned').style.display = 'block';
+      document.getElementById('signatureBlock').style.display = 'none';
+      document.getElementById('signedDetails').textContent = 'Signed by ' + signerName + ' on ' + new Date(signedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }).catch(function(err) {
+      console.error('Failed to save agreement:', err);
+      btn.disabled = false;
+      btn.textContent = 'Sign Agreement';
+      alert('There was a problem saving your agreement. Please try again or contact support@moonraker.ai.');
+    });
+  };
+
+
+  // ============================================================
+  // FORM: Helper to split comma-separated strings to arrays
+  // ============================================================
+  function csvToArray(str) {
+    if (!str) return [];
+    return str.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+  }
+  function arrayToCsv(arr) {
+    if (!arr || !Array.isArray(arr)) return '';
+    return arr.join(', ');
+  }
+
+  // ============================================================
+  // FORM: Pre-fill all forms from loaded data
+  // ============================================================
+  var practiceData = null;
+  var bioData = null;
+
+  function prefillForms() {
+    if (!contact) return;
+
+    // Step 1: Confirm Info
+    var fields = {
+      ci_first_name: contact.first_name,
+      ci_last_name: contact.last_name,
+      ci_credentials: contact.credentials,
+      ci_email: contact.email,
+      ci_phone: contact.phone,
+      ci_practice_name: contact.practice_name,
+      ci_legal_business_name: contact.legal_business_name,
+      ci_website_url: contact.website_url,
+      ci_team_size: contact.team_size,
+      ci_service_delivery: contact.service_delivery,
+      ci_address_line1: contact.practice_address_line1,
+      ci_address_line2: contact.practice_address_line2,
+      ci_city: contact.city,
+      ci_state_province: contact.state_province,
+      ci_postal_code: contact.postal_code,
+      ci_country: contact.country
+    };
+    Object.keys(fields).forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && fields[id]) el.value = fields[id];
+    });
+
+    // Step 4: Practice Details
+    if (practiceData) {
+      var pd = practiceData;
+      var pdFields = {
+        pd_specialties: arrayToCsv(pd.specialties),
+        pd_modalities: arrayToCsv(pd.modalities),
+        pd_populations: arrayToCsv(pd.populations),
+        pd_session_cost: pd.session_cost,
+        pd_session_frequency: pd.session_frequency,
+        pd_insurance: pd.insurance_or_private_pay,
+        pd_insurance_panels: pd.insurance_panels,
+        pd_licensed_states: arrayToCsv(pd.licensed_states),
+        pd_num_therapists: pd.num_therapists,
+        pd_offers_consultation: pd.offers_consultation === true ? 'true' : (pd.offers_consultation === false ? 'false' : ''),
+        pd_consultation_length: pd.consultation_length,
+        pd_booking_url: pd.booking_url,
+        pd_campaign_objectives: pd.campaign_objectives,
+        pd_current_caseload: pd.current_caseload,
+        pd_target_caseload: pd.target_caseload,
+        pd_target_keywords: arrayToCsv(pd.target_keywords),
+        pd_content_to_omit: pd.content_to_omit,
+        pd_pronoun_usage: pd.pronoun_usage,
+        pd_content_approval: pd.content_approval,
+        pd_brand_voice_sources: pd.brand_voice_sources,
+        pd_current_marketing: pd.current_marketing,
+        pd_ideal_client: pd.ideal_client,
+        pd_differentiators: pd.differentiators,
+        pd_intake_process: pd.intake_process,
+        pd_after_care: pd.after_care
+      };
+      Object.keys(pdFields).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && pdFields[id] != null && pdFields[id] !== '') el.value = pdFields[id];
+      });
+    }
+
+    // Step 5: Bio Materials
+    if (bioData) {
+      var b = bioData;
+      if (b.therapist_name) document.getElementById('bio_name').value = b.therapist_name;
+      if (b.therapist_credentials) document.getElementById('bio_credentials').value = b.therapist_credentials;
+      if (b.professional_bio) document.getElementById('bio_professional_bio').value = b.professional_bio;
+      if (b.clinical_approach) document.getElementById('bio_clinical_approach').value = b.clinical_approach;
+      // NPI from contact
+      if (contact.npi_number) document.getElementById('bio_npi').value = contact.npi_number;
+    } else {
+      // Pre-fill from contact if no bio row yet
+      var fullName = ((contact.first_name || '') + ' ' + (contact.last_name || '')).trim();
+      if (fullName) document.getElementById('bio_name').value = fullName;
+      if (contact.credentials) document.getElementById('bio_credentials').value = contact.credentials;
+      if (contact.npi_number) document.getElementById('bio_npi').value = contact.npi_number;
+    }
+
+    // Step 7: Social Profiles - fill from contact record
+    var socialMap = {
+      sp_youtube: contact.youtube_url,
+      sp_linkedin: contact.linkedin_url,
+      sp_facebook: contact.facebook_url,
+      sp_instagram: contact.instagram_url,
+      sp_quora: contact.quora_url,
+      sp_pinterest: contact.pinterest_url,
+      sp_tiktok: contact.tiktok_url,
+      sp_x: contact.x_url,
+      sp_psychtoday: contact.psychology_today_url,
+      sp_gbp: contact.gbp_url
+    };
+    Object.keys(socialMap).forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && socialMap[id]) el.value = socialMap[id];
+    });
+
+    // Prefill directory URLs from practice_details.additional_services
+    if (practiceData && practiceData.additional_services) {
+      try {
+        var dirs = JSON.parse(practiceData.additional_services);
+        Object.keys(dirs).forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.value = dirs[id];
+        });
+      } catch(e) { console.log('Could not parse directory data'); }
+    }
+
+    // Step 8: Drive folder link
+    if (contact.drive_folder_url) {
+      var driveLink = document.getElementById('driveFolderLink');
+      if (driveLink) { driveLink.href = contact.drive_folder_url; }
+    }
+
+
+  }
+
+  // ============================================================
+  // FORM: Save Step 1 - Confirm Info
+  // ============================================================
+  window.saveConfirmInfo = function() {
+    var data = {
+      first_name: document.getElementById('ci_first_name').value.trim(),
+      last_name: document.getElementById('ci_last_name').value.trim(),
+      credentials: document.getElementById('ci_credentials').value.trim(),
+      email: document.getElementById('ci_email').value.trim(),
+      phone: document.getElementById('ci_phone').value.trim(),
+      practice_name: document.getElementById('ci_practice_name').value.trim(),
+      legal_business_name: document.getElementById('ci_legal_business_name').value.trim(),
+      website_url: document.getElementById('ci_website_url').value.trim(),
+      team_size: document.getElementById('ci_team_size').value,
+      service_delivery: document.getElementById('ci_service_delivery').value,
+      practice_address_line1: document.getElementById('ci_address_line1').value.trim(),
+      practice_address_line2: document.getElementById('ci_address_line2').value.trim(),
+      city: document.getElementById('ci_city').value.trim(),
+      state_province: document.getElementById('ci_state_province').value.trim(),
+      postal_code: document.getElementById('ci_postal_code').value.trim(),
+      country: document.getElementById('ci_country').value.trim()
+    };
+    return sbPatch('contacts', 'id=eq.' + contact.id, data).then(function() {
+      Object.assign(contact, data);
+    });
+  };
+
+  // ============================================================
+  // FORM: Save Step 4 - Practice Details
+  // ============================================================
+  window.savePracticeDetails = function() {
+    var data = {
+      contact_id: contact.id,
+      specialties: csvToArray(document.getElementById('pd_specialties').value),
+      modalities: csvToArray(document.getElementById('pd_modalities').value),
+      populations: csvToArray(document.getElementById('pd_populations').value),
+      session_cost: document.getElementById('pd_session_cost').value.trim(),
+      session_frequency: document.getElementById('pd_session_frequency').value.trim(),
+      insurance_or_private_pay: document.getElementById('pd_insurance').value,
+      insurance_panels: document.getElementById('pd_insurance_panels').value.trim(),
+      licensed_states: csvToArray(document.getElementById('pd_licensed_states').value),
+      num_therapists: parseInt(document.getElementById('pd_num_therapists').value) || null,
+      offers_consultation: document.getElementById('pd_offers_consultation').value === 'true' ? true : (document.getElementById('pd_offers_consultation').value === 'false' ? false : null),
+      consultation_length: document.getElementById('pd_consultation_length').value.trim(),
+      booking_url: document.getElementById('pd_booking_url').value.trim(),
+      campaign_objectives: document.getElementById('pd_campaign_objectives').value.trim(),
+      current_caseload: document.getElementById('pd_current_caseload').value.trim(),
+      target_caseload: document.getElementById('pd_target_caseload').value.trim(),
+      target_keywords: csvToArray(document.getElementById('pd_target_keywords').value),
+      content_to_omit: document.getElementById('pd_content_to_omit').value.trim(),
+      pronoun_usage: document.getElementById('pd_pronoun_usage').value,
+      content_approval: document.getElementById('pd_content_approval').value,
+      brand_voice_sources: document.getElementById('pd_brand_voice_sources').value.trim(),
+      current_marketing: document.getElementById('pd_current_marketing').value.trim(),
+      ideal_client: document.getElementById('pd_ideal_client').value.trim(),
+      differentiators: document.getElementById('pd_differentiators').value.trim(),
+      intake_process: document.getElementById('pd_intake_process').value.trim(),
+      after_care: document.getElementById('pd_after_care').value.trim()
+    };
+
+    if (practiceData) {
+      delete data.contact_id;
+      return apiAction('update_record', 'practice_details', { contact_id: contact.id }, data)
+        .then(function(res) { practiceData = (res.data && res.data[0]) || practiceData; });
+    } else {
+      return apiAction('create_record', 'practice_details', null, data)
+        .then(function(res) { practiceData = (res.data && res.data[0]) || res.data || data; });
+    }
+  };
+
+  // ============================================================
+  // FORM: Save Step 5 - Bio Materials
+  // ============================================================
+  window.saveBioMaterials = function() {
+    var data = {
+      contact_id: contact.id,
+      therapist_name: document.getElementById('bio_name').value.trim(),
+      therapist_credentials: document.getElementById('bio_credentials').value.trim(),
+      professional_bio: document.getElementById('bio_professional_bio').value.trim(),
+      clinical_approach: document.getElementById('bio_clinical_approach').value.trim(),
+      is_primary: true
+    };
+
+    // Also update NPI on contact
+    var npi = document.getElementById('bio_npi').value.trim();
+    if (npi) { sbPatch('contacts', 'id=eq.' + contact.id, { npi_number: npi }); }
+
+    if (bioData) {
+      delete data.contact_id;
+      return apiAction('update_record', 'bio_materials', { contact_id: contact.id, is_primary: 'eq.true' }, data)
+        .then(function(res) { bioData = (res.data && res.data[0]) || bioData; });
+    } else {
+      return apiAction('create_record', 'bio_materials', null, data)
+        .then(function(res) { bioData = (res.data && res.data[0]) || res.data || data; });
+    }
+  };
+
+  // ============================================================
+  // FORM: Save Step 7 - Social Profiles
+  // ============================================================
+  window.saveSocialProfiles = function() {
+    var socialData = {
+      youtube_url: document.getElementById('sp_youtube').value.trim() || null,
+      linkedin_url: document.getElementById('sp_linkedin').value.trim() || null,
+      facebook_url: document.getElementById('sp_facebook').value.trim() || null,
+      instagram_url: document.getElementById('sp_instagram').value.trim() || null,
+      quora_url: document.getElementById('sp_quora').value.trim() || null,
+      pinterest_url: document.getElementById('sp_pinterest').value.trim() || null,
+      tiktok_url: document.getElementById('sp_tiktok').value.trim() || null,
+      x_url: document.getElementById('sp_x').value.trim() || null,
+      psychology_today_url: document.getElementById('sp_psychtoday').value.trim() || null,
+      gbp_url: document.getElementById('sp_gbp').value.trim() || null
+    };
+
+    // Collect all directory URLs into a JSON string
+    var dirIds = ['dir_yelp','dir_goodtherapy','dir_therapyden','dir_zencare','dir_theravive','dir_monarch','dir_openpath','dir_inclusive','dir_networktherapy','dir_headway','dir_alma','dir_zocdoc','dir_growtherapy','dir_sondermind','dir_emdria','dir_aamft','dir_tfbg','dir_latinx','dir_amhc','dir_ifs','dir_ementalhealth','dir_firstsession'];
+    var directories = {};
+    dirIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && el.value.trim()) directories[id] = el.value.trim();
+    });
+    var otherDirs = document.getElementById('dir_other').value.trim();
+    if (otherDirs) directories['dir_other'] = otherDirs;
+    var omit = document.getElementById('sp_omit').value.trim();
+
+    // Save socials + GBP + PT to contacts
+    return sbPatch('contacts', 'id=eq.' + contact.id, socialData).then(function() {
+      Object.assign(contact, socialData);
+
+      // Save directories to practice_details via API (service role key)
+      var pdUpdate = { additional_services: JSON.stringify(directories) };
+      if (omit) pdUpdate.content_to_omit = omit;
+
+      if (practiceData) {
+        return apiAction('update_record', 'practice_details', { contact_id: contact.id }, pdUpdate)
+          .then(function(res) { practiceData = (res.data && res.data[0]) || practiceData; });
+      } else {
+        pdUpdate.contact_id = contact.id;
+        return apiAction('create_record', 'practice_details', null, pdUpdate)
+          .then(function(res) { practiceData = (res.data && res.data[0]) || res.data || pdUpdate; });
+      }
+    });
+  };
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  function init() {
+    sbFetch('contacts', 'slug=eq.' + CLIENT_SLUG + '&select=*&limit=1')
+      .then(function(contacts) {
+        if (!contacts || contacts.length === 0) {
+          document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">No account found for "' + CLIENT_SLUG + '".</p>';
+          return;
+        }
+        contact = contacts[0];
+
+        document.title = 'Onboarding - ' + (contact.practice_name || CLIENT_SLUG) + ' - Moonraker';
+        document.getElementById('headerName').textContent = contact.practice_name || 'Onboarding';
+        document.getElementById('dashboardLink').href = '/' + CLIENT_SLUG;
+
+        // Load all related data in parallel
+        return Promise.all([
+          sbFetch('onboarding_steps', 'contact_id=eq.' + contact.id + '&select=step_key,status&order=sort_order'),
+          sbFetch('signed_agreements', 'contact_id=eq.' + contact.id + '&agreement_type=eq.csa&select=signer_name,signed_at&limit=1'),
+          sbFetch('practice_details', 'contact_id=eq.' + contact.id + '&select=*&limit=1'),
+          sbFetch('bio_materials', 'contact_id=eq.' + contact.id + '&is_primary=eq.true&select=*&limit=1')
+        ]);
+      })
+      .then(function(allData) {
+        if (!allData) return;
+
+        var steps = allData[0] || [];
+        var agreements = allData[1] || [];
+        practiceData = (allData[2] && allData[2][0]) ? allData[2][0] : null;
+        bioData = (allData[3] && allData[3][0]) ? allData[3][0] : null;
+
+        steps.forEach(function(s) { stepData[s.step_key] = s.status; });
+
+        if (agreements.length > 0) {
+          stepData['sign_agreement'] = 'complete';
+          document.getElementById('signatureBlock').style.display = 'none';
+          document.getElementById('csaAlreadySigned').style.display = 'block';
+          var a = agreements[0];
+          document.getElementById('signedDetails').textContent = 'Signed by ' + a.signer_name + ' on ' + new Date(a.signed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        }
+
+        // Check embed step states - show completion banners (keep embeds visible)
+        if (stepData['book_intro_call'] === 'complete') {
+          document.getElementById('callAlreadyBooked').style.display = 'block';
+        }
+        if (stepData['connect_accounts'] === 'complete') {
+          document.getElementById('accessAlreadyDone').style.display = 'block';
+        }
+
+        // Render CSA
+        renderCSA();
+
+        // Pre-fill all form fields
+        prefillForms();
+
+        // Wire up autosave on form steps (1.5s debounce)
+        setupAutosave('[data-step="confirm_info"]', saveConfirmInfo, 'ci_autosave', 1500);
+        setupAutosave('[data-step="practice_details"]', savePracticeDetails, 'pd_autosave', 1500);
+        setupAutosave('[data-step="bio_materials"]', saveBioMaterials, 'bio_autosave', 1500);
+        setupAutosave('[data-step="social_profiles"]', saveSocialProfiles, 'sp_autosave', 1500);
+
+        // Show the app
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'grid';
+
+        // Find first incomplete step
+        var startStep = 0;
+        for (var i = 0; i < STEPS.length; i++) {
+          if (stepData[STEPS[i].key] !== 'complete') { startStep = i; break; }
+        }
+        goToStep(startStep);
+
+        // Hash-based deep link: /{slug}/onboarding#confirm_info
+        if (window.location.hash) {
+          var hashKey = window.location.hash.substring(1);
+          for (var hi = 0; hi < STEPS.length; hi++) {
+            if (STEPS[hi].key === hashKey) { goToStep(hi); break; }
+          }
+        }
+      })
+      .catch(function(err) {
+        console.error('Init error:', err);
+        document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">Unable to load onboarding data. Please refresh.</p>';
+      });
+  }
+
+  // ============================================================
+  // THEME TOGGLE
+  // ============================================================
+  var themeBtn = document.getElementById('themeBtn');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function() {
+      var h = document.documentElement;
+      document.body.style.transition='opacity .25s ease';
+      document.body.style.opacity='0';
+      setTimeout(function(){
+        if (h.getAttribute('data-theme') === 'light') {
+          h.setAttribute('data-theme', 'dark');
+          themeBtn.innerHTML = '&#9728;&#65039;';
+          try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
+        } else {
+          h.setAttribute('data-theme', 'light');
+          themeBtn.innerHTML = '&#x1F319;';
+          try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
+        }
+        document.body.style.transition='opacity .3s ease';
+        document.body.style.opacity='1';
+        setTimeout(function(){document.body.style.transition=''},400);
+      },280);
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
