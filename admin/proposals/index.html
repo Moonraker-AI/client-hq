@@ -261,24 +261,25 @@ a:hover { color: var(--color-primary-hover); }
 <div class="main">
   <div class="topbar">
     <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">&#9776;</button>
-    <h1>Proposals</h1>
+    <div style="font-family:'Outfit',sans-serif;font-weight:600;font-size:.95rem;color:var(--color-heading);">Proposals</div>
     <div class="topbar-right">
-      <button class="btn btn-primary" onclick="openNewProposal()">+ New Proposal</button>
+      <span style="font-size:.78rem;color:var(--color-muted);" id="lastRefresh"></span>
     </div>
   </div>
 
   <div class="content">
+    <div class="section-header">
+      <h2>Proposals</h2>
+      <button class="btn btn-primary" onclick="openNewProposal()">+ New Proposal</button>
+    </div>
+    <p class="section-desc">Track proposals from draft through acceptance. Click any row to view details, or use the preview link to check without triggering view tracking.</p>
+
     <div class="stat-grid" id="statsGrid">
       <div class="stat-card"><div class="stat-label">Drafts</div><div class="stat-value" id="statDraft">-</div><div class="stat-sub">In progress</div></div>
       <div class="stat-card"><div class="stat-label">Sent</div><div class="stat-value" id="statSent">-</div><div class="stat-sub">Awaiting response</div></div>
       <div class="stat-card"><div class="stat-label">Viewed</div><div class="stat-value" id="statViewed">-</div><div class="stat-sub">Opened by prospect</div></div>
       <div class="stat-card"><div class="stat-label">Accepted</div><div class="stat-value" id="statAccepted">-</div><div class="stat-sub">Moved to checkout</div></div>
     </div>
-
-    <div class="section-header">
-      <h2>All Proposals</h2>
-    </div>
-    <p class="section-desc">Track proposals from draft through acceptance. Click any row to view details.</p>
 
     <div class="filter-bar" id="filterBar">
       <button class="filter-tab active" data-filter="all">All<span class="count" id="countAll">0</span></button>
@@ -668,7 +669,7 @@ a:hover { color: var(--color-primary-hover); }
     }
 
     var html = '<table class="proposals-table"><thead><tr>';
-    html += '<th>Contact</th><th>Status</th><th>Campaign</th><th>Created</th><th>Sent</th><th style="width:80px;"></th>';
+    html += '<th>Contact</th><th>Status</th><th>Campaign</th><th>Created</th><th>Sent</th><th>Views</th><th style="width:100px;"></th>';
     html += '</tr></thead><tbody>';
 
     filtered.forEach(function(p) {
@@ -678,7 +679,7 @@ a:hover { color: var(--color-primary-hover); }
       var tagClass = 'tag-' + p.status;
       var statusLabel = p.status.charAt(0).toUpperCase() + p.status.slice(1);
 
-      html += '<tr onclick="viewProposal(\'' + p.id + '\')">';
+      html += '<tr>';
       html += '<td><div class="client-cell"><div class="client-avatar">' + esc(initials.toUpperCase()) + '</div><div><div class="client-name">' + esc(name) + '</div><div class="client-practice">' + esc(c.practice_name || '') + '</div></div></div></td>';
       html += '<td><span class="tag ' + tagClass + '">' + statusLabel + '</span></td>';
       html += '<td><div class="plan-pills">';
@@ -689,8 +690,9 @@ a:hover { color: var(--color-primary-hover); }
       html += '</div></td>';
       html += '<td class="date-cell">' + formatDate(p.created_at) + '</td>';
       html += '<td class="date-cell">' + (p.sent_at ? formatDate(p.sent_at) : '-') + '</td>';
+      html += '<td class="date-cell">' + (p.view_count || 0) + '</td>';
       html += '<td class="actions-cell">';
-      if (p.proposal_url) html += '<a href="' + esc(p.proposal_url) + '" target="_blank" class="btn btn-ghost btn-sm" title="View proposal" onclick="event.stopPropagation()">&#8599;</a>';
+      if (p.proposal_url) html += '<a href="' + esc(p.proposal_url) + '?preview=true" target="_blank" class="btn btn-ghost btn-sm" title="Preview (no tracking)" onclick="event.stopPropagation()">&#128065; Preview</a>';
       html += '</td>';
       html += '</tr>';
     });
@@ -698,11 +700,6 @@ a:hover { color: var(--color-primary-hover); }
     html += '</tbody></table>';
     container.innerHTML = html;
   }
-
-  window.viewProposal = function(id) {
-    var p = state.proposals.find(function(pr) { return pr.id === id; });
-    if (p && p.proposal_url) window.open(p.proposal_url, '_blank');
-  };
 
   // Modal
   window.openNewProposal = function() {
