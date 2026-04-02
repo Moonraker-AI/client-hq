@@ -141,7 +141,10 @@ a:hover { color: var(--color-primary-hover); }
 .proposals-table .plan-pills { display: flex; gap: .25rem; flex-wrap: wrap; }
 .proposals-table .plan-pill { font-size: .68rem; padding: .1rem .35rem; border-radius: 4px; background: var(--color-bg); color: var(--color-muted); border: 1px solid var(--color-border); }
 .proposals-table .date-cell { font-size: .78rem; color: var(--color-muted); }
-.proposals-table .actions-cell { vertical-align: middle; }
+.proposals-table .actions-cell { vertical-align: middle; white-space: nowrap; }
+.proposals-table .row-delete { opacity: 0; color: var(--color-muted); background: none; border: none; cursor: pointer; padding: 2px; line-height: 1; transition: opacity .15s, color .15s; }
+.proposals-table tbody tr:hover .row-delete { opacity: .45; }
+.proposals-table .row-delete:hover { opacity: 1 !important; color: var(--color-danger); }
 
 /* Empty state */
 .empty-state { text-align: center; padding: 4rem 2rem; }
@@ -712,16 +715,16 @@ a:hover { color: var(--color-primary-hover); }
         var callCt = ed.calls ? ed.calls.length : 0;
         var hasAudit = !!es.entity_audit;
         var hasSite = !!es.website;
-        html += '<div style="display:flex;align-items:center;gap:.5rem;">';
-        html += '<div style="display:flex;gap:.4rem;flex-wrap:wrap;">';
+        html += '<span style="display:inline-flex;align-items:center;gap:.5rem;">';
+        html += '<span style="display:inline-flex;gap:.4rem;flex-wrap:wrap;">';
         if (emailCt) html += '<span class="plan-pill" style="color:var(--color-info);border-color:rgba(59,130,246,.2);">&#128231; ' + emailCt + ' emails</span>';
         if (callCt) html += '<span class="plan-pill" style="color:#A855F7;border-color:rgba(168,85,247,.2);">&#127908; ' + callCt + ' calls</span>';
         if (hasAudit) html += '<span class="plan-pill" style="color:var(--color-warning);border-color:rgba(245,158,11,.2);">&#128202; Audit</span>';
         if (hasSite) html += '<span class="plan-pill" style="color:var(--color-success);border-color:rgba(0,212,126,.2);">&#127760; Site</span>';
         if (!emailCt && !callCt && !hasAudit && !hasSite) html += '<span style="font-size:.72rem;color:var(--color-muted);">No data found</span>';
-        html += '</div>';
+        html += '</span>';
         html += '<button class="btn btn-primary btn-sm" style="flex-shrink:0;" onclick="event.stopPropagation();generateProposal(\'' + p.id + '\',this)">&#9889; Generate</button>';
-        html += '</div>';
+        html += '</span>';
       } else if (p.status === 'generating') {
         html += '<span class="tag tag-enriching" style="gap:.35rem;"><span class="dot-pulse"></span>Generating...</span>';
       } else if (p.status === 'ready') {
@@ -730,10 +733,8 @@ a:hover { color: var(--color-primary-hover); }
       } else if (p.status === 'sent' || p.status === 'viewed') {
         html += '<span class="tag tag-' + p.status + '">' + statusLabel + (p.view_count > 0 ? ' (' + p.view_count + ' views)' : '') + '</span>';
       }
-      html += '<div style="display:inline-flex;align-items:center;gap:.25rem;margin-left:.35rem;">';
-      if (p.proposal_url) html += '<a href="' + esc(p.proposal_url) + '?preview=true" target="_blank" class="btn btn-ghost btn-sm" title="Preview (no tracking)" onclick="event.stopPropagation()">&#128065;</a>';
-      html += '<button style="width:28px;height:28px;border-radius:8px;border:none;cursor:pointer;background:rgba(239,68,68,.08);color:var(--color-danger);display:inline-flex;align-items:center;justify-content:center;transition:background .15s;" onmouseenter="this.style.background=\'rgba(239,68,68,.15)\'" onmouseleave="this.style.background=\'rgba(239,68,68,.08)\'" title="Delete proposal" onclick="event.stopPropagation();deleteProposal(\'' + p.id + '\')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button>';
-      html += '</div>';
+      if (p.proposal_url) html += ' <a href="' + esc(p.proposal_url) + '?preview=true" target="_blank" class="btn btn-ghost btn-sm" title="Preview (no tracking)" onclick="event.stopPropagation()" style="vertical-align:middle;">&#128065;</a>';
+      html += ' <button class="row-delete" title="Delete" onclick="event.stopPropagation();deleteProposal(\'' + p.id + '\')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button>';
       html += '</td>';
       html += '</tr>';
     });
