@@ -717,7 +717,10 @@ a:hover { color: var(--color-primary-hover); }
       } else if (p.status === 'generating') {
         html += '<span class="tag tag-enriching" style="gap:.35rem;"><span class="dot-pulse"></span>Generating...</span>';
       } else if (p.status === 'ready') {
-        html += '<span class="tag tag-ready">Ready to send</span>';
+        html += '<button class="btn btn-primary btn-sm" style="margin-right:.35rem;" onclick="event.stopPropagation();sendProposal(\'' + p.id + '\',this)">&#9993; Send</button>';
+        html += '<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();previewEmail(\'' + p.id + '\')">Preview Email</button>';
+      } else if (p.status === 'sent' || p.status === 'viewed') {
+        html += '<span class="tag tag-' + p.status + '">' + statusLabel + (p.view_count > 0 ? ' (' + p.view_count + ' views)' : '') + '</span>';
       }
       if (p.proposal_url) html += ' <a href="' + esc(p.proposal_url) + '?preview=true" target="_blank" class="btn btn-ghost btn-sm" title="Preview (no tracking)" onclick="event.stopPropagation()">&#128065;</a>';
       html += '</td>';
@@ -775,6 +778,62 @@ a:hover { color: var(--color-primary-hover); }
       alert('Generation error: ' + e.message);
       btn.disabled = false;
       btn.innerHTML = '&#9889; Generate';
+    }
+  };
+
+  // Send proposal email
+  window.sendProposal = async function(proposalId, btn) {
+    if (!confirm('Send the proposal email to the prospect?')) return;
+    btn.disabled = true;
+    btn.innerHTML = 'Sending...';
+    try {
+      var resp = await fetch('/api/send-proposal-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proposal_id: proposalId })
+      });
+      var data = await resp.json();
+      if (data.ok) {
+        await loadData();
+      } else {
+        alert('Send failed: ' + (data.error || 'Unknown error'));
+        btn.disabled = false;
+        btn.innerHTML = '&#9993; Send';
+      }
+    } catch(e) {
+      alert('Send error: ' + e.message);
+      btn.disabled = false;
+      btn.innerHTML = '&#9993; Send';
+    }
+  };
+
+  // Preview email
+  window.previewEmail = async function(proposalId) {
+    try {
+      var resp = await fetch('/api/send-proposal-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proposal_id: proposalId, preview_only: true })
+      });
+      var data = await resp.json();
+      if (data.ok) {
+        var w = window.open('', '_blank');
+        w.document.write('<html><head><title>Email Preview</title></head><body>');
+        w.document.write('<div style="padding:1rem;background:#f5f5f5;font-family:sans-serif;font-size:14px;margin-bottom:1rem;">');
+        w.document.write('<strong>To:</strong> ' + data.to + '<br>');
+        w.document.write('<strong>From:</strong> ' + data.from + '<br>');
+        w.document.write('<strong>Reply-To:</strong> ' + data.reply_to + '<br>');
+        w.document.write('<strong>CC:</strong> ' + data.cc + '<br>');
+        w.document.write('<strong>Subject:</strong> ' + data.subject);
+        w.document.write('</div>');
+        w.document.write(data.body_html);
+        w.document.write('</body></html>');
+        w.document.close();
+      } else {
+        alert('Preview failed: ' + (data.error || 'Unknown error'));
+      }
+    } catch(e) {
+      alert('Preview error: ' + e.message);
     }
   };
 
