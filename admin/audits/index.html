@@ -282,7 +282,7 @@ a:hover { color: var(--color-primary-hover); }
   <div class="content">
     <div class="section-header">
       <h2>Audits</h2>
-      <button class="ea-btn" id="newEntityAuditBtn" style="display:none;background:var(--color-primary);color:#fff;border-color:var(--color-primary);padding:.45rem 1rem;font-size:.82rem;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:500;flex-shrink:0;" onclick="toggleNewAuditForm()">+ New Entity Audit</button>
+      <button class="ea-btn" id="newEntityAuditBtn" style="visibility:hidden;background:var(--color-primary);color:#fff;border-color:var(--color-primary);padding:.45rem 1rem;font-size:.82rem;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:500;flex-shrink:0;" onclick="toggleNewAuditForm()">+ New Entity Audit</button>
     </div>
 
     <div class="sub-tabs" id="subTabs">
@@ -613,7 +613,7 @@ a:hover { color: var(--color-primary-hover); }
     document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
     document.getElementById('tab-' + tab).classList.add('active');
     var eaBtn = document.getElementById('newEntityAuditBtn');
-    if (eaBtn) eaBtn.style.display = tab === 'entity' ? '' : 'none';
+    if (eaBtn) eaBtn.style.visibility = tab === 'entity' ? 'visible' : 'hidden';
     if (tab === 'entity' && !eaLoaded) loadEntityAudits();
   });
 
