@@ -243,6 +243,10 @@ a:hover { color: var(--color-primary-hover); }
 .surge-result-score .lbl { font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); }
 .surge-char-count { font-size: .75rem; color: var(--color-muted); margin-top: .35rem; }
 
+.toast { position: fixed; top: 1.25rem; left: 50%; transform: translateX(-50%); padding: .65rem 1.25rem; border-radius: 10px; font-size: .82rem; font-weight: 500; z-index: 1000; box-shadow: 0 4px 16px rgba(0,0,0,.15); opacity: 0; pointer-events: none; transition: opacity .3s; }
+.toast.show { opacity: 1; pointer-events: auto; }
+.toast.success { background: var(--color-primary); color: #fff; }
+.toast.error { background: var(--color-danger); color: #fff; }
 </style>
 </head>
 <body>
@@ -373,6 +377,15 @@ a:hover { color: var(--color-primary-hover); }
 </div>
 
 <script>
+  function toast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + (type || 'success');
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 3000);
+  }
+  window.toast = toast;
+
 (function() {
   'use strict';
 
@@ -1015,6 +1028,7 @@ a:hover { color: var(--color-primary-hover); }
 })();
 </script>
 <script src="/shared/chat-panel.js"></script>
+<div class="toast" id="toast"></div>
 </body>
 </html>
 
