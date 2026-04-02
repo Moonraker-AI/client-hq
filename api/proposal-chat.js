@@ -55,6 +55,7 @@ module.exports = async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
 
     var reader = aiResp.body.getReader();
     var decoder = new TextDecoder();
@@ -154,3 +155,4 @@ RESPONSE GUIDELINES:
 - Suggest booking a call with Scott for complex questions: https://msg.moonraker.ai/widget/bookings/scott-pope-calendar
 - Keep responses to 2-4 paragraphs unless the question requires more detail`;
 }
+
