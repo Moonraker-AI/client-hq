@@ -872,8 +872,7 @@ a:hover { color: var(--color-primary-hover); }
         w.document.write('<strong>Subject:</strong> ' + data.subject);
         w.document.write('</div>');
         w.document.write(data.body_html);
-        w.document.write('<div class="toast" id="toast"></div>
-</body></html>');
+        w.document.write('</body></html>');
         w.document.close();
       } else {
         alert('Preview failed: ' + (data.error || 'Unknown error'));
@@ -971,5 +970,6 @@ a:hover { color: var(--color-primary-hover); }
 })();
 </script>
 <script src="/shared/chat-panel.js"></script>
+<div class="toast" id="toast"></div>
 </body>
 </html>
