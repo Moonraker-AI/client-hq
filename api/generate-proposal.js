@@ -173,7 +173,7 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
   "strategy_roi_callout": "HTML: <div class=\"roi-callout\"><h4>Title</h4><p style=\"margin-bottom:0;\">ROI calculation relevant to their practice</p></div> or empty string if insufficient data",
   "timeline_items": "3-4 timeline phases as HTML: <div class=\"timeline-item\"><span class=\"timeline-phase\">PHASE_LABEL</span><h4>PHASE_TITLE</h4><p>DESCRIPTION</p></div>",
   "investment_features": "10-12 feature items as HTML: <li><span class=\"check\">&#10003;</span> FEATURE</li>",
-  "next_steps": "4 steps as HTML divs with numbered circles (just the inner content, I will wrap them)"
+  "next_steps": [{"title":"Step Title","desc":"Step description"}] // JSON array of exactly 4 steps describing what happens after they sign up. Personalize to their practice. Typical flow: Strategy Call, Custom Proposal/Onboarding, Quick Start, Launch & Monitor."
 }`;
 
   var generatedContent;
@@ -256,20 +256,21 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
 
   // Build next steps HTML
   var nextStepsHtml = '';
-  if (generatedContent.next_steps) {
-    nextStepsHtml = generatedContent.next_steps;
+  var steps = [];
+  if (Array.isArray(generatedContent.next_steps) && generatedContent.next_steps.length > 0) {
+    steps = generatedContent.next_steps;
   } else {
-    var steps = [
+    steps = [
       { title: 'Choose Your Plan', desc: 'Click the button below to select your payment method and complete your investment. We offer both bank transfer (ACH) and credit card options.' },
       { title: 'Sign Your Agreement', desc: 'After payment, you will be directed to our client portal where you can review and electronically sign our service agreement.' },
       { title: 'Book Your Onboarding Call', desc: 'Schedule a 60-75 minute call with Scott, our Director of Growth. We will set up accounts, define your target keywords, and align on campaign strategy together.' },
       { title: 'We Get to Work', desc: 'Within the first week, our team starts the deep audit of your practice. You will see content drafts for review, and your digital footprint begins taking shape immediately.' }
     ];
-    steps.forEach(function(s, i) {
-      var mb = i < steps.length - 1 ? 'margin-bottom:1.25rem;' : '';
-      nextStepsHtml += '<div style="display:flex;gap:1rem;align-items:flex-start;' + mb + '"><div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;">' + (i + 1) + '</div><div><h4>' + s.title + '</h4><p style="margin-bottom:0;">' + s.desc + '</p></div></div>';
-    });
   }
+  steps.forEach(function(s, i) {
+    var mb = i < steps.length - 1 ? 'margin-bottom:1.25rem;' : '';
+    nextStepsHtml += '<div style="display:flex;gap:1rem;align-items:flex-start;' + mb + '"><div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;">' + (i + 1) + '</div><div><h4>' + (s.title || 'Step ' + (i+1)) + '</h4><p style="margin-bottom:0;">' + (s.desc || s.description || '') + '</p></div></div>';
+  });
 
   // Replace template variables
   var html = templateHtml;
@@ -403,3 +404,4 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
     results: results
   });
 };
+
