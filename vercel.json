@@ -71,6 +71,9 @@
     "api/proposal-chat.js": {
       "maxDuration": 120,
       "memory": 1024
+    },
+    "api/delete-proposal.js": {
+      "maxDuration": 60
     }
   },
   "crons": [
