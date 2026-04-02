@@ -427,9 +427,11 @@
             if (data === '[DONE]') continue;
             try {
               var parsed = JSON.parse(data);
-              if (parsed.text) {
-                fullText += parsed.text;
+              if (parsed.type === 'content_block_delta' && parsed.delta && parsed.delta.text) {
+                fullText += parsed.delta.text;
                 startTypewriter();
+              } else if (parsed.type === 'message_stop') {
+                break;
               }
             } catch(e) {}
           }
