@@ -411,8 +411,6 @@ a:hover { color: var(--color-primary-hover); }
   var STATUS_ICONS = { delivered: '\u2713', in_progress: '\u25B6', pending_review: '\u25CF', not_started: '', blocked: '\u2716', client_action: '\u25CF' };
 
   var state = { contacts: [], deliverables: [], clientFilter: 'all', phaseFilter: 'all', view: 'list' };
-    }).then(function(r) { return r.json(); });
-  }
 
   function loadData() {
     Promise.all([
