@@ -875,9 +875,11 @@ strong { font-weight: 600; color: var(--color-heading); }
     // Update UI for embed steps - show completion banner (keep content visible)
     if (stepKey === 'book_intro_call') {
       document.getElementById('callAlreadyBooked').style.display = 'block';
+      document.getElementById('calendarEmbed').style.display = 'none';
     }
     if (stepKey === 'connect_accounts') {
       document.getElementById('accessAlreadyDone').style.display = 'block';
+      document.getElementById('leadsieEmbed').style.display = 'none';
     }
   };
 
@@ -1525,12 +1527,14 @@ strong { font-weight: 600; color: var(--color-heading); }
           document.getElementById('signedDetails').textContent = 'Signed by ' + a.signer_name + ' on ' + new Date(a.signed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
         }
 
-        // Check embed step states - show completion banners (keep embeds visible)
+        // Check embed step states - show completion banners and hide embeds
         if (stepData['book_intro_call'] === 'complete') {
           document.getElementById('callAlreadyBooked').style.display = 'block';
+          document.getElementById('calendarEmbed').style.display = 'none';
         }
         if (stepData['connect_accounts'] === 'complete') {
           document.getElementById('accessAlreadyDone').style.display = 'block';
+          document.getElementById('leadsieEmbed').style.display = 'none';
         }
 
         // Render CSA
