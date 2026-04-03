@@ -358,16 +358,14 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
   function buildResultsSection(type) {
     // Hardcoded GSC results matching the /results page data
     var groupResults = [
-      { pct: 213, time: '6 months', id: '1uVfNKUBxYy3KCEJEmJU92QE3DN9khHWA' },
-      { pct: 170, time: '6 months', id: '1spFbq2k8QOqwWbLuvz1JxLgWpM7VFfaa' },
-      { pct: 156, time: '3 months', id: '1jNjoiNtFgIINAyUpWyvH426qq1HTHG7X' },
-      { pct: 137, time: '6 months', id: '1kXJKL6OLlUvXNwweYGlAr_M0jNGeBIQa' }
+      { pct: 213, time: '6 months', id: '1uVfNKUBxYy3KCEJEmJU92QE3DN9khHWA', label: 'Group Practice' },
+      { pct: 170, time: '6 months', id: '1spFbq2k8QOqwWbLuvz1JxLgWpM7VFfaa', label: 'Group Practice' },
+      { pct: 156, time: '3 months', id: '1jNjoiNtFgIINAyUpWyvH426qq1HTHG7X', label: 'Group Practice' }
     ];
     var soloResults = [
-      { pct: 308, time: '3 months', id: '1ClS6rM1HrdGKr1qXKF7J9Yo32HaiFZOE' },
-      { pct: 202, time: '6 months', id: '1fdthfPuD2hn4g-yR1yaEd3VYJTYdFN5l' },
-      { pct: 168, time: '6 months', id: '1zTy0yzf_cZFPRiQNCykjxTLQfjoRDKVT' },
-      { pct: 168, time: '3 months', id: '1I6I47jI8ieqvOviLT0IYn60l9DuGf_Il' }
+      { pct: 308, time: '3 months', id: '1ClS6rM1HrdGKr1qXKF7J9Yo32HaiFZOE', label: 'Solo Therapist' },
+      { pct: 202, time: '6 months', id: '1fdthfPuD2hn4g-yR1yaEd3VYJTYdFN5l', label: 'Solo Therapist' },
+      { pct: 168, time: '6 months', id: '1zTy0yzf_cZFPRiQNCykjxTLQfjoRDKVT', label: 'Solo Therapist' }
     ];
 
     var featured = type === 'solo' ? soloResults : groupResults;
@@ -376,7 +374,7 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
 
     var html = '';
 
-    // Stats bar
+    // Stats bar (green numbers)
     html += '<div class="results-stats-bar">';
     html += '<div class="stat"><div class="stat-value">22</div><div class="stat-label">Client Results</div></div>';
     html += '<div class="stat"><div class="stat-value">115%</div><div class="stat-label">Average Increase</div></div>';
@@ -386,13 +384,14 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
     // Type label
     html += '<p style="text-align:center;font-size:.8125rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-muted);margin-bottom:1rem;">Featuring results from ' + typeLabel + '</p>';
 
-    // Mini grid of top 4 results
+    // Mini grid of top 3 results (matching results page card design)
     html += '<div class="results-mini-grid">';
-    featured.forEach(function(r) {
-      var imgUrl = 'https://lh3.googleusercontent.com/d/' + r.id + '=w600';
-      html += '<div class="results-mini-card">';
-      html += '<img class="card-img" src="' + imgUrl + '" alt="' + typeLabel.slice(0, -1) + ' result: +' + r.pct + '% in ' + r.time + '" loading="lazy">';
-      html += '<div class="card-info"><span class="card-pct">+' + r.pct + '%</span><span class="card-meta">' + r.time + '</span></div>';
+    featured.forEach(function(r, i) {
+      var imgUrl = 'https://lh3.googleusercontent.com/d/' + r.id + '=w800';
+      var hiResUrl = 'https://lh3.googleusercontent.com/d/' + r.id + '=w1400';
+      html += '<div class="results-mini-card" onclick="window._openResultLightbox(' + i + ')">';
+      html += '<div class="card-image-wrap"><img src="' + imgUrl + '" alt="' + r.label + ' result: +' + r.pct + '% in ' + r.time + '" loading="lazy" data-hires="' + hiResUrl + '"><div class="card-badge">+' + r.pct + '%</div></div>';
+      html += '<div class="card-body"><div class="card-meta"><span class="card-type-tag">' + r.label + '</span> ' + r.time + '</div></div>';
       html += '</div>';
     });
     html += '</div>';
@@ -401,6 +400,24 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
     html += '<div class="results-see-all">';
     html += '<a href="https://clients.moonraker.ai/results" class="cta-btn-outline" target="_blank" rel="noopener">See All 22 Client Results &#8594;</a>';
     html += '</div>';
+
+    // Lightbox HTML
+    html += '<div class="results-lightbox" id="resultsLightbox" onclick="window._closeResultLightbox()">';
+    html += '<button class="results-lightbox-close" onclick="window._closeResultLightbox()">&times;</button>';
+    html += '<div class="results-lightbox-inner" onclick="event.stopPropagation()">';
+    html += '<img id="resultsLightboxImg" src="" alt="">';
+    html += '<div class="results-lightbox-caption" id="resultsLightboxCaption"></div>';
+    html += '</div></div>';
+
+    // Lightbox JS (data embedded)
+    html += '<script>';
+    html += '(function(){';
+    html += 'var rd=' + JSON.stringify(featured.map(function(r) { return { pct: r.pct, time: r.time, label: r.label, hires: 'https://lh3.googleusercontent.com/d/' + r.id + '=w1400' }; })) + ';';
+    html += 'window._openResultLightbox=function(i){var r=rd[i],lb=document.getElementById("resultsLightbox");document.getElementById("resultsLightboxImg").src=r.hires;document.getElementById("resultsLightboxCaption").textContent=r.label+"  \\u00B7  +"+r.pct+"%  \\u00B7  "+r.time;lb.classList.add("open");document.body.style.overflow="hidden";};';
+    html += 'window._closeResultLightbox=function(){document.getElementById("resultsLightbox").classList.remove("open");document.body.style.overflow="";};';
+    html += 'document.addEventListener("keydown",function(e){if(e.key==="Escape")window._closeResultLightbox();});';
+    html += '})();';
+    html += '</script>';
 
     return html;
   }
@@ -538,6 +555,7 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
     results: results
   });
 };
+
 
 
 
