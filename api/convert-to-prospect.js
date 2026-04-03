@@ -62,7 +62,8 @@ module.exports = async function handler(req, res) {
       { contact_id: contactId, step_key: 'practice_details', label: 'Practice Details', status: 'pending', sort_order: 5 },
       { contact_id: contactId, step_key: 'bio_materials', label: 'Bio Materials', status: 'pending', sort_order: 6 },
       { contact_id: contactId, step_key: 'social_profiles', label: 'Social Profiles', status: 'pending', sort_order: 7 },
-      { contact_id: contactId, step_key: 'checkins_and_drive', label: 'Google Drive', status: 'pending', sort_order: 8 }
+      { contact_id: contactId, step_key: 'checkins_and_drive', label: 'Google Drive', status: 'pending', sort_order: 8 },
+      { contact_id: contactId, step_key: 'performance_guarantee', label: 'Performance Guarantee', status: 'pending', sort_order: 9 }
     ];
 
     // Delete any existing steps for this contact first (idempotent)
@@ -76,7 +77,7 @@ module.exports = async function handler(req, res) {
       headers: sbHeaders,
       body: JSON.stringify(steps)
     });
-    results.supabase.onboarding_steps = seedResp.ok ? 8 : 'failed';
+    results.supabase.onboarding_steps = seedResp.ok ? 9 : 'failed';
 
     // ============================================================
     // STEP 3: Deploy 4 template files to GitHub
@@ -184,3 +185,4 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: err.message, results: results });
   }
 };
+
