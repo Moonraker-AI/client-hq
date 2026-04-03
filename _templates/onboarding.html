@@ -763,6 +763,30 @@ strong { font-weight: 600; color: var(--color-heading); }
         </div>
       </div>
 
+      <!-- Pre-checkout teaser (shown when plan_type is null) -->
+      <div id="pgTeaser" style="display:none;">
+        <div style="background:rgba(0,212,126,.06);border:1px solid rgba(0,212,126,.2);border-radius:12px;padding:2rem;margin-bottom:2rem;">
+          <div style="font-size:2rem;margin-bottom:.75rem;">&#127919;</div>
+          <h3 style="color:var(--color-primary);margin:0 0 .75rem;">We Put Our Money Where Our Mouth Is</h3>
+          <p style="color:var(--color-body);font-size:.9375rem;line-height:1.7;margin:0 0 1rem;">When you choose our 12-Month Campaign, we set a measurable consultation call goal together based on your practice metrics. If we do not hit that goal within 12 months, we continue working for free until we do.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+            <div style="background:var(--color-surface);border-radius:10px;padding:1rem;text-align:center;">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--color-heading);font-family:'Outfit',sans-serif;">2x</div>
+              <div style="font-size:.75rem;color:var(--color-muted);margin-top:.25rem;">Your investment back in new client revenue</div>
+            </div>
+            <div style="background:var(--color-surface);border-radius:10px;padding:1rem;text-align:center;">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--color-heading);font-family:'Outfit',sans-serif;">12 mo</div>
+              <div style="font-size:.75rem;color:var(--color-muted);margin-top:.25rem;">To hit the goal or we keep working free</div>
+            </div>
+            <div style="background:var(--color-surface);border-radius:10px;padding:1rem;text-align:center;">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--color-heading);font-family:'Outfit',sans-serif;">Custom</div>
+              <div style="font-size:.75rem;color:var(--color-muted);margin-top:.25rem;">Goal tailored to your specific practice</div>
+            </div>
+          </div>
+          <p style="color:var(--color-muted);font-size:.875rem;margin:0;">Once you select your campaign length, this section will unlock so you can configure your personalized guarantee.</p>
+        </div>
+      </div>
+
       <!-- Annual configurator (shown by default) -->
       <div id="pgConfigurator">
         <p style="color:var(--color-muted);margin-bottom:1.5rem;">Each booked consultation call represents real value based on your practice metrics. Fill in the numbers below and we will calculate your performance benchmark together. These numbers will be finalized on your intro call with Scott.</p>
@@ -1613,20 +1637,32 @@ strong { font-weight: 600; color: var(--color-heading); }
   function loadGuaranteeData() {
     if (!contact) return;
 
-    // Determine if annual plan
-    var isAnnual = contact.plan_type === 'annual';
-    if (!isAnnual && contact.plan_type) {
+    // Three states based on plan_type
+    if (!contact.plan_type) {
+      // Pre-checkout: show teaser, hide configurator
+      document.getElementById('pgTeaser').style.display = 'block';
       document.getElementById('pgConfigurator').style.display = 'none';
+      document.getElementById('pgNotAnnual').style.display = 'none';
+      document.getElementById('pgLocked').style.display = 'none';
+      return;
+    }
+
+    if (contact.plan_type !== 'annual') {
+      // Quarterly/monthly: show lockout
+      document.getElementById('pgConfigurator').style.display = 'none';
+      document.getElementById('pgTeaser').style.display = 'none';
       document.getElementById('pgNotAnnual').style.display = 'block';
       document.getElementById('pgLocked').style.display = 'none';
       return;
     }
-    // If plan_type is null, show configurator (they may not have selected yet)
+
+    // Annual: show full configurator
+    document.getElementById('pgTeaser').style.display = 'none';
+    document.getElementById('pgNotAnnual').style.display = 'none';
 
     // Pre-fill investment if we know plan_amount_cents
     if (contact.plan_amount_cents) {
-      var annual = contact.plan_type === 'annual' ? contact.plan_amount_cents : contact.plan_amount_cents * 12;
-      document.getElementById('pgInvestment').value = Math.round(annual / 100);
+      document.getElementById('pgInvestment').value = Math.round(contact.plan_amount_cents / 100);
     }
 
     // Load existing guarantee draft
