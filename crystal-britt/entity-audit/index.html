@@ -183,7 +183,7 @@ section { padding: 4.5rem 0; }
 .quick-wins li::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--color-primary); border-radius: 50%; flex-shrink: 0; margin-top: .55rem; }
 
 /* RTPBA section */
-.rtpba-section { margin: 3rem 0; }
+.rtpba-section { margin: 1.5rem 0 0; }
 .rtpba-toggle { width: 100%; background: linear-gradient(135deg, var(--color-navy), #1a2f5a); border: none; border-radius: 14px; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all .3s; }
 .rtpba-toggle:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.15); }
 .rtpba-toggle span { color: #E8F5EF; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1rem; }
@@ -385,26 +385,25 @@ section { padding: 4.5rem 0; }
     <div id="findingsContainer">
       <!-- Populated by JS -->
     </div>
-  </div>
-</section>
 
-<!-- READY-TO-PUBLISH BEST ANSWER -->
-<div id="rtpbaSection" class="rtpba-section" style="display:none;">
-  <div class="container">
-    <button class="rtpba-toggle" id="rtpbaToggle">
-      <span>&#128196; Ready-to-Publish Best Answer</span>
-      <span class="arrow">&#9660;</span>
-    </button>
-    <div class="rtpba-content">
-      <div class="rtpba-content-inner">
-        <p class="rtpba-label">This is the Surge-generated Ready-to-Publish Best Answer for your practice homepage. This is the content AI search engines are looking for when they decide whether to recommend your practice. Use this as a reference for rewriting or restructuring your homepage content.</p>
-        <div id="rtpbaContent">
-          <!-- Populated by JS -->
+    <!-- READY-TO-PUBLISH BEST ANSWER -->
+    <div id="rtpbaSection" class="rtpba-section" style="display:none;">
+      <button class="rtpba-toggle" id="rtpbaToggle">
+        <span>&#128196; Ready-to-Publish Best Answer</span>
+        <span class="arrow">&#9660;</span>
+      </button>
+      <div class="rtpba-content">
+        <div class="rtpba-content-inner">
+          <p class="rtpba-label">This is the Surge-generated Ready-to-Publish Best Answer for your practice homepage. This is the content AI search engines are looking for when they decide whether to recommend your practice. Use this as a reference for rewriting or restructuring your homepage content.</p>
+          <div id="rtpbaContent">
+            <!-- Populated by JS -->
+          </div>
         </div>
       </div>
     </div>
+
   </div>
-</div>
+</section>
 
 <hr class="divider">
 
@@ -803,3 +802,4 @@ section { padding: 4.5rem 0; }
 </script>
 </body>
 </html>
+
