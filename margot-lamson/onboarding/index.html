@@ -171,6 +171,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 .form-group textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
 .form-group select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7599' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .75rem center; padding-right: 2.5rem; }
 .form-group .help-text { font-size: .75rem; color: var(--color-muted); margin-top: .25rem; }
+.form-hint { display: block; font-size: .75rem; color: var(--color-muted); margin-top: .3rem; line-height: 1.5; }
 .form-group .prefilled { font-size: .7rem; color: var(--color-primary); margin-top: .2rem; }
 .radio-group { display: flex; gap: 1rem; flex-wrap: wrap; }
 .radio-option { display: flex; align-items: center; gap: .5rem; padding: .5rem 1rem; border: 1px solid var(--color-border); border-radius: 8px; cursor: pointer; transition: all .2s; font-size: .875rem; }
@@ -243,7 +244,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     <!-- STEP 1: Confirm Info -->
     <div class="step-panel" data-step="confirm_info">
-      <span class="step-badge">Step 1 of 8</span>
+      <span class="step-badge">Step 1 of 9</span>
       <h1>Confirm Your Info <span class="autosave-status" id="ci_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
       <p style="color:var(--color-muted)">We have gathered some details about your practice. Please review and correct anything that needs updating.</p>
 
@@ -297,7 +298,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     <!-- STEP 2: Sign Agreement -->
     <div class="step-panel" data-step="sign_agreement">
-      <span class="step-badge">Step 2 of 8</span>
+      <span class="step-badge">Step 2 of 9</span>
       <h1>Client Service Agreement</h1>
       <p style="color:var(--color-muted)">Please review the agreement below, then sign at the bottom to confirm.</p>
 
@@ -349,7 +350,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     <!-- STEP 3: Book Intro Call -->
     <div class="step-panel" data-step="book_intro_call">
-      <span class="step-badge">Step 3 of 8</span>
+      <span class="step-badge">Step 3 of 9</span>
       <h1>Book Your Intro Call</h1>
       <p style="color:var(--color-muted)">Your intro call with Scott is a collaborative kickoff where we align on your campaign strategy and make sure everything is set up for success.</p>
 
@@ -412,7 +413,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     <!-- STEP 4: Connect Accounts (Leadsie) -->
     <div class="step-panel" data-step="connect_accounts">
-      <span class="step-badge">Step 4 of 8</span>
+      <span class="step-badge">Step 4 of 9</span>
       <h1>Connect Your Accounts</h1>
       <p style="color:var(--color-muted)">We use a secure tool called Leadsie to connect to your website and Google properties. Click through the steps below to grant access to your accounts. This process takes about 5 minutes.</p>
 
@@ -458,7 +459,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     <!-- STEP 5: Practice Details -->
     <div class="step-panel" data-step="practice_details">
-      <span class="step-badge">Step 5 of 8</span>
+      <span class="step-badge">Step 5 of 9</span>
       <h1>Practice &amp; Clinical Details <span class="autosave-status" id="pd_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
       <p style="color:var(--color-muted)">This information helps us build your service pages, write content in your voice, and target the right audience. Separate multiple items with commas.</p>
 
@@ -531,7 +532,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     <!-- STEP 6: Bio Materials -->
     <div class="step-panel" data-step="bio_materials">
-      <span class="step-badge">Step 6 of 8</span>
+      <span class="step-badge">Step 6 of 9</span>
       <h1>Bio Page Materials <span class="autosave-status" id="bio_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
       <p style="color:var(--color-muted)">We build a detailed bio page for each therapist at your practice. This info feeds directly into your bio page, schema markup, and AI visibility. Start with the primary therapist and we can add more later.</p>
 
@@ -583,7 +584,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     <!-- STEP 7: Social Profiles -->
     <div class="step-panel" data-step="social_profiles">
-      <span class="step-badge">Step 7 of 8</span>
+      <span class="step-badge">Step 7 of 9</span>
       <h1>Social Profiles <span class="autosave-status" id="sp_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
       <p style="color:var(--color-muted)">Google crawls social profiles to verify your practice is tied to a real person. We build out 9 interconnected profiles as part of our Rising Tide strategy. Please share any existing profile URLs below.</p>
 
@@ -707,7 +708,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     <!-- STEP 8: Google Drive -->
     <div class="step-panel" data-step="checkins_and_drive">
-      <span class="step-badge">Step 8 of 8</span>
+      <span class="step-badge">Step 8 of 9</span>
       <h1>Your Google Drive Folder</h1>
       <p style="color:var(--color-muted)">Your shared Google Drive folder is where you can upload creative assets, documents, and images for your campaign. We check this folder regularly.</p>
 
@@ -742,10 +743,151 @@ strong { font-weight: 600; color: var(--color-heading); }
         </div>
       </div>
 
-      <button class="btn btn-success" onclick="completeStep('checkins_and_drive')">Complete Onboarding &#10003;</button>
-
       <div class="step-actions">
         <button class="btn btn-outline" onclick="goToStep(6)">&#8592; Back</button>
+        <button class="btn btn-primary" onclick="completeAndAdvance('checkins_and_drive', 8)">Continue: Performance Guarantee &#8594;</button>
+      </div>
+    </div>
+
+    <!-- STEP 9: Performance Guarantee -->
+    <div class="step-panel" data-step="performance_guarantee">
+      <span class="step-badge">Step 9 of 9</span>
+      <h1>Your SEO Performance Guarantee</h1>
+
+      <!-- Non-annual notice (hidden by default, shown via JS) -->
+      <div id="pgNotAnnual" style="display:none;">
+        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:1.5rem;margin-bottom:2rem;">
+          <h3 style="margin:0 0 .75rem;color:var(--color-warning);">&#128274; Available with 12-Month Campaigns</h3>
+          <p style="color:var(--color-body);margin:0 0 .75rem;font-size:.9375rem;line-height:1.7;">The Performance Guarantee is available exclusively with our 12-Month Campaign. This is one of the key advantages of committing to a full year: if we do not hit your consultation call goal within 12 months, we continue working at no additional cost until we do. No other agency in this space offers this.</p>
+          <p style="color:var(--color-muted);margin:0;font-size:.875rem;">Interested in upgrading? Let Scott know on your intro call or reach out to <a href="mailto:scott@moonraker.ai">scott@moonraker.ai</a>.</p>
+        </div>
+      </div>
+
+      <!-- Pre-checkout teaser (shown when plan_type is null) -->
+      <div id="pgTeaser" style="display:none;">
+        <div style="background:rgba(0,212,126,.06);border:1px solid rgba(0,212,126,.2);border-radius:12px;padding:2rem;margin-bottom:2rem;">
+          <div style="font-size:2rem;margin-bottom:.75rem;">&#127919;</div>
+          <h3 style="color:var(--color-primary);margin:0 0 .75rem;">We Put Our Money Where Our Mouth Is</h3>
+          <p style="color:var(--color-body);font-size:.9375rem;line-height:1.7;margin:0 0 1rem;">When you choose our 12-Month Campaign, we set a measurable consultation call goal together based on your practice metrics. If we do not hit that goal within 12 months, we continue working for free until we do.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+            <div style="background:var(--color-surface);border-radius:10px;padding:1rem;text-align:center;">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--color-heading);font-family:'Outfit',sans-serif;">2x</div>
+              <div style="font-size:.75rem;color:var(--color-muted);margin-top:.25rem;">Your investment back in new client revenue</div>
+            </div>
+            <div style="background:var(--color-surface);border-radius:10px;padding:1rem;text-align:center;">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--color-heading);font-family:'Outfit',sans-serif;">12 mo</div>
+              <div style="font-size:.75rem;color:var(--color-muted);margin-top:.25rem;">To hit the goal or we keep working free</div>
+            </div>
+            <div style="background:var(--color-surface);border-radius:10px;padding:1rem;text-align:center;">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--color-heading);font-family:'Outfit',sans-serif;">Custom</div>
+              <div style="font-size:.75rem;color:var(--color-muted);margin-top:.25rem;">Goal tailored to your specific practice</div>
+            </div>
+          </div>
+          <p style="color:var(--color-muted);font-size:.875rem;margin:0;">Once you select your campaign length, this section will unlock so you can configure your personalized guarantee.</p>
+        </div>
+      </div>
+
+      <!-- Annual configurator (shown by default) -->
+      <div id="pgConfigurator">
+        <p style="color:var(--color-muted);margin-bottom:1.5rem;">Each booked consultation call represents real value based on your practice metrics. Fill in the numbers below and we will calculate your performance benchmark together. These numbers will be finalized on your intro call with Scott.</p>
+
+        <div class="form-section">
+          <h3>&#9889; Your Practice Metrics</h3>
+          <p style="color:var(--color-muted);font-size:.9375rem;line-height:1.7;margin-bottom:1.25rem;">We track consultation calls coming from organic channels only: Google Search, Google Maps, and AI Search results. Calls from paid ads, referrals, or other sources are not included in this benchmark.</p>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="form-group">
+              <label class="form-label">Average Client Lifetime Value</label>
+              <div style="position:relative;">
+                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--color-muted);font-weight:600;">$</span>
+                <input type="number" id="pgLtv" class="form-input" placeholder="5,000" min="0" step="100" style="padding-left:28px;" oninput="recalcGuarantee()">
+              </div>
+              <span class="form-hint">How much revenue does a typical client generate over their lifetime with your practice?</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Consultation-to-Client Conversion Rate</label>
+              <div style="position:relative;">
+                <input type="number" id="pgConversion" class="form-input" placeholder="75" min="0" max="100" step="5" style="padding-right:28px;" oninput="recalcGuarantee()">
+                <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--color-muted);font-weight:600;">%</span>
+              </div>
+              <span class="form-hint">Of the people who show up for a consultation, what percentage become clients?</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Call Attendance Rate</label>
+              <div style="position:relative;">
+                <input type="number" id="pgAttendance" class="form-input" placeholder="90" min="0" max="100" step="5" style="padding-right:28px;" oninput="recalcGuarantee()">
+                <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--color-muted);font-weight:600;">%</span>
+              </div>
+              <span class="form-hint">Of the people who book a call, what percentage actually attend?</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Current Monthly Organic Calls</label>
+              <input type="number" id="pgCurrentCalls" class="form-input" placeholder="2" min="0" step="1" oninput="recalcGuarantee()">
+              <span class="form-hint">How many consultation calls per month currently come from Google Search, Maps, or AI Search?</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Investment (read from contact data or entered manually) -->
+        <div class="form-section" style="margin-top:1.5rem;">
+          <h3>&#128176; Your Investment</h3>
+          <div class="form-group">
+            <label class="form-label">12-Month Campaign Investment</label>
+            <div style="position:relative;">
+              <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--color-muted);font-weight:600;">$</span>
+              <input type="number" id="pgInvestment" class="form-input" placeholder="20,000" min="0" step="100" style="padding-left:28px;" oninput="recalcGuarantee()">
+            </div>
+            <span class="form-hint">Your total investment over 12 months (monthly fee x 12). We will confirm this on your intro call.</span>
+          </div>
+        </div>
+
+        <!-- Live Calculation -->
+        <div id="pgCalculation" style="display:none;margin-top:2rem;">
+          <div class="form-section">
+            <h3>&#128202; The Math Behind Your Guarantee</h3>
+            <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px;padding:1.5rem;font-size:.9375rem;line-height:1.8;">
+              <div style="color:var(--color-muted);">Value per booked call = <span id="pgLtvDisplay">$0</span> &times; <span id="pgConvDisplay">0%</span> &times; <span id="pgAttDisplay">0%</span> = <strong style="color:var(--color-heading);" id="pgValuePerCall">$0.00</strong> per booked call</div>
+              <div style="color:var(--color-muted);margin-top:.5rem;"><span id="pgDoubleInvestment">$0</span> in new client value = <span id="pgValuePerCallRepeat">$0.00</span> &times; <strong style="color:var(--color-heading);" id="pgGuaranteeCalls">0</strong> calls</div>
+            </div>
+          </div>
+
+          <!-- Guarantee Card -->
+          <div style="background:rgba(0,212,126,.06);border:1px solid rgba(0,212,126,.2);border-radius:12px;padding:1.5rem;margin-top:1.5rem;">
+            <h3 style="color:var(--color-primary);margin:0 0 .75rem;">&#9989; Your Guarantee</h3>
+            <p style="font-size:.9375rem;line-height:1.7;margin:0 0 .75rem;">We will book you <strong id="pgCallsDisplay">0</strong> organic consultation calls in 12 months or we will work for free until you get there.</p>
+            <p style="font-size:.875rem;color:var(--color-muted);margin:0;">You are currently generating an average of <strong id="pgCurrentDisplay">0</strong> organic calls per month, so we want to see <strong id="pgBenchmarkDisplay">0</strong> total organic calls come in over the course of the year to hit our benchmark.</p>
+          </div>
+
+          <!-- Draft notice -->
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1rem 1.25rem;margin-top:1.5rem;display:flex;align-items:flex-start;gap:.75rem;">
+            <span style="font-size:1.25rem;flex-shrink:0;">&#128172;</span>
+            <div>
+              <strong style="font-size:.875rem;display:block;margin-bottom:.25rem;">This is a draft</strong>
+              <p style="font-size:.8125rem;color:var(--color-muted);margin:0;">These numbers will not be locked in until we review them together on your intro call with Scott. Save your draft below and we will finalize everything on the call.</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:1.5rem;">
+          <button class="btn btn-primary" id="pgSaveBtn" onclick="saveGuaranteeDraft()" disabled>Save Draft</button>
+          <span id="pgSaveStatus" style="margin-left:.75rem;font-size:.8125rem;color:var(--color-muted);"></span>
+        </div>
+      </div>
+
+      <!-- Locked state (shown when status = locked) -->
+      <div id="pgLocked" style="display:none;">
+        <div style="background:rgba(0,212,126,.06);border:1px solid rgba(0,212,126,.2);border-radius:12px;padding:2rem;text-align:center;">
+          <div style="font-size:2.5rem;margin-bottom:.75rem;">&#9989;</div>
+          <h3 style="color:var(--color-primary);margin:0 0 .5rem;">Performance Guarantee Confirmed</h3>
+          <p style="font-size:1.125rem;margin:.75rem 0;">We will book you <strong id="pgLockedCalls">0</strong> organic consultation calls in 12 months or we will work for free until you get there.</p>
+          <p style="color:var(--color-muted);font-size:.875rem;margin:0;">Total 12-month benchmark: <strong id="pgLockedBenchmark">0</strong> organic calls</p>
+        </div>
+      </div>
+
+      <button class="btn btn-success" onclick="completeStep('performance_guarantee')" id="pgCompleteBtn" style="display:none;margin-top:1.5rem;">Complete Onboarding &#10003;</button>
+
+      <div class="step-actions">
+        <button class="btn btn-outline" onclick="goToStep(7)">&#8592; Back</button>
         <a href="" id="dashboardLink" class="btn btn-primary">Go to Dashboard &#8594;</a>
       </div>
     </div>
@@ -779,7 +921,8 @@ strong { font-weight: 600; color: var(--color-heading); }
     { key: 'practice_details', label: 'Practice Details', num: 5 },
     { key: 'bio_materials', label: 'Bio Materials', num: 6 },
     { key: 'social_profiles', label: 'Social Profiles', num: 7 },
-    { key: 'checkins_and_drive', label: 'Google Drive', num: 8 }
+    { key: 'checkins_and_drive', label: 'Google Drive', num: 8 },
+    { key: 'performance_guarantee', label: 'Guarantee', num: 9 }
   ];
 
   var contact = null;
@@ -1487,6 +1630,169 @@ strong { font-weight: 600; color: var(--color-heading); }
   };
 
   // ============================================================
+  // FORM: Step 9 - Performance Guarantee
+  // ============================================================
+  var guaranteeData = null;
+
+  function loadGuaranteeData() {
+    if (!contact) return;
+
+    // Three states based on plan_type
+    if (!contact.plan_type) {
+      // Pre-checkout: show teaser, hide configurator
+      document.getElementById('pgTeaser').style.display = 'block';
+      document.getElementById('pgConfigurator').style.display = 'none';
+      document.getElementById('pgNotAnnual').style.display = 'none';
+      document.getElementById('pgLocked').style.display = 'none';
+      return;
+    }
+
+    if (contact.plan_type !== 'annual') {
+      // Quarterly/monthly: show lockout
+      document.getElementById('pgConfigurator').style.display = 'none';
+      document.getElementById('pgTeaser').style.display = 'none';
+      document.getElementById('pgNotAnnual').style.display = 'block';
+      document.getElementById('pgLocked').style.display = 'none';
+      return;
+    }
+
+    // Annual: show full configurator
+    document.getElementById('pgTeaser').style.display = 'none';
+    document.getElementById('pgNotAnnual').style.display = 'none';
+
+    // Pre-fill investment if we know plan_amount_cents
+    if (contact.plan_amount_cents) {
+      document.getElementById('pgInvestment').value = Math.round(contact.plan_amount_cents / 100);
+    }
+
+    // Load existing guarantee draft
+    sbFetch('performance_guarantees', 'contact_id=eq.' + contact.id + '&select=*&limit=1')
+      .then(function(rows) {
+        if (rows && rows.length > 0) {
+          guaranteeData = rows[0];
+          if (guaranteeData.avg_client_ltv_cents) document.getElementById('pgLtv').value = Math.round(guaranteeData.avg_client_ltv_cents / 100);
+          if (guaranteeData.conversion_rate) document.getElementById('pgConversion').value = Math.round(guaranteeData.conversion_rate * 100);
+          if (guaranteeData.attendance_rate) document.getElementById('pgAttendance').value = Math.round(guaranteeData.attendance_rate * 100);
+          if (guaranteeData.current_monthly_organic_calls != null) document.getElementById('pgCurrentCalls').value = guaranteeData.current_monthly_organic_calls;
+          if (guaranteeData.investment_cents) document.getElementById('pgInvestment').value = Math.round(guaranteeData.investment_cents / 100);
+
+          if (guaranteeData.status === 'locked') {
+            document.getElementById('pgConfigurator').style.display = 'none';
+            document.getElementById('pgLocked').style.display = 'block';
+            document.getElementById('pgLockedCalls').textContent = guaranteeData.guarantee_calls || 0;
+            document.getElementById('pgLockedBenchmark').textContent = guaranteeData.total_benchmark || 0;
+            document.getElementById('pgCompleteBtn').style.display = 'inline-flex';
+          }
+
+          recalcGuarantee();
+        }
+      })
+      .catch(function() {});
+  }
+
+  window.recalcGuarantee = function() {
+    var ltv = parseFloat(document.getElementById('pgLtv').value) || 0;
+    var conv = parseFloat(document.getElementById('pgConversion').value) / 100 || 0;
+    var att = parseFloat(document.getElementById('pgAttendance').value) / 100 || 0;
+    var currentCalls = parseInt(document.getElementById('pgCurrentCalls').value) || 0;
+    var investment = parseFloat(document.getElementById('pgInvestment').value) || 0;
+
+    var allFilled = ltv > 0 && conv > 0 && att > 0 && investment > 0;
+    document.getElementById('pgSaveBtn').disabled = !allFilled;
+
+    if (!allFilled) {
+      document.getElementById('pgCalculation').style.display = 'none';
+      return;
+    }
+
+    var valuePerCall = ltv * conv * att;
+    var doubleInvestment = investment * 2;
+    var guaranteeCalls = Math.ceil(doubleInvestment / valuePerCall);
+    var totalBenchmark = (currentCalls * 12) + guaranteeCalls;
+
+    document.getElementById('pgLtvDisplay').textContent = '$' + ltv.toLocaleString();
+    document.getElementById('pgConvDisplay').textContent = Math.round(conv * 100) + '%';
+    document.getElementById('pgAttDisplay').textContent = Math.round(att * 100) + '%';
+    document.getElementById('pgValuePerCall').textContent = '$' + valuePerCall.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('pgValuePerCallRepeat').textContent = '$' + valuePerCall.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('pgDoubleInvestment').textContent = '$' + doubleInvestment.toLocaleString();
+    document.getElementById('pgGuaranteeCalls').textContent = guaranteeCalls;
+    document.getElementById('pgCallsDisplay').textContent = guaranteeCalls;
+    document.getElementById('pgCurrentDisplay').textContent = currentCalls;
+    document.getElementById('pgBenchmarkDisplay').textContent = totalBenchmark;
+
+    document.getElementById('pgCalculation').style.display = 'block';
+  };
+
+  window.saveGuaranteeDraft = function() {
+    var ltv = parseFloat(document.getElementById('pgLtv').value) || 0;
+    var conv = parseFloat(document.getElementById('pgConversion').value) / 100 || 0;
+    var att = parseFloat(document.getElementById('pgAttendance').value) / 100 || 0;
+    var currentCalls = parseInt(document.getElementById('pgCurrentCalls').value) || 0;
+    var investment = parseFloat(document.getElementById('pgInvestment').value) || 0;
+
+    var valuePerCall = ltv * conv * att;
+    var doubleInvestment = investment * 2;
+    var guaranteeCalls = Math.ceil(doubleInvestment / valuePerCall);
+    var totalBenchmark = (currentCalls * 12) + guaranteeCalls;
+
+    var payload = {
+      contact_id: contact.id,
+      avg_client_ltv_cents: Math.round(ltv * 100),
+      conversion_rate: conv,
+      attendance_rate: att,
+      current_monthly_organic_calls: currentCalls,
+      investment_cents: Math.round(investment * 100),
+      value_per_call_cents: Math.round(valuePerCall * 100),
+      guarantee_calls: guaranteeCalls,
+      total_benchmark: totalBenchmark,
+      status: 'draft',
+      updated_at: new Date().toISOString()
+    };
+
+    var statusEl = document.getElementById('pgSaveStatus');
+    statusEl.textContent = 'Saving...';
+    statusEl.style.color = 'var(--color-muted)';
+
+    var method, url;
+    if (guaranteeData && guaranteeData.id) {
+      method = 'PATCH';
+      url = SB_URL + '/rest/v1/performance_guarantees?id=eq.' + guaranteeData.id;
+    } else {
+      method = 'POST';
+      url = SB_URL + '/rest/v1/performance_guarantees';
+    }
+
+    fetch(url, {
+      method: method,
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify(payload)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var row = Array.isArray(data) ? data[0] : data;
+      if (row && row.id) {
+        guaranteeData = row;
+        statusEl.textContent = 'Draft saved';
+        statusEl.style.color = 'var(--color-success)';
+        // Mark step in progress
+        sbPatch('onboarding_steps', 'contact_id=eq.' + contact.id + '&step_key=eq.performance_guarantee',
+          { status: 'in_progress', notes: 'Draft: ' + guaranteeCalls + ' calls / ' + totalBenchmark + ' benchmark' });
+        stepData['performance_guarantee'] = 'in_progress';
+        buildNav();
+        setTimeout(function() { statusEl.textContent = ''; }, 3000);
+      } else {
+        statusEl.textContent = 'Error saving';
+        statusEl.style.color = 'var(--color-danger)';
+      }
+    })
+    .catch(function() {
+      statusEl.textContent = 'Error saving';
+      statusEl.style.color = 'var(--color-danger)';
+    });
+  };
+
+  // ============================================================
   // INIT
   // ============================================================
   function init() {
@@ -1550,6 +1856,9 @@ strong { font-weight: 600; color: var(--color-heading); }
         setupAutosave('[data-step="bio_materials"]', saveBioMaterials, 'bio_autosave', 1500);
         setupAutosave('[data-step="social_profiles"]', saveSocialProfiles, 'sp_autosave', 1500);
 
+        // Load performance guarantee data
+        loadGuaranteeData();
+
         // Show the app
         document.getElementById('loadingState').style.display = 'none';
         document.getElementById('mainApp').style.display = 'grid';
@@ -1561,9 +1870,9 @@ strong { font-weight: 600; color: var(--color-heading); }
         }
         goToStep(startStep);
 
-        // Hash-based deep link: /{slug}/onboarding#confirm_info
+        // Hash-based deep link: /{slug}/onboarding#confirm_info or #performance-guarantee
         if (window.location.hash) {
-          var hashKey = window.location.hash.substring(1);
+          var hashKey = window.location.hash.substring(1).replace(/-/g, '_');
           for (var hi = 0; hi < STEPS.length; hi++) {
             if (STEPS[hi].key === hashKey) { goToStep(hi); break; }
           }
@@ -1606,3 +1915,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 </script>
 </body>
 </html>
+
+
+
+
