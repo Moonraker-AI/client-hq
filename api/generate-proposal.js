@@ -59,6 +59,16 @@ module.exports = async function handler(req, res) {
   var billings = proposal.billing_options || [];
   var customPricing = proposal.custom_pricing || null;
 
+  // Load practice_type for results section filtering
+  var practiceType = 'group'; // default
+  try {
+    var pdResp = await fetch(sbUrl + '/rest/v1/practice_details?contact_id=eq.' + contact.id + '&select=practice_type&limit=1', { headers: sbHeaders() });
+    var pdRows = await pdResp.json();
+    if (pdRows && pdRows.length > 0 && pdRows[0].practice_type) {
+      practiceType = pdRows[0].practice_type; // 'solo' or 'group'
+    }
+  } catch (e) { /* default to group */ }
+
   // Update status
   await fetch(sbUrl + '/rest/v1/proposals?id=eq.' + proposalId, {
     method: 'PATCH', headers: sbHeaders(), body: JSON.stringify({ status: 'generating' })
@@ -344,6 +354,57 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
     nextStepsHtml += '<div style="display:flex;gap:1rem;align-items:flex-start;' + mb + '"><div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;">' + (i + 1) + '</div><div><h4>' + (s.title || 'Step ' + (i+1)) + '</h4><p style="margin-bottom:0;">' + (s.desc || s.description || '') + '</p></div></div>';
   });
 
+  // ─── Build Results Section (practice-type aware) ──────────────
+  function buildResultsSection(type) {
+    // Hardcoded GSC results matching the /results page data
+    var groupResults = [
+      { pct: 213, time: '6 months', id: '1uVfNKUBxYy3KCEJEmJU92QE3DN9khHWA' },
+      { pct: 170, time: '6 months', id: '1spFbq2k8QOqwWbLuvz1JxLgWpM7VFfaa' },
+      { pct: 156, time: '3 months', id: '1jNjoiNtFgIINAyUpWyvH426qq1HTHG7X' },
+      { pct: 137, time: '6 months', id: '1kXJKL6OLlUvXNwweYGlAr_M0jNGeBIQa' }
+    ];
+    var soloResults = [
+      { pct: 308, time: '3 months', id: '1ClS6rM1HrdGKr1qXKF7J9Yo32HaiFZOE' },
+      { pct: 202, time: '6 months', id: '1fdthfPuD2hn4g-yR1yaEd3VYJTYdFN5l' },
+      { pct: 168, time: '6 months', id: '1zTy0yzf_cZFPRiQNCykjxTLQfjoRDKVT' },
+      { pct: 168, time: '3 months', id: '1I6I47jI8ieqvOviLT0IYn60l9DuGf_Il' }
+    ];
+
+    var featured = type === 'solo' ? soloResults : groupResults;
+    var typeLabel = type === 'solo' ? 'Solo Therapists' : 'Group Practices';
+    var topPct = type === 'solo' ? '308%' : '213%';
+
+    var html = '';
+
+    // Stats bar
+    html += '<div class="results-stats-bar">';
+    html += '<div class="stat"><div class="stat-value">22</div><div class="stat-label">Client Results</div></div>';
+    html += '<div class="stat"><div class="stat-value">115%</div><div class="stat-label">Average Increase</div></div>';
+    html += '<div class="stat"><div class="stat-value">' + topPct + '</div><div class="stat-label">Top ' + (type === 'solo' ? 'Solo' : 'Group') + ' Result</div></div>';
+    html += '</div>';
+
+    // Type label
+    html += '<p style="text-align:center;font-size:.8125rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-muted);margin-bottom:1rem;">Featuring results from ' + typeLabel + '</p>';
+
+    // Mini grid of top 4 results
+    html += '<div class="results-mini-grid">';
+    featured.forEach(function(r) {
+      var imgUrl = 'https://lh3.googleusercontent.com/d/' + r.id + '=w600';
+      html += '<div class="results-mini-card">';
+      html += '<img class="card-img" src="' + imgUrl + '" alt="' + typeLabel.slice(0, -1) + ' result: +' + r.pct + '% in ' + r.time + '" loading="lazy">';
+      html += '<div class="card-info"><span class="card-pct">+' + r.pct + '%</span><span class="card-meta">' + r.time + '</span></div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    // CTA
+    html += '<div class="results-see-all">';
+    html += '<a href="https://clients.moonraker.ai/results" class="cta-btn-outline" target="_blank" rel="noopener">See All 22 Client Results &#8594;</a>';
+    html += '</div>';
+
+    return html;
+  }
+
   // Replace template variables
   var html = templateHtml;
   var replacements = {
@@ -381,6 +442,7 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
     '{{INVESTMENT_CARDS_HTML}}': investmentCardsHtml,
     '{{CHECKOUT_URL}}': '/' + slug + '/checkout',
     '{{GUARANTEE_BOX}}': guaranteeBox,
+    '{{RESULTS_SECTION}}': buildResultsSection(practiceType),
     '{{NEXT_STEPS_ITEMS}}': nextStepsHtml
   };
 
@@ -476,6 +538,7 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
     results: results
   });
 };
+
 
 
 
