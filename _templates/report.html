@@ -745,7 +745,7 @@ section { padding: 4.5rem 0; }
         var label = g.label || g.keyword || g.search_term;
         var solv = Math.round((g.solv || 0) * (g.solv > 1 ? 1 : 100));
         if (g.solv > 1) solv = Math.round(g.solv);
-        var imgUrl = g.heatmap_url || g.image_url;
+        var imgUrl = g.image_url || g.heatmap_url;
         var publicLink = g.public_url;
         var gridSize = g.grid_size || 7;
 
@@ -822,9 +822,15 @@ section { padding: 4.5rem 0; }
       '<div class="engine-count">' + (ai.engines_citing || 0) + '<span style="font-size:1.25rem;opacity:.5">/' + (ai.engines_checked || 8) + '</span></div>' +
       '<div class="engine-count-label">AI platforms citing <strong>' + PRACTICE_NAME + '</strong> this month</div></div>';
 
+    // Sort engines to preferred display order
+    var engineOrder = { 'Google AI Mode': 0, 'Gemini': 1, 'Google AI Overviews': 2, 'ChatGPT': 3 };
+    var sortedEngines = ai.engines.slice().sort(function(a, b) {
+      return (engineOrder[a.name] != null ? engineOrder[a.name] : 99) - (engineOrder[b.name] != null ? engineOrder[b.name] : 99);
+    });
+
     // SoLV bars per engine
     html += '<div class="ai-engine-bars">';
-    ai.engines.forEach(function(e) {
+    sortedEngines.forEach(function(e) {
       var solv = e.avg_solv || 0;
       var solvPct = solv > 1 ? solv : solv * 100;
       var cls = solvPct >= 40 ? 'high' : solvPct >= 20 ? 'mid' : solvPct > 0 ? 'low' : 'zero';
@@ -852,30 +858,39 @@ section { padding: 4.5rem 0; }
 
     // Keyword breakdown table
     var kb = ai.keyword_breakdown;
-    if (kb && Object.keys(kb).length > 0) {
-      var keywords = Object.keys(kb).sort(function(a, b) {
+    if (kb && ((Array.isArray(kb) && kb.length > 0) || (!Array.isArray(kb) && Object.keys(kb).length > 0))) {
+      // Platform key to engine name mapping
+      var platformToEngine = { 'chatgpt': 'ChatGPT', 'gemini': 'Gemini', 'gaio': 'Google AI Overviews', 'aimode': 'Google AI Mode' };
+      var platformKeys = ['aimode', 'gemini', 'gaio', 'chatgpt'];
+
+      // Normalize: handle both list and dict formats
+      var kbList = Array.isArray(kb) ? kb : Object.keys(kb).map(function(k) { return { keyword: k, label: k, platforms: kb[k] }; });
+
+      // Sort by max SoLV across platforms
+      kbList.sort(function(a, b) {
         var aMax = 0, bMax = 0;
-        var aEng = kb[a]; var bEng = kb[b];
-        for (var k in aEng) { if (aEng[k].solv > aMax) aMax = aEng[k].solv; }
-        for (var k2 in bEng) { if (bEng[k2].solv > bMax) bMax = bEng[k2].solv; }
+        var ap = a.platforms || {}; var bp = b.platforms || {};
+        for (var pk in ap) { if ((ap[pk].solv || 0) > aMax) aMax = ap[pk].solv || 0; }
+        for (var pk2 in bp) { if ((bp[pk2].solv || 0) > bMax) bMax = bp[pk2].solv || 0; }
         return bMax - aMax;
       });
-      var engineNames = ai.engines.map(function(e) { return e.name; });
 
       html += '<div class="ai-keyword-table"><h4>Visibility by Keyword</h4>';
       html += '<div class="data-table-wrap"><table class="data-table"><thead><tr><th>Keyword</th>';
-      engineNames.forEach(function(n) { html += '<th style="text-align:center">' + n.replace('Google ', '') + '</th>'; });
+      platformKeys.forEach(function(pk) {
+        var shortName = (platformToEngine[pk] || pk).replace('Google ', '');
+        html += '<th style="text-align:center">' + shortName + '</th>';
+      });
       html += '</tr></thead><tbody>';
 
-      keywords.slice(0, 15).forEach(function(kw) {
-        html += '<tr><td>' + esc(kw) + '</td>';
-        engineNames.forEach(function(en) {
-          var data = (kb[kw] || {})[en] || {};
-          var solv = data.solv || 0;
-          var solvPct = solv > 1 ? solv : solv * 100;
-          if (solvPct > 0) {
-            var c = solvPct >= 40 ? 'change-up' : '';
-            html += '<td class="num ' + c + '">' + solvPct.toFixed(0) + '%</td>';
+      kbList.slice(0, 15).forEach(function(row) {
+        html += '<tr><td>' + esc(row.label || row.keyword) + '</td>';
+        platformKeys.forEach(function(pk) {
+          var pdata = (row.platforms || {})[pk] || {};
+          var solv = pdata.solv || 0;
+          if (solv > 0) {
+            var c = solv >= 40 ? 'change-up' : '';
+            html += '<td class="num ' + c + '">' + solv.toFixed(0) + '%</td>';
           } else {
             html += '<td class="num" style="opacity:.3">-</td>';
           }
