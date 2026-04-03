@@ -141,6 +141,8 @@ section { padding: 4.5rem 0; }
 
 .investment-card { background: var(--color-surface); border: 2px solid var(--color-primary); border-radius: 18px; padding: 2.5rem; text-align: center; position: relative; overflow: hidden; }
 .investment-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--color-primary), #00f598, var(--color-primary)); background-size: 200% 100%; animation: shimmer 3s ease infinite; }
+.investment-card.recommended { border-width: 3px; box-shadow: 0 0 24px rgba(0, 209, 130, 0.2), 0 0 48px rgba(0, 209, 130, 0.08); }
+.investment-card.recommended::before { height: 6px; }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 .investment-price { font-size: 3.25rem; font-weight: 700; color: var(--color-heading); margin: .75rem 0 .25rem; font-family: 'Outfit', sans-serif; }
 .investment-period { color: var(--color-muted); font-size: .9375rem; margin-bottom: 1.5rem; }
@@ -479,6 +481,7 @@ section { padding: 4.5rem 0; }
 <script src="/shared/proposal-chatbot.js"></script>
 </body>
 </html>
+
 
 
 
