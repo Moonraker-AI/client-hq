@@ -296,9 +296,8 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
     var info = campaignInfo[c];
     if (!info) return;
     var isRecommended = campaigns.length > 1 && c === 'annual';
-    investmentCardsHtml += '<div class="investment-card">';
+    investmentCardsHtml += '<div class="investment-card' + (isRecommended ? ' recommended' : '') + '">';
     investmentCardsHtml += '<span class="badge">' + info.badge + '</span>';
-    if (isRecommended) investmentCardsHtml += '<div style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-primary);margin-top:.5rem;">Recommended</div>';
     investmentCardsHtml += '<div class="investment-price">' + info.price + '</div>';
     investmentCardsHtml += '<div class="investment-period">' + info.period + '</div>';
     var featuresList = standardFeatures;
