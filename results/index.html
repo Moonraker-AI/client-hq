@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client Results - Moonraker</title>
+<link rel="icon" href="https://moonraker.ai/wp-content/uploads/2023/10/cropped-Moonraker-Favicon-32x32.png" sizes="32x32">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+(function(){var t=localStorage.getItem('moonraker-theme');if(t==='dark')document.documentElement.classList.add('dark')})();
+</script>
+<style>
+:root {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00b86c;
+  --color-primary-light: #B4EEE0;
+  --color-primary-subtle: #DDF8F2;
+  --color-bg: #F7FDFB;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-heading: #1E2A5E;
+  --color-body: #333F70;
+  --color-muted: #6B7599;
+  --color-navy: #141C3A;
+  --color-overlay: rgba(30,42,94,.65);
+}
+html.dark {
+  --color-primary-hover: #00f598;
+  --color-primary-light: #1A4A38;
+  --color-primary-subtle: #0D2E22;
+  --color-bg: #080F0B;
+  --color-surface: #0E1A14;
+  --color-border: #1E3530;
+  --color-heading: #E8F5EF;
+  --color-body: #C8D8D0;
+  --color-muted: #5A7A6E;
+  --color-navy: #0A1630;
+  --color-overlay: rgba(8,15,11,.8);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Theme Toggle ── */
+.theme-toggle {
+  position: fixed; top: 1.25rem; right: 1.25rem; z-index: 100;
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; transition: background .2s, border-color .2s;
+}
+.theme-toggle:hover { border-color: var(--color-primary); }
+
+/* ── Nav ── */
+.nav {
+  padding: 1.25rem 2rem;
+  display: flex; align-items: center; gap: .75rem;
+}
+.nav img { height: 32px; }
+.nav-divider {
+  width: 1px; height: 20px; background: var(--color-border); margin: 0 .25rem;
+}
+.nav-label {
+  font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .85rem;
+  color: var(--color-muted); letter-spacing: .02em;
+}
+
+/* ── Hero ── */
+.hero {
+  text-align: center; padding: 3.5rem 2rem 2.5rem;
+  max-width: 780px; margin: 0 auto;
+}
+.hero h1 {
+  font-family: 'Outfit', sans-serif; font-weight: 700;
+  font-size: 2.25rem; line-height: 1.2; color: var(--color-heading);
+  margin-bottom: 1rem;
+}
+.hero h1 span { color: var(--color-primary); }
+.hero p {
+  font-size: .95rem; color: var(--color-muted); max-width: 560px; margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* ── Stats Bar ── */
+.stats-bar {
+  display: flex; justify-content: center; gap: 2.5rem;
+  padding: 1.5rem 2rem; margin: 0 auto 1rem; max-width: 700px;
+  flex-wrap: wrap;
+}
+.stat-item { text-align: center; }
+.stat-value {
+  font-family: 'Outfit', sans-serif; font-weight: 700;
+  font-size: 1.75rem; color: var(--color-primary); line-height: 1.2;
+}
+.stat-label {
+  font-size: .72rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--color-muted); margin-top: .15rem;
+}
+
+/* ── Filter Pills ── */
+.filters {
+  display: flex; justify-content: center; gap: .5rem;
+  padding: .75rem 2rem 2rem; flex-wrap: wrap;
+}
+.filter-pill {
+  font-family: 'Inter', sans-serif; font-size: .78rem; font-weight: 500;
+  padding: .4rem 1rem; border-radius: 100px; cursor: pointer;
+  border: 1px solid var(--color-border); background: transparent;
+  color: var(--color-body); transition: all .2s;
+}
+.filter-pill:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.filter-pill.active {
+  border-color: var(--color-primary); background: var(--color-primary-subtle);
+  color: var(--color-primary); font-weight: 600;
+}
+.filter-pill .count {
+  display: inline-block; margin-left: .35rem; font-size: .7rem;
+  background: var(--color-primary-subtle); color: var(--color-primary);
+  padding: .1rem .4rem; border-radius: 100px; font-weight: 600;
+}
+.filter-pill.active .count {
+  background: var(--color-primary); color: #fff;
+}
+
+/* ── Grid ── */
+.results-grid {
+  max-width: 1200px; margin: 0 auto; padding: 0 2rem 3rem;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.25rem;
+}
+
+/* ── Card ── */
+.result-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px; overflow: hidden;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+  cursor: pointer;
+}
+.result-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,212,126,.08);
+  border-color: var(--color-primary);
+}
+.result-card.hidden { display: none; }
+
+.card-image-wrap {
+  position: relative; width: 100%; overflow: hidden;
+  aspect-ratio: 1312 / 702; background: var(--color-navy);
+}
+.card-image-wrap.portrait { aspect-ratio: 708 / 773; }
+
+.card-image-wrap img {
+  width: 100%; height: 100%; object-fit: cover;
+  display: block; transition: transform .3s;
+}
+.result-card:hover .card-image-wrap img { transform: scale(1.03); }
+
+.card-badge {
+  position: absolute; top: .65rem; right: .65rem;
+  background: var(--color-primary); color: #fff;
+  font-family: 'Outfit', sans-serif; font-weight: 700;
+  font-size: .8rem; padding: .3rem .65rem; border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+
+.card-body { padding: .85rem 1rem; }
+.card-name {
+  font-family: 'Outfit', sans-serif; font-weight: 700;
+  font-size: .88rem; color: var(--color-heading); line-height: 1.3;
+}
+.card-meta {
+  display: flex; align-items: center; gap: .5rem; margin-top: .3rem;
+  font-size: .75rem; color: var(--color-muted);
+}
+.card-type-tag {
+  font-size: .65rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .04em; padding: .15rem .45rem; border-radius: 4px;
+  background: var(--color-primary-subtle); color: var(--color-primary);
+}
+
+/* ── Lightbox ── */
+.lightbox {
+  position: fixed; inset: 0; z-index: 200;
+  background: var(--color-overlay); backdrop-filter: blur(8px);
+  display: none; align-items: center; justify-content: center;
+  padding: 2rem; cursor: pointer;
+}
+.lightbox.open { display: flex; }
+.lightbox img {
+  max-width: 95vw; max-height: 90vh; border-radius: 10px;
+  box-shadow: 0 12px 48px rgba(0,0,0,.3);
+}
+.lightbox-close {
+  position: absolute; top: 1.25rem; right: 1.5rem;
+  font-size: 1.5rem; color: #fff; cursor: pointer;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(0,0,0,.4); border: none;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s;
+}
+.lightbox-close:hover { background: rgba(0,0,0,.6); }
+.lightbox-caption {
+  position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,.55); color: #fff; padding: .5rem 1.25rem;
+  border-radius: 8px; font-size: .82rem; font-weight: 500;
+  white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── CTA Section ── */
+.cta-section {
+  text-align: center; padding: 3rem 2rem 4rem;
+  max-width: 640px; margin: 0 auto;
+}
+.cta-section h2 {
+  font-family: 'Outfit', sans-serif; font-weight: 700;
+  font-size: 1.5rem; color: var(--color-heading); margin-bottom: .75rem;
+}
+.cta-section p {
+  font-size: .88rem; color: var(--color-muted); margin-bottom: 1.5rem;
+  line-height: 1.7;
+}
+.cta-btn {
+  display: inline-block; padding: .7rem 2rem;
+  background: var(--color-primary); color: #fff;
+  font-family: 'Inter', sans-serif; font-weight: 600; font-size: .88rem;
+  border-radius: 8px; text-decoration: none;
+  transition: background .2s, transform .15s;
+}
+.cta-btn:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
+
+/* ── Footer ── */
+.footer {
+  text-align: center; padding: 2rem;
+  font-size: .72rem; color: var(--color-muted);
+  border-top: 1px solid var(--color-border);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .hero { padding: 2.5rem 1.25rem 2rem; }
+  .hero h1 { font-size: 1.6rem; }
+  .stats-bar { gap: 1.5rem; }
+  .stat-value { font-size: 1.35rem; }
+  .results-grid { grid-template-columns: 1fr; padding: 0 1rem 2rem; }
+  .nav { padding: 1rem 1.25rem; }
+}
+
+@media (max-width: 480px) {
+  .stats-bar { gap: 1rem; }
+  .hero h1 { font-size: 1.35rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <a href="https://moonraker.ai" target="_blank" rel="noopener">
+    <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker">
+  </a>
+  <div class="nav-divider"></div>
+  <span class="nav-label">Client Results</span>
+</nav>
+
+<!-- Theme Toggle -->
+<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+  <span id="themeIcon">🌙</span>
+</button>
+
+<!-- Hero -->
+<section class="hero">
+  <h1>Real Results for <span>Real Practices</span></h1>
+  <p>Verified Google Search Console data showing how therapy practices grow their online visibility with Moonraker. No vanity metrics, just the numbers that matter.</p>
+</section>
+
+<!-- Stats Bar -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-value">23</div>
+    <div class="stat-label">Client Results</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">115%</div>
+    <div class="stat-label">Average Increase</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">308%</div>
+    <div class="stat-label">Top Result</div>
+  </div>
+</div>
+
+<!-- Filter Pills -->
+<div class="filters">
+  <button class="filter-pill active" onclick="filterCards('all')">All <span class="count">23</span></button>
+  <button class="filter-pill" onclick="filterCards('group')">Group Practices <span class="count">11</span></button>
+  <button class="filter-pill" onclick="filterCards('solo')">Solo Therapists <span class="count">12</span></button>
+</div>
+
+<!-- Results Grid -->
+<div class="results-grid" id="resultsGrid"></div>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2>Ready to See Results Like These?</h2>
+  <p>Every practice shown here started right where you are now. Book a quick call with our team to see what Moonraker can do for yours.</p>
+  <a href="https://msg.moonraker.ai/widget/bookings/scott-pope-calendar" target="_blank" rel="noopener" class="cta-btn">Book a Call</a>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  &copy; 2026 Moonraker AI. All data sourced directly from Google Search Console.
+</footer>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+  <img id="lightboxImg" src="" alt="">
+  <div class="lightbox-caption" id="lightboxCaption"></div>
+</div>
+
+<script>
+// ── Data ──
+var results = [
+  // Group Practices (sorted by % desc)
+  { name: 'Mind Body Soulmates', pct: 213, time: '6 months', type: 'group', id: '1uVfNKUBxYy3KCEJEmJU92QE3DN9khHWA' },
+  { name: 'Cope and Calm', pct: 170, time: '6 months', type: 'group', id: '1spFbq2k8QOqwWbLuvz1JxLgWpM7VFfaa' },
+  { name: 'Albuquerque Family Counseling', pct: 156, time: '3 months', type: 'group', id: '1jNjoiNtFgIINAyUpWyvH426qq1HTHG7X' },
+  { name: 'Full Tilt', pct: 137, time: '6 months', type: 'group', id: '1kXJKL6OLlUvXNwweYGlAr_M0jNGeBIQa' },
+  { name: 'Tides Mental Health', pct: 106, time: '3 months', type: 'group', id: '1nIQ_ufQh_pFGn49LK_fkehwrSsM7YP7b' },
+  { name: 'Bridges of the Mind', pct: 94, time: '6 months', type: 'group', id: '1HpumenhcJp-S7Xh1UHK-SGDQAS3QJWca' },
+  { name: 'Pittsburgh CIT', pct: 91, time: '6 months', type: 'group', id: '1A7Kjutbuqb2Ak5UT_bw9IC77Qa2tySsb' },
+  { name: 'Caught Dreamin Therapy', pct: 71, time: '3 months', type: 'group', id: '1i3SPnzTJwQidkuUHApV9u58LNVEEspCk' },
+  { name: 'Wilde Counseling', pct: 39, time: '3 months', type: 'group', id: '1kaS8HcCcbKY3O9Dz-Y-e8SfRfiCZb3di' },
+  { name: 'Light Within', pct: 38, time: '6 months', type: 'group', id: '1Auko_Q3Bx48qOucCPkVN2hBciM6VQQkh' },
+  { name: 'Every Heart Dreams', pct: 31, time: '3 months', type: 'group', id: '1Z-hA5D3xuMnUpWQkXUPAr5B6TDxstkeV' },
+  // Solo Therapists (sorted by % desc)
+  { name: 'Thriving CA', pct: 308, time: '3 months', type: 'solo', id: '1ClS6rM1HrdGKr1qXKF7J9Yo32HaiFZOE' },
+  { name: 'Live Mindfully', pct: 202, time: '6 months', type: 'solo', id: '1fdthfPuD2hn4g-yR1yaEd3VYJTYdFN5l' },
+  { name: 'Empower U', pct: 168, time: '6 months', type: 'solo', id: '1zTy0yzf_cZFPRiQNCykjxTLQfjoRDKVT' },
+  { name: 'Couples Awaken', pct: 168, time: '3 months', type: 'solo', id: '1I6I47jI8ieqvOviLT0IYn60l9DuGf_Il' },
+  { name: 'Linda Kocieniewski', pct: 127, time: '3 months', type: 'solo', id: '1zJmPzlmek47aMDPizpJPaRSZHDK70OMc' },
+  { name: 'Revive Intimacy', pct: 84, time: '3 months', type: 'solo', id: '1InJXxG5BGzd5fEu3CG7bqqPmviA6bSoY' },
+  { name: 'Resilience Counselling', pct: 61, time: '3 months', type: 'solo', id: '1-clyu91xGiqKLWykIULLdxo_arM82dsV' },
+  { name: 'Full Vida Therapy', pct: 53, time: '3 months', type: 'solo', id: '1xZ6encxHVtjmwZ1frNHC8F9iMfhsyeSs' },
+  { name: 'Mindful Mental Health NYC', pct: 48, time: '3 months', type: 'solo', id: '13fQGqw8RJuBEWbFkX6EzY4NyTGB1A-V-' },
+  { name: 'Audrey Schoen', pct: 36, time: '6 months', type: 'solo', id: '1hegvRrLjbtBc-Ulux-7SVuQlgCgVBA1b' },
+  { name: 'Amy Hagerstrom', pct: 35, time: '6 months', type: 'solo', id: '1XKx4iqwvpBLmzrny-KvPnmgbZGW7TCZi' },
+  { name: 'Audrey Schoen', pct: 100, time: '12 months', type: 'solo', id: '1KjsF7BZyi-iRFbjcfsYm6s4UFVrBzKTY', portrait: true, label: 'Over 2x traffic' }
+];
+
+// Sort all by pct descending
+results.sort(function(a, b) { return b.pct - a.pct; });
+
+var currentFilter = 'all';
+
+function imgUrl(fileId, width) {
+  return 'https://lh3.googleusercontent.com/d/' + fileId + '=w' + (width || 800);
+}
+
+function renderGrid() {
+  var grid = document.getElementById('resultsGrid');
+  var html = '';
+  results.forEach(function(r, i) {
+    var show = currentFilter === 'all' || r.type === currentFilter;
+    var badgeText = r.label || ('+' + r.pct + '%');
+    var typeLabel = r.type === 'group' ? 'Group Practice' : 'Solo Therapist';
+    html += '<div class="result-card' + (show ? '' : ' hidden') + '" data-type="' + r.type + '" onclick="openLightbox(' + i + ')">';
+    html += '<div class="card-image-wrap' + (r.portrait ? ' portrait' : '') + '">';
+    html += '<img src="' + imgUrl(r.id, 800) + '" alt="' + r.name + ' results" loading="lazy">';
+    html += '<div class="card-badge">' + badgeText + '</div>';
+    html += '</div>';
+    html += '<div class="card-body">';
+    html += '<div class="card-name">' + r.name + '</div>';
+    html += '<div class="card-meta"><span class="card-type-tag">' + typeLabel + '</span> ' + r.time + '</div>';
+    html += '</div></div>';
+  });
+  grid.innerHTML = html;
+}
+
+window.filterCards = function(type) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-pill').forEach(function(pill) {
+    pill.classList.toggle('active', pill.textContent.toLowerCase().indexOf(
+      type === 'all' ? 'all' : type === 'group' ? 'group' : 'solo'
+    ) !== -1);
+  });
+  renderGrid();
+};
+
+window.openLightbox = function(idx) {
+  var r = results[idx];
+  var lb = document.getElementById('lightbox');
+  document.getElementById('lightboxImg').src = imgUrl(r.id, 1400);
+  var cap = r.name + '  -  ' + (r.label || ('+' + r.pct + '% in ' + r.time));
+  document.getElementById('lightboxCaption').textContent = cap;
+  lb.classList.add('open');
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeLightbox = function() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeLightbox();
+});
+
+// ── Theme ──
+window.toggleTheme = function() {
+  var html = document.documentElement;
+  var dark = html.classList.toggle('dark');
+  localStorage.setItem('moonraker-theme', dark ? 'dark' : 'light');
+  document.getElementById('themeIcon').textContent = dark ? '☀️' : '🌙';
+};
+
+(function() {
+  var dark = document.documentElement.classList.contains('dark');
+  document.getElementById('themeIcon').textContent = dark ? '☀️' : '🌙';
+})();
+
+// ── Init ──
+renderGrid();
+</script>
+</body>
+</html>
