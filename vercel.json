@@ -92,6 +92,10 @@
     },
     "api/cron/process-followups.js": {
       "maxDuration": 60
+    },
+    "api/activate-reporting.js": {
+      "maxDuration": 120,
+      "memory": 1024
     }
   },
   "crons": [
