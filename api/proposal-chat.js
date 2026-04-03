@@ -240,10 +240,10 @@ ${pageContent.substring(0, 6000)}
 
 This Client Service Agreement ("the Agreement") is entered into between Moonraker.AI, LLC, a Massachusetts limited liability company, located at 119 Oliver St, Easthampton, MA 01027 ("Moonraker") and the Client.
 
-PURPOSE: The Agreement sets a clear, mutual understanding between Moonraker and the Client regarding the scope, objectives, and deliverables of the digital marketing services ("the Services"). It outlines the Services while specifying the Client's responsibilities, ensuring alignment on goals, timelines, and measurable outcomes.
+PURPOSE: The purpose of the Agreement is to set a clear, mutual understanding between Moonraker and the Client regarding the scope, objectives, and deliverables of the digital marketing services provided by Moonraker to the Client ("the Services"). It outlines the details of the Services, while also specifying the Client's responsibilities. The Agreement is essential to ensure that both parties are aligned on the goals, timelines, and measurable outcomes of the Services, thus minimizing misunderstandings and setting a clear path for collaboration and success.
 
 SCOPE OF SERVICES AND LIMITATIONS:
-Moonraker is your dedicated marketing and SEO team. Our mission: help potential clients find your practice when they're searching for the support you provide.
+Moonraker is your dedicated marketing and SEO team, and our mission is simple: to help potential clients find your practice when they're searching for the support you provide.
 
 What Moonraker DOES Provide:
 - Digital marketing strategy
@@ -253,79 +253,82 @@ What Moonraker DOES Provide:
 The complete scope is outlined in the Statement of Work section.
 
 What Moonraker Does NOT Provide:
-- Website Infrastructure and Hosting: hosting, server management, security monitoring, SSL management, backups, DNS/domain management, ongoing maintenance beyond SEO-related updates, plugin management outside SEO scope
-- Third-Party Platform Management: ongoing management or troubleshooting for EHR systems, booking platforms, CRMs, email marketing platforms, payment processing, communication tools, practice management software. Initial setup as part of Statement of Work is one-time; ongoing management not included unless stated in monthly deliverables.
-- HIPAA Compliance and Regulatory Consulting: no legal, compliance, or regulatory consulting including HIPAA guidance, healthcare regulatory compliance, data privacy (GDPR, CCPA), professional licensing, or BAA consulting beyond marketing services.
+- Website Infrastructure and Hosting: Website hosting services or server management, ongoing security monitoring, patches, or updates, SSL certificate management, website backups, DNS or domain management, ongoing website maintenance beyond SEO-related updates, or installation and management of website plugins that fall outside our immediate SEO work.
+- Third-Party Platform Management: Ongoing management, technical support, or troubleshooting for third-party platforms, including: Electronic Health Records (EHR) systems, booking and scheduling platforms, CRM systems, email marketing platforms, payment processing systems, communication tools, practice management software, and any other third-party applications or services. Important Clarification: When we perform initial setup or configuration of platforms as part of your Statement of Work, this is a one-time implementation. Ongoing management, updates, troubleshooting, or monitoring of these platforms is not included unless explicitly stated in your monthly deliverables.
+- HIPAA Compliance and Regulatory Consulting: Moonraker does not provide legal, compliance, or regulatory consulting services of any kind, including HIPAA compliance guidance or auditing, healthcare regulatory compliance advice, data privacy regulation guidance (GDPR, CCPA, etc.), professional licensing requirements, industry-specific compliance standards, or Business Associate Agreement (BAA) consulting beyond marketing services.
 
 The Gray Area (When We'll Still Help):
-We WILL: Answer questions about tools we installed (even months later), help troubleshoot tracking codes or analytics we implemented, guide you through basic fixes for marketing-related issues, point you toward the right resources, provide reasonable support for minor issues related to our initial work.
-We WON'T: Act as ongoing tech support for your EHR or booking platform, monitor website security, provide general IT support, take responsibility for third-party outages, guarantee ongoing functionality of platforms we don't control, or manage plugins outside SEO scope.
+We WILL: Answer questions about tools and integrations we installed (even months after setup), help troubleshoot tracking codes or analytics we implemented, guide you through basic fixes for marketing-related issues, point you toward the right resources or vendors for issues we can't handle, and provide reasonable support for minor issues related to our initial work.
+We WON'T: Act as ongoing technical support for your EHR or booking platform, monitor your website for security vulnerabilities or breaches, provide general IT support for technology issues, take responsibility for third-party platform outages or functionality issues, guarantee the ongoing functionality of platforms we don't control, or install and manage website plugins that fall outside our immediate SEO work.
 
 CLIENT RESPONSIBILITIES:
-- Platform Selection and Management: selecting appropriate providers, ensuring compliance, managing access, reviewing terms
-- Compliance and Regulatory: ensuring operations comply with applicable laws, consulting legal professionals, implementing privacy policies
-- Data and Security: monitoring for incidents, maintaining backups, coordinating with vendors, implementing security measures
-- Website and Infrastructure: maintaining hosting, security updates, plugin updates, domain registration and DNS
+- Platform Selection and Management: Selecting appropriate third-party service providers and platforms, ensuring all third-party platforms meet your compliance and security requirements, managing user access, permissions, and security settings for all platforms, and reviewing platform terms of service and privacy policies.
+- Compliance and Regulatory Matters: Ensuring your business operations, website, and third-party platforms comply with applicable laws and regulations (HIPAA, state regulations, etc.), consulting with legal or compliance professionals when guidance is needed, and implementing required privacy policies, terms of service, and consent mechanisms on your website.
+- Data and Security Management: Monitoring for and responding to security incidents or data breaches, maintaining backups of all data and systems, coordinating with third-party platform vendors for support and issue resolution, and implementing appropriate security measures to protect client data.
+- Website and Infrastructure: Maintaining website hosting, security updates, and backups, ensuring your website platform and plugins stay updated, and managing domain registration and DNS settings.
 
 LIMITED WARRANTIES FOR INTEGRATION WORK:
-Our Responsibility: correct implementation at time of installation, following best practices, testing, providing documentation.
-Our Limitations: no warranties on security, compliance, or ongoing performance of third-party platforms; not responsible for provider changes after implementation or compliance violations from platform selections.
+Our Responsibility: Correct technical implementation of the integration at the time of installation, following industry best practices for implementation, testing the integration to ensure it works at the time of setup, and providing documentation or basic guidance on how the integration functions.
+Our Limitations: We make no warranties regarding the security, compliance, or ongoing performance of third-party platforms. We are not responsible for changes made by third-party platform providers after our initial implementation, issues caused by platform updates, service outages, or policy changes, or compliance violations related to your selection or use of third-party platforms.
+Your Responsibility: Vetting and selecting platforms that meet your specific compliance requirements, understanding how platforms handle, store, and process data, monitoring integrations for ongoing functionality, and contacting platform vendors directly for platform-specific technical issues or support.
 
 LIABILITY AND INDEMNIFICATION:
-Moonraker is not responsible for: security breaches involving your systems (unless caused by proven Moonraker negligence); your failure to maintain compliance; third-party platform issues; modifications after our implementation. Client agrees to indemnify and hold Moonraker harmless from related claims. Moonraker maintains professional liability insurance.
+You acknowledge and agree that Moonraker is not responsible or liable for: security breaches, data breaches, or compliance violations involving your website, third-party platforms, or systems (unless directly and solely caused by Moonraker's proven negligence in performing services within our stated scope); your failure to maintain compliance with applicable laws and regulations; issues arising from third-party platforms, services, or vendors that you selected or use; or modifications made to your website, integrations, or third-party platforms by you or other parties after Moonraker's initial implementation.
+The Client agrees to indemnify and hold Moonraker harmless from any claims, damages, losses, or expenses (including attorney fees) arising from or related to: security breaches, data breaches, or compliance violations involving the Client's website, third-party platforms, or systems; the Client's failure to maintain compliance with applicable laws and regulations; issues arising from third-party platforms, services, or vendors selected or used by the Client; or any modifications made to the website or third-party integrations by the Client or other parties after Moonraker's initial implementation.
+Moonraker maintains appropriate professional liability insurance and takes full responsibility for work performed within our defined scope of services.
 
-CLARIFICATION REQUESTS: If uncertain whether a service is in scope, submit a written request. Moonraker responds within 2 business days.
+CLARIFICATION REQUESTS: If the Client is uncertain whether a requested service falls within Moonraker's scope of work, the Client agrees to submit a written request for clarification prior to assuming such services are included. Moonraker will respond in writing within 2 business days to confirm whether the requested service is included or would constitute additional work requiring a separate agreement and fees.
 
-OWNERSHIP: Client warrants ownership of all materials provided to Moonraker and indemnifies Moonraker against third-party claims.
+OWNERSHIP: The Client represents and warrants to Moonraker that the Client owns and/or has a legitimate legal license to use for business purposes, all photos, text, artwork, graphics, designs, trademarks, and other materials provided by the Client for Moonraker's use, and that the Client has obtained all waivers, authorizations, and other documentation that may be appropriate to evidence such ownership. The Client shall indemnify and hold Moonraker harmless from all losses and claims, including attorney fees and legal expenses, that may result by reason of claims by third parties related to such materials.
 
-ALTERATION: Terms renegotiable after 90 days. After 12 months, rates subject to change. Scope changes require mutual agreement with new paperwork.
+ALTERATION: Terms of this agreement are renegotiable after 90 days. After 12 months, Moonraker rates are subject to change for all services. In the event that the scope of work is required to change due to any of the agreed upon terms in this contract before or after the end of this agreement, Moonraker reserves the right to cancel or renegotiate this Agreement and the Client reserves the right to accept or reject the new terms provided. Any alteration that takes place prior will be agreed upon by both Moonraker and the Client, and new paperwork will be issued for handling in addition to the new rates applied after the alteration.
 
 INTELLECTUAL PROPERTY:
-- Client Ownership: Upon completion and full payment, Client owns all deliverables created specifically for them.
-- Moonraker's Proprietary Methods: Moonraker retains all rights to its proprietary processes, methodologies, tools, software, and frameworks.
+- Client Ownership of Deliverables: Upon completion of the Services and receipt of full payment, the Client shall own all tangible work product and deliverables created specifically for the Client, including but not limited to: the Client's website, Google Business Profile, content created for the Client, and data/analytics reports provided to the Client. The Client may continue to use, modify, and maintain these deliverables without additional consent or compensation from Moonraker.
+- Moonraker's Proprietary Methods: Moonraker retains all ownership and intellectual property rights to its proprietary processes, methodologies, tools, software, frameworks, and strategic approaches used in delivering the Services. These proprietary methods represent Moonraker's competitive advantage and trade secrets.
 
-MUTUAL CONFIDENTIALITY: Both parties protect each other's proprietary information. Continues after termination.
+MUTUAL CONFIDENTIALITY: Moonraker will not directly share or divulge any type of proprietary or private information of the Client's in any form. Moonraker will protect such information and treat it as strictly confidential. This provision shall continue to be effective until the end of the Agreement. The Client shall not at any time or in any manner, either directly or indirectly, use for the personal benefit of the Client, or divulge, or otherwise communicate in any manner any information that is proprietary to Moonraker as it relates to Moonraker's proprietary strategy and structure of the Services. Both parties shall continue to hold each other in good faith after the termination of the Agreement.
 
-INDEPENDENT CONTRACTOR: Moonraker is an independent contractor, not an employee of the Client.
+INDEPENDENT CONTRACTOR: Moonraker is an independent contractor with respect to its relationship to the Client. Moonraker shall not be deemed, for any purpose, an employee of the Client.
 
-WARRANTY: Moonraker warrants it has the right and power to enter into and perform the Agreement.
+WARRANTY: Moonraker represents and warrants that it has the unencumbered right and power to enter into and perform the Agreement and that Moonraker is not aware of any claims or basis for claims of infringement of any patent, trademark, copyright, trade secret, or contractual or other proprietary rights of third parties in or to any materials included by Moonraker in the Services or trade names related to the Services.
 
-LIMITATION OF LIABILITY: Neither party liable for indirect, incidental, consequential, special, or exemplary damages.
+LIMITATION OF LIABILITY: Under no circumstances shall either party be liable to the other party or any third party for indirect, incidental, consequential, special, or exemplary damages (even if that party has been advised of the possibility of such damages), arising from any provision of the Agreement. This includes, but is not limited to, loss of revenue or anticipated profit or lost business, costs of delay or failure of delivery, or liabilities to third parties arising from any source. Interruptions to the Services such as acts of God, war, fire, law, restrictions, and other causes are not at the fault of either the Client or Moonraker at any time.
 
-INDEMNITY: Each party defends, indemnifies, and holds harmless the other from third-party claims from material breach.
+INDEMNITY: Each party agrees to defend, indemnify, and hold harmless the other party and its business partners from any and all third party claims, demands, liabilities, costs and expenses, including reasonable attorney fees, costs and expenses resulting from the indemnifying party's material breach of any duty, representation, or warranty under this agreement.
 
-LEGAL NOTICE: Neither Moonraker nor its agents warrants that Services will be uninterrupted or error-free.
+LEGAL NOTICE: Neither Moonraker nor any of its employees or agents warrants that the functions contained in the Services will be uninterrupted or error-free. The entire risk as to the quality and performance is with the Client. In no event will Moonraker be liable to the Client or any third party for any claimed damages, including those resulting from service interruptions caused by Acts of God, the Hosting Service or any other circumstances beyond Moonraker's reasonable control; any lost profits, lost savings or other incidental, consequential, punitive, or special damages arising out of the operation of or inability to operate the Services; or failure of any service provider, telecommunications carrier, Internet backbone, Internet servers, or the Client's site visitor's computer or Internet software.
 
 ACCOUNT ACCESS:
-- Client retains primary ownership of all accounts and digital assets
-- Client grants Moonraker administrator-level access
-- Both parties agree not to modify credentials or revoke access without 48-hour written notice
-- Client notifies Moonraker before granting access to third parties
-- If actions by Client or third parties interfere with Moonraker's ability to perform, Client assumes responsibility
+- Client Ownership: The Client retains primary ownership and control of all accounts, profiles, and digital assets. The Client agrees to grant Moonraker administrator-level access necessary to perform the Services as outlined in this Agreement.
+- Access Requirements: The Client shall provide and maintain administrator-level access for Moonraker to all relevant accounts and platforms required to deliver the Services. This access must remain active and uninterrupted throughout the duration of the contract.
+- Access Stability: Both parties agree not to modify login credentials, revoke access, or change account permissions without prior written notice to the other party. If a password change or access modification is required for security or operational reasons, the initiating party shall provide written notice at least 48 hours in advance when feasible.
+- Third-Party Access: The Client agrees to notify Moonraker in writing before granting account access to any third parties, including other agencies, contractors, consultants, employees, or vendors who will have access to accounts where Moonraker is actively providing Services.
+- Service Interference: If the Client or any third party granted access by the Client takes actions that interfere with Moonraker's ability to perform the Services (including but not limited to: modifying code, changing configurations, altering strategies, or revoking necessary permissions), the Client assumes full responsibility for any resulting issues. Moonraker shall not be held liable for outcomes resulting from such interference.
 
-COMMUNICATION: Moonraker replies to inquiries within 24-72 hours except during previously notified limited availability periods.
+COMMUNICATION: Within the duration of the Agreement, Moonraker will make every effort to reply to inquiries within 24-72 hours except where the Client has been previously notified of a period of limited availability. Moonraker will respond in good faith but cannot guarantee any specific action within a given time frame. The Services will be provided in a timely and professional manner.
 
-ETHICS: Requests for black hat or unethical tactics may result in immediate cancellation.
+ETHICS: Moonraker will conduct services so long as the Client's requests remain ethical. Any requests to provide black hat or otherwise questionable tactics in relation to a service Moonraker delivers may result in the immediate cancellation of the Agreement. The Client acknowledges that Moonraker has educated them on any services that they are requesting which may be illegal or unethical.
 
-TERMINATION: Moonraker may terminate if Client violates ethical or legal standards. Agreement terminates upon completion of Services.
+TERMINATION: Moonraker may terminate the contract if the Client violates any ethical or legal standards. Unless otherwise terminated, the Agreement will terminate upon completion of the Services.
 
-TERMINATION ON DEFAULT: If Client defaults (including payment failure), Moonraker may terminate with notice. Client has 15 days to cure. Moonraker is owed in full for any Termination on Default.
+TERMINATION ON DEFAULT: If the Client defaults by failing to substantially perform any provision, term, or condition of the Agreement (including failure to make monetary payment when due), Moonraker may terminate the Agreement by providing notice to the defaulting party. The notice shall describe the nature of the default. The Client shall have 15 days from the effective date of such notice to cure the default(s). Unless waived by the party providing the notice, the failure to cure the default(s) within such a time period shall result in the termination of the Agreement. Moonraker is owed in full for any type of Termination on Default, and the Client agrees to remedy Moonraker for all costs agreed upon in this agreement in full.
 
-GOVERNING FORUM: Construed under laws of Hampshire County, Massachusetts. Disputes settled through mediation.
+GOVERNING FORUM: The Agreement shall be construed in accordance with the internal laws of Hampshire County, in the State of Massachusetts, without regard to conflict of laws rules. Venue shall be in a court of competent jurisdiction in the State of Massachusetts, and both parties expressly consent to jurisdiction in such courts. All and any disputes will be settled through mediation.
 
-COMPLETE CONTRACT / AMENDMENT: Supersedes all prior agreements. Prices honored for 12 months. Continuation requires a new agreement.
+COMPLETE CONTRACT / AMENDMENT: The Agreement supersedes all prior agreements and understandings between the parties for performance of the Services, and constitutes the complete agreement and understanding between the parties. The parties may amend the Agreement in a written document signed by both parties. All prices specified in this contract will be honored for 12 months after both parties sign this contract. Continuation of the Services after that time will require a new agreement.
 
-PAYMENT TERMS: All payments made digitally. Credit card and eCheck payments include processing fees. All payments are final. Client responsible for third-party fees.
+PAYMENT TERMS: All payments shall be made digitally using Moonraker's digital payment processing of choice. If the Services are paid for digitally via credit card or eChecks, processing and service fees from the transaction will be passed on to the Client. If payment is not made in full, Moonraker retains full ownership of content not provided by the Client, and shall not be required to release any property until Moonraker is fully compensated for the Services. The Client is responsible for all third party fees and costs associated with the Services in addition to Moonraker's fees. Any technology paid for by Moonraker will be removed and/or cease to function at the end of the Agreement if the Client doesn't purchase said technology from Moonraker or a third party. All payments are final.
 
-SERVICE FEES: Paid in full at start of each payment term (Effective Date). Determined by campaign scope and payment term. Nonpayment may result in withholding Services.
+SERVICE FEES: All fees for the Services must be paid in full at the start of the scheduled payment term, known as the Effective Date. The Effective Date of the Services is the date when payment is processed. Fees are determined by the campaign scope and payment term chosen by the Client. The Client's chosen plan and payment term are recorded in Moonraker's client management system. If payment is not received by the Effective Date, Moonraker reserves the right to withhold any Services for which payment is due.
 
-PERFORMANCE GUARANTEE: Available for 12-month terms only. Goal determined collaboratively and confirmed in writing. If not achieved, Moonraker continues Services at no cost until goal is met.
+PERFORMANCE GUARANTEE: Moonraker will provide a performance guarantee when the Client selects a 12-month payment term. This guarantee may include, for example, a specific increase in website traffic or a designated number of booked consultation calls. The specific performance goal will be determined collaboratively by Moonraker and the Client and confirmed in writing. To accurately track performance against the guarantee, the Client agrees to grant Moonraker access to relevant systems, such as website analytics and booking platforms. Should Moonraker fail to help the Client achieve the established goal by the end of the 12-month term, Moonraker will continue providing the Services at no cost until the goal is met.
 
-ADDITIONAL FEES: Services beyond the Agreement incur additional fees. Excessive work orders may also incur charges.
+ADDITIONAL FEES: Any additional services requested by the Client that are not included in the Agreement will result in additional fees decided on by Moonraker. An excessive amount of work orders from the Client in relation to the Services may result in additional fees from Moonraker, including but not limited to the need to have additional work completed, multiple revisions, extensions of the Services, or additional purchase of resources.
 
-CANCELLATION OF SERVICES: Client may cancel in writing at any time. Moonraker completes deliverables for the current billing cycle before offboarding. No auto-billing beyond campaign period. All assets built remain Client's property.
+CANCELLATION OF SERVICES: The Client may cancel services in writing at any time. Moonraker will deactivate billing and complete all deliverables for the current billing cycle before initiating the Client offboarding process.
 
-REFUND POLICY: No refunds for any work completed in accordance with the Agreement. All payments are final and non-refundable.
+REFUND POLICY: The Client acknowledges and agrees that no refunds will be provided by Moonraker for any work that has been completed in accordance with the Agreement. All payments made to Moonraker are final and non-refundable, regardless of the Client's satisfaction with the outcomes of the Services rendered.
 
 STATEMENT OF WORK (CORE Marketing Campaign includes):
 - Project setup, tracking, and baseline reporting
@@ -337,7 +340,7 @@ STATEMENT OF WORK (CORE Marketing Campaign includes):
 - Bio page creation for each therapist
 - General FAQ page
 - Google Business Profile optimization
-- Citation audit and directory listings (15 citations + 5 data aggregators)
+- Citation audit and directory listings management (15 citations + 5 data aggregators)
 - Press release syndication (1 included, additional at $300/ea)
 - LiveDrive local signal deployment
 - Rising Tide social profile buildout and content distribution
@@ -346,14 +349,14 @@ STATEMENT OF WORK (CORE Marketing Campaign includes):
 - Monthly campaign reporting with AI-powered insights
 
 CAMPAIGN COMMUNICATIONS:
-Month 1: Reporting on all completed deliverables, content approval request, weekly campaign updates.
-Month 2 onward: Automated monthly reporting on analytics and deliverables, with ability to chat with results for deeper insights.
+Month 1: Reporting on all completed deliverables as the campaign is launched, content approval request, and weekly campaign updates.
+Month 2 Onward: Automated monthly reporting on analytics and deliverables, with the ability to chat with your results for deeper insights.
 
 CLIENT RESPONSIBILITIES:
-- Complete campaign onboarding: provide all requested info so Moonraker can launch without delay
-- Provide access: website, GBP, GA4, GSC, GTM if available
-- Historical SEO data: provide access to previous SEO tools/accounts
-- Approve content promptly: respond within 48 hours. After 7 days, Moonraker may publish on Client's behalf.
+- Complete Campaign Onboarding: The Client agrees to provide all requested information in the Client Onboarding dashboard in a thorough and exhaustive manner so that Moonraker can launch the Services without delay.
+- Provide Access to Website and Google Properties: The Client agrees to provide access to their website, Google Business Profile (GBP) listing and other Google properties including Google Analytics (GA4), Google Search Console (GSC), and Google Tag Manager (GTM), if available.
+- Provide Access to Historical SEO Data and Tools: The Client agrees to provide access to previous SEO tools or accounts for Moonraker to analyze past performance and make informed strategy decisions.
+- Approve Campaign Content in a Timely Manner: The Client will respond to content approval requests from Moonraker within 48 hours, either with approval or a request for updates. If the Client does not respond within 7 days, Moonraker may go ahead and publish updates on the Client's behalf. Changes can still be made after content goes live.
 
 Paid advertising: Referred to Mike Ensor at Advertising Report Card (separate engagement).
 Timeline: Generally 1-2 months for initial buildout, ongoing optimization months 3-12.
@@ -378,6 +381,7 @@ The team:
 - Keep responses to 2-4 paragraphs unless the question requires more detail.
 - End responses on an encouraging, forward-moving note when natural.`;
 }
+
 
 
 
