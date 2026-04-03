@@ -145,60 +145,107 @@ module.exports = async function handler(req, res) {
   }
 
   // ─── 2. Fathom Search (both accounts) ─────────────────────────
+  // Fathom REST API: https://api.fathom.ai/external/v1
+  // Auth: X-Api-Key header. Filter by calendar_invitees_domains.
+  // Summary endpoint: GET /recordings/{recording_id}/summary
+  var FATHOM_BASE = 'https://api.fathom.ai/external/v1';
   var fathomKeys = [];
   if (fathomChris) fathomKeys.push({ key: fathomChris, owner: 'chris' });
   if (fathomScott) fathomKeys.push({ key: fathomScott, owner: 'scott' });
 
   for (var fk of fathomKeys) {
     try {
-      // Search by attendee email, contact name, and practice name
-      var searchTerms = [];
-      if (searchEmail) searchTerms.push(searchEmail);
-      if (searchName) searchTerms.push(searchName);
-      if (practiceName) searchTerms.push(practiceName);
+      // Build query params: filter by prospect's domain and/or list recent external meetings
+      var fParams = new URLSearchParams();
+      if (searchDomain) {
+        fParams.append('calendar_invitees_domains[]', searchDomain);
+      }
+      // Also include summary inline to reduce API calls
+      fParams.append('include_summary', 'true');
+      fParams.append('calendar_invitees_domains_type', 'one_or_more_external');
 
-      for (var term of searchTerms) {
-        var fResp = await fetch(
-          'https://api.fathom.video/v1/call-recordings?query=' + encodeURIComponent(term) + '&limit=10',
-          { headers: { 'Authorization': 'Bearer ' + fk.key, 'Content-Type': 'application/json' } }
-        );
+      var fUrl = FATHOM_BASE + '/meetings?' + fParams.toString();
+      var fResp = await fetch(fUrl, {
+        headers: { 'X-Api-Key': fk.key },
+        signal: AbortSignal.timeout(10000)
+      });
 
-        if (fResp.ok) {
-          var fData = await fResp.json();
-          var recordings = fData.call_recordings || fData.data || fData.recordings || fData;
-          if (Array.isArray(recordings) && recordings.length > 0) {
-            enrichment.sources.fathom.push({ owner: fk.owner, recording_count: recordings.length, search_term: term });
+      if (fResp.ok) {
+        var fData = await fResp.json();
+        var meetings = fData.items || [];
 
-            for (var rec of recordings) {
-              // Avoid duplicates
-              var recId = rec.id || rec.recording_id;
-              if (enrichment.data.calls.some(function(c) { return c.recording_id === recId; })) continue;
+        // If domain filter returned nothing, try broader search (recent meetings)
+        // and manually filter by attendee email or name
+        if (meetings.length === 0 && searchEmail) {
+          var broadParams = new URLSearchParams();
+          broadParams.append('include_summary', 'true');
+          broadParams.append('calendar_invitees_domains_type', 'one_or_more_external');
+          var broadUrl = FATHOM_BASE + '/meetings?' + broadParams.toString();
+          var broadResp = await fetch(broadUrl, {
+            headers: { 'X-Api-Key': fk.key },
+            signal: AbortSignal.timeout(10000)
+          });
+          if (broadResp.ok) {
+            var broadData = await broadResp.json();
+            var allMeetings = broadData.items || [];
+            // Filter client-side by attendee email or name in title
+            meetings = allMeetings.filter(function(m) {
+              var invitees = m.calendar_invitees || [];
+              var hasEmail = invitees.some(function(inv) {
+                return inv.email && inv.email.toLowerCase() === searchEmail.toLowerCase();
+              });
+              var titleMatch = searchName && m.title && m.title.toLowerCase().indexOf(searchName.toLowerCase()) !== -1;
+              var meetingTitleMatch = searchName && m.meeting_title && m.meeting_title.toLowerCase().indexOf(searchName.toLowerCase()) !== -1;
+              return hasEmail || titleMatch || meetingTitleMatch;
+            });
+          }
+        }
 
-              var callEntry = {
-                recording_id: recId,
-                fathom_owner: fk.owner,
-                title: rec.title || rec.meeting_title || '',
-                date: rec.created_at || rec.date || rec.started_at || '',
-                duration_seconds: rec.duration || rec.duration_seconds || null,
-                attendees: rec.attendees || []
-              };
+        if (meetings.length > 0) {
+          enrichment.sources.fathom.push({ owner: fk.owner, recording_count: meetings.length });
 
-              // Try to get the summary
+          for (var rec of meetings) {
+            var recId = rec.recording_id || rec.id;
+            if (!recId) continue;
+            if (enrichment.data.calls.some(function(c) { return c.recording_id === String(recId); })) continue;
+
+            var callEntry = {
+              recording_id: String(recId),
+              fathom_owner: fk.owner,
+              title: rec.title || rec.meeting_title || '',
+              date: rec.created_at || '',
+              duration_seconds: null,
+              attendees: (rec.calendar_invitees || []).map(function(inv) {
+                return { name: inv.name || '', email: inv.email || '' };
+              })
+            };
+
+            // Use inline summary if available (from include_summary=true)
+            if (rec.default_summary) {
+              callEntry.summary = rec.default_summary.markdown_formatted || JSON.stringify(rec.default_summary).substring(0, 2000);
+            } else {
+              // Fallback: fetch summary separately
               try {
                 var sumResp = await fetch(
-                  'https://api.fathom.video/v1/call-recordings/' + recId + '/summary',
-                  { headers: { 'Authorization': 'Bearer ' + fk.key } }
+                  FATHOM_BASE.replace('/meetings', '') + '/recordings/' + recId + '/summary',
+                  { headers: { 'X-Api-Key': fk.key }, signal: AbortSignal.timeout(8000) }
                 );
                 if (sumResp.ok) {
                   var sumData = await sumResp.json();
-                  callEntry.summary = sumData.summary || sumData.text || sumData.content || JSON.stringify(sumData).substring(0, 2000);
+                  callEntry.summary = sumData.markdown_formatted || sumData.summary || sumData.text || JSON.stringify(sumData).substring(0, 2000);
                 }
               } catch(e) { /* summary fetch optional */ }
-
-              enrichment.data.calls.push(callEntry);
             }
+
+            enrichment.data.calls.push(callEntry);
           }
+        } else {
+          enrichment.sources.fathom.push({ owner: fk.owner, recording_count: 0, note: 'No matching meetings found' });
         }
+      } else {
+        var errText = '';
+        try { errText = await fResp.text(); } catch(e) {}
+        enrichment.sources.fathom.push({ owner: fk.owner, error: 'HTTP ' + fResp.status + ': ' + errText.substring(0, 200) });
       }
     } catch (e) {
       enrichment.sources.fathom.push({ owner: fk.owner, error: e.message || String(e) });
@@ -356,3 +403,4 @@ async function getDelegatedToken(saJson, impersonateEmail, scope) {
     return { error: e.message || String(e) };
   }
 }
+
