@@ -215,6 +215,7 @@ STATEMENT OF WORK (CORE Marketing Campaign includes):
 - Up to 5 new and optimized website pages with custom HTML and schema
 - Bio page creation for each therapist
 - General FAQ page
+- 1 location page
 - Google Business Profile optimization
 - Citation audit and directory listings management (15 citations + 5 data aggregators)
 - Press release syndication (1 included, additional at $300/ea)
@@ -269,6 +270,7 @@ Months 3-12: Activation of Rising Tide, NEO, LiveDrive, and ongoing content dist
 - When explaining what Moonraker does NOT do, always end positively with what we DO provide
 - End responses on an encouraging, forward-moving note when natural`;
 }
+
 
 
 
