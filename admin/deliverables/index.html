@@ -30,6 +30,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 17px; }
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.6; -webkit-font-smoothing: antialiased;  overflow-x: hidden; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
 h1,h2,h3,h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.2; }
 a { color: var(--color-primary); text-decoration: none; }
 a:hover { color: var(--color-primary-hover); }
@@ -804,9 +805,7 @@ a:hover { color: var(--color-primary-hover); }
     themeBtn.innerHTML = _curTheme === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
     themeBtn.addEventListener('click', function() {
       var h = document.documentElement;
-      document.body.style.transition='opacity .25s ease';
-      document.body.style.opacity='0';
-      setTimeout(function(){
+      function apply() {
         if (h.getAttribute('data-theme') === 'light') {
           h.setAttribute('data-theme', 'dark'); themeBtn.innerHTML = '&#9728;&#65039;';
           try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
@@ -814,10 +813,8 @@ a:hover { color: var(--color-primary-hover); }
           h.setAttribute('data-theme', 'light'); themeBtn.innerHTML = '&#x1F319;';
           try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
         }
-        document.body.style.transition='opacity .3s ease';
-        document.body.style.opacity='1';
-        setTimeout(function(){document.body.style.transition=''},400);
-      },280);
+      }
+      if (document.startViewTransition) { document.startViewTransition(apply); } else { apply(); }
     });
   }
   loadData();
