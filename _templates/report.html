@@ -274,8 +274,9 @@ section { padding: 4.5rem 0; }
   <a href="#hero"><span class="nav-dot"></span>Overview</a>
   <a href="#highlights"><span class="nav-dot"></span>Highlights</a>
   <a href="#search"><span class="nav-dot"></span>Search</a>
-  <a href="#maps"><span class="nav-dot"></span>Maps</a>
   <a href="#ai-visibility"><span class="nav-dot"></span>AI Visibility</a>
+  <a href="#maps"><span class="nav-dot"></span>Maps</a>
+  <a href="#geogrids"><span class="nav-dot"></span>Geogrids</a>
   <a href="#core"><span class="nav-dot"></span>CORE Scores</a>
   <a href="#progress"><span class="nav-dot"></span>Progress</a>
   <a href="#deliverables"><span class="nav-dot"></span>Deliverables</a>
@@ -351,6 +352,19 @@ section { padding: 4.5rem 0; }
 
 <hr class="divider">
 
+<!-- AI VISIBILITY -->
+<section id="ai-visibility" class="reveal">
+  <div class="container">
+    <h2>AI Visibility</h2>
+    <p style="color:var(--color-muted);margin-bottom:1rem">How conversational AI engines reference the practice across ChatGPT, Gemini, Google AI Overviews, and AI Mode.</p>
+    <div id="aiVisibilityContent">
+      <p style="color:var(--color-muted)">AI visibility data not yet available for this period.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
 <!-- MAPS / GBP -->
 <section id="maps" class="reveal">
   <div class="container">
@@ -367,22 +381,9 @@ section { padding: 4.5rem 0; }
 <section id="geogrids" class="reveal">
   <div class="container">
     <h2>Local Rank Tracking</h2>
-    <p style="color:var(--color-muted);margin-bottom:1rem">7x7 geogrid scans showing where the practice ranks in Google Maps across a ~7 mile radius.</p>
+    <p style="color:var(--color-muted);margin-bottom:1rem">Geogrid scans showing where the practice ranks on Google and Apple Maps across a 10 mile diameter.</p>
     <div id="geogridContent">
       <p style="color:var(--color-muted)">Geogrid data not yet available for this period.</p>
-    </div>
-  </div>
-</section>
-
-<hr class="divider">
-
-<!-- AI VISIBILITY -->
-<section id="ai-visibility" class="reveal">
-  <div class="container">
-    <h2>AI Visibility</h2>
-    <p style="color:var(--color-muted);margin-bottom:1rem">How conversational AI engines reference the practice.</p>
-    <div id="aiVisibilityContent">
-      <p style="color:var(--color-muted)">AI visibility data not yet available for this period.</p>
     </div>
   </div>
 </section>
@@ -866,6 +867,21 @@ section { padding: 4.5rem 0; }
       }
       currentSnap = snaps[0];
       renderReport(currentSnap, highlights);
+
+      // Set chatbot context so the report assistant has full data
+      window.__REPORT_CHAT_CONTEXT = {
+        snapshot: currentSnap,
+        highlights: highlights,
+        practice_name: PRACTICE_NAME,
+        campaign_month: currentSnap.campaign_month
+      };
+      // Load chatbot script dynamically (only once)
+      if (!document.getElementById('reportChatbotScript')) {
+        var s = document.createElement('script');
+        s.id = 'reportChatbotScript';
+        s.src = '/shared/report-chatbot.js';
+        document.body.appendChild(s);
+      }
     }).catch(function(err) {
       console.error('Failed to load report:', err);
       document.getElementById('loadingState').innerHTML =
@@ -1024,4 +1040,5 @@ section { padding: 4.5rem 0; }
 </script>
 </body>
 </html>
+
 
