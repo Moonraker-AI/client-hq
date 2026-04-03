@@ -218,11 +218,11 @@
         '<h3>Hi! I\'m your Proposal Assistant</h3>' +
         '<p>I can answer questions about your proposal, the service agreement, pricing, timeline, or anything else you\'re curious about.</p>' +
         '<div class="mpc-welcome-chips">' +
-          '<button class="mpc-chip" data-q="What does the CORE framework mean?">CORE framework</button>' +
-          '<button class="mpc-chip" data-q="What is the performance guarantee?">Guarantee</button>' +
-          '<button class="mpc-chip" data-q="What are the payment options?">Payment options</button>' +
+          '<button class="mpc-chip" data-q="What exactly will Moonraker do for my practice?">What\'s included</button>' +
+          '<button class="mpc-chip" data-q="How does the CORE framework work?">CORE framework</button>' +
+          '<button class="mpc-chip" data-q="How does payment work for my plan?">Payment</button>' +
           '<button class="mpc-chip" data-q="What happens after I sign up?">Next steps</button>' +
-          '<button class="mpc-chip" data-q="Can I cancel anytime?">Cancellation</button>' +
+          '<button class="mpc-chip" data-q="Can I cancel if I need to?">Cancellation</button>' +
         '</div>' +
       '</div>' +
     '</div>' +
@@ -462,5 +462,6 @@
   }
 
 })();
+
 
 
