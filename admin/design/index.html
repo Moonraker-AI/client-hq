@@ -653,7 +653,8 @@ window.toast = toast;</code></pre>
 
   <table class="token-table">
     <tr><th>Pattern</th><th>Convention</th></tr>
-    <tr><td>Theme persistence</td><td><code>localStorage.getItem('moonraker-theme')</code> - reads on page load before paint</td></tr>
+    <tr><td>Theme persistence</td><td><code>localStorage.getItem('moonraker-theme')</code> - reads on page load before paint. Admin pages use <code>data-theme</code> attribute on <code>&lt;html&gt;</code>. Public/client pages use <code>.dark</code> class on <code>&lt;html&gt;</code>.</td></tr>
+    <tr><td>Theme toggle animation</td><td>Uses the <strong>View Transition API</strong> for a unified cross-fade. Wrap the theme swap in <code>document.startViewTransition(apply)</code> with a <code>.25s</code> duration. Falls back to instant swap in unsupported browsers. CSS: <code>::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }</code>. Never use the legacy opacity fade hack.</td></tr>
     <tr><td>Sidebar collapse</td><td><code>localStorage.getItem('moonraker-sidebar')</code> - text hidden via <code>color: transparent</code></td></tr>
     <tr><td>Optimistic updates</td><td>Change local state first, revert on API failure. Standard for all status changes.</td></tr>
     <tr><td>Window-scoped functions</td><td>All functions called from inline <code>onclick</code> must be assigned to <code>window</code></td></tr>
@@ -987,7 +988,7 @@ fetch('/api/action', {
 </div>
 
 <div style="text-align:center;padding:2rem 0;color:var(--color-muted);font-size:.82rem;">
-  Client HQ Architecture &middot; Last updated April 2026 &middot; <a href="/admin" style="color:var(--color-primary);">Back to Admin</a>
+  Client HQ Architecture &middot; Last updated April 4, 2026 &middot; <a href="/admin" style="color:var(--color-primary);">Back to Admin</a>
 </div>
 
 </div><!-- end tab-sitemap -->
