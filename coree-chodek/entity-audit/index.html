@@ -181,6 +181,7 @@ section { padding: 4.5rem 0; }
 .quick-wins ul { list-style: none; padding: 0; margin: 0; }
 .quick-wins li { padding: .35rem 0; font-size: .9375rem; display: flex; align-items: flex-start; gap: .5rem; }
 .quick-wins li::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--color-primary); border-radius: 50%; flex-shrink: 0; margin-top: .55rem; }
+
 /* RTPBA section */
 .rtpba-section { margin: 3rem 0; }
 .rtpba-toggle { width: 100%; background: linear-gradient(135deg, var(--color-navy), #1a2f5a); border: none; border-radius: 14px; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all .3s; }
@@ -270,7 +271,7 @@ section { padding: 4.5rem 0; }
 <div id="loadingState">
   <header class="header">
     <div class="container header-inner">
-      <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker">
+      <img src="/assets/logo.png" alt="Moonraker">
       <div class="header-meta"><p class="name">Entity Audit</p><p>Loading...</p></div>
     </div>
   </header>
@@ -282,7 +283,7 @@ section { padding: 4.5rem 0; }
 
 <header class="header">
   <div class="container header-inner">
-    <img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker">
+    <img src="/assets/logo.png" alt="Moonraker">
     <div class="header-meta">
       <p class="name" id="headerName">Entity Audit</p>
       <p id="headerMeta">Moonraker</p>
@@ -429,7 +430,7 @@ section { padding: 4.5rem 0; }
 </section>
 
 <div class="confidential"><div class="container">This report is confidential and prepared exclusively for <span id="confName">your practice</span>.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai</div></div>
-<footer class="footer"><div class="container"><img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker"><br><a href="https://moonraker.ai">moonraker.ai</a></div></footer>
+<footer class="footer"><div class="container"><img src="/assets/logo.png" alt="Moonraker"><br><a href="https://moonraker.ai">moonraker.ai</a></div></footer>
 
 </div><!-- /mainContent -->
 
@@ -476,6 +477,7 @@ section { padding: 4.5rem 0; }
     if (f.fix) {
       html += '<div class="fix-accordion"><button class="fix-toggle" onclick="this.parentElement.classList.toggle(\'open\')"><span class="fix-arrow">&#9654;</span> How to fix this</button>';
       if (IS_PREMIUM || idx === 0) {
+        // Premium gets all, free gets first per pillar
         html += '<div class="fix-content"><div class="fix-content-inner">' + f.fix + '</div></div>';
       } else {
         html += '<div class="fix-content"><div class="gated-wrap"><div class="gated-blur"><div class="fix-content-inner">' + f.fix + '</div></div>';
@@ -520,7 +522,7 @@ section { padding: 4.5rem 0; }
 
   function init() {
     if (!CLIENT_SLUG) {
-      document.getElementById('loadingState').innerHTML = '<header class="header"><div class="container header-inner"><img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker"></div></header><div style="text-align:center;padding:6rem 2rem;"><p style="color:var(--color-danger)">No audit found. Please check your URL.</p></div>';
+      document.getElementById('loadingState').innerHTML = '<header class="header"><div class="container header-inner"><img src="/assets/logo.png" alt="Moonraker"></div></header><div style="text-align:center;padding:6rem 2rem;"><p style="color:var(--color-danger)">No audit found. Please check your URL.</p></div>';
       return;
     }
 
@@ -538,7 +540,7 @@ section { padding: 4.5rem 0; }
       })
       .catch(function(err) {
         console.error('Init error:', err);
-        document.getElementById('loadingState').innerHTML = '<header class="header"><div class="container header-inner"><img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker"></div></header><div style="text-align:center;padding:6rem 2rem;"><p style="color:var(--color-danger)">Unable to load audit data. Please contact support@moonraker.ai.</p></div>';
+        document.getElementById('loadingState').innerHTML = '<header class="header"><div class="container header-inner"><img src="/assets/logo.png" alt="Moonraker"></div></header><div style="text-align:center;padding:6rem 2rem;"><p style="color:var(--color-danger)">Unable to load audit data. Please contact support@moonraker.ai.</p></div>';
       });
   }
 
