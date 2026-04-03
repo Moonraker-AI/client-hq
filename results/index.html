@@ -38,485 +38,254 @@ html.dark {
   --color-overlay: rgba(8,15,11,.8);
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Inter', sans-serif;
-  background: var(--color-bg);
-  color: var(--color-body);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ── Nav ── */
-.theme-toggle {
-  position: fixed; top: 1.25rem; right: 1.25rem; z-index: 100;
-  width: 40px; height: 40px; border-radius: 50%;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem; transition: background .2s, border-color .2s;
-}
+body { font-family: 'Inter', sans-serif; background: var(--color-bg); color: var(--color-body); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+.theme-toggle { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 100; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--color-border); background: var(--color-surface); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; transition: background .2s, border-color .2s; }
 .theme-toggle:hover { border-color: var(--color-primary); }
-.nav {
-  padding: 1.25rem 2rem;
-  display: flex; align-items: center; gap: .75rem;
-}
+.nav { padding: 1.25rem 2rem; display: flex; align-items: center; gap: .75rem; }
 .nav img { height: 32px; }
 .nav-divider { width: 1px; height: 20px; background: var(--color-border); margin: 0 .25rem; }
-.nav-label {
-  font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .85rem;
-  color: var(--color-muted); letter-spacing: .02em;
-}
-
-/* ── Hero ── */
-.hero {
-  text-align: center; padding: 3rem 2rem 1.5rem;
-  max-width: 780px; margin: 0 auto;
-}
-.hero h1 {
-  font-family: 'Outfit', sans-serif; font-weight: 800;
-  font-size: 2.5rem; line-height: 1.15; color: var(--color-heading);
-  margin-bottom: 1rem;
-}
+.nav-label { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .88rem; color: var(--color-muted); letter-spacing: .02em; }
+.hero { text-align: center; padding: 3.5rem 2rem 2rem; max-width: 780px; margin: 0 auto; }
+.hero h1 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 2.6rem; line-height: 1.15; color: var(--color-heading); margin-bottom: 1rem; }
 .hero h1 span { color: var(--color-primary); }
-.hero p {
-  font-size: .95rem; color: var(--color-muted); max-width: 560px; margin: 0 auto;
-}
-
-/* ── Trust badges ── */
-.trust-bar {
-  display: flex; align-items: center; justify-content: center; gap: 1.5rem;
-  padding: 1.5rem 2rem; flex-wrap: wrap; max-width: 800px; margin: 0 auto;
-}
-.trust-badge {
-  background: var(--color-surface); border: 1px solid var(--color-border);
-  border-radius: 14px; padding: .75rem 1.5rem;
-  display: flex; align-items: center; justify-content: center;
-  flex: 1; min-width: 180px; max-width: 240px;
-}
-.trust-badge img { height: 44px; max-width: 100%; object-fit: contain; }
-html.dark .trust-badge img { filter: brightness(1.2); }
-
-/* ── Partners ── */
-.partners-section {
-  padding: 3rem 2rem 2rem; max-width: 1200px; margin: 0 auto; text-align: center;
-}
-.section-heading {
-  font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.75rem;
-  color: var(--color-heading); margin-bottom: .5rem;
-}
-.section-subhead {
-  font-size: .9rem; color: var(--color-muted); max-width: 520px; margin: 0 auto 2rem;
-}
-.partners-grid {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-  gap: 2rem 3rem; padding: 0 1rem;
-}
-.partner-logo {
-  height: 52px; max-width: 200px; object-fit: contain;
-  transition: transform .2s, opacity .2s; opacity: .85;
-}
+.hero p { font-size: 1rem; color: var(--color-muted); max-width: 560px; margin: 0 auto; }
+.partners-section { padding: 2rem 2rem 3rem; max-width: 1100px; margin: 0 auto; text-align: center; }
+.section-heading { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.85rem; color: var(--color-heading); margin-bottom: .5rem; }
+.section-subhead { font-size: .95rem; color: var(--color-muted); max-width: 540px; margin: 0 auto 2.5rem; }
+.partners-rows { display: flex; flex-direction: column; align-items: center; gap: 2rem; }
+.partner-row { display: flex; align-items: center; justify-content: center; gap: 2.5rem; flex-wrap: wrap; }
+.partner-logo { height: 60px; max-width: 220px; object-fit: contain; transition: transform .2s, opacity .2s; opacity: .85; }
 .partner-logo:hover { transform: scale(1.08); opacity: 1; }
 html.dark .partner-logo { filter: brightness(1.1) contrast(1.05); opacity: .75; }
 html.dark .partner-logo:hover { opacity: .95; }
-
-/* ── Stats ── */
-.stats-bar {
-  display: flex; justify-content: center; gap: 3rem; padding: 1.5rem 2rem;
-}
+.stats-bar { display: flex; justify-content: center; gap: 3rem; padding: 1.5rem 2rem; }
 .stat-item { text-align: center; }
-.stat-value {
-  font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 2rem;
-  color: var(--color-primary); line-height: 1;
-}
-.stat-label {
-  font-size: .75rem; font-weight: 600; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--color-muted); margin-top: .35rem;
-}
-
-/* ── Filters ── */
-.filters {
-  display: flex; justify-content: center; gap: .5rem; padding: .5rem 2rem 1.5rem;
-  flex-wrap: wrap;
-}
-.filter-pill {
-  padding: .4rem 1rem; border-radius: 99px; font-size: .8rem; font-weight: 500;
-  border: 1px solid var(--color-border); background: var(--color-surface);
-  color: var(--color-muted); cursor: pointer; transition: all .2s;
-}
+.stat-value { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 2.1rem; color: var(--color-primary); line-height: 1; }
+.stat-label { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--color-muted); margin-top: .35rem; }
+.filters { display: flex; justify-content: center; gap: .5rem; padding: .5rem 2rem 1.5rem; flex-wrap: wrap; }
+.filter-pill { padding: .45rem 1.1rem; border-radius: 99px; font-size: .84rem; font-weight: 500; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-muted); cursor: pointer; transition: all .2s; }
 .filter-pill:hover { border-color: var(--color-primary); color: var(--color-heading); }
-.filter-pill.active {
-  background: var(--color-primary); color: #fff; border-color: var(--color-primary);
-}
-.filter-pill .count {
-  display: inline-block; background: rgba(255,255,255,.2); border-radius: 99px;
-  padding: 0 .45rem; font-size: .7rem; margin-left: .25rem;
-}
+.filter-pill.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+.filter-pill .count { display: inline-block; background: rgba(255,255,255,.2); border-radius: 99px; padding: 0 .45rem; font-size: .73rem; margin-left: .25rem; }
 .filter-pill:not(.active) .count { background: var(--color-primary-subtle); color: var(--color-primary); }
-
-/* ── Results grid ── */
-.results-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.25rem; padding: 0 2rem 3rem; max-width: 1200px; margin: 0 auto;
-}
-.result-card {
-  background: var(--color-surface); border-radius: 12px;
-  border: 1px solid var(--color-border); overflow: hidden; cursor: pointer;
-  transition: transform .2s, box-shadow .2s;
-}
-.result-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0,0,0,.08);
-}
+.results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; padding: 0 2rem 3rem; max-width: 1200px; margin: 0 auto; }
+.result-card { background: var(--color-surface); border-radius: 12px; border: 1px solid var(--color-border); overflow: hidden; cursor: pointer; transition: transform .2s, box-shadow .2s; }
+.result-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.08); }
 .result-card.hidden { display: none; }
-.card-image-wrap {
-  position: relative; overflow: hidden; aspect-ratio: 16/9; background: var(--color-navy);
-}
+.card-image-wrap { position: relative; overflow: hidden; aspect-ratio: 16/9; background: var(--color-navy); }
 .card-image-wrap.portrait { aspect-ratio: 4/5; }
-.card-image-wrap img {
-  width: 100%; height: 100%; object-fit: cover; transition: transform .3s;
-}
+.card-image-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
 .result-card:hover .card-image-wrap img { transform: scale(1.03); }
-.card-badge {
-  position: absolute; top: .75rem; right: .75rem;
-  background: var(--color-primary); color: #fff; font-family: 'Outfit', sans-serif;
-  font-weight: 700; font-size: .8rem; padding: .3rem .7rem; border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.2);
-}
+.card-badge { position: absolute; top: .75rem; right: .75rem; background: var(--color-primary); color: #fff; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .84rem; padding: .3rem .7rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
 .card-body { padding: .75rem 1rem; }
-.card-meta {
-  font-size: .78rem; color: var(--color-muted);
-  display: flex; align-items: center; gap: .5rem;
-}
-.card-type-tag {
-  display: inline-block; background: var(--color-primary-subtle);
-  color: var(--color-primary); font-weight: 600; font-size: .7rem;
-  padding: .15rem .5rem; border-radius: 6px;
-}
+.card-meta { font-size: .82rem; color: var(--color-muted); display: flex; align-items: center; gap: .5rem; }
+.card-type-tag { display: inline-block; background: var(--color-primary-subtle); color: var(--color-primary); font-weight: 600; font-size: .73rem; padding: .15rem .5rem; border-radius: 6px; }
+.section-divider { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+.section-divider hr { border: none; border-top: 1px solid var(--color-border); }
 
-/* ── Divider ── */
-.section-divider {
-  max-width: 1200px; margin: 0 auto; padding: 0 2rem;
-}
-.section-divider hr {
-  border: none; border-top: 1px solid var(--color-border);
-}
-
-/* ── Testimonials ── */
-.testimonials-section {
-  padding: 3rem 2rem; max-width: 1100px; margin: 0 auto;
-}
-.testimonials-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
-  gap: 1.5rem;
-}
-.testimonial-card {
-  background: var(--color-surface); border: 1px solid var(--color-border);
-  border-radius: 16px; padding: 2rem; position: relative; overflow: hidden;
-  transition: border-color .2s, box-shadow .2s;
-}
-.testimonial-card:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 4px 20px rgba(0, 212, 126, 0.08);
-}
-.testimonial-card::before {
-  content: '\201C'; position: absolute; top: .75rem; right: 1.25rem;
-  font-family: Georgia, serif; font-size: 4rem; line-height: 1;
-  color: var(--color-primary); opacity: .15;
-}
-.testimonial-text {
-  font-size: .9rem; line-height: 1.7; color: var(--color-body);
-  margin-bottom: 1.5rem; font-style: italic; position: relative;
-}
-.testimonial-author {
-  display: flex; align-items: center; gap: 1rem;
-}
-.testimonial-headshot {
-  width: 56px; height: 56px; border-radius: 50%; object-fit: cover;
-  border: 2px solid var(--color-primary-light);
-}
-.testimonial-name {
-  font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .9rem;
-  color: var(--color-heading);
-}
-.testimonial-role {
-  font-size: .78rem; color: var(--color-muted);
-}
-.testimonial-logo {
-  height: 28px; max-width: 120px; object-fit: contain; margin-top: .35rem;
-  opacity: .6;
-}
+/* ── Full-width Testimonials (carousel) ── */
+.testimonials-section { padding: 4rem 2rem; max-width: 900px; margin: 0 auto; }
+.testimonial-carousel { position: relative; }
+.testimonial-slide { display: none; animation: fadeSlide .4s ease; }
+.testimonial-slide.active { display: block; }
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.testimonial-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; padding: 2.5rem 3rem; position: relative; overflow: hidden; }
+.testimonial-card::before { content: '\201C'; position: absolute; top: 1rem; right: 1.5rem; font-family: Georgia, serif; font-size: 5rem; line-height: 1; color: var(--color-primary); opacity: .12; }
+.testimonial-result-img { width: 100%; border-radius: 10px; margin-bottom: 1.75rem; border: 1px solid var(--color-border); }
+.testimonial-text { font-size: 1.1rem; line-height: 1.8; color: var(--color-body); margin-bottom: 2rem; font-style: italic; position: relative; }
+.testimonial-author { display: flex; align-items: center; gap: 1.25rem; }
+.testimonial-headshot { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-primary-light); }
+.testimonial-name { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .95rem; color: var(--color-heading); }
+.testimonial-role { font-size: .82rem; color: var(--color-muted); }
+.testimonial-logo { height: 32px; max-width: 140px; object-fit: contain; margin-top: .4rem; opacity: .6; }
 html.dark .testimonial-logo { filter: brightness(1.3); }
+.carousel-nav { display: flex; align-items: center; justify-content: center; gap: 1.25rem; margin-top: 1.75rem; }
+.carousel-arrow { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--color-border); background: var(--color-surface); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--color-muted); transition: all .2s; }
+.carousel-arrow:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.carousel-dots { display: flex; gap: .5rem; }
+.carousel-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-border); cursor: pointer; transition: background .2s, transform .2s; }
+.carousel-dot.active { background: var(--color-primary); transform: scale(1.2); }
 
 /* ── Google Reviews ── */
-.google-reviews-section {
-  padding: 3rem 2rem; max-width: 1200px; margin: 0 auto; text-align: center;
-}
-.google-badge-large {
-  display: inline-flex; align-items: center; gap: .75rem;
-  background: var(--color-surface); border: 1px solid var(--color-border);
-  border-radius: 14px; padding: .75rem 1.5rem; margin-bottom: 2rem;
-}
+.google-reviews-section { padding: 3rem 2rem; max-width: 1200px; margin: 0 auto; text-align: center; }
+.google-badge-large { display: inline-flex; align-items: center; gap: .75rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: .75rem 1.5rem; margin-bottom: 2rem; }
 .google-badge-large svg { width: 28px; height: 28px; flex-shrink: 0; }
-.badge-stars { color: #F59E0B; font-size: 1.1rem; letter-spacing: .1em; line-height: 1; }
-.badge-text { font-size: .78rem; color: var(--color-muted); }
-.reviews-masonry {
-  columns: 3; column-gap: 1rem; padding-top: .5rem;
-}
-.review-card {
-  break-inside: avoid; background: var(--color-surface);
-  border: 1px solid var(--color-border); border-radius: 12px;
-  padding: 1.25rem; margin-bottom: 1rem; text-align: left;
-  transition: border-color .2s;
-}
+.badge-stars { color: #F59E0B; font-size: 1.15rem; letter-spacing: .1em; line-height: 1; }
+.badge-text { font-size: .82rem; color: var(--color-muted); }
+.reviews-masonry { columns: 3; column-gap: 1rem; padding-top: .5rem; }
+.review-card { break-inside: avoid; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; text-align: left; transition: border-color .2s; }
 .review-card:hover { border-color: var(--color-primary); }
-.review-stars { color: #F59E0B; font-size: .85rem; margin-bottom: .5rem; }
-.review-text { font-size: .82rem; line-height: 1.65; color: var(--color-body); margin-bottom: .75rem; }
-.review-author {
-  font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .78rem;
-  color: var(--color-heading);
-}
-
-/* ── CTA ── */
-.cta-section {
-  text-align: center; padding: 4rem 2rem; max-width: 600px; margin: 0 auto;
-}
-.cta-section h2 {
-  font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.5rem;
-  color: var(--color-heading); margin-bottom: .75rem;
-}
-.cta-section p {
-  font-size: .9rem; color: var(--color-muted); margin-bottom: 1.5rem;
-}
-.cta-btn {
-  display: inline-block; padding: .75rem 2.25rem; border-radius: 99px;
-  background: var(--color-primary); color: #fff; text-decoration: none;
-  font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .9rem;
-  transition: background .2s, transform .15s;
-}
+.review-stars { color: #F59E0B; font-size: .88rem; margin-bottom: .5rem; }
+.review-text { font-size: .86rem; line-height: 1.65; color: var(--color-body); margin-bottom: .75rem; }
+.review-author { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .82rem; color: var(--color-heading); }
+.cta-section { text-align: center; padding: 4rem 2rem; max-width: 600px; margin: 0 auto; }
+.cta-section h2 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.6rem; color: var(--color-heading); margin-bottom: .75rem; }
+.cta-section p { font-size: .95rem; color: var(--color-muted); margin-bottom: 1.5rem; }
+.cta-btn { display: inline-block; padding: .75rem 2.25rem; border-radius: 99px; background: var(--color-primary); color: #fff; text-decoration: none; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .95rem; transition: background .2s, transform .15s; }
 .cta-btn:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
-.footer {
-  text-align: center; padding: 1.5rem; font-size: .75rem; color: var(--color-muted);
-}
-
-/* ── Lightbox ── */
-.lightbox {
-  display: none; position: fixed; inset: 0; z-index: 200;
-  background: var(--color-overlay); backdrop-filter: blur(12px);
-  align-items: center; justify-content: center; padding: 2rem;
-}
+.footer { text-align: center; padding: 1.5rem; font-size: .78rem; color: var(--color-muted); }
+.lightbox { display: none; position: fixed; inset: 0; z-index: 200; background: var(--color-overlay); backdrop-filter: blur(12px); align-items: center; justify-content: center; padding: 2rem; }
 .lightbox.open { display: flex; }
-.lightbox img {
-  max-width: 90vw; max-height: 85vh; border-radius: 12px;
-  box-shadow: 0 12px 48px rgba(0,0,0,.3);
-}
-.lightbox-close {
-  position: absolute; top: 1.25rem; right: 1.5rem;
-  background: none; border: none; color: #fff; font-size: 2rem;
-  cursor: pointer; opacity: .7; transition: opacity .2s;
-}
+.lightbox img { max-width: 90vw; max-height: 85vh; border-radius: 12px; box-shadow: 0 12px 48px rgba(0,0,0,.3); }
+.lightbox-close { position: absolute; top: 1.25rem; right: 1.5rem; background: none; border: none; color: #fff; font-size: 2rem; cursor: pointer; opacity: .7; transition: opacity .2s; }
 .lightbox-close:hover { opacity: 1; }
-.lightbox-caption {
-  position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
-  background: var(--color-surface); color: var(--color-heading);
-  padding: .5rem 1.25rem; border-radius: 99px; font-size: .8rem;
-  font-weight: 500; white-space: nowrap; box-shadow: 0 2px 12px rgba(0,0,0,.15);
-}
+.lightbox-caption { position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--color-surface); color: var(--color-heading); padding: .5rem 1.25rem; border-radius: 99px; font-size: .84rem; font-weight: 500; white-space: nowrap; box-shadow: 0 2px 12px rgba(0,0,0,.15); }
 
-/* ── Responsive ── */
 @media (max-width: 768px) {
-  .hero h1 { font-size: 1.75rem; }
+  .hero h1 { font-size: 1.85rem; }
+  .hero { padding: 2.5rem 1.5rem 1.5rem; }
   .results-grid { grid-template-columns: 1fr; padding: 0 1rem 2rem; }
-  .testimonials-grid { grid-template-columns: 1fr; }
-  .testimonials-section { padding: 2rem 1rem; }
-  .partners-grid { gap: 1.5rem 2rem; }
-  .partner-logo { height: 40px; }
+  .testimonials-section { padding: 3rem 1rem; }
+  .testimonial-card { padding: 1.75rem 1.5rem; }
+  .testimonial-text { font-size: .98rem; }
+  .partner-row { gap: 1.5rem; }
+  .partner-logo { height: 44px; max-width: 160px; }
   .reviews-masonry { columns: 1; }
   .stats-bar { gap: 1.5rem; }
-  .trust-bar { gap: .75rem; }
-  .trust-badge { min-width: 140px; padding: .6rem 1rem; }
-  .trust-badge img { height: 36px; }
 }
-@media (max-width: 480px) {
-  .stats-bar { gap: 1rem; }
-  .hero h1 { font-size: 1.35rem; }
-}
-@media (min-width: 769px) and (max-width: 1024px) {
-  .reviews-masonry { columns: 2; }
-}
+@media (max-width: 480px) { .stats-bar { gap: 1rem; } .hero h1 { font-size: 1.45rem; } .partner-logo { height: 38px; } }
+@media (min-width: 769px) and (max-width: 1024px) { .reviews-masonry { columns: 2; } .partner-logo { height: 52px; } }
 </style>
 </head>
 <body>
-
 <nav class="nav">
-  <a href="https://moonraker.ai" target="_blank" rel="noopener">
-    <img src="/assets/logo.png" alt="Moonraker">
-  </a>
+  <a href="https://moonraker.ai" target="_blank" rel="noopener"><img src="/assets/logo.png" alt="Moonraker"></a>
   <div class="nav-divider"></div>
   <span class="nav-label">Client Results</span>
 </nav>
+<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode"><span id="themeIcon">&#127769;</span></button>
 
-<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
-  <span id="themeIcon">&#127769;</span>
-</button>
-
-<!-- ── Hero ── -->
 <section class="hero">
   <h1>Real Results for <span>Real Practices</span></h1>
   <p>Verified Google Search Console data showing how therapy practices grow their online visibility with Moonraker. No vanity metrics, just the numbers that matter.</p>
 </section>
 
-<!-- ── Trust Badges ── -->
-<div class="trust-bar">
-  <div class="trust-badge">
-    <img src="/assets/badges/google-partner.webp" alt="Google Partner">
-  </div>
-  <div class="trust-badge">
-    <img src="/assets/badges/google-rating.webp" alt="Google Rating 4.9 stars">
-  </div>
-  <div class="trust-badge">
-    <img src="/assets/badges/google-local-guides.webp" alt="Google Local Guides">
-  </div>
-</div>
-
-<!-- ── Partner Logos ── -->
 <section class="partners-section">
   <h2 class="section-heading">Trusted by the Experts</h2>
   <p class="section-subhead">Moonraker is trusted by the leading experts who educate therapists. Imagine what we can do for your practice!</p>
-  <div class="partners-grid">
-    <img class="partner-logo" src="/assets/partners/psychology-business-school.webp" alt="Psychology Business School">
-    <img class="partner-logo" src="/assets/partners/walker-co-strategy.webp" alt="Walker Co Strategy">
-    <img class="partner-logo" src="/assets/partners/traveling-therapist.webp" alt="The Traveling Therapist">
-    <img class="partner-logo" src="/assets/partners/berries.webp" alt="Berries">
-    <img class="partner-logo" src="/assets/partners/therasaas.webp" alt="TheraSaaS">
-    <img class="partner-logo" src="/assets/partners/scalingup-emdr.webp" alt="ScalingUp EMDR">
-    <img class="partner-logo" src="/assets/partners/entrepreneurial-therapist.webp" alt="Entrepreneurial Therapist">
-    <img class="partner-logo" src="/assets/partners/private-practice-academy.webp" alt="The Private Practice Academy">
-    <img class="partner-logo" src="/assets/partners/private-practice-elevation.webp" alt="Private Practice Elevation">
-    <img class="partner-logo" src="/assets/partners/prosperous-therapist.webp" alt="The Prosperous Therapist">
-    <img class="partner-logo" src="/assets/partners/mccance-method.webp" alt="The McCance Method">
-    <img class="partner-logo" src="/assets/partners/balanced-private-practice.webp" alt="Balanced Private Practice">
-    <img class="partner-logo" src="/assets/partners/intensive-therapy-coach.webp" alt="Intensive Therapy Coach">
+  <div class="partners-rows">
+    <div class="partner-row">
+      <img class="partner-logo" src="/assets/partners/psychology-business-school.webp" alt="Psychology Business School">
+      <img class="partner-logo" src="/assets/partners/walker-co-strategy.webp" alt="Walker Co Strategy">
+      <img class="partner-logo" src="/assets/partners/traveling-therapist.webp" alt="The Traveling Therapist">
+      <img class="partner-logo" src="/assets/partners/berries.webp" alt="Berries">
+      <img class="partner-logo" src="/assets/partners/therasaas.webp" alt="TheraSaaS">
+    </div>
+    <div class="partner-row">
+      <img class="partner-logo" src="/assets/partners/scalingup-emdr.webp" alt="ScalingUp EMDR">
+      <img class="partner-logo" src="/assets/partners/entrepreneurial-therapist.webp" alt="Entrepreneurial Therapist">
+      <img class="partner-logo" src="/assets/partners/private-practice-academy.webp" alt="The Private Practice Academy">
+      <img class="partner-logo" src="/assets/partners/balanced-private-practice.webp" alt="Balanced Private Practice">
+    </div>
+    <div class="partner-row">
+      <img class="partner-logo" src="/assets/partners/private-practice-elevation.webp" alt="Private Practice Elevation">
+      <img class="partner-logo" src="/assets/partners/prosperous-therapist.webp" alt="The Prosperous Therapist">
+      <img class="partner-logo" src="/assets/partners/mccance-method.webp" alt="The McCance Method">
+      <img class="partner-logo" src="/assets/partners/intensive-therapy-coach.webp" alt="Intensive Therapy Coach">
+    </div>
   </div>
 </section>
 
 <div class="section-divider"><hr></div>
 
-<!-- ── Stats ── -->
 <div class="stats-bar">
-  <div class="stat-item">
-    <div class="stat-value">23</div>
-    <div class="stat-label">Client Results</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-value">115%</div>
-    <div class="stat-label">Average Increase</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-value">308%</div>
-    <div class="stat-label">Top Result</div>
-  </div>
+  <div class="stat-item"><div class="stat-value">22</div><div class="stat-label">Client Results</div></div>
+  <div class="stat-item"><div class="stat-value">115%</div><div class="stat-label">Average Increase</div></div>
+  <div class="stat-item"><div class="stat-value">308%</div><div class="stat-label">Top Result</div></div>
 </div>
-
-<!-- ── Filters ── -->
 <div class="filters">
-  <button class="filter-pill active" onclick="filterCards('all')">All <span class="count">23</span></button>
-  <button class="filter-pill" onclick="filterCards('group')">Group Practices <span class="count">11</span></button>
+  <button class="filter-pill active" onclick="filterCards('all')">All <span class="count">22</span></button>
+  <button class="filter-pill" onclick="filterCards('group')">Group Practices <span class="count">10</span></button>
   <button class="filter-pill" onclick="filterCards('solo')">Solo Therapists <span class="count">12</span></button>
 </div>
-
-<!-- ── GSC Results Grid ── -->
 <div class="results-grid" id="resultsGrid"></div>
 
 <div class="section-divider"><hr></div>
 
-<!-- ── Partner Testimonials ── -->
 <section class="testimonials-section">
   <h2 class="section-heading" style="text-align:center;">What Our Partners and Clients Say</h2>
   <p class="section-subhead" style="text-align:center;">Feedback from the therapists, practice owners, and industry leaders we work with every day.</p>
-
-  <div class="testimonials-grid">
-    <!-- Audrey Shoen -->
-    <div class="testimonial-card">
-      <div class="testimonial-text">"So. Good problem. The SEO is working too good!! I've had 8 inquiries in the past 10 days. And most are scheduling consultations. I'm now faced with some new challenges that I wasn't quite prepared to solve so soon. Time to figure out waitlist management. And further streamline or offload more tasks. My calendar books 2-3 weeks out now."</div>
-      <div class="testimonial-author">
-        <img class="testimonial-headshot" src="/assets/headshots/audrey-shoen.png" alt="Audrey Shoen">
-        <div>
-          <div class="testimonial-name">Audrey Shoen, LMFT</div>
-          <div class="testimonial-role">Founder, Balanced Private Practice</div>
-          <img class="testimonial-logo" src="/assets/partners/balanced-private-practice.webp" alt="Balanced Private Practice">
+  <div class="testimonial-carousel" id="testimonialCarousel">
+    <div class="testimonial-slide active" data-slide="0">
+      <div class="testimonial-card">
+        <img class="testimonial-result-img" src="https://lh3.googleusercontent.com/d/1uVfNKUBxYy3KCEJEmJU92QE3DN9khHWA=w1200" alt="Balanced Private Practice GSC Results">
+        <div class="testimonial-text">"So. Good problem. The SEO is working too good!! I've had 8 inquiries in the past 10 days. And most are scheduling consultations. I'm now faced with some new challenges that I wasn't quite prepared to solve so soon. Time to figure out waitlist management. And further streamline or offload more tasks. My calendar books 2-3 weeks out now."</div>
+        <div class="testimonial-author">
+          <img class="testimonial-headshot" src="/assets/headshots/audrey-shoen.png" alt="Audrey Shoen">
+          <div>
+            <div class="testimonial-name">Audrey Shoen, LMFT</div>
+            <div class="testimonial-role">Founder, Balanced Private Practice</div>
+            <img class="testimonial-logo" src="/assets/partners/balanced-private-practice.webp" alt="Balanced Private Practice">
+          </div>
         </div>
       </div>
     </div>
-
-    <!-- Kym Tolson -->
-    <div class="testimonial-card">
-      <div class="testimonial-text">"As a multi-passionate entrepreneur, keeping my brands organized and visible online has always felt like herding cats. Enter Moonraker and Chris, absolute game-changers! Chris helped me untangle the chaos, streamline my marketing, and optimize my websites for SEO in a way that actually makes sense (and gets results). Whether it's refining my messaging, making sure my sites rank on Google, or creating a strategy that works across multiple brands, Moonraker has been an invaluable asset."</div>
-      <div class="testimonial-author">
-        <img class="testimonial-headshot" src="/assets/headshots/kym-tolson.png" alt="Kym Tolson">
-        <div>
-          <div class="testimonial-name">Kym Tolson</div>
-          <div class="testimonial-role">Founder, The Traveling Therapist</div>
-          <img class="testimonial-logo" src="/assets/partners/traveling-therapist.webp" alt="The Traveling Therapist">
+    <div class="testimonial-slide" data-slide="1">
+      <div class="testimonial-card">
+        <div class="testimonial-text">"As a multi-passionate entrepreneur, keeping my brands organized and visible online has always felt like herding cats. Enter Moonraker and Chris, absolute game-changers! Chris helped me untangle the chaos, streamline my marketing, and optimize my websites for SEO in a way that actually makes sense (and gets results). Whether it's refining my messaging, making sure my sites rank on Google, or creating a strategy that works across multiple brands, Moonraker has been an invaluable asset."</div>
+        <div class="testimonial-author">
+          <img class="testimonial-headshot" src="/assets/headshots/kym-tolson.png" alt="Kym Tolson">
+          <div>
+            <div class="testimonial-name">Kym Tolson</div>
+            <div class="testimonial-role">Founder, The Traveling Therapist</div>
+            <img class="testimonial-logo" src="/assets/partners/traveling-therapist.webp" alt="The Traveling Therapist">
+          </div>
         </div>
       </div>
     </div>
-
-    <!-- Kelly Smyth-Dent -->
-    <div class="testimonial-card">
-      <div class="testimonial-text">"Chris was great to work with. He was responsive, answered our questions clearly, and explained things in a way that made sense. His help improved our SEO, and we appreciate his expertise. Highly recommend!"</div>
-      <div class="testimonial-author">
-        <img class="testimonial-headshot" src="/assets/headshots/kelly-smyth-dent.png" alt="Kelly Smyth-Dent">
-        <div>
-          <div class="testimonial-name">Kelly Smyth-Dent</div>
-          <div class="testimonial-role">Founder, ScalingUp EMDR</div>
-          <img class="testimonial-logo" src="/assets/partners/scalingup-emdr.webp" alt="ScalingUp EMDR">
+    <div class="testimonial-slide" data-slide="2">
+      <div class="testimonial-card">
+        <div class="testimonial-text">"Chris was great to work with. He was responsive, answered our questions clearly, and explained things in a way that made sense. His help improved our SEO, and we appreciate his expertise. Highly recommend!"</div>
+        <div class="testimonial-author">
+          <img class="testimonial-headshot" src="/assets/headshots/kelly-smyth-dent.png" alt="Kelly Smyth-Dent">
+          <div>
+            <div class="testimonial-name">Kelly Smyth-Dent</div>
+            <div class="testimonial-role">Founder, ScalingUp EMDR</div>
+            <img class="testimonial-logo" src="/assets/partners/scalingup-emdr.webp" alt="ScalingUp EMDR">
+          </div>
         </div>
       </div>
     </div>
-
-    <!-- Brent Stutzman -->
-    <div class="testimonial-card">
-      <div class="testimonial-text">"If you're a therapist looking for SEO strategy and implementation, Chris and his Moonraker team know how to rank you high on Google. I highly recommend them."</div>
-      <div class="testimonial-author">
-        <img class="testimonial-headshot" src="/assets/headshots/brent-stutzman.png" alt="Brent Stutzman">
-        <div>
-          <div class="testimonial-name">Brent Stutzman</div>
-          <div class="testimonial-role">Founder, TheraSaaS</div>
-          <img class="testimonial-logo" src="/assets/partners/therasaas.webp" alt="TheraSaaS">
+    <div class="testimonial-slide" data-slide="3">
+      <div class="testimonial-card">
+        <div class="testimonial-text">"If you're a therapist looking for SEO strategy and implementation, Chris and his Moonraker team know how to rank you high on Google. I highly recommend them."</div>
+        <div class="testimonial-author">
+          <img class="testimonial-headshot" src="/assets/headshots/brent-stutzman.png" alt="Brent Stutzman">
+          <div>
+            <div class="testimonial-name">Brent Stutzman</div>
+            <div class="testimonial-role">Founder, TheraSaaS</div>
+            <img class="testimonial-logo" src="/assets/partners/therasaas.webp" alt="TheraSaaS">
+          </div>
         </div>
       </div>
+    </div>
+    <div class="carousel-nav">
+      <button class="carousel-arrow" onclick="changeSlide(-1)" aria-label="Previous">&#8592;</button>
+      <div class="carousel-dots" id="carouselDots"></div>
+      <button class="carousel-arrow" onclick="changeSlide(1)" aria-label="Next">&#8594;</button>
     </div>
   </div>
 </section>
 
 <div class="section-divider"><hr></div>
 
-<!-- ── Google Reviews ── -->
 <section class="google-reviews-section" id="googleReviews">
   <h2 class="section-heading">Google Reviews</h2>
   <p class="section-subhead">What our clients are saying on Google.</p>
   <div class="google-badge-large">
     <svg viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-    <div>
-      <div class="badge-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-      <div class="badge-text">4.9 stars from 44 Google reviews</div>
-    </div>
+    <div><div class="badge-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><div class="badge-text">4.9 stars from 44 Google reviews</div></div>
   </div>
   <div class="reviews-masonry" id="reviewsMasonry"></div>
 </section>
 
-<!-- ── CTA ── -->
 <section class="cta-section">
   <h2>Ready to See Results Like These?</h2>
   <p>Every practice shown here started right where you are now. Book a quick call with our team to see what Moonraker can do for yours.</p>
   <a href="https://msg.moonraker.ai/widget/bookings/moonraker-free-strategy-call" target="_blank" rel="noopener" class="cta-btn">Book a Free Strategy Call</a>
 </section>
+<footer class="footer">&copy; 2026 Moonraker AI. All data sourced directly from Google Search Console.</footer>
 
-<footer class="footer">
-  &copy; 2026 Moonraker AI. All data sourced directly from Google Search Console.
-</footer>
-
-<!-- ── Lightbox ── -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
   <img id="lightboxImg" src="" alt="">
@@ -524,8 +293,8 @@ html.dark .testimonial-logo { filter: brightness(1.3); }
 </div>
 
 <script>
+/* GSC Results - BPP (id:1uVfNKUBxYy3KCEJEmJU92QE3DN9khHWA) moved to testimonial */
 var results = [
-  {pct:213,time:'6 months',type:'group',id:'1uVfNKUBxYy3KCEJEmJU92QE3DN9khHWA'},
   {pct:170,time:'6 months',type:'group',id:'1spFbq2k8QOqwWbLuvz1JxLgWpM7VFfaa'},
   {pct:156,time:'3 months',type:'group',id:'1jNjoiNtFgIINAyUpWyvH426qq1HTHG7X'},
   {pct:137,time:'6 months',type:'group',id:'1kXJKL6OLlUvXNwweYGlAr_M0jNGeBIQa'},
@@ -549,144 +318,114 @@ var results = [
   {pct:35,time:'6 months',type:'solo',id:'1XKx4iqwvpBLmzrny-KvPnmgbZGW7TCZi'},
   {pct:100,time:'12 months',type:'solo',id:'1KjsF7BZyi-iRFbjcfsYm6s4UFVrBzKTY',portrait:true,label:'Over 2x traffic',bottom:true}
 ];
-
 var currentFilter = 'all';
-
-function imgUrl(fileId, width) {
-  return 'https://lh3.googleusercontent.com/d/' + fileId + '=w' + (width || 800);
-}
-
+function imgUrl(fid, w) { return 'https://lh3.googleusercontent.com/d/' + fid + '=w' + (w || 800); }
 function renderGrid() {
-  var grid = document.getElementById('resultsGrid');
-  var html = '';
+  var grid = document.getElementById('resultsGrid'), html = '';
   results.forEach(function(r, i) {
     var show = currentFilter === 'all' || r.type === currentFilter;
-    var badgeText = r.label || ('+' + r.pct + '%');
-    var typeLabel = r.type === 'group' ? 'Group Practice' : 'Solo Therapist';
+    var badge = r.label || ('+' + r.pct + '%');
+    var type = r.type === 'group' ? 'Group Practice' : 'Solo Therapist';
     html += '<div class="result-card' + (show ? '' : ' hidden') + '" data-type="' + r.type + '" onclick="openLightbox(' + i + ')">';
-    html += '<div class="card-image-wrap' + (r.portrait ? ' portrait' : '') + '">';
-    html += '<img src="' + imgUrl(r.id, 800) + '" alt="' + typeLabel + ' result: +' + r.pct + '% in ' + r.time + '" loading="lazy">';
-    html += '<div class="card-badge">' + badgeText + '</div>';
-    html += '</div>';
-    html += '<div class="card-body">';
-    html += '<div class="card-meta"><span class="card-type-tag">' + typeLabel + '</span> ' + r.time + '</div>';
-    html += '</div></div>';
+    html += '<div class="card-image-wrap' + (r.portrait ? ' portrait' : '') + '"><img src="' + imgUrl(r.id, 800) + '" alt="' + type + ' result: +' + r.pct + '% in ' + r.time + '" loading="lazy"><div class="card-badge">' + badge + '</div></div>';
+    html += '<div class="card-body"><div class="card-meta"><span class="card-type-tag">' + type + '</span> ' + r.time + '</div></div></div>';
   });
   grid.innerHTML = html;
 }
-
 window.filterCards = function(type) {
   currentFilter = type;
   document.querySelectorAll('.filter-pill').forEach(function(pill) {
-    var text = pill.textContent.toLowerCase();
-    var isActive = (type === 'all' && text.indexOf('all') !== -1)
-      || (type === 'group' && text.indexOf('group') !== -1)
-      || (type === 'solo' && text.indexOf('solo') !== -1);
-    pill.classList.toggle('active', isActive);
+    var t = pill.textContent.toLowerCase();
+    pill.classList.toggle('active', (type === 'all' && t.indexOf('all') !== -1) || (type === 'group' && t.indexOf('group') !== -1) || (type === 'solo' && t.indexOf('solo') !== -1));
   });
   renderGrid();
 };
-
 window.openLightbox = function(idx) {
-  var r = results[idx];
-  var lb = document.getElementById('lightbox');
+  var r = results[idx], lb = document.getElementById('lightbox');
   document.getElementById('lightboxImg').src = imgUrl(r.id, 1400);
-  var typeLabel = r.type === 'group' ? 'Group Practice' : 'Solo Therapist';
-  var cap = typeLabel + '  \u00B7  ' + (r.label || ('+' + r.pct + '%')) + '  \u00B7  ' + r.time;
-  document.getElementById('lightboxCaption').textContent = cap;
-  lb.classList.add('open');
-  document.body.style.overflow = 'hidden';
+  var type = r.type === 'group' ? 'Group Practice' : 'Solo Therapist';
+  document.getElementById('lightboxCaption').textContent = type + '  \u00B7  ' + (r.label || ('+' + r.pct + '%')) + '  \u00B7  ' + r.time;
+  lb.classList.add('open'); document.body.style.overflow = 'hidden';
 };
-
-window.closeLightbox = function() {
-  document.getElementById('lightbox').classList.remove('open');
-  document.body.style.overflow = '';
-};
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeLightbox();
-});
-
+window.closeLightbox = function() { document.getElementById('lightbox').classList.remove('open'); document.body.style.overflow = ''; };
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
 window.toggleTheme = function() {
-  var html = document.documentElement;
-  var dark = html.classList.toggle('dark');
+  var dark = document.documentElement.classList.toggle('dark');
   localStorage.setItem('moonraker-theme', dark ? 'dark' : 'light');
   document.getElementById('themeIcon').innerHTML = dark ? '&#9728;&#65039;' : '&#127769;';
 };
-
-(function() {
-  var dark = document.documentElement.classList.contains('dark');
-  document.getElementById('themeIcon').innerHTML = dark ? '&#9728;&#65039;' : '&#127769;';
-})();
-
+(function() { document.getElementById('themeIcon').innerHTML = document.documentElement.classList.contains('dark') ? '&#9728;&#65039;' : '&#127769;'; })();
 renderGrid();
 
-// ── Google Reviews (firstname + last initial) ──
+/* Carousel */
+var curSlide = 0, totalSlides = document.querySelectorAll('.testimonial-slide').length;
+(function() {
+  var dots = document.getElementById('carouselDots'), h = '';
+  for (var i = 0; i < totalSlides; i++) h += '<div class="carousel-dot' + (i === 0 ? ' active' : '') + '" onclick="goToSlide(' + i + ')"></div>';
+  dots.innerHTML = h;
+})();
+window.goToSlide = function(idx) {
+  curSlide = idx;
+  document.querySelectorAll('.testimonial-slide').forEach(function(s, i) { s.classList.toggle('active', i === idx); });
+  document.querySelectorAll('.carousel-dot').forEach(function(d, i) { d.classList.toggle('active', i === idx); });
+};
+window.changeSlide = function(dir) { goToSlide((curSlide + dir + totalSlides) % totalSlides); };
+
+/* Google Reviews */
 var googleReviews = [
-  {name:'Erinn E.',rating:5,text:'Chris is amazing!  His expertise is so valuable and we experienced a significant increase in traffic and inquiries through our website with the help of his SEO knowledge. His honesty and transparency stands out among the service providers out there.  I couldn\'t ask for more friendly, professional, and expedient service.  And his website design is absolutely stunning.'},
-  {name:'Nathan A.',rating:5,text:'Thank you, Chris! Starting private practice has not been easy. I hoped this meeting would give me insights into how I can move forward. On the call, I was met where I was at in my journey, with kindness, care and insight. Chris is very knowledgeable and a great teacher! Practical tools and resources were shared and explained, providing me with simple steps that I can take to move forward: from SEOs to the importance of maps, a simple understanding into how AI works and tweaks to my website. I am more hopeful, encouraged and excited about building on what I am called to do!'},
+  {name:'Erinn E.',rating:5,text:'Chris is amazing! His expertise is so valuable and we experienced a significant increase in traffic and inquiries through our website with the help of his SEO knowledge. His honesty and transparency stands out among the service providers out there.'},
+  {name:'Nathan A.',rating:5,text:'Chris is very knowledgeable and a great teacher! Practical tools and resources were shared and explained, providing me with simple steps that I can take to move forward. I am more hopeful, encouraged and excited about building on what I am called to do!'},
   {name:'Christine R.',rating:5,text:'Chris and his team are amazing at what they do. Their approach is comprehensive and up-to-date with the ever-changing landscape of SEO and AI. It\'s only been a couple of months and I\'m already starting to see results. I highly recommend them!'},
-  {name:'Carolynn',rating:5,text:'I have been able to experience Chris\' work both in presentations done alongside Business Coaches as well as one on one. He has an excellent ability to distill information into chunks that are accessible and have a clear rationale for the goals they are trying to achieve. He is thorough and knowledgeable and has a clear expertise in SEO and driving traffic to websites.'},
-  {name:'George',rating:5,text:'So grateful I found Chris! I had no idea how much of an impact SEO could have on my business until I connected with him. He explained everything so clearly that I felt completely confident in his services, and within just eight months my returns had already doubled. Thanks, Chris!'},
-  {name:'Jennifer',rating:5,text:'I love working with Chris!  I am not tech-savvy in ANY way.  Chris is so knowledgeable, explains things in a way I can understand without being condescending and is so patient!  It is truly refreshing to work with someone on marketing who is as passionate about the mental health field as I am and understands my role as a therapist and practice owner.  Thank you so much for what you do Chris!!'},
+  {name:'Carolynn',rating:5,text:'He has an excellent ability to distill information into chunks that are accessible and have a clear rationale for the goals they are trying to achieve. He is thorough and knowledgeable and has a clear expertise in SEO and driving traffic to websites.'},
+  {name:'George',rating:5,text:'So grateful I found Chris! He explained everything so clearly that I felt completely confident in his services, and within just eight months my returns had already doubled. Thanks, Chris!'},
+  {name:'Jennifer',rating:5,text:'Chris is so knowledgeable, explains things in a way I can understand without being condescending and is so patient! It is truly refreshing to work with someone on marketing who is as passionate about the mental health field as I am.'},
   {name:'Kelly S.',rating:5,text:'Chris was great to work with. He was responsive, answered our questions clearly, and explained things in a way that made sense. His help improved our SEO, and we appreciate his expertise. Highly recommend!'},
-  {name:'Kym T.',rating:5,text:'As a multi-passionate entrepreneur, keeping my brands organized and visible online has always felt like herding cats. Enter Moonraker and Chris, absolute game-changers! Chris helped me untangle the chaos, streamline my marketing, and optimize my websites for SEO in a way that actually makes sense (and gets results). Whether it\'s refining my messaging, making sure my sites rank on Google, or creating a strategy that works across multiple brands, Moonraker has been an invaluable asset. If you\'re juggling multiple businesses and need expert guidance on marketing and SEO, this is the team you want in your corner. Highly recommend!'},
-  {name:'Audrey S.',rating:5,text:'I\'ve been working with Chris from Moonraker for about 6 months now and the results are amazing! Clicks, impressions, and my avg position have all improved significantly. People are finding me through Google more than ever before. The investment is paying off big time. They have been really easy to work with, they are punctual in their communication and very receptive to direct feedback. I also really appreciate the transparency about the process and results. They really strive to make the process easy and make sure you understand it. It\'s been a great experience!'},
-  {name:'Christopher B.',rating:5,text:'My business was in a really tough spot when I started working with Chris and Moonraker. In a very short amount of time Chris was able to significantly improve the inbound traffic on my website. He counseled and coached me through some additional best practices, and leads started to appear again. A significant chunk of the new business we\'ve gained this past year is due to Chris and the excellent work he does at Moonraker. Thank you!'},
-  {name:'Julie Ann O.',rating:5,text:'Chris is an incredible, talented SEO wiz, and I love working with him. He took the time to really help me understand how we could drive business to my website as well as how to improve the usability of my site. After six months, I\'m seeing a significant increase in traffic to connect with the people I really want to find me. I would especially recommend hiring Chris if you need SEO help that is affordable and you\'re just starting out. It has totally been worth the investment, and I\'m looking forward to working with Chris as my business grows over the next year.'},
-  {name:'Jennifer K.',rating:5,text:'Chris has gone above and beyond for my company. He is very knowledgeable and you can tell that he has a true passion to help small businesses thrive. If something is not working, he will do whatever he can to make it work. I am appreciative for his hard work and dedication to help my business flourish.'},
+  {name:'Kym T.',rating:5,text:'Chris helped me untangle the chaos, streamline my marketing, and optimize my websites for SEO in a way that actually makes sense (and gets results). If you\'re juggling multiple businesses and need expert guidance, this is the team you want in your corner. Highly recommend!'},
+  {name:'Audrey S.',rating:5,text:'I\'ve been working with Chris from Moonraker for about 6 months now and the results are amazing! Clicks, impressions, and my avg position have all improved significantly. The investment is paying off big time. It\'s been a great experience!'},
+  {name:'Christopher B.',rating:5,text:'In a very short amount of time Chris was able to significantly improve the inbound traffic on my website. A significant chunk of the new business we\'ve gained this past year is due to Chris and the excellent work he does at Moonraker.'},
+  {name:'Julie Ann O.',rating:5,text:'Chris is an incredible, talented SEO wiz. After six months, I\'m seeing a significant increase in traffic to connect with the people I really want to find me. It has totally been worth the investment!'},
+  {name:'Jennifer K.',rating:5,text:'Chris has gone above and beyond for my company. He is very knowledgeable and you can tell that he has a true passion to help small businesses thrive.'},
   {name:'Ivhan A.',rating:5,text:'Chris is simply phenomenal! His SEO expertise propelled our website to new heights: clear communication, impressive results, and a pleasure to work with. Highly recommend!'},
-  {name:'Hannah T.',rating:5,text:'Chris\' SEO skills are super effective. He linked me up with just the clientele base I needed. On top of that, he is super communicative, and personable, making him a joy and super easy to work with! I appreciate his ingenuity and creativity in making my business thrive. Big thanks to Chris and Moonraker!!!'},
-  {name:'Matthew C.',rating:5,text:'You have to meet Chris to understand the power of what he is capable of doing to transform your business. From making your website look and run amazing while bringing you into present/future with new tech. He makes your visibility jump up dramatically in no time. I have so many good things I can say about Chris\' services, but I can\'t express it as well as he can. Do yourself a favor, take a meeting with Chris and your business will get better, period.'},
-  {name:'Stephanie J.',rating:5,text:'SEO optimization might be one of those "we\'ll get to it later" kind of things for small business owners like me. But let me tell you, when you\'re absolutely blown away by the immediate results, new customers, and actual dollars driven to the bottom line, you\'ll want to shout from the rooftops about Chris too. First, he\'s a great human. Authentic, funny, personable, and present. He cares about my business AND me as a person. Second, he\'s brilliant at his craft. He listens to your goals and designs a custom strategy that not only saves marketing dollars, but delivers increased revenue. I highly recommend Chris and his team!'},
-  {name:'Hayley J.',rating:5,text:'Chris is Awesome!!! He met me right where I was and was so helpful. He built me a beautiful customized website and online shop. He worked well with other folks on my team and was unbelievably patient when progress on my end slowed. He was very good at knowing when to give me a gentle push back towards progress. He is kind and funny and creates a relaxed and enjoyable experience. It all felt so personal which was very important to me. I highly recommend!!!'},
-  {name:'Jessica D.',rating:5,text:'Chris is very professional and responsive in addition to offering high quality SEO services. I enjoy working with him and appreciate his innovative thinking and willingness to learn and understand the specific challenges and needs of my business.'},
-  {name:'Bambi R.',rating:5,text:'I have been working with Chris for over a year now, and I wanted to provide an update to my earlier review. I honestly think that Chris/Moonraker is the best choice that anyone could ever make for digital marketing. The specific services that I provide need to be targeted to a niche population and I know that I never would have been able to attract the clients that I have, in the volume that I have, without Chris\' expertise. He designed my website from the ground up and is always taking things to the next level. When you hire Chris it\'s like you have an entire team behind you providing support and guidance when needed. He really is amazing!'},
-  {name:'Alina\'s Ristorante',rating:5,text:'Chris is fantastic to work with! He designed the online food ordering system for Alina\'s Ristorante from scratch. Ordering time was cut in HALF! This allowed us to cater to more clients and increased our sales. We highly recommend Chris and look forward to working with him again in the future!'},
-  {name:'Karada Detox',rating:5,text:'I have worked with so many web designers and system engineers in the past, and I can say that Chris is really THE BEST!! Yes, my new website looks better, my clients are happy but what I want to share about Chris is that HE MAKES ME FEEL GOOD AND BETTER about my business!! He is really good at finding opportunities to make money that I didn\'t even see on my business! His marketing knowledge makes me super excited about growing my business. I totally recommend you to work with him!'},
-  {name:'Bob B.',rating:5,text:'I won\'t pretend to understand how he does what he does, but Chris is a marketing and search engine optimization genius! He can help increase your customer base exponentially with his vast wealth of ideas to market your business. He is so brilliant and amazing at building and designing websites as well. I cannot recommend his services or speak highly enough of the quality of his work!'},
-  {name:'Michael K.',rating:5,text:'Chris is a human Swiss army knife. Keeper of many tools and all of them useful. SEO can be a cold and numbers driven game, but Chris manages to bring some humanity to it. He\'s a keen listener and good synthesizer of information when it comes to assessing the goals of a business. Once he has a handle on goals, he\'s able to translate it into a marketing strategy that is both data driven and aware that there are actual humans on the receiving end of those messages.'},
-  {name:'Ross H.',rating:5,text:'Chris is a magician with this SEO stuff. I\'m an older person completely baffled by technology, and I knew what I wanted in terms of marketing. I found myself talking to Chris about SEO services and he said all the right things so I said yes. Then he held my hand, walked and talked me through it and things began to happen. What I really like is that as a marketing consultant he figured out right away what I wanted. He made it all work. Thank You Chris!'},
-  {name:'Tracy S.',rating:5,text:'Chris is an SEO Pro! He can scale up or down on projects and brings his great mind and keen wit to any ask. He has a great network and team to pull in as-needed on any digital project too. Highly recommend.'},
-  {name:'Mary Kay M.',rating:5,text:'Chris and his team have been fantastic to work with! He\'s professional and wise. He has been great at navigating through a tough IT environment to help us reach the goals we have for our website. His knowledge is unmatched and I can\'t recommend Moonraker enough!'},
+  {name:'Hannah T.',rating:5,text:'Chris\' SEO skills are super effective. He is super communicative and personable, making him a joy and super easy to work with! Big thanks to Chris and Moonraker!!!'},
+  {name:'Matthew C.',rating:5,text:'You have to meet Chris to understand the power of what he is capable of doing to transform your business. He makes your visibility jump up dramatically in no time. Do yourself a favor, take a meeting with Chris.'},
+  {name:'Stephanie J.',rating:5,text:'He\'s a great human. Authentic, funny, personable, and present. He cares about my business AND me as a person. He\'s brilliant at his craft. I highly recommend Chris and his team!'},
+  {name:'Hayley J.',rating:5,text:'Chris is Awesome!!! He built me a beautiful customized website and online shop. He is kind and funny and creates a relaxed and enjoyable experience. I highly recommend!!!'},
+  {name:'Jessica D.',rating:5,text:'Chris is very professional and responsive in addition to offering high quality SEO services. I appreciate his innovative thinking and willingness to understand the specific challenges of my business.'},
+  {name:'Bambi R.',rating:5,text:'I honestly think that Chris/Moonraker is the best choice that anyone could ever make for digital marketing. When you hire Chris it\'s like you have an entire team behind you. He really is amazing!'},
+  {name:'Alina\'s Ristorante',rating:5,text:'He designed our online food ordering system from scratch. Ordering time was cut in HALF! This allowed us to cater to more clients and increased our sales. We highly recommend Chris!'},
+  {name:'Karada Detox',rating:5,text:'Chris is really THE BEST!! He is really good at finding opportunities to make money that I didn\'t even see in my business! His marketing knowledge makes me super excited about growing my business.'},
+  {name:'Bob B.',rating:5,text:'Chris is a marketing and search engine optimization genius! He can help increase your customer base exponentially. I cannot recommend his services or speak highly enough of the quality of his work!'},
+  {name:'Michael K.',rating:5,text:'Chris is a human Swiss army knife. He\'s a keen listener and good synthesizer of information when it comes to assessing the goals of a business. He brings humanity to SEO.'},
+  {name:'Ross H.',rating:5,text:'Chris is a magician with this SEO stuff. He held my hand, walked and talked me through it and things began to happen. He made it all work. Thank You Chris!'},
+  {name:'Tracy S.',rating:5,text:'Chris is an SEO Pro! He can scale up or down on projects and brings his great mind and keen wit to any ask. Highly recommend.'},
+  {name:'Mary Kay M.',rating:5,text:'Chris and his team have been fantastic to work with! He\'s professional and wise. His knowledge is unmatched and I can\'t recommend Moonraker enough!'},
   {name:'Brent S.',rating:5,text:'If you\'re a therapist looking for SEO strategy and implementation, Chris and his Moonraker team know how to rank you high on Google. I highly recommend them.'},
-  {name:'Rocio R.',rating:5,text:'I have been able to spend time co-working and exchanging professional experiences with Chris for a month now. I admire his clarity, passion, and commitment to his partners. Always eager to help and enhance other professionals\' careers. His focus is on getting results and at the same time adding value to the daily experience. What else can you ask for?'},
-  {name:'Uroboros Mediations',rating:5,text:'Moonraker SEO Services was the best choice for web design and SEO services for our organization. Moonraker responded to our inquiries on Sunday mornings and 11 o\'clock at night. They were conscientious and courteous. I am a satisfied customer, and I am happy to refer them to more clients!'},
+  {name:'Rocio R.',rating:5,text:'I admire his clarity, passion, and commitment to his partners. Always eager to help and enhance other professionals\' careers. What else can you ask for?'},
+  {name:'Uroboros Mediations',rating:5,text:'Moonraker was the best choice for web design and SEO services for our organization. They were conscientious and courteous. I am a satisfied customer!'},
   {name:'John M.',rating:5,text:'Chris\'s SEO Services are top shelf. He is very creative and knowledgeable and his website update created more traffic, resulting in more business.'},
-  {name:'Eduardo P.',rating:5,text:'Having worked with Chris in the past I knew he is a responsible professional but the website created for us was much better than what we expected. The look and feel, content, layout and pictures used creates synergies that amount to more than the value of each component. Will work with Chris on other projects as well. Recommended++'},
-  {name:'Steve B.',rating:5,text:'Chris is a Marketing & SEO Specialist! I highly recommend giving him a call if you have questions or need SEO Services. He is always friendly, easy to talk with and never pushy. A true gentleman. Thank you Chris!!'},
-  {name:'Shannon M.',rating:5,text:'Having worked with Moonraker on a number of different projects and campaigns over the years, I can say without a doubt Moonraker\'s service is the best investment you can make for your business, no matter what era of development it\'s currently in. Your web presence is one of the most important aspects of your brand, and Moonraker just intuitively gets that, in addition to having an impeccable design aesthetic. There isn\'t a problem I\'ve brought to the Moonraker team that they can\'t solve. If you like to win, you pick a winning team. That\'s why I go with Moonraker every time.'},
+  {name:'Eduardo P.',rating:5,text:'The website created for us was much better than what we expected. The look and feel, content, layout and pictures creates synergies. Recommended++'},
+  {name:'Steve B.',rating:5,text:'Chris is a Marketing & SEO Specialist! He is always friendly, easy to talk with and never pushy. A true gentleman. Thank you Chris!!'},
+  {name:'Shannon M.',rating:5,text:'Moonraker\'s service is the best investment you can make for your business. There isn\'t a problem I\'ve brought to the Moonraker team that they can\'t solve. If you like to win, you pick a winning team.'},
   {name:'Laura B.',rating:5,text:'Chris is the best in the business! He is so knowledgeable and is always such a pleasure to work with. Go see him for all of your SEO needs!'},
-  {name:'Stephanie C.',rating:5,text:'Chris is an absolute pleasure to work with. He really dove in and got to know our business from the inside out. This knowledge translated into amazing reports with actionable insights. I look forward to continuing to work with him and his team.'},
-  {name:'Salim U.',rating:5,text:'I\'ve used Moonraker for my company\'s website, and they aim to please! They are responsive and reliable. I would recommend anyone using their services. Moonraker\'s biggest strength is being able to internalize the needs, objectives and desires of their clients and deliver those values stylistically through curated content. I\'m quite pleased with their service, and you\'ll be as well.'},
+  {name:'Stephanie C.',rating:5,text:'Chris is an absolute pleasure to work with. He really dove in and got to know our business from the inside out. This knowledge translated into amazing reports with actionable insights.'},
+  {name:'Salim U.',rating:5,text:'They are responsive and reliable. Moonraker\'s biggest strength is being able to internalize the needs and desires of their clients and deliver through curated content.'},
   {name:'Liz D.',rating:5,text:'Expert level SEO consultant! A true jedi master. Chris is like a living marketing encyclopedia determined to help his colleagues succeed.'},
   {name:'Myles W.',rating:5,text:'Chris took a data-driven approach to helping us get more traffic and convert more of those visitors into leads. Highly recommended!'},
-  {name:'Rojan S.',rating:5,text:'Without any agreement or cost, Chris helped me take back my Google business account and helped me set it up properly. He is very knowledgeable. Highly recommend!'},
-  {name:'Christine C.',rating:5,text:'Chris has been a pleasure to work with. Went above and beyond in getting our website together! I cannot thank him enough. Call him, you will not be disappointed!'},
+  {name:'Rojan S.',rating:5,text:'Without any agreement or cost, Chris helped me take back my Google business account and helped me set it up properly. Highly recommend!'},
+  {name:'Christine C.',rating:5,text:'Chris has been a pleasure to work with. Went above and beyond in getting our website together! Call him, you will not be disappointed!'},
   {name:'Amy S.',rating:5,text:'This service is even better than I expected. Chris is intuitive, accommodating and extremely competent. I highly recommend Moonraker for search engine optimization.'},
   {name:'Sophie M.',rating:5,text:'Chris really knows his stuff! He cares deeply about his clients\' success and works hard to get it done.'},
 ];
-
 function renderReviews() {
-  var container = document.getElementById('reviewsMasonry');
-  if (!container || !googleReviews.length) return;
-  var html = '';
+  var c = document.getElementById('reviewsMasonry'); if (!c) return;
+  var h = '';
   googleReviews.forEach(function(r) {
-    var stars = '';
-    for (var i = 0; i < r.rating; i++) stars += '&#9733;';
-    for (var j = r.rating; j < 5; j++) stars += '&#9734;';
-    var text = r.text;
-    var truncated = text.length > 220;
-    var displayText = truncated ? text.substring(0, 220) + '...' : text;
-    html += '<div class="review-card">';
-    html += '<div class="review-stars">' + stars + '</div>';
-    html += '<div class="review-text">' + displayText + '</div>';
-    html += '<div class="review-author">' + r.name + '</div>';
-    html += '</div>';
+    var stars = ''; for (var i=0;i<r.rating;i++) stars+='&#9733;'; for (var j=r.rating;j<5;j++) stars+='&#9734;';
+    var t = r.text, d = t.length > 220 ? t.substring(0,220)+'...' : t;
+    h += '<div class="review-card"><div class="review-stars">'+stars+'</div><div class="review-text">'+d+'</div><div class="review-author">'+r.name+'</div></div>';
   });
-  container.innerHTML = html;
+  c.innerHTML = h;
 }
-
 renderReviews();
 </script>
 </body>
