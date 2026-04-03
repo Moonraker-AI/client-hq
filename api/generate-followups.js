@@ -188,7 +188,9 @@ function buildEmail3(firstName, practiceName, proposalUrl) {
     greeting(firstName)
     + p('I wanted to share a quick note about something we are seeing with practices similar to ' + practiceName + '.')
     + p('The practices that tend to see the fastest growth are the ones that invest in building a strong, verified digital foundation early. Things like consistent business listings, a well-structured website, and a presence across the platforms where potential clients are searching (including AI platforms) all compound over time.')
-    + p('Many of the practices we work with started in a similar position to where ' + practiceName + ' is today, and the results have been really encouraging. We would love to share some specific examples if you are curious.')
+    + p('Many of the practices we work with started in a similar position to where ' + practiceName + ' is today. Rather than take our word for it, here are real Google Search Console results from both solo therapists and group practices:')
+    + ctaButton('https://clients.moonraker.ai/results', 'See Client Results')
+    + p('Every result on that page is verified data pulled directly from Google Search Console. No vanity metrics, just real growth numbers.')
     + ctaButton(proposalUrl, 'Revisit Your Proposal')
     + p('If you would like to hear more about what has worked for similar practices, Scott would be happy to walk you through a few examples.')
     + bookingLink()
@@ -207,3 +209,4 @@ function buildEmail4(firstName, practiceName, proposalUrl) {
     + '<p style="color:#333F70;line-height:1.7;margin-bottom:0;">Warmly,<br>The Moonraker Team</p>'
   );
 }
+
