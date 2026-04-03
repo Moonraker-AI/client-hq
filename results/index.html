@@ -126,10 +126,11 @@ html.dark .testimonial-logo { filter: brightness(1.3); }
 .footer { text-align: center; padding: 1.5rem; font-size: .8125rem; color: var(--color-muted); }
 .lightbox { display: none; position: fixed; inset: 0; z-index: 200; background: var(--color-overlay); backdrop-filter: blur(12px); align-items: center; justify-content: center; padding: 2rem; }
 .lightbox.open { display: flex; }
-.lightbox img { max-width: 90vw; max-height: 85vh; border-radius: 12px; box-shadow: 0 12px 48px rgba(0,0,0,.3); }
+.lightbox-content { position: relative; display: inline-block; }
+.lightbox-content img { max-width: 90vw; max-height: 85vh; border-radius: 12px; box-shadow: 0 12px 48px rgba(0,0,0,.3); display: block; }
 .lightbox-close { position: absolute; top: 1.25rem; right: 1.5rem; background: none; border: none; color: #fff; font-size: 2rem; cursor: pointer; opacity: .7; transition: opacity .2s; }
 .lightbox-close:hover { opacity: 1; }
-.lightbox-caption { position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); background: var(--color-primary); color: #fff; padding: .5rem 1.25rem; border-radius: 99px; font-size: .875rem; font-weight: 600; white-space: nowrap; box-shadow: 0 2px 12px rgba(0,0,0,.2); }
+.lightbox-caption { position: absolute; bottom: .75rem; left: 50%; transform: translateX(-50%); background: var(--color-primary); color: #fff; padding: .5rem 1.25rem; border-radius: 99px; font-size: .875rem; font-weight: 600; white-space: nowrap; box-shadow: 0 2px 12px rgba(0,0,0,.2); z-index: 1; }
 
 @media (max-width: 768px) {
   .hero h1 { font-size: 2rem; }
@@ -288,8 +289,10 @@ html.dark .testimonial-logo { filter: brightness(1.3); }
 
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
-  <img id="lightboxImg" src="" alt="">
-  <div class="lightbox-caption" id="lightboxCaption"></div>
+  <div class="lightbox-content">
+    <img id="lightboxImg" src="" alt="">
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+  </div>
 </div>
 
 <script>
