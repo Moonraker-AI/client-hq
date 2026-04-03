@@ -416,6 +416,7 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
     html += 'window._openResultLightbox=function(i){var r=rd[i],lb=document.getElementById("resultsLightbox");document.getElementById("resultsLightboxImg").src=r.hires;document.getElementById("resultsLightboxCaption").textContent=r.label+"  \\u00B7  +"+r.pct+"%  \\u00B7  "+r.time;lb.classList.add("open");document.body.style.overflow="hidden";};';
     html += 'window._closeResultLightbox=function(){document.getElementById("resultsLightbox").classList.remove("open");document.body.style.overflow="";};';
     html += 'document.addEventListener("keydown",function(e){if(e.key==="Escape")window._closeResultLightbox();});';
+    html += 'var lb=document.getElementById("resultsLightbox");if(lb)document.body.appendChild(lb);';
     html += '})();';
     html += '</script>';
 
@@ -555,6 +556,7 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
     results: results
   });
 };
+
 
 
 
