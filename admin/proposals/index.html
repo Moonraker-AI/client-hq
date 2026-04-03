@@ -440,7 +440,7 @@ a:hover { color: var(--color-primary-hover); }
   var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
   var SB_SVC = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDMyMzU1NywiZXhwIjoyMDg5ODk5NTU3fQ.EyEyVh6er79xjWGgMIgKaF2pErkDz0fOxQsrNSup2fk';
 
-  var state = { contacts: [], proposals: [], filter: 'all' };
+  var state = { contacts: [], proposals: [], followups: {}, filter: 'all' };
 
   // BILLING OPTIONS MAP
   var BILLING_MAP = {
@@ -468,12 +468,19 @@ a:hover { color: var(--color-primary-hover); }
 
   async function loadData() {
     try {
-      var [contacts, proposals] = await Promise.all([
+      var [contacts, proposals, followups] = await Promise.all([
         sbFetch('contacts?select=id,slug,status,first_name,last_name,credentials,email,practice_name,website_url,city,state_province&order=last_name'),
-        sbFetch('proposals?select=*,contacts(slug,first_name,last_name,credentials,practice_name,email)&order=created_at.desc')
+        sbFetch('proposals?select=*,contacts(slug,first_name,last_name,credentials,practice_name,email)&order=created_at.desc'),
+        sbFetch('proposal_followups?select=*&order=sequence_number.asc')
       ]);
       state.contacts = contacts || [];
       state.proposals = proposals || [];
+      // Index followups by proposal_id
+      state.followups = {};
+      (followups || []).forEach(function(fu) {
+        if (!state.followups[fu.proposal_id]) state.followups[fu.proposal_id] = [];
+        state.followups[fu.proposal_id].push(fu);
+      });
       populateContactSelect();
       render();
     } catch(e) {
@@ -744,7 +751,34 @@ a:hover { color: var(--color-primary-hover); }
         html += '<button class="btn btn-primary btn-sm" style="margin-right:.35rem;" onclick="event.stopPropagation();sendProposal(\'' + p.id + '\',this)">&#9993; Send</button>';
         html += '<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();previewEmail(\'' + p.id + '\')">Preview Email</button>';
       } else if (p.status === 'sent' || p.status === 'viewed') {
-        html += '<span class="tag tag-' + p.status + '">' + statusLabel + (p.view_count > 0 ? ' (' + p.view_count + ' views)' : '') + '</span>';
+        html += '<span class="tag tag-' + p.status + '">' + statusLabel + (p.view_count > 0 ? ' (' + p.view_count + ' views)' : '') + '</span> ';
+        // Follow-up controls
+        var fus = state.followups[p.id] || [];
+        if (fus.length === 0) {
+          html += '<button class="btn btn-outline btn-sm" style="margin-left:.35rem;" onclick="event.stopPropagation();generateFollowups(\'' + p.id + '\',this)">&#128337; Schedule Follow-ups</button>';
+        } else {
+          var draftCount = fus.filter(function(f){return f.status==='draft'}).length;
+          var pendingCount = fus.filter(function(f){return f.status==='pending'}).length;
+          var sentCount = fus.filter(function(f){return f.status==='sent'}).length;
+          var cancelledCount = fus.filter(function(f){return f.status==='cancelled'}).length;
+          if (draftCount > 0) {
+            html += '<button class="btn btn-outline btn-sm" style="margin-left:.35rem;" onclick="event.stopPropagation();previewFollowupSequence(\'' + p.id + '\')">Preview Sequence</button>';
+            html += '<button class="btn btn-primary btn-sm" style="margin-left:.25rem;" onclick="event.stopPropagation();approveFollowups(\'' + p.id + '\',this)">Approve &amp; Schedule</button>';
+          } else if (pendingCount > 0) {
+            var nextFu = fus.filter(function(f){return f.status==='pending'}).sort(function(a,b){return new Date(a.scheduled_for)-new Date(b.scheduled_for)})[0];
+            var nextDate = nextFu ? formatDate(nextFu.scheduled_for) : '';
+            html += '<span class="plan-pill" style="margin-left:.35rem;color:var(--color-info);border-color:rgba(59,130,246,.2);">&#128231; ' + sentCount + '/' + fus.length + ' sent</span>';
+            html += '<span style="font-size:.72rem;color:var(--color-muted);margin-left:.25rem;">Next: ' + nextDate + '</span>';
+            html += '<button class="btn btn-ghost btn-sm" style="margin-left:.25rem;" onclick="event.stopPropagation();previewFollowupSequence(\'' + p.id + '\')" title="View sequence">&#128065;</button>';
+            html += '<button class="btn btn-ghost btn-sm" style="margin-left:.1rem;color:var(--color-danger);" onclick="event.stopPropagation();cancelFollowups(\'' + p.id + '\')" title="Cancel remaining">&#10005;</button>';
+          } else if (sentCount === fus.length) {
+            html += '<span class="plan-pill" style="margin-left:.35rem;color:var(--color-success);border-color:rgba(0,212,126,.2);">&#9989; Sequence complete</span>';
+          } else if (cancelledCount > 0) {
+            var reason = fus.find(function(f){return f.cancel_reason}) || {};
+            var label = reason.cancel_reason === 'signed_up' ? 'Signed up' : reason.cancel_reason === 'lost' ? 'Lost' : 'Cancelled';
+            html += '<span class="plan-pill" style="margin-left:.35rem;color:var(--color-muted);border-color:rgba(107,117,153,.2);">' + label + ' (' + sentCount + '/' + fus.length + ' sent)</span>';
+          }
+        }
       }
       if (p.proposal_url) html += ' <a href="' + esc(p.proposal_url) + '?preview=true" target="_blank" class="btn btn-ghost btn-sm" title="Preview (no tracking)" onclick="event.stopPropagation()" style="vertical-align:middle;">&#128065;</a>';
       html += ' <button class="row-delete" title="Delete" onclick="event.stopPropagation();deleteProposal(\'' + p.id + '\')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button>';
@@ -882,6 +916,129 @@ a:hover { color: var(--color-primary-hover); }
     }
   };
 
+  // ---- Follow-up sequence management ----
+
+  // Generate the 4-email follow-up sequence
+  window.generateFollowups = async function(proposalId, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '&#128337; Generating...';
+    try {
+      var resp = await fetch('/api/generate-followups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proposal_id: proposalId })
+      });
+      var data = await resp.json();
+      if (data.ok) {
+        toast('Follow-up sequence generated. Preview and approve to schedule.');
+        await loadData();
+      } else {
+        alert('Failed: ' + (data.error || 'Unknown error'));
+        btn.disabled = false;
+        btn.innerHTML = '&#128337; Schedule Follow-ups';
+      }
+    } catch(e) {
+      alert('Error: ' + e.message);
+      btn.disabled = false;
+      btn.innerHTML = '&#128337; Schedule Follow-ups';
+    }
+  };
+
+  // Preview the full follow-up sequence in a new window
+  window.previewFollowupSequence = function(proposalId) {
+    var fus = state.followups[proposalId] || [];
+    if (fus.length === 0) return alert('No follow-ups found.');
+
+    var w = window.open('', '_blank');
+    w.document.write('<html><head><title>Follow-up Sequence Preview</title>');
+    w.document.write('<style>');
+    w.document.write('body{margin:0;padding:2rem;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1E2A5E;}');
+    w.document.write('.email-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:2rem;overflow:hidden;}');
+    w.document.write('.email-header{padding:1rem 1.5rem;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;}');
+    w.document.write('.email-meta{font-size:.85rem;color:#6B7599;}');
+    w.document.write('.email-meta strong{color:#1E2A5E;}');
+    w.document.write('.email-num{font-size:.75rem;font-weight:600;padding:.25rem .75rem;border-radius:99px;display:inline-block;}');
+    w.document.write('.status-draft{background:rgba(245,158,11,.1);color:#F59E0B;}');
+    w.document.write('.status-pending{background:rgba(59,130,246,.08);color:#3B82F6;}');
+    w.document.write('.status-sent{background:rgba(0,212,126,.1);color:#00D47E;}');
+    w.document.write('.status-cancelled{background:rgba(107,117,153,.1);color:#6B7599;}');
+    w.document.write('.status-failed{background:rgba(239,68,68,.1);color:#EF4444;}');
+    w.document.write('.email-body{padding:0;}');
+    w.document.write('.email-body iframe{width:100%;border:none;min-height:500px;}');
+    w.document.write('h1{font-size:1.3rem;margin:0 0 .25rem;}');
+    w.document.write('</style></head><body>');
+    w.document.write('<h1>Follow-up Sequence (' + fus.length + ' emails)</h1>');
+    w.document.write('<p style="color:#6B7599;font-size:.85rem;margin-bottom:1.5rem;">From: proposals@clients.moonraker.ai &middot; CC: chris@moonraker.ai, scott@moonraker.ai</p>');
+
+    fus.forEach(function(fu, idx) {
+      var statusClass = 'status-' + fu.status;
+      var statusLabel = fu.status.charAt(0).toUpperCase() + fu.status.slice(1);
+      var schedStr = fu.scheduled_for ? new Date(fu.scheduled_for).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'Day ' + fu.day_offset;
+      if (fu.sent_at) schedStr = 'Sent ' + new Date(fu.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      w.document.write('<div class="email-card">');
+      w.document.write('<div class="email-header">');
+      w.document.write('<div><span class="email-num ' + statusClass + '">Email ' + fu.sequence_number + ' &middot; ' + statusLabel + '</span>');
+      w.document.write('<span class="email-meta" style="margin-left:.75rem;">' + schedStr + '</span></div>');
+      w.document.write('<div class="email-meta"><strong>Subject:</strong> ' + (fu.subject || '(no subject)') + '</div>');
+      w.document.write('</div>');
+      w.document.write('<div class="email-body">');
+      // Use srcdoc to render HTML safely in iframe
+      var escaped = (fu.body_html || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+      w.document.write('<iframe srcdoc="' + escaped + '" style="width:100%;min-height:500px;border:none;" onload="this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'"></iframe>');
+      w.document.write('</div></div>');
+    });
+
+    w.document.write('</body></html>');
+    w.document.close();
+  };
+
+  // Approve and schedule the follow-up sequence
+  window.approveFollowups = async function(proposalId, btn) {
+    if (!confirm('Approve and schedule all follow-up emails? They will be sent automatically on the scheduled dates.')) return;
+    btn.disabled = true;
+    btn.innerHTML = 'Scheduling...';
+    try {
+      var resp = await fetch('/api/approve-followups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proposal_id: proposalId })
+      });
+      var data = await resp.json();
+      if (data.ok) {
+        toast('Scheduled ' + data.scheduled + ' follow-up emails.');
+        await loadData();
+      } else {
+        alert('Failed: ' + (data.error || 'Unknown error'));
+        btn.disabled = false;
+        btn.innerHTML = 'Approve &amp; Schedule';
+      }
+    } catch(e) {
+      alert('Error: ' + e.message);
+      btn.disabled = false;
+      btn.innerHTML = 'Approve &amp; Schedule';
+    }
+  };
+
+  // Cancel remaining follow-ups manually
+  window.cancelFollowups = async function(proposalId) {
+    if (!confirm('Cancel all remaining follow-up emails for this proposal?')) return;
+    try {
+      var fus = state.followups[proposalId] || [];
+      var pending = fus.filter(function(f) { return f.status === 'pending'; });
+      for (var i = 0; i < pending.length; i++) {
+        await fetch(SB_URL + '/rest/v1/proposal_followups?id=eq.' + pending[i].id, {
+          method: 'PATCH',
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+          body: JSON.stringify({ status: 'cancelled', cancelled_at: new Date().toISOString(), cancel_reason: 'manual', updated_at: new Date().toISOString() })
+        });
+      }
+      toast('Cancelled ' + pending.length + ' follow-up emails.');
+      await loadData();
+    } catch(e) {
+      alert('Cancel error: ' + e.message);
+    }
+  };
+
   // Enrich a proposal
   window.enrichProposal = async function(proposalId, btn) {
     btn.disabled = true;
@@ -973,3 +1130,4 @@ a:hover { color: var(--color-primary-hover); }
 <div class="toast" id="toast"></div>
 </body>
 </html>
+
