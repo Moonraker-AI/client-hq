@@ -4,7 +4,7 @@
 // 1. Sends Surge data to Claude for structured extraction
 // 2. Updates entity_audits row in Supabase with scores + tasks
 // 3. Deploys scorecard page from template to GitHub
-// 4. Flips status to delivered
+// 4. Deploys scorecard + checkout pages to GitHub (status stays at 'complete' until email is sent)
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -284,15 +284,9 @@ ${surgeData}`;
     }
 
     // ============================================================
-    // STEP 5: Flip status to delivered
+    // STEP 5: Finalize (status stays at 'complete' until email is sent)
     // ============================================================
     send({ step: 'finalize', message: 'Finalizing...' });
-
-    await fetch(sbUrl + '/rest/v1/entity_audits?id=eq.' + auditId, {
-      method: 'PATCH',
-      headers: Object.assign({}, sbHeaders(), { 'Prefer': 'return=minimal' }),
-      body: JSON.stringify({ status: 'delivered' })
-    });
 
     // Send final success event
     send({
