@@ -53,8 +53,8 @@ body { font-family: 'Inter', sans-serif; background: var(--color-bg); color: var
 .section-heading { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.85rem; color: var(--color-heading); margin-bottom: .5rem; }
 .section-subhead { font-size: .95rem; color: var(--color-muted); max-width: 540px; margin: 0 auto 2.5rem; }
 .partners-rows { display: flex; flex-direction: column; align-items: center; gap: 2rem; }
-.partner-row { display: flex; align-items: center; justify-content: center; gap: 2.5rem; flex-wrap: wrap; }
-.partner-logo { height: 72px; max-width: 240px; object-fit: contain; transition: transform .2s, opacity .2s; opacity: .85; }
+.partner-row { display: flex; align-items: center; justify-content: center; gap: 2rem 3rem; flex-wrap: nowrap; }
+.partner-logo { height: 80px; max-width: 200px; object-fit: contain; transition: transform .2s, opacity .2s; opacity: .85; }
 .partner-logo:hover { transform: scale(1.08); opacity: 1; }
 html.dark .partner-logo { filter: brightness(1.1) contrast(1.05); opacity: .75; }
 html.dark .partner-logo:hover { opacity: .95; }
@@ -138,7 +138,7 @@ html.dark .testimonial-logo { filter: brightness(1.3); }
   .testimonials-section { padding: 3rem 1rem; }
   .testimonial-card { padding: 1.75rem 1.5rem; }
   .testimonial-text { font-size: .98rem; }
-  .partner-row { gap: 1.5rem; }
+  .partner-row { flex-wrap: wrap; gap: 1.5rem; }
   .partner-logo { height: 52px; max-width: 180px; }
   .reviews-masonry { columns: 1; }
   .stats-bar { gap: 1.5rem; }
@@ -189,13 +189,13 @@ html.dark .testimonial-logo { filter: brightness(1.3); }
 <div class="section-divider"><hr></div>
 
 <div class="stats-bar">
-  <div class="stat-item"><div class="stat-value">22</div><div class="stat-label">Client Results</div></div>
+  <div class="stat-item"><div class="stat-value">23</div><div class="stat-label">Client Results</div></div>
   <div class="stat-item"><div class="stat-value">115%</div><div class="stat-label">Average Increase</div></div>
   <div class="stat-item"><div class="stat-value">308%</div><div class="stat-label">Top Result</div></div>
 </div>
 <div class="filters">
-  <button class="filter-pill active" onclick="filterCards('all')">All <span class="count">22</span></button>
-  <button class="filter-pill" onclick="filterCards('group')">Group Practices <span class="count">10</span></button>
+  <button class="filter-pill active" onclick="filterCards('all')">All <span class="count">23</span></button>
+  <button class="filter-pill" onclick="filterCards('group')">Group Practices <span class="count">11</span></button>
   <button class="filter-pill" onclick="filterCards('solo')">Solo Therapists <span class="count">12</span></button>
 </div>
 <div class="results-grid" id="resultsGrid"></div>
@@ -208,7 +208,7 @@ html.dark .testimonial-logo { filter: brightness(1.3); }
   <div class="testimonial-carousel" id="testimonialCarousel">
     <div class="testimonial-slide active" data-slide="0">
       <div class="testimonial-card">
-        <img class="testimonial-result-img" src="https://lh3.googleusercontent.com/d/1uVfNKUBxYy3KCEJEmJU92QE3DN9khHWA=w1200" alt="Audrey Shoen sharing her Moonraker results on Facebook">
+        <img class="testimonial-result-img" src="https://lh3.googleusercontent.com/d/1KjsF7BZyi-iRFbjcfsYm6s4UFVrBzKTY=w1200" alt="Audrey Shoen sharing her Moonraker results">
         <div class="testimonial-text">"So. Good problem. The SEO is working too good!! I've had 8 inquiries in the past 10 days. And most are scheduling consultations. I'm now faced with some new challenges that I wasn't quite prepared to solve so soon. Time to figure out waitlist management. And further streamline or offload more tasks. My calendar books 2-3 weeks out now."</div>
         <div class="testimonial-author">
           <img class="testimonial-headshot" src="/assets/headshots/audrey-shoen.png" alt="Audrey Shoen">
@@ -294,6 +294,7 @@ html.dark .testimonial-logo { filter: brightness(1.3); }
 
 <script>
 var results = [
+  {pct:213,time:'6 months',type:'group',id:'1uVfNKUBxYy3KCEJEmJU92QE3DN9khHWA'},
   {pct:170,time:'6 months',type:'group',id:'1spFbq2k8QOqwWbLuvz1JxLgWpM7VFfaa'},
   {pct:156,time:'3 months',type:'group',id:'1jNjoiNtFgIINAyUpWyvH426qq1HTHG7X'},
   {pct:137,time:'6 months',type:'group',id:'1kXJKL6OLlUvXNwweYGlAr_M0jNGeBIQa'},
