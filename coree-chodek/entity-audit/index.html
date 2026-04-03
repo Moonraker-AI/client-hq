@@ -199,6 +199,17 @@ section { padding: 4.5rem 0; }
 .rtpba-content-inner li { font-size: .9375rem; line-height: 1.7; margin-bottom: .35rem; }
 .rtpba-label { display: block; font-size: .875rem; color: var(--color-muted); margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-border); }
 
+/* AI Usage section */
+.ai-usage { margin: 0; }
+.ai-usage-intro { max-width: 640px; margin: 0 auto 1.5rem; text-align: center; color: var(--color-body); font-size: .9375rem; line-height: 1.7; }
+.ai-tips { display: grid; gap: .875rem; max-width: 640px; margin: 0 auto 1.5rem; }
+.ai-tip { display: flex; gap: .875rem; align-items: flex-start; }
+.ai-tip-num { min-width: 28px; height: 28px; border-radius: 6px; background: rgba(0, 212, 126, .1); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-size: .8125rem; font-weight: 600; flex-shrink: 0; margin-top: .1rem; }
+.ai-tip-title { font-weight: 600; color: var(--color-heading); font-size: .9375rem; margin-bottom: .15rem; }
+.ai-tip-body { font-size: .875rem; color: var(--color-body); line-height: 1.65; }
+.ai-tip-callout { max-width: 640px; margin: 0 auto; padding: 1rem 1.25rem; border-radius: 10px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: .875rem; line-height: 1.6; color: var(--color-body); }
+.ai-tip-callout strong { color: var(--color-heading); }
+
 /* CTA section */
 .cta-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2.5rem 0; }
 
@@ -264,6 +275,7 @@ section { padding: 4.5rem 0; }
   <a href="#scores"><span class="nav-dot"></span>CORE Scores</a>
   <a href="#findings"><span class="nav-dot"></span>Findings</a>
   <a href="#rtpbaSection" id="navRtpba" style="display:none;"><span class="nav-dot"></span>Best Answer</a>
+  <a href="#aiUsage"><span class="nav-dot"></span>AI Tips</a>
   <a href="#next"><span class="nav-dot"></span>Next Steps</a>
 </nav>
 
@@ -393,6 +405,49 @@ section { padding: 4.5rem 0; }
     </div>
   </div>
 </div>
+
+<hr class="divider">
+
+<!-- RECOMMENDED AI USAGE -->
+<section class="reveal ai-usage" id="aiUsage">
+  <div class="container">
+    <h2 style="text-align:center;">Getting the Most from Your Audit</h2>
+    <p class="ai-usage-intro">Your Entity Audit contains a wealth of insights about your online presence. To help you process and act on these findings more efficiently, we recommend using an AI assistant like ChatGPT, Claude, or Gemini as a thinking partner.</p>
+    <div class="ai-tips">
+      <div class="ai-tip">
+        <div class="ai-tip-num">1</div>
+        <div>
+          <div class="ai-tip-title">Understand your findings</div>
+          <div class="ai-tip-body">Copy any finding into an AI assistant and ask it to explain what it means in plain language, why it matters for your practice, and what would happen if you left it unaddressed.</div>
+        </div>
+      </div>
+      <div class="ai-tip">
+        <div class="ai-tip-num">2</div>
+        <div>
+          <div class="ai-tip-title">Get help with action steps</div>
+          <div class="ai-tip-body">Share the recommended fixes and ask the AI to walk you through them step by step. It can tailor instructions to your specific website platform, whether that is WordPress, Squarespace, Wix, or something else.</div>
+        </div>
+      </div>
+      <div class="ai-tip">
+        <div class="ai-tip-num">3</div>
+        <div>
+          <div class="ai-tip-title">Draft and refine content</div>
+          <div class="ai-tip-body">Use your audit findings as a starting point to draft improved website copy, service descriptions, or professional bios. The AI can help you write content that speaks to both potential clients and search engines.</div>
+        </div>
+      </div>
+      <div class="ai-tip">
+        <div class="ai-tip-num">4</div>
+        <div>
+          <div class="ai-tip-title">Prioritize what to fix first</div>
+          <div class="ai-tip-body">Share your full list of findings and ask the AI to help you create a priority list based on impact and effort. Not everything needs to happen at once.</div>
+        </div>
+      </div>
+    </div>
+    <div class="ai-tip-callout">
+      <strong>Tip:</strong> When using an AI assistant, start by sharing some context about your practice, your specialties, and your ideal client. The more context you provide, the more relevant and useful the responses will be.
+    </div>
+  </div>
+</section>
 
 <hr class="divider">
 
