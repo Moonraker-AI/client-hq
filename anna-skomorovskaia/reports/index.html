@@ -691,13 +691,21 @@ section { padding: 4.5rem 0; }
     var appleGrids = platforms.apple || [];
     if (googleGrids.length === 0 && appleGrids.length === 0) return;
 
-    // Deduplicate: best ARP per keyword per platform
+    // Deduplicate: prefer largest grid_size per keyword, then best ARP within that size
     function dedupGrids(grids) {
       var byKeyword = {};
       grids.forEach(function(g) {
         var key = g.keyword || g.search_term || g.label;
-        if (!byKeyword[key] || g.arp < byKeyword[key].arp) {
+        var gSize = parseInt(g.grid_size) || 7;
+        var existing = byKeyword[key];
+        if (!existing) {
           byKeyword[key] = g;
+        } else {
+          var eSize = parseInt(existing.grid_size) || 7;
+          // Prefer larger grid; if same size, prefer better (lower) ARP
+          if (gSize > eSize || (gSize === eSize && (g.arp || 21) < (existing.arp || 21))) {
+            byKeyword[key] = g;
+          }
         }
       });
       // Sort by ARP ascending (best first)
