@@ -96,6 +96,10 @@
     "api/activate-reporting.js": {
       "maxDuration": 120,
       "memory": 1024
+    },
+    "api/report-chat.js": {
+      "maxDuration": 120,
+      "memory": 1024
     }
   },
   "crons": [
