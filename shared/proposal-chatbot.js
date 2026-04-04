@@ -1,6 +1,6 @@
 // /shared/proposal-chatbot.js
 // Self-contained chatbot widget for proposal pages.
-// Floating button (bottom-right), dismissible tooltip, streaming Opus 4.6 chat.
+// Floating button (bottom-right), dismissible tooltip, streaming Sonnet 4.6 chat.
 // Include via <script src="/shared/proposal-chatbot.js"></script>
 
 (function() {
