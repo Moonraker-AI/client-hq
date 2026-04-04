@@ -776,6 +776,12 @@ strong { font-weight: 600; color: var(--color-heading); }
           <div id="rptConfigForm"></div>
         </div>
 
+        <!-- Keyword Targets -->
+        <div class="card" style="margin-bottom:1rem;">
+          <div class="card-header"><h3>Keyword Targets</h3></div>
+          <div id="rptKeywordForm" style="padding:.25rem 0;"></div>
+        </div>
+
         <!-- Tracked Queries -->
         <div class="card" style="margin-bottom:1rem;">
           <div class="card-header"><h3>Tracked Queries</h3></div>
@@ -1524,7 +1530,7 @@ strong { font-weight: 600; color: var(--color-heading); }
   // ---- KEYWORD FORM (inside Intro Call) ----
   function renderKeywordForm(targetId) {
     // Renders into any element - used by both IC tab and Reports tab
-    var targets = targetId ? [targetId] : ['icKeywordForm'];
+    var targets = targetId ? [targetId] : ['icKeywordForm', 'rptKeywordForm'];
     var slug = state.contact.slug;
     fetch(SB + '/rest/v1/tracked_keywords?client_slug=eq.' + slug + '&active=eq.true&order=priority.asc,keyword.asc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).then(function(kws) {
       var html = '<div class="ic-kw-form">';
@@ -2331,7 +2337,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     var queries = (cfg && cfg.tracked_queries) || [];
     var tqHtml = '<p style="font-size:.82rem;color:var(--color-muted);margin:0 0 .75rem;">Checked against 5 AI engines each month (Google AI Mode, Gemini, ChatGPT, Perplexity, Bing).</p>';
     if (queries.length > 0) {
-      tqHtml += '<div style="display:grid;grid-template-columns:1fr 200px 50px 28px;gap:.5rem;padding:0 0 .4rem;border-bottom:1px solid var(--color-border);margin-bottom:.35rem;">';
+      tqHtml += '<div style="display:grid;grid-template-columns:.5fr 1fr 50px 28px;gap:.5rem;padding:0 0 .4rem;border-bottom:1px solid var(--color-border);margin-bottom:.35rem;">';
       tqHtml += '<span style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">Search Query</span>';
       tqHtml += '<span style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">Target URL</span>';
       tqHtml += '<span style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">Priority</span>';
@@ -2339,7 +2345,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       queries.forEach(function(q, i) {
         var pri = q.priority || 'P1';
         var priColor = pri === 'P1' ? 'background:rgba(0,212,126,.1);color:#00b86c' : 'background:rgba(59,130,246,.1);color:#3B82F6';
-        tqHtml += '<div style="display:grid;grid-template-columns:1fr 200px 50px 28px;gap:.5rem;align-items:center;padding:.35rem 0;border-bottom:1px solid var(--color-border);font-size:.82rem;">';
+        tqHtml += '<div style="display:grid;grid-template-columns:.5fr 1fr 50px 28px;gap:.5rem;align-items:center;padding:.35rem 0;border-bottom:1px solid var(--color-border);font-size:.82rem;">';
         tqHtml += '<input type="text" value="' + esc(q.query || '') + '" data-idx="' + i + '" data-field="query" class="rpt-tq-input" style="font-family:inherit;font-size:.82rem;padding:.3rem .5rem;border:1px solid var(--color-border);border-radius:6px;background:var(--color-surface);color:var(--color-heading);">';
         tqHtml += '<input type="text" value="' + esc(q.target_url || q.label || '') + '" data-idx="' + i + '" data-field="target_url" class="rpt-tq-input" style="font-family:inherit;font-size:.82rem;padding:.3rem .5rem;border:1px solid var(--color-border);border-radius:6px;background:var(--color-surface);color:var(--color-heading);" placeholder="/page-url/">';
         tqHtml += '<button data-idx="' + i + '" data-field="priority" class="rpt-tq-input" onclick="toggleQueryPriority(' + i + ')" style="font-family:inherit;font-size:.72rem;font-weight:600;padding:.2rem .4rem;border-radius:5px;border:none;cursor:pointer;' + priColor + ';">' + esc(pri) + '</button>';
@@ -2353,6 +2359,9 @@ strong { font-weight: 600; color: var(--color-heading); }
     tqHtml += '<span style="font-size:.72rem;color:var(--color-muted);"><strong>P1</strong> = primary targets &nbsp;|&nbsp; <strong>P2</strong> = secondary monitoring</span>';
     tqHtml += '</div>';
     tqEl.innerHTML = tqHtml;
+
+    // ── KEYWORD TARGETS (shared form from tracked_keywords table) ──
+    renderKeywordForm('rptKeywordForm');
 
     // ── REPORT HISTORY ──
     if (snaps.length === 0) {
@@ -2467,10 +2476,10 @@ strong { font-weight: 600; color: var(--color-heading); }
   window.saveTrackedQueries = function() {
     var cfg = state.reportConfig;
     var c = state.contact;
-    if (!cfg || !c) return;
+    if (!c) return;
     // Read current values from DOM inputs (not buttons)
     var inputs = document.querySelectorAll('input.rpt-tq-input');
-    var queries = cfg.tracked_queries || [];
+    var queries = (cfg && cfg.tracked_queries) || [];
     inputs.forEach(function(el) {
       var idx = parseInt(el.getAttribute('data-idx'));
       var field = el.getAttribute('data-field');
@@ -2478,16 +2487,22 @@ strong { font-weight: 600; color: var(--color-heading); }
     });
     // Remove empty queries
     queries = queries.filter(function(q) { return q.query && q.query.trim(); });
-    cfg.tracked_queries = queries;
 
-    fetch('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update_record', table: 'report_configs', filters: { client_slug: c.slug } || undefined, data: { tracked_queries: queries } }) }).then(function(r) { return r.json(); }).then(function(res) {
-      if (res.success) {
-        toast('Tracked queries saved (' + queries.length + ')', 'success');
-        renderReports();
-      } else {
-        toast('Failed to save queries', 'error');
-      }
-    });
+    if (cfg) {
+      // Update existing config
+      cfg.tracked_queries = queries;
+      fetch('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update_record', table: 'report_configs', filters: { client_slug: c.slug }, data: { tracked_queries: queries } }) }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.success) { toast('Tracked queries saved (' + queries.length + ')', 'success'); renderReports(); }
+        else { toast('Failed to save queries', 'error'); }
+      });
+    } else {
+      // Create config row first, then it exists for future saves
+      var newCfg = { client_slug: c.slug, tracked_queries: queries, active: false };
+      fetch('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create_record', table: 'report_configs', data: newCfg }) }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.success) { state.reportConfig = (res.data && res.data[0]) || newCfg; toast('Tracked queries saved (' + queries.length + ')', 'success'); renderReports(); }
+        else { toast('Failed to create report config', 'error'); }
+      });
+    }
   };
 
   window.approveReport = function(snapId) {
