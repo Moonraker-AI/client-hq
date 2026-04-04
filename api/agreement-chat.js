@@ -1,6 +1,6 @@
 // /api/agreement-chat.js
 // Streaming chat endpoint for the agreement page chatbot (client-facing).
-// Uses Claude Opus 4.6 with full CSA details and Moonraker services knowledge.
+// Uses Claude Sonnet 4.6 with full CSA details and Moonraker services knowledge.
 // Raw byte pipe streaming (proven pattern from admin chat).
 //
 // POST { messages: [...], context: { page_content } }
@@ -42,7 +42,7 @@ module.exports = async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 2000,
         system: systemPrompt,
         messages: messages,
