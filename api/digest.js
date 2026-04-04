@@ -1,4 +1,6 @@
 // /api/digest.js - Team Digest email sender via Resend
+var email = require('./_lib/email-template');
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -86,7 +88,7 @@ module.exports = async function handler(req, res) {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'Client HQ <notifications@clients.moonraker.ai>',
+        from: email.FROM.notifications,
         to: recipients,
         subject: 'Team Digest: ' + formatDateRange(from, to),
         html: html
@@ -202,22 +204,15 @@ function prettyStatus(val) {
 
 function buildDigestEmail(data) {
   var h = '';
-  h += '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>';
-  h += '<body style="margin:0;padding:0;background:#f4f7f6;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">';
-  h += '<div style="max-width:640px;margin:0 auto;padding:24px;">';
-
-  // Header
-  h += '<div style="text-align:center;padding:24px 0 16px;">';
-  h += '<img src="https://moonraker.ai/wp-content/uploads/2023/10/Moonraker-Logo-Transparent.png" alt="Moonraker" style="height:32px;opacity:.7;">';
-  h += '<h1 style="font-size:22px;color:#1E2A5E;margin:12px 0 4px;">Team Digest</h1>';
-  h += '<p style="font-size:14px;color:#6B7599;margin:0;">' + formatDateRange(data.from, data.to) + '</p>';
-  h += '</div>';
+  // Content starts here - will be wrapped with email.wrap() at the end
+  h += '<h1 style="font-family:Outfit,sans-serif;font-size:24px;font-weight:700;color:#1E2A5E;margin:0 0 8px;">Team Digest</h1>';
+  h += '<p style="font-family:Inter,sans-serif;font-size:15px;color:#333F70;margin:0 0 24px;line-height:1.6;">' + formatDateRange(data.from, data.to) + '</p>';
 
   // Key Insights
   h += '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:16px 20px;margin-bottom:16px;border-left:3px solid #00D47E;">';
-  h += '<h3 style="font-size:14px;color:#1E2A5E;margin:0 0 8px;">Key Insights</h3>';
+  h += '<h3 style="font-family:Outfit,sans-serif;font-size:14px;font-weight:700;color:#1E2A5E;margin:0 0 8px;">Key Insights</h3>';
   data.insights.forEach(function(i) {
-    h += '<p style="font-size:13px;color:#333F70;margin:4px 0;line-height:1.5;">' + esc(i) + '</p>';
+    h += '<p style="font-family:Inter,sans-serif;font-size:13px;color:#333F70;margin:4px 0;line-height:1.5;">' + email.esc(i) + '</p>';
   });
   h += '</div>';
 
@@ -236,8 +231,8 @@ function buildDigestEmail(data) {
   salesRow.forEach(function(s, i) {
     if (i > 0) h += '<td width="12"></td>';
     h += '<td width="33%" style="background:' + s.bg + ';border:1px solid ' + s.bc + ';border-radius:10px;padding:12px 16px;text-align:center;">';
-    h += '<div style="font-size:24px;font-weight:700;color:' + s.nc + ';">' + s.val + '</div>';
-    h += '<div style="font-size:10px;color:#6B7599;text-transform:uppercase;letter-spacing:.5px;">' + s.label + '</div></td>';
+    h += '<div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:700;color:' + s.nc + ';">' + s.val + '</div>';
+    h += '<div style="font-family:Inter,sans-serif;font-size:10px;color:#6B7599;text-transform:uppercase;letter-spacing:.5px;">' + s.label + '</div></td>';
   });
   h += '</tr></table>';
   // Row 2: Activity (neutral)
@@ -250,33 +245,33 @@ function buildDigestEmail(data) {
   actRow.forEach(function(s, i) {
     if (i > 0) h += '<td width="12"></td>';
     h += '<td width="33%" style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:12px 16px;text-align:center;">';
-    h += '<div style="font-size:24px;font-weight:700;color:#1E2A5E;">' + s.val + emailArrow(s.val, s.prev) + '</div>';
-    h += '<div style="font-size:10px;color:#6B7599;text-transform:uppercase;letter-spacing:.5px;">' + s.label + '</div></td>';
+    h += '<div style="font-family:Outfit,sans-serif;font-size:24px;font-weight:700;color:#1E2A5E;">' + s.val + emailArrow(s.val, s.prev) + '</div>';
+    h += '<div style="font-family:Inter,sans-serif;font-size:10px;color:#6B7599;text-transform:uppercase;letter-spacing:.5px;">' + s.label + '</div></td>';
   });
   h += '</tr></table>';
 
   // Pipeline - three tiers
   if (data.signups.length > 0 || data.proposals.length > 0 || data.leads.length > 0) {
     h += '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:16px;margin-bottom:16px;">';
-    h += '<h3 style="font-size:15px;color:#1E2A5E;margin:0 0 12px;">Pipeline</h3>';
+    h += '<h3 style="font-family:Outfit,sans-serif;font-size:15px;font-weight:700;color:#1E2A5E;margin:0 0 12px;">Pipeline</h3>';
     if (data.signups.length > 0) {
-      h += '<div style="font-size:11px;font-weight:600;color:#1E2A5E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Clients Signed (' + data.signups.length + ')</div>';
+      h += '<div style="font-family:Inter,sans-serif;font-size:11px;font-weight:600;color:#1E2A5E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Clients Signed (' + data.signups.length + ')</div>';
       data.signups.forEach(function(c) {
-        h += '<div style="padding:3px 0;font-size:13px;color:#333F70;"><span style="background:rgba(0,212,126,.1);color:#00b86c;font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;margin-right:6px;">SIGNED</span>' + esc(c.practice_name || c.slug) + '</div>';
+        h += '<div style="font-family:Inter,sans-serif;padding:3px 0;font-size:13px;color:#333F70;"><span style="background:rgba(0,212,126,.1);color:#00b86c;font-family:Inter,sans-serif;font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;margin-right:6px;">SIGNED</span>' + email.esc(c.practice_name || c.slug) + '</div>';
       });
       h += '<div style="height:10px;"></div>';
     }
     if (data.proposals.length > 0) {
-      h += '<div style="font-size:11px;font-weight:600;color:#1E2A5E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Proposals Sent (' + data.proposals.length + ')</div>';
+      h += '<div style="font-family:Inter,sans-serif;font-size:11px;font-weight:600;color:#1E2A5E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Proposals Sent (' + data.proposals.length + ')</div>';
       data.proposals.forEach(function(c) {
-        h += '<div style="padding:3px 0;font-size:13px;color:#333F70;"><span style="background:rgba(59,130,246,.1);color:#3B82F6;font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;margin-right:6px;">PROPOSAL</span>' + esc(c.practice_name || c.slug) + '</div>';
+        h += '<div style="font-family:Inter,sans-serif;padding:3px 0;font-size:13px;color:#333F70;"><span style="background:rgba(59,130,246,.1);color:#3B82F6;font-family:Inter,sans-serif;font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;margin-right:6px;">PROPOSAL</span>' + email.esc(c.practice_name || c.slug) + '</div>';
       });
       if (data.leads.length > 0) h += '<div style="height:10px;"></div>';
     }
     if (data.leads.length > 0) {
-      h += '<div style="font-size:11px;font-weight:600;color:#1E2A5E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">New Leads (' + data.leads.length + ')</div>';
+      h += '<div style="font-family:Inter,sans-serif;font-size:11px;font-weight:600;color:#1E2A5E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">New Leads (' + data.leads.length + ')</div>';
       data.leads.forEach(function(c) {
-        h += '<div style="padding:3px 0;font-size:13px;color:#333F70;"><span style="background:rgba(245,158,11,.1);color:#D97706;font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;margin-right:6px;">LEAD</span>' + esc(c.practice_name || c.slug) + '</div>';
+        h += '<div style="font-family:Inter,sans-serif;padding:3px 0;font-size:13px;color:#333F70;"><span style="background:rgba(245,158,11,.1);color:#D97706;font-family:Inter,sans-serif;font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;margin-right:6px;">LEAD</span>' + email.esc(c.practice_name || c.slug) + '</div>';
       });
     }
     h += '</div>';
@@ -285,12 +280,12 @@ function buildDigestEmail(data) {
   // Activity by client
   var slugs = Object.keys(data.byClient).sort();
   if (slugs.length > 0) {
-    h += '<h3 style="font-size:15px;color:#1E2A5E;margin:16px 0 8px;">Activity by Client</h3>';
+    h += '<h3 style="font-family:Outfit,sans-serif;font-size:15px;font-weight:700;color:#1E2A5E;margin:16px 0 8px;">Activity by Client</h3>';
     slugs.forEach(function(slug) {
       var entries = data.byClient[slug];
       var name = data.contactMap[slug] || slug;
       h += '<div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:16px;margin-bottom:12px;">';
-      h += '<h4 style="font-size:14px;color:#1E2A5E;margin:0 0 8px;">' + esc(name) + ' <span style="font-size:11px;font-weight:400;color:#6B7599;">(' + entries.length + ')</span></h4>';
+      h += '<h4 style="font-family:Outfit,sans-serif;font-size:14px;font-weight:700;color:#1E2A5E;margin:0 0 8px;">' + email.esc(name) + ' <span style="font-size:11px;font-weight:400;color:#6B7599;">(' + entries.length + ')</span></h4>';
       h += '<table width="100%" cellpadding="0" cellspacing="0">';
       entries.forEach(function(e) {
         var date = new Date(e.created_at);
@@ -301,10 +296,10 @@ function buildDigestEmail(data) {
         else if (e.table_name === 'checklist_items') { badgeBg = '#EDEDF0'; badgeColor = '#6B7599'; label = 'AUDIT TASK'; }
         else { badgeBg = '#FEF3C7'; badgeColor = '#D97706'; label = e.table_name.replace(/_/g,' ').toUpperCase(); }
         h += '<tr>';
-        h += '<td style="padding:5px 0;font-size:13px;color:#6B7599;width:50px;vertical-align:top;">' + dateStr + '</td>';
-        h += '<td style="padding:5px 4px;vertical-align:top;"><span style="background:' + badgeBg + ';color:' + badgeColor + ';font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;display:inline-block;">' + label + '</span></td>';
-        var entryLabel = e.record_label ? '<strong>' + esc(e.record_label) + '</strong> - ' : '';
-        h += '<td style="padding:5px 0;font-size:13px;color:#333F70;">' + entryLabel + esc(e.field_name) + ': ' + prettyStatus(e.old_value || '-') + ' &#8594; ' + prettyStatus(e.new_value || '-') + '</td>';
+        h += '<td style="font-family:Inter,sans-serif;padding:5px 0;font-size:13px;color:#6B7599;width:50px;vertical-align:top;">' + dateStr + '</td>';
+        h += '<td style="padding:5px 4px;vertical-align:top;"><span style="background:' + badgeBg + ';color:' + badgeColor + ';font-family:Inter,sans-serif;font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;display:inline-block;">' + label + '</span></td>';
+        var entryLabel = e.record_label ? '<strong>' + email.esc(e.record_label) + '</strong> - ' : '';
+        h += '<td style="font-family:Inter,sans-serif;padding:5px 0;font-size:13px;color:#333F70;">' + entryLabel + email.esc(e.field_name) + ': ' + prettyStatus(e.old_value || '-') + ' &#8594; ' + prettyStatus(e.new_value || '-') + '</td>';
         h += '</tr>';
       });
       h += '</table>';
@@ -312,14 +307,14 @@ function buildDigestEmail(data) {
     });
   }
 
-  // Footer
-  h += '<div style="text-align:center;padding:16px 0;color:#6B7599;font-size:12px;">';
-  h += 'Sent from <a href="https://clients.moonraker.ai/admin/reports" style="color:#00D47E;">Client HQ</a>';
-  h += '</div></div></body></html>';
-  return h;
+  // Wrap content with shared branded template
+  return email.wrap({
+    headerLabel: 'Team Digest',
+    content: h
+  });
 }
 
-function esc(s) {
+function email.esc(s) {
   if (!s) return '';
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
