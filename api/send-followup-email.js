@@ -9,6 +9,8 @@
 // Reply-To: scott@moonraker.ai
 // CC: chris@moonraker.ai, scott@moonraker.ai
 
+var email = require('./_lib/email-template');
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -71,7 +73,7 @@ module.exports = async function handler(req, res) {
       day_offset: followup.day_offset,
       scheduled_for: followup.scheduled_for,
       to: contact.email,
-      from: 'Moonraker AI <proposals@clients.moonraker.ai>',
+      from: email.FROM.proposals,
       reply_to: 'scott@moonraker.ai',
       cc: 'chris@moonraker.ai, scott@moonraker.ai',
       subject: followup.subject,
@@ -90,7 +92,7 @@ module.exports = async function handler(req, res) {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'Moonraker AI <proposals@clients.moonraker.ai>',
+        from: email.FROM.proposals,
         to: [contact.email],
         cc: ['chris@moonraker.ai', 'scott@moonraker.ai'],
         reply_to: 'scott@moonraker.ai',
