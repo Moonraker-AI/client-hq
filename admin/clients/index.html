@@ -614,6 +614,8 @@ strong { font-weight: 600; color: var(--color-heading); }
 .prop-regen-notice .rn-text { flex: 1; }
 .prop-fu-section { margin-top: 1rem; }
 .prop-fu-bar { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.prop-delete { width: 26px; height: 26px; border-radius: 6px; border: none; background: transparent; color: var(--color-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; }
+.prop-delete:hover { background: rgba(239,68,68,.1); color: var(--color-danger); }
 </style>
 </head>
 <body>
@@ -2842,7 +2844,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     if (proposal.sent_at) h += '<span style="font-size:.78rem;color:var(--color-muted);">Sent ' + new Date(proposal.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>';
     if (proposal.proposal_url) h += '<a href="' + esc(proposal.proposal_url) + '?preview=true" target="_blank" style="font-size:.78rem;color:var(--color-primary);">Preview &#8599;</a>';
     h += '<div style="flex:1;"></div>';
-    h += '<button class="row-delete" title="Delete proposal" onclick="window._deleteProposal(\'' + proposal.id + '\')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button>';
+    h += '<button class="prop-delete" title="Delete proposal" onclick="window._deleteProposal(\'' + proposal.id + '\')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button>';
     h += '</div>';
 
     // Enrichment pills (if enriched)
