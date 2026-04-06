@@ -802,6 +802,15 @@
     });
 
     Promise.all(fetches).then(function(results) {
+      // Clean up orphaned <br> tags left after card removal in the parent message
+      var msgDivs = messagesEl.querySelectorAll('.mr-msg-ai');
+      msgDivs.forEach(function(div) {
+        // Strip runs of 3+ consecutive <br> down to one
+        div.innerHTML = div.innerHTML.replace(/(<br\s*\/?>[\s\n]*){3,}/gi, '<br>');
+        // Strip trailing <br> tags after the last real content
+        div.innerHTML = div.innerHTML.replace(/(<br\s*\/?>[\s\n]*)+$/gi, '');
+      });
+
       // Combine successful results into one context message
       var successResults = results.filter(function(r) { return r.success && r.data; });
       if (successResults.length === 0) return;
