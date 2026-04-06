@@ -1138,15 +1138,15 @@
 
     // If reads were suppressed because data is already in context, redirect the model
     if (hadSuppressedReads) {
-      // Hide the "let me look that up" message since it was a false start
+      // Sanitize the false-start message - strip action blocks so they don't repeat in history
       if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
-        messages[messages.length - 1].hidden = true;
+        messages[messages.length - 1].content = messages[messages.length - 1].content.replace(/```action[\s\S]*?```/g, '').trim();
       }
 
       // Tell the model to answer from context directly
       messages.push({
         role: 'user',
-        content: '[System: Your read requests were not needed because all that data is already available in your Live Data context. Answer the user\'s original question directly using the onboarding steps, intro call steps, tasks, deliverables, and contact data already provided. Do NOT attempt any more read_records. Do NOT expose raw field names or JSON.]',
+        content: '[System: The data you tried to fetch is already available in your Live Data context. Answer the user\'s original question directly using the onboarding steps, intro call steps, tasks, deliverables, and contact data already provided. Do NOT attempt any more read_records. Do NOT expose raw field names or JSON. Just give a clean, actionable answer.]',
         hidden: true
       });
 
@@ -1156,9 +1156,6 @@
       sendBtn.disabled = true;
       currentStreamText = '';
       displayedText = '';
-
-      // Re-render first to hide the false-start message, THEN append streaming div
-      renderMessages();
 
       var aiDiv = document.createElement('div');
       aiDiv.className = 'mr-msg mr-msg-ai streaming';
@@ -1189,7 +1186,7 @@
         addSystemMessage('Error: ' + err.message);
       });
 
-      return; // Don't clear stream state yet
+      return;
     }
 
     currentStreamEl = null;
