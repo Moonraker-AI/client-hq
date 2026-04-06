@@ -1,6 +1,6 @@
 // /shared/report-chatbot.js
 // Self-contained chatbot widget for report pages.
-// Floating button (bottom-right), dismissible tooltip, streaming Opus 4.6 chat.
+// Floating button (bottom-right), dismissible tooltip, streaming Sonnet 4.6 chat.
 // Include via <script src="/shared/report-chatbot.js"></script>
 //
 // Expects window.__REPORT_CHAT_CONTEXT to be set before this script loads:
@@ -215,7 +215,7 @@
     '<div class="mrc-header-icon"><img src="/assets/logo.png" alt="Moonraker"></div>' +
     '<div class="mrc-header-info">' +
     '<div class="mrc-header-title">Report Assistant</div>' +
-    '<div class="mrc-header-sub">Powered by Claude Opus</div>' +
+    '<div class="mrc-header-sub">Powered by Claude Sonnet 4.6</div>' +
     '</div>' +
     '<button class="mrc-close" id="mrcClose">&times;</button>' +
     '</div>' +
@@ -438,3 +438,4 @@
   }
 
 })();
+
