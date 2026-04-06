@@ -866,6 +866,9 @@ strong { font-weight: 600; color: var(--color-heading); }
           <div id="rptConfigForm" class="collapsible-body"></div>
         </div>
 
+        <!-- Campaign Readiness -->
+        <div id="rptCampaignReadiness" style="margin-bottom:1rem;"></div>
+
         <!-- Keyword Targets -->
         <div class="card" style="margin-bottom:1rem;" id="rptKeywordCard">
           <div class="card-header collapsible-header" onclick="toggleReportSection('keywords')">
@@ -1029,7 +1032,8 @@ strong { font-weight: 600; color: var(--color-heading); }
         fetch(SB + '/rest/v1/signed_agreements?select=*&contact_id=eq.' + cid + '&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
         fetch(SB + '/rest/v1/intro_call_steps?select=*&order=sort_order&contact_id=eq.' + cid, { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
         fetch(SB + '/rest/v1/proposals?select=*&contact_id=eq.' + cid + '&order=created_at.desc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
-        fetch(SB + '/rest/v1/entity_audits?select=*&contact_id=eq.' + cid + '&order=created_at.desc&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; })
+        fetch(SB + '/rest/v1/entity_audits?select=*&contact_id=eq.' + cid + '&order=created_at.desc&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch(SB + '/rest/v1/tracked_keywords?select=id,keyword&client_slug=eq.' + slug + '&active=eq.true', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; })
       ]);
     }).then(function(res) {
       if (!res) return; // Contact not found, already handled
@@ -1045,6 +1049,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       state.introCall = res[8] || [];
       state.proposals = res[9] || [];
       state.entityAudit = (res[10] && res[10][0]) || null;
+      state.trackedKeywords = res[11] || [];
       state.proposalFollowups = {};
 
       // Load followups for proposals (async, re-renders proposals tab when done)
@@ -3044,6 +3049,60 @@ strong { font-weight: 600; color: var(--color-heading); }
     fHtml += '</div>';
     document.getElementById('rptConfigForm').innerHTML = fHtml;
 
+    // ── CAMPAIGN READINESS CARD ──
+    var crEl = document.getElementById('rptCampaignReadiness');
+    if (crEl) {
+      var isNational = c && c.campaign_type === 'national';
+      if (isNational) {
+        crEl.innerHTML = '<div style="padding:.85rem 1rem;background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;margin-bottom:1rem;">' +
+          '<div style="font-size:.78rem;font-weight:600;color:var(--color-heading);margin-bottom:.4rem;">Campaign Type: National</div>' +
+          '<div style="font-size:.78rem;color:var(--color-muted);">LocalFalcon geogrid tracking is not applicable for national campaigns. Reporting pulls from Google Search Console only.</div>' +
+          '</div>';
+      } else {
+        var hasGbp = !!(c && c.gbp_place_id);
+        var hasKw = state.trackedKeywords && state.trackedKeywords.length > 0;
+        var kwCount = state.trackedKeywords ? state.trackedKeywords.length : 0;
+        var hasLfPlace = !!(cfg && cfg.localfalcon_place_id);
+        var hasLfCampaigns = !!(cfg && cfg.lf_campaign_keys && Object.keys(cfg.lf_campaign_keys).length > 0);
+        var allReady = hasGbp && hasKw && hasLfPlace;
+        var lfKeys = (cfg && cfg.lf_campaign_keys) || {};
+        var lfPlatformNames = { google: 'Google Maps', apple: 'Apple Maps', aimode: 'AI Mode', gaio: 'AI Overviews', chatgpt: 'ChatGPT', gemini: 'Gemini' };
+
+        var check = '<span style="color:var(--color-success);font-weight:700;margin-right:.5rem;">&#10003;</span>';
+        var cross = '<span style="color:var(--color-danger);font-weight:700;margin-right:.5rem;">&#10007;</span>';
+
+        var crHtml = '<div style="padding:.85rem 1rem;background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;margin-bottom:1rem;">';
+        crHtml += '<div style="font-size:.78rem;font-weight:600;color:var(--color-heading);margin-bottom:.65rem;">Campaign Readiness</div>';
+
+        crHtml += '<div style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:.75rem;">';
+        crHtml += '<div style="font-size:.78rem;color:var(--color-text);display:flex;align-items:center;">' + (hasGbp ? check : cross) + 'GBP Place ID' + (hasGbp ? '' : '<span style="color:var(--color-muted);margin-left:.4rem;font-size:.72rem;">Set in contact record</span>') + '</div>';
+        crHtml += '<div style="font-size:.78rem;color:var(--color-text);display:flex;align-items:center;">' + (hasKw ? check : cross) + 'Keywords' + (hasKw ? '<span style="color:var(--color-muted);margin-left:.4rem;font-size:.72rem;">' + kwCount + ' tracked</span>' : '<span style="color:var(--color-muted);margin-left:.4rem;font-size:.72rem;">Add keywords in Targets tab</span>') + '</div>';
+        crHtml += '<div style="font-size:.78rem;color:var(--color-text);display:flex;align-items:center;">' + (hasLfPlace ? check : cross) + 'LocalFalcon Place ID' + (hasLfPlace ? '' : '<span style="color:var(--color-muted);margin-left:.4rem;font-size:.72rem;">Enter above or use Bootstrap</span>') + '</div>';
+        crHtml += '<div style="font-size:.78rem;color:var(--color-text);display:flex;align-items:center;">' + (hasLfCampaigns ? check : cross) + 'LF Campaigns' + (hasLfCampaigns ? '<span style="color:var(--color-muted);margin-left:.4rem;font-size:.72rem;">' + Object.keys(lfKeys).length + ' active</span>' : '') + '</div>';
+        crHtml += '</div>';
+
+        if (hasLfCampaigns) {
+          crHtml += '<div style="display:flex;flex-wrap:wrap;gap:.35rem;">';
+          Object.keys(lfKeys).forEach(function(p) {
+            crHtml += '<span style="font-size:.68rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;background:rgba(0,212,126,.1);color:#00b86c;">' + (lfPlatformNames[p] || p) + '</span>';
+          });
+          crHtml += '</div>';
+        } else if (allReady) {
+          crHtml += '<button id="btnActivateLF" onclick="window.activateLFCampaigns()" style="padding:.4rem .85rem;font-size:.78rem;font-weight:600;border:none;background:var(--color-primary);color:#fff;border-radius:6px;cursor:pointer;font-family:inherit;">Create LF Campaigns</button>';
+        } else {
+          var missing = [];
+          if (!hasGbp) missing.push('GBP Place ID');
+          if (!hasKw) missing.push('Keywords');
+          if (!hasLfPlace) missing.push('LocalFalcon Place ID');
+          crHtml += '<button disabled style="padding:.4rem .85rem;font-size:.78rem;font-weight:600;border:none;background:var(--color-border);color:var(--color-muted);border-radius:6px;cursor:not-allowed;font-family:inherit;">Create LF Campaigns</button>';
+          crHtml += '<div style="font-size:.72rem;color:var(--color-muted);margin-top:.35rem;">Missing: ' + missing.join(', ') + '</div>';
+        }
+
+        crHtml += '</div>';
+        crEl.innerHTML = crHtml;
+      }
+    }
+
     // ── KEYWORD TARGETS (shared form from tracked_keywords table) ──
     renderKeywordForm('rptKeywordForm');
 
@@ -3089,6 +3148,55 @@ strong { font-weight: 600; color: var(--color-heading); }
     document.getElementById('rptList').innerHTML = html;
     autoCollapseReportSections();
   }
+
+  window.activateLFCampaigns = function() {
+    var c = state.contact;
+    if (!c || !c.slug) return;
+    var btn = document.getElementById('btnActivateLF');
+    if (!btn) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Creating campaigns...';
+    btn.style.background = 'var(--color-border)';
+    btn.style.color = 'var(--color-muted)';
+    btn.style.cursor = 'wait';
+
+    fetch('/api/activate-reporting', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_slug: c.slug })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success || res.campaign_keys) {
+        // Reload report config to get the new campaign keys
+        fetch(SB + '/rest/v1/report_configs?client_slug=eq.' + c.slug + '&limit=1', {
+          headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
+        }).then(function(r) { return r.json(); }).then(function(cfgs) {
+          state.reportConfig = (cfgs && cfgs[0]) || state.reportConfig;
+          renderReports();
+        });
+        // Also reload deliverables
+        fetch(SB + '/rest/v1/deliverables?select=*&order=created_at.desc&contact_id=eq.' + c.id, {
+          headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
+        }).then(function(r) { return r.json(); }).then(function(dels) {
+          state.deliverables = dels || [];
+        });
+      } else {
+        alert('Campaign creation failed: ' + (res.error || 'Unknown error'));
+        btn.disabled = false;
+        btn.textContent = 'Create LF Campaigns';
+        btn.style.background = 'var(--color-primary)';
+        btn.style.color = '#fff';
+        btn.style.cursor = 'pointer';
+      }
+    }).catch(function(err) {
+      alert('Network error: ' + err.message);
+      btn.disabled = false;
+      btn.textContent = 'Create LF Campaigns';
+      btn.style.background = 'var(--color-primary)';
+      btn.style.color = '#fff';
+      btn.style.cursor = 'pointer';
+    });
+  };
 
   window.saveReportConfig = function() {
     var c = state.contact;
