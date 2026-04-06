@@ -8,7 +8,7 @@
 //   Maps:  google (7x7, 5mi), apple (7x7, 5mi)
 //   AI:    aimode (3x3, 5mi), gaio (3x3, 5mi), chatgpt (3x3, 5mi), gemini (3x3, 5mi)
 //
-// All campaigns: monthly frequency, run on the 30th at 6:00 AM UTC
+// All campaigns: monthly frequency, run on the 28th at 6:00 AM UTC
 //
 // ENV VARS: SUPABASE_SERVICE_ROLE_KEY, LOCALFALCON_API_KEY
 
@@ -69,12 +69,12 @@ module.exports = async function handler(req, res) {
 
     var keywordList = keywords.map(function(kw) { return kw.keyword; }).join(',');
 
-    // ─── 4. Calculate start date (30th of current or next month) ──
+    // ─── 4. Calculate start date (28th of current or next month) ──
     var now = new Date();
     var startYear = now.getUTCFullYear();
     var startMonth = now.getUTCMonth(); // 0-indexed
 
-    // If we're past the 30th already, schedule for next month
+    // If we're past the 28th already, schedule for next month
     if (now.getUTCDate() > 28) {
       startMonth += 1;
       if (startMonth > 11) {
@@ -83,9 +83,8 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // Use the 30th (or last day of month for Feb)
-    var daysInMonth = new Date(Date.UTC(startYear, startMonth + 1, 0)).getUTCDate();
-    var startDay = Math.min(30, daysInMonth);
+    // Use the 28th (exists in every month including February)
+    var startDay = 28;
     var startDate = String(startMonth + 1).padStart(2, '0') + '/' + String(startDay).padStart(2, '0') + '/' + startYear;
 
     // ─── 5. Create 6 campaigns ───────────────────────────────────
