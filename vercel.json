@@ -109,6 +109,9 @@
     },
     "api/notify-team.js": {
       "maxDuration": 30
+    },
+    "api/send-audit-email.js": {
+      "maxDuration": 30
     }
   },
   "crons": [
