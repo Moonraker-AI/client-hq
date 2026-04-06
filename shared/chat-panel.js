@@ -1114,6 +1114,9 @@
     // Flush any remaining buffered text
     if (typewriterTimer) { clearInterval(typewriterTimer); typewriterTimer = null; }
     displayedText = currentStreamText;
+
+    // Reset suppression counter BEFORE any rendering
+    suppressedReadCount = 0;
     
     if (currentStreamEl) {
       currentStreamEl.classList.remove('streaming');
@@ -1127,14 +1130,14 @@
       saveHistory();
     }
 
-    // Reset suppression counter before re-render (renderMessages triggers renderActionCard)
-    suppressedReadCount = 0;
+    // Capture suppression count BEFORE re-render (re-render won't re-count due to executedReadIds)
+    var hadSuppressedReads = suppressedReadCount > 0;
 
     // Re-render to bind action buttons properly
     renderMessages();
 
     // If reads were suppressed because data is already in context, redirect the model
-    if (suppressedReadCount > 0) {
+    if (hadSuppressedReads) {
       // Hide the "let me look that up" message since it was a false start
       if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
         messages[messages.length - 1].hidden = true;
