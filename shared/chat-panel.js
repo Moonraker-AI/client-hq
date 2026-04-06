@@ -462,6 +462,7 @@
 
     var html = '';
     messages.forEach(function(msg, idx) {
+      if (msg.hidden) return; // Skip auto-fetch data messages
       if (msg.role === 'user') {
         html += '<div class="mr-msg mr-msg-user">' + esc(msg.content) + '</div>';
       } else if (msg.role === 'assistant') {
@@ -757,78 +758,109 @@
   // ============================================================
   // ACTION EXECUTION
   // ============================================================
+  var pendingReads = [];
+  var batchReadTimer = null;
+
   function autoExecuteRead(actionData, cardId) {
-    fetch(ACTION_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(actionData)
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(result) {
-      var card = document.getElementById('read-card-' + cardId);
-      if (result.success && result.data) {
-        // Remove the loading card - the AI follow-up will present the data conversationally
+    pendingReads.push({ actionData: actionData, cardId: cardId });
+
+    // Debounce: wait for all reads from this render cycle to be queued
+    if (batchReadTimer) clearTimeout(batchReadTimer);
+    batchReadTimer = setTimeout(function() {
+      batchReadTimer = null;
+      processBatchReads();
+    }, 200);
+  }
+
+  function processBatchReads() {
+    if (pendingReads.length === 0) return;
+
+    var reads = pendingReads.slice();
+    pendingReads = [];
+
+    // Execute all reads in parallel
+    var fetches = reads.map(function(r) {
+      return fetch(ACTION_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(r.actionData)
+      }).then(function(res) { return res.json(); }).then(function(result) {
+        // Remove loading card
+        var card = document.getElementById('read-card-' + r.cardId);
         if (card) card.remove();
 
-        // Inject results as a hidden assistant message and auto-trigger follow-up
-        var dataStr = JSON.stringify(result.data, null, 2);
-        // Truncate if too large
-        if (dataStr.length > 4000) dataStr = dataStr.substring(0, 4000) + '\n... (truncated)';
+        return {
+          table: r.actionData.table,
+          success: result.success,
+          data: result.data
+        };
+      }).catch(function(err) {
+        var card = document.getElementById('read-card-' + r.cardId);
+        if (card) card.querySelector('.mr-action-card-body').innerHTML = '<span style="color:var(--color-danger);">Error: ' + esc(err.message) + '</span>';
+        return { table: r.actionData.table, success: false, data: null };
+      });
+    });
 
-        // Add result as context in conversation history
-        messages.push({
-          role: 'assistant',
-          content: 'I fetched the data. Here are the results from ' + (actionData.table || 'the database') + ':\n```json\n' + dataStr + '\n```\nLet me summarize this for you.'
-        });
+    Promise.all(fetches).then(function(results) {
+      // Combine successful results into one context message
+      var successResults = results.filter(function(r) { return r.success && r.data; });
+      if (successResults.length === 0) return;
 
-        // Auto-trigger a follow-up to get a conversational summary
-        messages.push({
-          role: 'user',
-          content: '[System: The data above was auto-fetched. Please provide a concise, conversational summary of what you found. Do NOT output any action blocks. Just interpret the data naturally in plain text.]'
-        });
+      var combinedData = successResults.map(function(r) {
+        var dataStr = JSON.stringify(r.data, null, 2);
+        if (dataStr.length > 3000) dataStr = dataStr.substring(0, 3000) + '\n... (truncated)';
+        return '**' + r.table + ':**\n```json\n' + dataStr + '\n```';
+      }).join('\n\n');
 
-        // Trigger the AI to respond (with guard flag)
-        isAutoReadFollowUp = true;
-        isStreaming = true;
-        sendBtn.disabled = true;
-        currentStreamText = '';
-        displayedText = '';
+      // Push combined data as a hidden message (sent to API for context but not shown in chat)
+      messages.push({
+        role: 'assistant',
+        content: 'I pulled the following data:\n\n' + combinedData,
+        hidden: true
+      });
 
-        var aiDiv = document.createElement('div');
-        aiDiv.className = 'mr-msg mr-msg-ai streaming';
-        aiDiv.innerHTML = '<div class="mr-msg-label">COREBot</div>';
-        messagesEl.appendChild(aiDiv);
-        currentStreamEl = aiDiv;
-        scrollToBottom(true);
+      // Push single summarize instruction (also hidden)
+      messages.push({
+        role: 'user',
+        content: '[System: The data above was auto-fetched from ' + successResults.length + ' source(s). Provide a single concise, conversational summary addressing the user\'s original question. Do NOT output any action blocks. Do NOT expose raw field names, table names, or JSON structure. Translate everything into plain English for the team.]',
+        hidden: true
+      });
 
-        var apiMessages = messages.filter(function(m) {
-          return m.role === 'user' || m.role === 'assistant';
-        }).map(function(m) {
-          return { role: m.role, content: m.content };
-        });
+      // Trigger single follow-up stream
+      isAutoReadFollowUp = true;
+      isStreaming = true;
+      sendBtn.disabled = true;
+      currentStreamText = '';
+      displayedText = '';
 
-        var ctx = getPageContext();
+      var aiDiv = document.createElement('div');
+      aiDiv.className = 'mr-msg mr-msg-ai streaming';
+      aiDiv.innerHTML = '<div class="mr-msg-label">COREBot</div>';
+      messagesEl.appendChild(aiDiv);
+      currentStreamEl = aiDiv;
+      scrollToBottom(true);
 
-        fetch(CHAT_API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: apiMessages, context: ctx })
-        })
-        .then(function(response) {
-          if (!response.ok) throw new Error('API error: ' + response.status);
-          return readStream(response.body);
-        })
-        .catch(function(err) {
-          finishStream();
-          addSystemMessage('Error: ' + err.message);
-        });
-      } else {
-        if (card) card.querySelector('.mr-action-card-body').innerHTML = '<span style="color:var(--color-danger);">Failed: ' + esc((result && result.error) || 'Unknown') + '</span>';
-      }
-    })
-    .catch(function(err) {
-      var card = document.getElementById('read-card-' + cardId);
-      if (card) card.querySelector('.mr-action-card-body').innerHTML = '<span style="color:var(--color-danger);">Error: ' + esc(err.message) + '</span>';
+      var apiMessages = messages.filter(function(m) {
+        return m.role === 'user' || m.role === 'assistant';
+      }).map(function(m) {
+        return { role: m.role, content: m.content };
+      });
+
+      var ctx = getPageContext();
+
+      fetch(CHAT_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: apiMessages, context: ctx })
+      })
+      .then(function(response) {
+        if (!response.ok) throw new Error('API error: ' + response.status);
+        return readStream(response.body);
+      })
+      .catch(function(err) {
+        finishStream();
+        addSystemMessage('Error: ' + err.message);
+      });
     });
   }
 
