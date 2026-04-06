@@ -100,6 +100,9 @@
     "api/report-chat.js": {
       "maxDuration": 120,
       "memory": 1024
+    },
+    "api/stripe-webhook.js": {
+      "maxDuration": 30
     }
   },
   "crons": [
