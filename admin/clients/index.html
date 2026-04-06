@@ -1818,8 +1818,12 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     // Actions row
     h += '<div style="display:flex;gap:.5rem;flex-wrap:wrap;">';
-    if (ea.status === 'pending' || ea.status === 'processing') {
+    if (ea.status === 'processing') {
+      h += '<button disabled style="padding:.5rem 1rem;background:var(--color-info);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:wait;font-family:Outfit,sans-serif;opacity:.7;">&#9881; Processing...</button>';
+    } else if (ea.status === 'pending') {
       h += '<button onclick="processSurgeAudit()" style="padding:.5rem 1rem;background:var(--color-info);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;">&#9889; Process Surge</button>';
+    } else {
+      h += '<button onclick="processSurgeAudit()" style="padding:.5rem 1rem;border:1px solid var(--color-info);color:var(--color-info);background:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;">&#9889; Reprocess Surge</button>';
     }
     h += '<a href="/' + esc(c.slug) + '/entity-audit" target="_blank" style="padding:.5rem 1rem;border:1px solid var(--color-primary);color:var(--color-primary);border-radius:8px;font-size:.82rem;font-weight:600;text-decoration:none;font-family:Outfit,sans-serif;">View Scorecard &#8250;</a>';
     if (ea.status === 'complete' || ea.status === 'delivered') {
@@ -4259,6 +4263,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
 
 
