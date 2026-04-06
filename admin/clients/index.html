@@ -2166,29 +2166,28 @@ strong { font-weight: 600; color: var(--color-heading); }
     var c = state.contact;
     if (!ea || !c) return;
     if (!c.email) { toast('No email address on file', 'error'); return; }
+    if (!confirm('Send the audit scorecard email to ' + c.email + '?')) return;
 
     var btn = document.getElementById('eaSendBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
 
-    fetch('/api/action', {
+    fetch('/api/send-audit-email', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'update_record', table: 'entity_audits', filters: { id: ea.id },
-        data: { status: 'delivered', sent_at: new Date().toISOString(), sent_to: c.email, updated_at: new Date().toISOString() }
-      })
+      body: JSON.stringify({ audit_id: ea.id })
     }).then(function(r) { return r.json(); }).then(function(res) {
-      if (res.success) {
+      if (res.ok) {
         ea.status = 'delivered';
         ea.sent_at = new Date().toISOString();
         ea.sent_to = c.email;
         renderEntityAudit();
-        toast('Audit marked as delivered to ' + c.email, 'success');
+        toast('Audit email sent to ' + c.email, 'success');
       } else {
         if (btn) { btn.disabled = false; btn.textContent = '\u2709 Send to Client'; }
-        toast('Failed to update', 'error');
+        toast('Send failed: ' + (res.error || 'Unknown error'), 'error');
       }
-    }).catch(function() {
+    }).catch(function(err) {
       if (btn) { btn.disabled = false; btn.textContent = '\u2709 Send to Client'; }
+      toast('Send error: ' + err.message, 'error');
     });
   };
 
