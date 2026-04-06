@@ -1829,6 +1829,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     if (ea.status === 'complete' || ea.status === 'delivered') {
       h += '<button onclick="sendEntityAuditEmail()" id="eaSendBtn" style="padding:.5rem 1rem;border:1px solid var(--color-border);color:var(--color-body);border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;background:none;font-family:Outfit,sans-serif;">&#9993; Send to Client</button>';
     }
+    h += '<button onclick="deleteEntityAudit()" style="padding:.5rem 1rem;border:1px solid var(--color-danger);color:var(--color-danger);background:rgba(239,68,68,.04);border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;margin-left:auto;">Delete Audit</button>';
     h += '</div>';
 
     container.innerHTML = h;
@@ -2059,6 +2060,32 @@ strong { font-weight: 600; color: var(--color-heading); }
       }
     }).catch(function() {
       if (btn) { btn.disabled = false; btn.textContent = '\u2709 Send to Client'; }
+    });
+  };
+
+  window.deleteEntityAudit = function() {
+    var ea = state.entityAudit;
+    var c = state.contact;
+    if (!ea || !c) return;
+
+    if (!confirm('Delete entity audit for ' + (c.practice_name || c.slug) + '? This will remove the audit record, scorecard page, and checkout page. This cannot be undone.')) return;
+
+    toast('Deleting entity audit...', 'info');
+
+    fetch('/api/delete-entity-audit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ audit_id: ea.id, slug: c.slug })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success) {
+        state.entityAudit = null;
+        renderAudit();
+        setTabCount('audit', 0);
+        toast('Entity audit deleted', 'success');
+      } else {
+        toast('Failed to delete: ' + (res.error || 'Unknown error'), 'error');
+      }
+    }).catch(function(e) {
+      toast('Error: ' + e.message, 'error');
     });
   };
 
@@ -4263,6 +4290,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
 
 
