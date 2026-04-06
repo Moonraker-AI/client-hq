@@ -718,6 +718,18 @@
       if (isAutoReadFollowUp || executedReadIds[cardId]) {
         return '';
       }
+
+      // Suppress reads for tables already in the client deep-dive context
+      var ctx = window._mrChatContext;
+      if (ctx && ctx.clientData) {
+        var alreadyLoaded = ['contacts', 'onboarding_steps', 'intro_call_steps', 'checklist_items',
+          'deliverables', 'audit_scores', 'report_snapshots', 'practice_details', 'proposals'];
+        if (alreadyLoaded.indexOf(table) !== -1) {
+          executedReadIds[cardId] = true;
+          return ''; // Data already in context, no fetch needed
+        }
+      }
+
       executedReadIds[cardId] = true;
       setTimeout(function() { autoExecuteRead(actionData, cardId); }, 100);
       return '<div class="mr-action-card" data-card-id="' + cardId + '" id="read-card-' + cardId + '">' +
