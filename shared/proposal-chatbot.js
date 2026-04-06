@@ -209,7 +209,7 @@
   panel.innerHTML =
     '<div class="mpc-header">' +
       '<div class="mpc-header-icon"><img src="/assets/logo.png" alt="M"></div>' +
-      '<div class="mpc-header-info"><div class="mpc-header-title">Proposal Assistant</div><div class="mpc-header-sub">Powered by Claude</div></div>' +
+      '<div class="mpc-header-info"><div class="mpc-header-title">Proposal Assistant</div><div class="mpc-header-sub">Powered by Claude Sonnet 4.6</div></div>' +
       '<button class="mpc-close" id="mpcClose">&times;</button>' +
     '</div>' +
     '<div class="mpc-messages" id="mpcMessages">' +
@@ -462,6 +462,7 @@
   }
 
 })();
+
 
 
 
