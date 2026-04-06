@@ -96,8 +96,8 @@ strong { font-weight: 600; color: var(--color-heading); }
 .search-result { display: flex; align-items: center; gap: .75rem; padding: .6rem 1rem; cursor: pointer; transition: background .1s; }
 .search-result:hover, .search-result.focused { background: var(--color-primary-subtle); }
 .search-result .result-name { font-weight: 500; font-size: .85rem; color: var(--color-heading); }
-.search-result .result-slug { font-size: .75rem; color: var(--color-muted); }
 .search-result .result-practice { font-size: .75rem; color: var(--color-muted); }
+.search-result .result-slug { font-size: .7rem; color: var(--color-muted); opacity: .7; }
 .search-result .result-status { margin-left: auto; }
 .topbar-right { display: flex; align-items: center; gap: .5rem; margin-left: auto; }
 
@@ -614,8 +614,6 @@ strong { font-weight: 600; color: var(--color-heading); }
 .prop-regen-notice .rn-text { flex: 1; }
 .prop-fu-section { margin-top: 1rem; }
 .prop-fu-bar { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
-.prop-delete { width: 26px; height: 26px; border-radius: 6px; border: none; background: transparent; color: var(--color-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; }
-.prop-delete:hover { background: rgba(239,68,68,.1); color: var(--color-danger); }
 </style>
 </head>
 <body>
@@ -2844,7 +2842,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     if (proposal.sent_at) h += '<span style="font-size:.78rem;color:var(--color-muted);">Sent ' + new Date(proposal.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>';
     if (proposal.proposal_url) h += '<a href="' + esc(proposal.proposal_url) + '?preview=true" target="_blank" style="font-size:.78rem;color:var(--color-primary);">Preview &#8599;</a>';
     h += '<div style="flex:1;"></div>';
-    h += '<button class="prop-delete" title="Delete proposal" onclick="window._deleteProposal(\'' + proposal.id + '\')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button>';
+    h += '<button class="row-delete" title="Delete proposal" onclick="window._deleteProposal(\'' + proposal.id + '\')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button>';
     h += '</div>';
 
     // Enrichment pills (if enriched)
@@ -3340,7 +3338,7 @@ strong { font-weight: 600; color: var(--color-heading); }
         var fullName = ((c.first_name || '') + ' ' + (c.last_name || '')).trim();
         var practiceName = c.practice_name || '';
         var displayName = fullName || practiceName || c.slug;
-        var displayPractice = practiceName && practiceName.toLowerCase() !== (fullName || '').toLowerCase() ? practiceName : '';
+        var displayPractice = practiceName && practiceName !== fullName ? practiceName : '';
         return '<div class="search-result" data-slug="' + c.slug + '" onclick="window.location.href=\'/admin/clients?slug=' + c.slug + '\'">' +
           '<div><div class="result-name">' + esc(displayName) + '</div>' +
           (displayPractice ? '<div class="result-practice">' + esc(displayPractice) + '</div>' : '') +
