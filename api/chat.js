@@ -140,7 +140,9 @@ function buildSystemPrompt(ctx) {
   parts.push(BASE_PROMPT);
 
   // === CONDITIONAL: read_records docs vs direct-answer mode ===
-  if (clientData) {
+  // Only use direct-answer mode on client deep-dive (clientSlug present = full detail data loaded)
+  // On list/summary pages, include read_records so the model can fetch specific client data
+  if (clientSlug && clientData) {
     parts.push(DIRECT_ANSWER_MODE);
   } else {
     parts.push(CROSS_CLIENT_OPS);
