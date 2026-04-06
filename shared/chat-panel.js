@@ -726,6 +726,7 @@
           'deliverables', 'audit_scores', 'report_snapshots', 'practice_details', 'proposals'];
         if (alreadyLoaded.indexOf(table) !== -1) {
           executedReadIds[cardId] = true;
+          suppressedReadCount++;
           return ''; // Data already in context, no fetch needed
         }
       }
@@ -1069,6 +1070,7 @@
   var displayedText = '';
   var isAutoReadFollowUp = false;
   var executedReadIds = {}; // persistent map of read card IDs that have already fired
+  var suppressedReadCount = 0; // tracks reads suppressed by context guard per render cycle
   var typewriterTimer = null;
   var TYPEWRITER_SPEED = 8; // ms per character - very fast but smooth
 
@@ -1125,8 +1127,67 @@
       saveHistory();
     }
 
+    // Reset suppression counter before re-render (renderMessages triggers renderActionCard)
+    suppressedReadCount = 0;
+
     // Re-render to bind action buttons properly
     renderMessages();
+
+    // If reads were suppressed because data is already in context, redirect the model
+    if (suppressedReadCount > 0) {
+      // Hide the "let me look that up" message since it was a false start
+      if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
+        messages[messages.length - 1].hidden = true;
+      }
+
+      // Tell the model to answer from context directly
+      messages.push({
+        role: 'user',
+        content: '[System: Your read requests were not needed because all that data is already available in your Live Data context. Answer the user\'s original question directly using the onboarding steps, intro call steps, tasks, deliverables, and contact data already provided. Do NOT attempt any more read_records. Do NOT expose raw field names or JSON.]',
+        hidden: true
+      });
+
+      // Trigger follow-up stream
+      isAutoReadFollowUp = true;
+      isStreaming = true;
+      sendBtn.disabled = true;
+      currentStreamText = '';
+      displayedText = '';
+
+      var aiDiv = document.createElement('div');
+      aiDiv.className = 'mr-msg mr-msg-ai streaming';
+      aiDiv.innerHTML = '<div class="mr-msg-label">COREBot</div>';
+      messagesEl.appendChild(aiDiv);
+      currentStreamEl = aiDiv;
+      scrollToBottom(true);
+
+      renderMessages(); // Re-render to hide the false-start message
+
+      var apiMessages = messages.filter(function(m) {
+        return m.role === 'user' || m.role === 'assistant';
+      }).map(function(m) {
+        return { role: m.role, content: m.content };
+      });
+
+      var ctx = getPageContext();
+
+      fetch(CHAT_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: apiMessages, context: ctx })
+      })
+      .then(function(response) {
+        if (!response.ok) throw new Error('API error: ' + response.status);
+        return readStream(response.body);
+      })
+      .catch(function(err) {
+        finishStream();
+        addSystemMessage('Error: ' + err.message);
+      });
+
+      return; // Don't clear stream state yet
+    }
+
     currentStreamEl = null;
     currentStreamText = '';
     displayedText = '';
