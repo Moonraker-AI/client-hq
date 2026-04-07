@@ -104,10 +104,10 @@ section{padding:3.5rem 0}
 <hr class="divider">
 <section id="tasks"><div class="container" id="phasesContainer"></div></section>
 <hr class="divider">
-<section><div class="container" style="text-align:center;">
+<section id="next"><div class="container" style="text-align:center;">
   <h2>Track Your Progress</h2>
   <p style="color:var(--color-muted);max-width:500px;margin:0 auto 1.5rem;">Use the interactive progress tracker to update task statuses as work gets completed.</p>
-  <div class="suite-nav" style="justify-content:center;"><a id="ctaDiagnosis" href="#">View Diagnosis</a><a id="ctaProgress" href="#">Track Progress</a></div>
+  <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;"><a id="ctaDiagnosis" href="#" style="padding:.75rem 1.75rem;border:1px solid var(--color-border);color:var(--color-heading);border-radius:8px;font-weight:600;font-family:'Outfit',sans-serif;font-size:.9375rem;">View Diagnosis</a><a id="ctaProgress" href="#" style="padding:.75rem 1.75rem;background:var(--color-primary);color:#fff;border-radius:8px;font-weight:600;font-family:'Outfit',sans-serif;font-size:.9375rem;">Track Progress</a></div>
 </div></section>
 <footer class="footer"><div class="container"><p id="footerText"></p></div></footer>
 </div>
@@ -178,7 +178,8 @@ section{padding:3.5rem 0}
     });
     document.getElementById('phasesContainer').innerHTML=ph;
     // Build section nav from phases
-    var sn='';phaseOrder.forEach(function(phase,i){
+    var sn='<a href="#overview"><span class="nav-dot"></span>Overview</a>';
+    phaseOrder.forEach(function(phase,i){
       sn+='<a href="#phase-'+i+'"><span class="nav-dot"></span>'+esc(phase)+'</a>';
     });
     sn+='<a href="#next"><span class="nav-dot"></span>Next Steps</a>';
@@ -197,6 +198,7 @@ section{padding:3.5rem 0}
     if(pLine)pLine.style.width=(dh>0?(st/dh)*100:0)+'%';
     var secs=document.querySelectorAll('section[id],div[id^="phase-"]');var cur='';
     secs.forEach(function(s){if(st>=s.offsetTop-200)cur=s.id});
+    if(!cur&&secs.length>0)cur=secs[0].id;
     document.querySelectorAll('.section-nav a').forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+cur)});
   }
   window.addEventListener('scroll',onScroll);})();
