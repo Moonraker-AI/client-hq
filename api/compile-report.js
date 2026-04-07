@@ -556,9 +556,9 @@ module.exports = async function handler(req, res) {
   var geogridData = lfData ? lfData.maps : null;
   var aiData = lfData ? lfData.ai : null;
 
-  // Fetch CORE scores from audit_scores (fallback when prevSnap has none)
-  var auditScores = await safe('audit_scores', async function() {
-    var resp = await fetch(sbUrl + '/rest/v1/audit_scores?client_slug=eq.' + clientSlug + '&order=audit_date.desc&limit=1&select=score_credibility,score_optimization,score_reputation,score_engagement', { headers: sbHeaders() });
+  // Fetch CORE scores from entity_audits (fallback when prevSnap has none)
+  var auditScores = await safe('entity_audits', async function() {
+    var resp = await fetch(sbUrl + '/rest/v1/entity_audits?client_slug=eq.' + clientSlug + '&order=audit_date.desc&limit=1&select=score_credibility,score_optimization,score_reputation,score_engagement,variance_score,cres_score', { headers: sbHeaders() });
     var rows = await resp.json();
     return (Array.isArray(rows) && rows.length > 0) ? rows[0] : null;
   });
@@ -607,7 +607,7 @@ module.exports = async function handler(req, res) {
     gbp_website_clicks_prev: prevSnap ? prevSnap.gbp_website_clicks : null,
     gbp_photo_views_prev: prevSnap ? prevSnap.gbp_photo_views : null,
 
-    // CORE scores (carry forward from prevSnap, fallback to audit_scores)
+    // CORE scores (carry forward from prevSnap, fallback to entity_audits)
     score_credibility: (prevSnap && prevSnap.score_credibility != null) ? prevSnap.score_credibility : (auditScores ? auditScores.score_credibility : null),
     score_optimization: (prevSnap && prevSnap.score_optimization != null) ? prevSnap.score_optimization : (auditScores ? auditScores.score_optimization : null),
     score_reputation: (prevSnap && prevSnap.score_reputation != null) ? prevSnap.score_reputation : (auditScores ? auditScores.score_reputation : null),
