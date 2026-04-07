@@ -770,7 +770,6 @@ strong { font-weight: 600; color: var(--color-heading); }
 
       <!-- TAB: Overview -->
       <div class="tab-panel active" id="tab-overview">
-        <div class="stat-row" id="campaignStats"></div>
         <div class="card-grid card-grid-2">
           <div class="card">
             <div class="card-header"><h3>Contact Information</h3></div>
@@ -1393,31 +1392,6 @@ strong { font-weight: 600; color: var(--color-heading); }
 
   // ---- OVERVIEW TAB ----
   function renderOverview(c, p) {
-    // Campaign stats row (visible for onboarding/active)
-    var csEl = document.getElementById('campaignStats');
-    if (csEl && (c.status === 'onboarding' || c.status === 'active')) {
-      var startStr = c.campaign_start ? formatDate(c.campaign_start) : '<span style="color:var(--color-warning);">Not set</span>';
-      var monthsActive = '';
-      if (c.campaign_start) {
-        var sd = new Date(c.campaign_start);
-        var now = new Date();
-        var mths = (now.getFullYear() - sd.getFullYear()) * 12 + (now.getMonth() - sd.getMonth());
-        if (mths < 1) monthsActive = '<1';
-        else monthsActive = String(mths);
-      } else {
-        monthsActive = '--';
-      }
-      var endStr = c.campaign_end ? formatDate(c.campaign_end) : '<span style="color:var(--color-muted);">--</span>';
-      var planLabel = c.plan_type ? c.plan_type.charAt(0).toUpperCase() + c.plan_type.slice(1) : '<span style="color:var(--color-muted);">--</span>';
-      csEl.innerHTML =
-        '<div class="stat-mini"><div class="stat-label">Campaign Start</div><div class="stat-value" style="font-size:1.15rem;">' + startStr + '</div></div>' +
-        '<div class="stat-mini"><div class="stat-label">Months Active</div><div class="stat-value">' + monthsActive + '</div></div>' +
-        '<div class="stat-mini"><div class="stat-label">Campaign End</div><div class="stat-value" style="font-size:1.15rem;">' + endStr + '</div></div>' +
-        '<div class="stat-mini"><div class="stat-label">Plan</div><div class="stat-value" style="font-size:1.15rem;">' + planLabel + '</div></div>';
-    } else if (csEl) {
-      csEl.innerHTML = '';
-    }
-
     var cf = document.getElementById('contactFields');
     cf.innerHTML = editField('contacts', 'first_name', 'First Name', c.first_name)
       + editField('contacts', 'last_name', 'Last Name', c.last_name)
@@ -1701,40 +1675,6 @@ strong { font-weight: 600; color: var(--color-heading); }
         fetch('/api/notify-team', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: 'intro_call_complete', slug: slug }) })
           .then(function() { toast('Team notified: intro call complete', 'success'); })
           .catch(function() { console.log('Notification send failed'); });
-
-        // Auto-set campaign_start (today) if not already set
-        if (state.contact && !state.contact.campaign_start) {
-          var today = new Date();
-          var yyyy = today.getFullYear();
-          var mm = String(today.getMonth() + 1).padStart(2, '0');
-          var dd = String(today.getDate()).padStart(2, '0');
-          var startDate = yyyy + '-' + mm + '-' + dd;
-          var campData = { campaign_start: startDate };
-
-          // Auto-set campaign_end based on plan_type
-          var pt = state.contact.plan_type;
-          if (pt === 'annual' || pt === 'quarterly') {
-            var endD = new Date(today);
-            endD.setMonth(endD.getMonth() + (pt === 'annual' ? 12 : 3));
-            var ey = endD.getFullYear();
-            var em = String(endD.getMonth() + 1).padStart(2, '0');
-            var ed = String(endD.getDate()).padStart(2, '0');
-            campData.campaign_end = ey + '-' + em + '-' + ed;
-          }
-
-          fetch('/api/action', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'update_record', table: 'contacts', filters: { slug: slug }, data: campData })
-          }).then(function(r) { return r.json(); }).then(function(r) {
-            if (r.success) {
-              state.contact.campaign_start = campData.campaign_start;
-              if (campData.campaign_end) state.contact.campaign_end = campData.campaign_end;
-              renderOverview(state.contact, state.practice);
-              toast('Campaign start date set: ' + formatDate(startDate), 'success');
-            }
-          }).catch(function() { console.log('Campaign date update failed'); });
-        }
       }
     }).catch(function() { step.status = oldStatus; renderIntroCall(); });
   };
@@ -3539,7 +3479,8 @@ strong { font-weight: 600; color: var(--color-heading); }
     if (btn) { btn.textContent = 'Compiling...'; btn.disabled = true; btn.style.opacity = '.6'; }
 
     var now = new Date();
-    var reportMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+    var prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    var reportMonth = prev.getFullYear() + '-' + String(prev.getMonth() + 1).padStart(2, '0') + '-01';
 
     fetch('/api/compile-report', {
       method: 'POST',
@@ -4853,6 +4794,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
 
 
