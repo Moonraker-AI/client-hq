@@ -118,6 +118,12 @@
     },
     "api/approve-audit-followups.js": {
       "maxDuration": 30
+    },
+    "api/trigger-agent.js": {
+      "maxDuration": 30
+    },
+    "api/poll-agent.js": {
+      "maxDuration": 15
     }
   },
   "crons": [
