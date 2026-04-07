@@ -84,13 +84,11 @@ section{padding:3.5rem 0}
 <header class="header"><div class="container header-inner"><img src="/assets/logo.png" alt="Moonraker"><div class="header-meta"><p class="name" id="headerName"></p><p id="headerMeta"></p><p id="headerDate"></p></div></div></header>
 <button class="theme-toggle" id="themeBtn">&#x1F319;</button>
 <section style="padding-top:3rem;padding-bottom:1rem;"><div class="container">
-  <div class="suite-nav"><a id="navDiagnosis" href="#">Diagnosis</a><a href="#" class="active">Action Plan</a><a id="navProgress" href="#">Progress</a><a id="navScorecard" href="#">Scorecard</a></div>
+  <div class="suite-nav"><a id="navDiagnosis" href="#">Diagnosis</a><a href="#" class="active">Action Plan</a><a id="navProgress" href="#">Progress</a></div>
 </div></section>
 <section style="padding-top:1rem;"><div class="container">
   <h1 id="heroTitle"></h1>
   <p style="font-size:1.0625rem;color:var(--color-muted);max-width:720px;margin-top:.5rem;" id="heroSub">Prioritized tasks from your CORE audit, organized by implementation phase.</p>
-  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar" style="width:0%;background:var(--color-success);"></div></div>
-  <div class="stat-row" id="statRow"></div>
 </div></section>
 <hr class="divider">
 <section><div class="container" id="phasesContainer"></div></section>
@@ -136,26 +134,10 @@ section{padding:3.5rem 0}
     var base='/'+SLUG;
     document.getElementById('navDiagnosis').href=base+'/audits/diagnosis';
     document.getElementById('navProgress').href=base+'/audits/progress';
-    document.getElementById('navScorecard').href=base+'/entity-audit';
     document.getElementById('ctaDiagnosis').href=base+'/audits/diagnosis';
     document.getElementById('ctaProgress').href=base+'/audits/progress';
     document.getElementById('heroTitle').textContent=name+': Action Plan';
-    // Stats
     var total=tasks.length;
-    var complete=tasks.filter(function(t){return t.status==='complete'}).length;
-    var ip=tasks.filter(function(t){return t.status==='in_progress'}).length;
-    var ns=total-complete-ip;
-    var pct=total>0?Math.round(complete/total*100):0;
-    document.getElementById('progressBar').style.width=pct+'%';
-    var moonraker=tasks.filter(function(t){return t.owner==='Moonraker'}).length;
-    var client=tasks.filter(function(t){return t.owner==='Client'}).length;
-    var collab=tasks.filter(function(t){return t.owner==='Collaboration'}).length;
-    document.getElementById('statRow').innerHTML=
-      '<div class="stat-box"><div class="stat-val">'+total+'</div><div class="stat-label">Total Tasks</div></div>'+
-      '<div class="stat-box"><div class="stat-val" style="color:var(--color-success)">'+complete+'</div><div class="stat-label">Complete</div></div>'+
-      '<div class="stat-box"><div class="stat-val" style="color:var(--color-info)">'+ip+'</div><div class="stat-label">In Progress</div></div>'+
-      '<div class="stat-box"><div class="stat-val">'+ns+'</div><div class="stat-label">Remaining</div></div>'+
-      '<div class="stat-box"><div class="stat-val">'+pct+'%</div><div class="stat-label">Progress</div></div>';
     // Group by phase
     var phases={};var phaseOrder=[];
     tasks.forEach(function(t){
@@ -179,9 +161,6 @@ section{padding:3.5rem 0}
         if(t.scope)ph+='<span class="task-scope">'+esc(t.scope)+'</span>';
         if(t.category)ph+='<span class="task-category">'+esc(t.category)+'</span>';
         ph+='</div></div>';
-        var stClass=t.status==='complete'?'complete':t.status==='in_progress'?'in_progress':'not_started';
-        var stLabel=t.status==='complete'?'Complete':t.status==='in_progress'?'In Progress':'Not Started';
-        ph+='<span class="task-status '+stClass+'">'+stLabel+'</span>';
         ph+='</div>';
       });
       ph+='</div>';
