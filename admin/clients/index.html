@@ -1856,6 +1856,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     // Always show entity audit management section
     document.getElementById('auditEntitySection').style.display = 'block';
     renderEntityAudit();
+    checkAgentResume();
 
     // For active/onboarding, also show the task tracker below
     if (isActiveCampaign && (state.tasks.length > 0 || state.scores)) {
@@ -1958,11 +1959,11 @@ strong { font-weight: 600; color: var(--color-heading); }
     h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">';
 
     // Status
-    var statusLabel = { pending: 'Pending', processing: 'Processing', complete: 'Complete', delivered: 'Delivered' };
-    var statusColor = { pending: 'var(--color-muted)', processing: 'var(--color-info)', complete: 'var(--color-warning)', delivered: 'var(--color-success)' };
+    var statusLabel = { pending: 'Pending', processing: 'Processing', agent_running: 'Agent Running', agent_error: 'Agent Error', complete: 'Complete', delivered: 'Delivered' };
+    var statusColor = { pending: 'var(--color-muted)', processing: 'var(--color-info)', agent_running: 'var(--color-info)', agent_error: 'var(--color-danger)', complete: 'var(--color-warning)', delivered: 'var(--color-success)' };
     h += '<div><div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);margin-bottom:.25rem;">Status</div>';
     h += '<select id="eaStatusSelect" onchange="updateEntityAuditField(\'status\',this.value)" style="width:100%;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;font-size:.84rem;background:var(--color-surface);color:var(--color-heading);font-family:inherit;">';
-    ['pending','processing','complete','delivered'].forEach(function(s) {
+    ['pending','processing','agent_running','agent_error','complete','delivered'].forEach(function(s) {
       h += '<option value="' + s + '"' + (ea.status === s ? ' selected' : '') + '>' + (statusLabel[s] || s) + '</option>';
     });
     h += '</select></div>';
@@ -1991,8 +1992,17 @@ strong { font-weight: 600; color: var(--color-heading); }
     h += '<div style="display:flex;gap:.5rem;flex-wrap:wrap;">';
     if (ea.status === 'processing') {
       h += '<button disabled style="padding:.5rem 1rem;background:var(--color-info);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:wait;font-family:Outfit,sans-serif;opacity:.7;">&#9881; Processing...</button>';
+    } else if (ea.status === 'agent_running') {
+      h += '<div id="agentStatusBar" style="flex:1 1 100%;display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:8px;">';
+      h += '<div class="agent-spinner" style="width:16px;height:16px;border:2px solid rgba(59,130,246,.2);border-top-color:var(--color-info);border-radius:50%;animation:spin 1s linear infinite;flex-shrink:0;"></div>';
+      h += '<span id="agentStatusText" style="font-size:.82rem;color:var(--color-info);font-weight:500;">Agent running...</span>';
+      h += '</div>';
+    } else if (ea.status === 'agent_error') {
+      h += '<button onclick="triggerAgentAudit()" style="padding:.5rem 1rem;background:var(--color-primary);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;">&#9889; Retry Automated Audit</button>';
+      h += '<button onclick="processSurgeAudit()" style="padding:.5rem 1rem;border:1px solid var(--color-info);color:var(--color-info);background:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;">&#128203; Paste Surge (Manual)</button>';
     } else if (ea.status === 'pending') {
-      h += '<button onclick="processSurgeAudit()" style="padding:.5rem 1rem;background:var(--color-info);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;">&#9889; Process Surge</button>';
+      h += '<button onclick="triggerAgentAudit()" style="padding:.5rem 1rem;background:var(--color-primary);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;">&#9889; Run Automated Audit</button>';
+      h += '<button onclick="processSurgeAudit()" style="padding:.5rem 1rem;border:1px solid var(--color-info);color:var(--color-info);background:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;">&#128203; Paste Surge (Manual)</button>';
     } else {
       h += '<button onclick="processSurgeAudit()" style="padding:.5rem 1rem;border:1px solid var(--color-info);color:var(--color-info);background:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;">&#9889; Reprocess Surge</button>';
     }
@@ -2370,6 +2380,99 @@ strong { font-weight: 600; color: var(--color-heading); }
       if (state.entityAudit) state.entityAudit.status = 'pending';
       renderAudit();
     });
+  }
+
+  // ── Automated Agent Audit ──
+  var _agentPollTimer = null;
+
+  window.triggerAgentAudit = function() {
+    var ea = state.entityAudit;
+    var c = state.contact;
+    if (!ea || !c) return;
+
+    var websiteUrl = ea.homepage_url || c.website_url || '';
+    if (!websiteUrl) {
+      toast('Website URL required. Add it to the audit first.', 'error');
+      return;
+    }
+
+    if (!confirm('Run an automated Surge audit for ' + (c.practice_name || c.first_name) + '? The agent will handle everything automatically. This typically takes 25 to 40 minutes.')) return;
+
+    // Optimistic update
+    ea.status = 'agent_running';
+    renderEntityAudit();
+    toast('Triggering automated audit...', 'info');
+
+    fetch('/api/trigger-agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ audit_id: ea.id, contact_id: c.id })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success && res.task_id) {
+        ea.agent_task_id = res.task_id;
+        toast('Agent started. You can keep working, this will complete in the background.', 'success');
+        startAgentPoll(res.task_id);
+      } else {
+        ea.status = 'pending';
+        renderEntityAudit();
+        toast('Failed to trigger agent: ' + (res.error || 'Unknown error'), 'error');
+      }
+    }).catch(function(e) {
+      ea.status = 'pending';
+      renderEntityAudit();
+      toast('Error: ' + e.message, 'error');
+    });
+  };
+
+  function startAgentPoll(taskId) {
+    if (_agentPollTimer) clearInterval(_agentPollTimer);
+
+    _agentPollTimer = setInterval(function() {
+      fetch('/api/poll-agent?task_id=' + taskId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          // Update status text in the agent bar
+          var statusText = document.getElementById('agentStatusText');
+          if (statusText && data.message) {
+            statusText.textContent = data.message;
+          }
+
+          // Check for terminal states
+          if (data.status === 'complete') {
+            clearInterval(_agentPollTimer);
+            _agentPollTimer = null;
+            toast('Automated audit complete! Refreshing data...', 'success');
+            // Reload entity audit data from Supabase
+            var cid = state.contact ? state.contact.id : '';
+            fetch(SB + '/rest/v1/entity_audits?contact_id=eq.' + cid + '&order=created_at.desc&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } })
+              .then(function(r) { return r.json(); })
+              .then(function(audits) {
+                if (audits && audits[0]) {
+                  state.entityAudit = audits[0];
+                  renderAudit();
+                  setTabCount('audit', 0);
+                }
+              });
+          } else if (data.status === 'error' || data.status === 'credits_exhausted') {
+            clearInterval(_agentPollTimer);
+            _agentPollTimer = null;
+            if (state.entityAudit) state.entityAudit.status = 'agent_error';
+            renderEntityAudit();
+            toast('Agent error: ' + (data.error || data.message || 'Unknown'), 'error');
+          }
+        })
+        .catch(function() {
+          // Silent failure on poll — agent might be temporarily unreachable
+        });
+    }, 30000); // Poll every 30 seconds
+  }
+
+  // Resume polling if we load a client that has an active agent task
+  function checkAgentResume() {
+    var ea = state.entityAudit;
+    if (ea && ea.status === 'agent_running' && ea.agent_task_id) {
+      startAgentPoll(ea.agent_task_id);
+    }
   }
 
   window.sendEntityAuditEmail = function() {
