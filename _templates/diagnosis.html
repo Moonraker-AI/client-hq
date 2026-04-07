@@ -47,10 +47,7 @@ section{padding:3.5rem 0}
 .score-ring-label span{font-size:.85rem;font-weight:400;color:var(--color-muted)}
 .score-name{font-family:'Outfit',sans-serif;font-weight:700;font-size:1rem;color:var(--color-heading)}
 .score-sub{font-size:.8125rem;color:var(--color-muted);margin-top:.25rem}
-.variance-card{text-align:center;padding:2.5rem}
-.variance-score{font-family:'Outfit',sans-serif;font-weight:800;font-size:4rem;line-height:1}
-.variance-label{font-family:'Outfit',sans-serif;font-weight:600;font-size:1.15rem;color:var(--color-muted);margin-top:.5rem}
-.variance-desc{font-size:.9375rem;color:var(--color-body);max-width:500px;margin:1rem auto 0}
+
 .pillar-section{margin-bottom:2.5rem}
 .pillar-header{display:flex;align-items:baseline;gap:.75rem;margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:2px solid var(--color-border)}
 .pillar-header h3{margin:0}
@@ -69,12 +66,27 @@ section{padding:3.5rem 0}
 .citation-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .citation-dot.yes{background:var(--color-success)}
 .citation-dot.no{background:var(--color-border)}
-.suite-nav{position:fixed;top:1.25rem;right:5rem;z-index:200;display:flex;gap:.35rem}
-.suite-nav a{padding:.4rem .85rem;border:1px solid var(--color-border);border-radius:6px;font-weight:600;font-size:.75rem;color:var(--color-muted);transition:all .2s;background:var(--color-surface);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.suite-nav{position:fixed;top:5rem;right:1.25rem;z-index:200;display:flex;flex-direction:column;gap:.35rem}
+.suite-nav a{padding:.4rem .85rem;border:1px solid var(--color-border);border-radius:6px;font-weight:600;font-size:.75rem;color:var(--color-muted);transition:all .2s;background:var(--color-surface);box-shadow:0 2px 8px rgba(0,0,0,.06);text-align:center}
 .suite-nav a:hover{border-color:var(--color-primary);color:var(--color-primary)}
 .suite-nav a.active{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
-@media(max-width:860px){.suite-nav{position:static;margin:1.5rem auto;justify-content:center}
+@media(max-width:860px){.suite-nav{position:static;flex-direction:row;margin:1.5rem auto;justify-content:center}
 .suite-nav a{font-size:.8rem;padding:.5rem 1rem}}
+.hero{padding:5.5rem 0 4rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-100px;right:-80px;width:500px;height:500px;background:radial-gradient(circle at 30% 40%,rgba(0,212,126,.06) 0%,transparent 60%);pointer-events:none}
+.hero-layout{display:grid;grid-template-columns:1fr 280px;gap:3rem;align-items:center}
+@media(max-width:768px){.hero-layout{grid-template-columns:1fr}.hero-visual{display:none}}
+.hero-content{position:relative;z-index:1}
+.hero h1{margin-bottom:1rem}
+.hero .subtitle{font-size:1.0625rem;color:var(--color-muted);line-height:1.7}
+.badge{display:inline-block;background:var(--color-primary-subtle);color:var(--color-primary);font-weight:600;font-size:.75rem;padding:.4rem 1rem;border-radius:100px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:1rem}
+.hero-visual svg{width:100%;height:auto}
+.variance-box{background:linear-gradient(135deg,var(--color-navy),#1a2f5a);border-radius:16px;padding:2.5rem;color:#E8F5EF;margin:2rem 0;position:relative;overflow:hidden;text-align:center}
+.variance-box::before{content:'';position:absolute;top:-30%;right:-5%;width:260px;height:260px;background:radial-gradient(circle,rgba(0,212,126,.12) 0%,transparent 70%);pointer-events:none}
+.variance-box .variance-score{font-size:4rem;font-weight:700;font-family:'Outfit',sans-serif;margin:.5rem 0}
+.variance-box .variance-top-label{font-size:1rem;color:rgba(232,245,239,.6);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.variance-box .variance-label{font-size:1rem;color:rgba(232,245,239,.6);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.variance-box .variance-desc{color:rgba(232,245,239,.8);max-width:600px;margin:1rem auto 0;font-size:.9375rem}
 .progress-line{position:fixed;top:0;left:0;height:3px;background:var(--color-primary);width:0%;z-index:999;transition:width .1s linear;box-shadow:0 0 8px rgba(0,212,126,.4)}
 .section-nav{position:fixed;right:2rem;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:2px}
 @media(max-width:1140px){.section-nav{display:none}}
@@ -104,9 +116,26 @@ section{padding:3.5rem 0}
   <a href="#findings"><span class="nav-dot"></span>Findings</a>
   <a href="#next"><span class="nav-dot"></span>Next Steps</a>
 </nav>
-<section id="summary" style="padding-top:4rem;"><div class="container">
-  <h1 id="heroTitle"></h1>
-  <div id="summaryText" style="font-size:1.0625rem;color:var(--color-body);margin-top:1rem;line-height:1.7;"></div>
+<section class="hero" id="summary"><div class="container">
+  <div class="hero-layout">
+    <div class="hero-content">
+      <span class="badge">CORE Diagnosis</span>
+      <h1 id="heroTitle"></h1>
+      <div id="summaryText" class="subtitle"></div>
+    </div>
+    <div class="hero-visual">
+      <svg viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="140" cy="140" r="120" stroke="var(--color-primary)" stroke-width=".5" opacity=".2"/>
+        <circle cx="140" cy="140" r="90" stroke="var(--color-primary)" stroke-width=".5" opacity=".15"/>
+        <circle cx="140" cy="140" r="60" stroke="var(--color-primary)" stroke-width=".5" opacity=".1"/>
+        <circle cx="140" cy="60" r="8" fill="var(--color-primary)" opacity=".7"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="360 140 140" dur="20s" repeatCount="indefinite"/></circle>
+        <circle cx="230" cy="140" r="6" fill="var(--color-info)" opacity=".5"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="-360 140 140" dur="25s" repeatCount="indefinite"/></circle>
+        <circle cx="140" cy="200" r="5" fill="var(--color-warning)" opacity=".4"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="360 140 140" dur="30s" repeatCount="indefinite"/></circle>
+        <text x="140" y="130" text-anchor="middle" font-family="Outfit" font-weight="700" font-size="16" fill="var(--color-heading)">CORE</text>
+        <text x="140" y="148" text-anchor="middle" font-family="Inter" font-weight="400" font-size="10" fill="var(--color-muted)" letter-spacing=".06em">DIAGNOSIS</text>
+      </svg>
+    </div>
+  </div>
 </div></section>
 <hr class="divider">
 <section id="scores"><div class="container">
@@ -115,7 +144,12 @@ section{padding:3.5rem 0}
   <div class="score-grid" id="scoreGrid"></div>
 </div></section>
 <section style="padding-top:0;"><div class="container">
-  <div class="card variance-card"><div class="variance-score" id="varianceScore">--</div><div class="variance-label" id="varianceLabel"></div><div class="variance-desc" id="varianceDesc"></div></div>
+  <div class="variance-box">
+    <div class="variance-top-label">Variance Score</div>
+    <div class="variance-score" id="varianceScore">--</div>
+    <div class="variance-label" id="varianceLabel"></div>
+    <div class="variance-desc" id="varianceDesc"></div>
+  </div>
 </div></section>
 <hr class="divider">
 <section id="citations"><div class="container">
@@ -213,9 +247,10 @@ section{padding:3.5rem 0}
     var variance=audit.variance_score!=null?audit.variance_score:(scores.variance||0);
     var vs=document.getElementById('varianceScore');
     vs.innerHTML=variance+'<span style="font-size:1.5rem;opacity:.5">/100</span>';
-    vs.style.color=vColor(variance);
+    var vColor=variance<=30?'var(--color-success)':variance<=60?'var(--color-warning)':'var(--color-danger)';
+    vs.style.color=vColor;
     document.getElementById('varianceLabel').textContent=audit.variance_label||vWord(variance);
-    if(scores.variance_desc)document.getElementById('varianceDesc').textContent=scores.variance_desc;
+    if(scores.variance_desc&&scores.variance_desc!==(audit.variance_label||''))document.getElementById('varianceDesc').textContent=scores.variance_desc;
     var cits=[{key:'cited_google_ai',label:'Google AI'},{key:'cited_chatgpt',label:'ChatGPT'},{key:'cited_claude',label:'Claude'},{key:'cited_perplexity',label:'Perplexity'},{key:'cited_bing',label:'Bing Copilot'},{key:'cited_youtube',label:'YouTube'},{key:'cited_reddit',label:'Reddit'},{key:'cited_meta',label:'Meta AI'}];
     var ch='';
     cits.forEach(function(ci){var y=audit[ci.key]===true;ch+='<div class="citation-item'+(y?' cited':'')+'"><span class="citation-dot '+(y?'yes':'no')+'"></span>'+esc(ci.label)+'</div>'});
@@ -240,6 +275,12 @@ section{padding:3.5rem 0}
     document.getElementById('footerText').textContent='Prepared for '+(contact.first_name||'')+' '+(contact.last_name||'')+creds+' \u00B7 '+name+' \u00B7 Confidential';
     document.getElementById('loadingState').style.display='none';
     document.getElementById('mainContent').style.display='block';
+    // Restart SVG orbit animations (they freeze when starting inside display:none)
+    setTimeout(function(){
+      document.querySelectorAll('.hero-visual animateTransform').forEach(function(a){if(a.beginElement)a.beginElement()});
+      var svg=document.querySelector('.hero-visual svg');
+      if(svg){svg.style.display='none';svg.offsetHeight;svg.style.display=''}
+    },50);
   }
   var tb=document.getElementById('themeBtn');
   var ct=document.documentElement.getAttribute('data-theme');
