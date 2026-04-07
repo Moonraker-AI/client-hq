@@ -273,7 +273,8 @@ section { padding: 4.5rem 0; }
 
 <nav class="section-nav" id="sectionNav">
   <a href="#hero"><span class="nav-dot"></span>Overview</a>
-  <a href="#walkthrough"><span class="nav-dot"></span>Walkthrough</a>
+  <a href="#walkthrough" id="navWalkthrough" style="display:none;"><span class="nav-dot"></span>Walkthrough</a>
+  <a href="#summary"><span class="nav-dot"></span>Summary</a>
   <a href="#scores"><span class="nav-dot"></span>CORE Scores</a>
   <a href="#findings"><span class="nav-dot"></span>Findings</a>
   <a href="#rtpbaSection" id="navRtpba" style="display:none;"><span class="nav-dot"></span>Best Answer</a>
@@ -626,6 +627,8 @@ section { padding: 4.5rem 0; }
       var loomSection = document.getElementById('walkthrough');
       loomSection.classList.add('visible');
       document.getElementById('loomEmbed').src = audit.loom_url.replace('loom.com/share/', 'loom.com/embed/');
+      var navWalk = document.getElementById('navWalkthrough');
+      if (navWalk) navWalk.style.display = '';
     }
 
     // Hero
