@@ -56,7 +56,18 @@ section{padding:3.5rem 0}
 .task-item{display:flex;align-items:center;gap:.75rem;padding:.85rem 1.25rem;border-radius:10px;margin-bottom:.5rem;background:var(--color-surface);border:1px solid var(--color-border);cursor:pointer;transition:all .2s;user-select:none}
 .task-item:hover{border-color:rgba(0,212,126,.25)}
 .task-item.complete{opacity:.65}
-.task-item.complete .task-text{text-decoration:line-through}
+.task-item.complete .task-text-title{text-decoration:line-through}
+.task-item.expanded{border-color:var(--color-primary);border-bottom-left-radius:0;border-bottom-right-radius:0;margin-bottom:0}
+.task-detail{display:none;padding:1rem 1.25rem 1.25rem;background:var(--color-bg);border:1px solid var(--color-primary);border-top:none;border-radius:0 0 10px 10px;margin-bottom:.5rem;font-size:.9375rem;line-height:1.7}
+.task-detail.open{display:block}
+.task-detail p{margin-bottom:.75rem}
+.task-detail ol,.task-detail ul{margin:0 0 .75rem 1.25rem}
+.task-detail li{margin-bottom:.35rem}
+.task-detail pre{background:var(--color-surface);border:1px solid var(--color-border);border-radius:8px;padding:.75rem 1rem;overflow-x:auto;font-size:.8125rem;margin-bottom:.75rem}
+.task-detail code{font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:.8125rem}
+.task-detail-label{font-size:.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--color-muted);margin-bottom:.35rem}
+.task-expand-arrow{font-size:.6rem;color:var(--color-muted);transition:transform .2s;flex-shrink:0;width:16px;text-align:center}
+.task-item.expanded .task-expand-arrow{transform:rotate(90deg)}
 .task-check{width:24px;height:24px;border-radius:6px;border:2px solid var(--color-border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:.75rem}
 .task-item.complete .task-check{background:var(--color-success);border-color:var(--color-success);color:#fff}
 .task-item.in_progress .task-check{background:var(--color-info);border-color:var(--color-info);color:#fff}
@@ -88,7 +99,7 @@ section{padding:3.5rem 0}
 <header class="header"><div class="container header-inner"><img src="/assets/logo.png" alt="Moonraker"><div class="header-meta"><p class="name" id="headerName"></p><p id="headerMeta"></p><p id="headerDate"></p></div></div></header>
 <button class="theme-toggle" id="themeBtn">&#x1F319;</button>
 <section style="padding-top:3rem;padding-bottom:1rem;"><div class="container">
-  <div class="suite-nav"><a id="navDiagnosis" href="#">Diagnosis</a><a id="navActionPlan" href="#">Action Plan</a><a href="#" class="active">Progress</a><a id="navScorecard" href="#">Scorecard</a></div>
+  <div class="suite-nav"><a id="navDiagnosis" href="#">Diagnosis</a><a id="navActionPlan" href="#">Action Plan</a><a href="#" class="active">Progress</a></div>
 </div></section>
 <section style="padding-top:1rem;"><div class="container">
   <h1 id="heroTitle"></h1>
@@ -144,7 +155,6 @@ section{padding:3.5rem 0}
     var base='/'+SLUG;
     document.getElementById('navDiagnosis').href=base+'/audits/diagnosis';
     document.getElementById('navActionPlan').href=base+'/audits/action-plan';
-    document.getElementById('navScorecard').href=base+'/entity-audit';
     document.getElementById('heroTitle').textContent=name+': Progress Tracker';
     // RTPBA
     if(audit&&audit.scores&&audit.scores.rtpba){
@@ -155,6 +165,7 @@ section{padding:3.5rem 0}
     document.getElementById('loadingState').style.display='none';
     document.getElementById('mainContent').style.display='block';
   }
+  var expandedTask=null;
   function renderTasks(){
     var total=allTasks.length;
     var complete=allTasks.filter(function(t){return t.status==='complete'}).length;
@@ -167,7 +178,6 @@ section{padding:3.5rem 0}
     document.getElementById('progressBar').innerHTML=(cPct>0?'<div class="seg seg-complete" style="width:'+cPct+'%"></div>':'')+(iPct>0?'<div class="seg seg-ip" style="width:'+iPct+'%"></div>':'');
     var moon=allTasks.filter(function(t){return t.owner==='Moonraker'}).length;
     var cli=allTasks.filter(function(t){return t.owner==='Client'}).length;
-    var col=allTasks.filter(function(t){return t.owner==='Collaboration'}).length;
     document.getElementById('statRow').innerHTML=
       '<div class="stat-box"><div class="stat-val">'+total+'</div><div class="stat-label">Total</div></div>'+
       '<div class="stat-box"><div class="stat-val" style="color:var(--color-success)">'+complete+'</div><div class="stat-label">Complete</div></div>'+
@@ -175,27 +185,46 @@ section{padding:3.5rem 0}
       '<div class="stat-box"><div class="stat-val">'+ns+'</div><div class="stat-label">Remaining</div></div>'+
       '<div class="stat-box"><div class="stat-val" style="color:#00b86c">'+moon+'</div><div class="stat-label">Moonraker</div></div>'+
       '<div class="stat-box"><div class="stat-val" style="color:#3B82F6">'+cli+'</div><div class="stat-label">Client</div></div>';
-    // Group by phase
     var phases={};var order=[];
     allTasks.forEach(function(t){var ph=t.phase||'Other';if(!phases[ph]){phases[ph]=[];order.push(ph)}phases[ph].push(t)});
     var h='';
     order.forEach(function(phase){
       h+='<div class="phase-label">'+esc(phase)+'</div>';
-      phases[phase].forEach(function(t,idx){
+      phases[phase].forEach(function(t){
         var cls=t.status==='complete'?'complete':t.status==='in_progress'?'in_progress':'not_started';
         var check=t.status==='complete'?'&#10003;':t.status==='in_progress'?'&#9654;':'';
-        h+='<div class="task-item '+cls+'" onclick="window._cycleTask(\''+t.id+'\')">';
-        h+='<div class="task-check">'+check+'</div>';
+        var isExpanded=expandedTask===t.id;
+        h+='<div class="task-item '+cls+(isExpanded?' expanded':'')+'" onclick="window._toggleExpand(\''+t.id+'\')">';
+        h+='<div class="task-check" onclick="event.stopPropagation();window._cycleTask(\''+t.id+'\')">'+check+'</div>';
         h+='<div class="task-text"><div class="task-text-title">'+esc(t.title)+'</div>';
         h+='<div class="task-text-meta">';
         if(t.owner)h+='<span class="task-owner-tag '+t.owner.toLowerCase()+'">'+esc(t.owner)+'</span>';
         if(t.priority)h+='<span class="task-priority-tag">'+t.priority+'</span>';
         if(t.category)h+='<span style="color:var(--color-muted)">'+esc(t.category)+'</span>';
-        h+='</div></div></div>';
+        h+='</div></div>';
+        h+='<span class="task-expand-arrow">&#9654;</span>';
+        h+='</div>';
+        // Detail panel
+        if(isExpanded){
+          h+='<div class="task-detail open">';
+          if(t.description){
+            var parts=t.description.split('\n\n');
+            if(parts[0])h+='<div class="task-detail-label">Details</div><p>'+esc(parts[0])+'</p>';
+            if(parts[1])h+='<div class="task-detail-label">How to Fix</div>'+parts[1];
+          }
+          var metaParts=[];
+          if(t.scope)metaParts.push('Scope: '+t.scope);
+          if(t.category)metaParts.push('Category: '+t.category);
+          if(t.owner)metaParts.push('Owner: '+t.owner);
+          if(t.priority)metaParts.push('Priority: '+t.priority);
+          if(metaParts.length>0)h+='<div style="margin-top:.75rem;font-size:.78rem;color:var(--color-muted);">'+metaParts.join(' &middot; ')+'</div>';
+          h+='</div>';
+        }
       });
     });
     document.getElementById('taskList').innerHTML=h;
   }
+  window._toggleExpand=function(id){expandedTask=expandedTask===id?null:id;renderTasks();};
   window._cycleTask=function(taskId){
     var task=allTasks.find(function(t){return t.id===taskId});
     if(!task)return;
