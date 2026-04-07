@@ -35,10 +35,21 @@ section{padding:3.5rem 0}
 .header-meta .name{color:#E8F5EF;font-weight:600;font-size:.9375rem}
 .theme-toggle{position:fixed;top:1.25rem;right:1.25rem;z-index:200;background:var(--color-surface);border:1px solid var(--color-border);border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.15rem;transition:all .25s;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .theme-toggle:hover{border-color:var(--color-primary)}
-.suite-nav{display:flex;gap:.75rem;flex-wrap:wrap}
-.suite-nav a{padding:.65rem 1.25rem;border:1px solid var(--color-border);border-radius:8px;font-weight:600;font-size:.875rem;color:var(--color-heading);transition:all .2s}
+.suite-nav{position:fixed;top:1.25rem;right:5rem;z-index:200;display:flex;gap:.35rem}
+.suite-nav a{padding:.4rem .85rem;border:1px solid var(--color-border);border-radius:6px;font-weight:600;font-size:.75rem;color:var(--color-muted);transition:all .2s;background:var(--color-surface);box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .suite-nav a:hover{border-color:var(--color-primary);color:var(--color-primary)}
 .suite-nav a.active{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
+@media(max-width:860px){.suite-nav{position:static;margin:1.5rem auto;justify-content:center}
+.suite-nav a{font-size:.8rem;padding:.5rem 1rem}}
+.progress-line{position:fixed;top:0;left:0;height:3px;background:var(--color-primary);width:0%;z-index:999;transition:width .1s linear;box-shadow:0 0 8px rgba(0,212,126,.4)}
+.section-nav{position:fixed;right:2rem;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:2px}
+@media(max-width:1140px){.section-nav{display:none}}
+.section-nav a{display:flex;align-items:center;gap:10px;padding:6px 12px 6px 8px;border-radius:8px;font-size:.75rem;font-weight:500;color:var(--color-muted);text-decoration:none;transition:all .25s;white-space:nowrap}
+.section-nav a:hover{color:var(--color-heading);background:var(--color-surface)}
+.section-nav a.active{color:var(--color-primary);background:var(--color-primary-subtle)}
+.section-nav .nav-dot{width:6px;height:6px;border-radius:50%;background:var(--color-border);flex-shrink:0;transition:all .25s}
+.section-nav a.active .nav-dot{background:var(--color-primary);width:8px;height:8px;box-shadow:0 0 6px rgba(0,212,126,.5)}
+@media print{.section-nav,.theme-toggle,.progress-line,.suite-nav{display:none !important}}
 /* Progress hero */
 .progress-hero{text-align:center;padding:2rem 0}
 .progress-pct{font-family:'Outfit',sans-serif;font-weight:800;font-size:5rem;line-height:1;color:var(--color-primary)}
@@ -96,12 +107,16 @@ section{padding:3.5rem 0}
 <body>
 <div id="loadingState" class="loading-state"><div class="spinner"></div><p style="margin-top:1rem;color:var(--color-muted);">Loading progress tracker...</p></div>
 <div id="mainContent" style="display:none;">
+<div class="progress-line" id="progressLine"></div>
 <header class="header"><div class="container header-inner"><img src="/assets/logo.png" alt="Moonraker"><div class="header-meta"><p class="name" id="headerName"></p><p id="headerMeta"></p><p id="headerDate"></p></div></div></header>
+<div class="suite-nav"><a id="navDiagnosis" href="#">Diagnosis</a><a id="navActionPlan" href="#">Action Plan</a><a href="#" class="active">Progress</a></div>
 <button class="theme-toggle" id="themeBtn">&#x1F319;</button>
-<section style="padding-top:3rem;padding-bottom:1rem;"><div class="container">
-  <div class="suite-nav"><a id="navDiagnosis" href="#">Diagnosis</a><a id="navActionPlan" href="#">Action Plan</a><a href="#" class="active">Progress</a></div>
-</div></section>
-<section style="padding-top:1rem;"><div class="container">
+<nav class="section-nav" id="sectionNav">
+  <a href="#stats"><span class="nav-dot"></span>Overview</a>
+  <a href="#checklist"><span class="nav-dot"></span>Tasks</a>
+  <a href="#rtpba"><span class="nav-dot"></span>Content</a>
+</nav>
+<section id="stats" style="padding-top:4rem;"><div class="container">
   <h1 id="heroTitle"></h1>
   <div class="progress-hero">
     <div class="progress-pct" id="pctDisplay">0<span>%</span></div>
@@ -110,7 +125,7 @@ section{padding:3.5rem 0}
   </div>
 </div></section>
 <hr class="divider">
-<section><div class="container">
+<section id="checklist"><div class="container">
   <h2>Task Checklist</h2>
   <p style="color:var(--color-muted);margin-bottom:.5rem;">Click any task to cycle its status. Changes save automatically.</p>
   <div class="save-status" id="saveStatus"></div>
@@ -158,7 +173,7 @@ section{padding:3.5rem 0}
     document.getElementById('heroTitle').textContent=name+': Progress Tracker';
     // RTPBA
     if(audit&&audit.scores&&audit.scores.rtpba){
-      document.getElementById('rtpbaWrap').innerHTML='<hr class="divider"><section><div class="container"><h2>Ready-to-Publish Content</h2><p style="color:var(--color-muted);margin-bottom:1.5rem;">Use this AI-optimized content for your homepage and target pages.</p><div class="rtpba-section">'+audit.scores.rtpba+'</div></div></section>';
+      document.getElementById('rtpbaWrap').innerHTML='<hr class="divider"><section id="rtpba"><div class="container"><h2>Ready-to-Publish Content</h2><p style="color:var(--color-muted);margin-bottom:1.5rem;">Use this AI-optimized content for your homepage and target pages.</p><div class="rtpba-section">'+audit.scores.rtpba+'</div></div></section>';
     }
     document.getElementById('footerText').textContent='Prepared for '+(contact.first_name||'')+' '+(contact.last_name||'')+creds+' \u00B7 '+name+' \u00B7 Confidential';
     renderTasks();
@@ -248,7 +263,16 @@ section{padding:3.5rem 0}
   var tb=document.getElementById('themeBtn');
   var ct=document.documentElement.getAttribute('data-theme');
   if(tb){tb.innerHTML=ct==='dark'?'&#9728;&#65039;':'&#x1F319;';tb.addEventListener('click',function(){var h=document.documentElement;if(h.getAttribute('data-theme')==='light'){h.setAttribute('data-theme','dark');tb.innerHTML='&#9728;&#65039;';try{localStorage.setItem('moonraker-theme','dark')}catch(e){}}else{h.setAttribute('data-theme','light');tb.innerHTML='&#x1F319;';try{localStorage.setItem('moonraker-theme','light')}catch(e){}}})}
-})();
+  var pLine=document.getElementById('progressLine');
+  function onScroll(){
+    var st=window.scrollY;var dh=document.documentElement.scrollHeight-window.innerHeight;
+    if(pLine)pLine.style.width=(dh>0?(st/dh)*100:0)+'%';
+    var secs=document.querySelectorAll('section[id]');var cur='';
+    secs.forEach(function(s){if(st>=s.offsetTop-200)cur=s.id});
+    document.querySelectorAll('.section-nav a').forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+cur)});
+  }
+  window.addEventListener('scroll',onScroll);
+  setTimeout(function(){onScroll()},100);})();
 </script>
 </body>
 </html>
