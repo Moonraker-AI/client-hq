@@ -47,7 +47,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; font-size: 16px; }
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.7; -webkit-font-smoothing: antialiased;  }
-::view-transition-old(root),::view-transition-new(root){animation-duration:.25s}
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
 h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.15; }
 h1 { font-size: 2.75rem; letter-spacing: -0.02em; }
 h2 { font-size: 2rem; margin-bottom: .75rem; letter-spacing: -0.01em; }
@@ -202,6 +202,52 @@ section { padding: 4.5rem 0; }
 .geogrid-card-stats .gs-label { font-size: .625rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--color-muted); margin-top: .15rem; }
 .geogrid-explainer { font-size: .8125rem; color: var(--color-muted); line-height: 1.6; margin-top: 1.5rem; padding: 1rem 1.25rem; background: var(--color-primary-subtle); border-radius: 10px; }
 
+/* Platform tabs */
+.platform-tabs { display: flex; gap: 2px; margin-bottom: 2rem; background: var(--color-border); border-radius: 10px; padding: 3px; }
+.platform-tab { flex: 1; padding: .6rem 1rem; text-align: center; border-radius: 8px; cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .8125rem; color: var(--color-muted); background: transparent; border: none; transition: all .2s ease; white-space: nowrap; }
+.platform-tab:hover { color: var(--color-heading); }
+.platform-tab.active { background: var(--color-surface); color: var(--color-heading); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.platform-tab .tab-count { font-size: .7rem; opacity: .6; margin-left: .35rem; }
+.platform-panel { display: none; }
+.platform-panel.active { display: block; }
+
+/* GBP summary row */
+.gbp-summary { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; padding: 1.25rem 1.5rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; align-items: center; }
+.gbp-summary .gbp-rating { display: flex; align-items: center; gap: .5rem; }
+.gbp-summary .gbp-stars { color: #F59E0B; font-size: 1.125rem; letter-spacing: 1px; }
+.gbp-summary .gbp-rating-val { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.5rem; color: var(--color-heading); }
+.gbp-summary .gbp-review-count { font-size: .875rem; color: var(--color-muted); }
+.gbp-summary .gbp-sep { width: 1px; height: 2rem; background: var(--color-border); }
+
+/* AI SoLV bars */
+.ai-engine-bars { display: grid; gap: .75rem; margin: 1.5rem 0; }
+.ai-bar-row { display: flex; align-items: center; gap: 1rem; padding: .75rem 1rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; }
+.ai-bar-status { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.ai-bar-status.cited { background: var(--color-success); box-shadow: 0 0 6px rgba(0,212,126,.4); }
+.ai-bar-status.not-cited { background: var(--color-border); }
+.ai-bar-name { font-weight: 600; font-size: .875rem; color: var(--color-heading); min-width: 140px; }
+.ai-bar-track { flex: 1; height: 8px; background: var(--color-border); border-radius: 4px; overflow: hidden; min-width: 80px; }
+.ai-bar-fill { height: 100%; border-radius: 4px; transition: width .8s cubic-bezier(.4,0,.2,1); }
+.ai-bar-fill.high { background: var(--color-success); }
+.ai-bar-fill.mid { background: var(--color-warning); }
+.ai-bar-fill.low { background: var(--color-danger); }
+.ai-bar-fill.zero { background: var(--color-border); }
+.ai-bar-val { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .9375rem; min-width: 52px; text-align: right; }
+.ai-bar-val.high { color: var(--color-success); }
+.ai-bar-val.mid { color: var(--color-warning); }
+.ai-bar-val.low { color: var(--color-danger); }
+.ai-bar-val.zero { color: var(--color-muted); }
+.ai-bar-detail { font-size: .75rem; color: var(--color-muted); min-width: 80px; text-align: right; }
+@media (max-width: 640px) {
+  .ai-bar-row { flex-wrap: wrap; }
+  .ai-bar-name { min-width: auto; }
+  .ai-bar-detail { min-width: auto; text-align: left; }
+}
+
+/* AI keyword breakdown */
+.ai-keyword-table { margin-top: 2rem; }
+.ai-keyword-table h4 { margin-bottom: 1rem; }
+
 /* Task progress bar */
 .progress-snapshot { margin: 1.5rem 0; }
 .progress-track { height: 12px; background: var(--color-border); border-radius: 6px; overflow: hidden; display: flex; }
@@ -275,8 +321,8 @@ section { padding: 4.5rem 0; }
   <a href="#hero"><span class="nav-dot"></span>Overview</a>
   <a href="#highlights"><span class="nav-dot"></span>Highlights</a>
   <a href="#search"><span class="nav-dot"></span>Search</a>
-  <a href="#maps"><span class="nav-dot"></span>Maps</a>
   <a href="#ai-visibility"><span class="nav-dot"></span>AI Visibility</a>
+  <a href="#local-visibility"><span class="nav-dot"></span>Local Visibility</a>
   <a href="#core"><span class="nav-dot"></span>CORE Scores</a>
   <a href="#progress"><span class="nav-dot"></span>Progress</a>
   <a href="#deliverables"><span class="nav-dot"></span>Deliverables</a>
@@ -352,38 +398,27 @@ section { padding: 4.5rem 0; }
 
 <hr class="divider">
 
-<!-- MAPS / GBP -->
-<section id="maps" class="reveal">
+<!-- AI VISIBILITY -->
+<section id="ai-visibility" class="reveal">
   <div class="container">
-    <h2>Google Maps Performance</h2>
-    <p style="color:var(--color-muted);margin-bottom:1.5rem">Google Business Profile engagement metrics.</p>
-    <div class="kpi-grid" id="gbpKpis"></div>
-    <div id="gbpDetail"></div>
-  </div>
-</section>
-
-<hr class="divider">
-
-<!-- GEOGRIDS / LOCAL RANK TRACKING -->
-<section id="geogrids" class="reveal">
-  <div class="container">
-    <h2>Local Rank Tracking</h2>
-    <p style="color:var(--color-muted);margin-bottom:1rem">7x7 geogrid scans showing where the practice ranks in Google Maps across a ~7 mile radius.</p>
-    <div id="geogridContent">
-      <p style="color:var(--color-muted)">Geogrid data not yet available for this period.</p>
+    <h2>AI Visibility</h2>
+    <p style="color:var(--color-muted);margin-bottom:1rem">How AI search platforms like ChatGPT, Gemini, and Google AI cite the practice in response to user queries.</p>
+    <div id="aiVisibilityContent">
+      <p style="color:var(--color-muted)">AI visibility data not yet available for this period.</p>
     </div>
   </div>
 </section>
 
 <hr class="divider">
 
-<!-- AI VISIBILITY -->
-<section id="ai-visibility" class="reveal">
+<!-- LOCAL VISIBILITY (Maps + Geogrids merged) -->
+<section id="local-visibility" class="reveal">
   <div class="container">
-    <h2>AI Visibility</h2>
-    <p style="color:var(--color-muted);margin-bottom:1rem">How conversational AI engines reference the practice.</p>
-    <div id="aiVisibilityContent">
-      <p style="color:var(--color-muted)">AI visibility data not yet available for this period.</p>
+    <h2>Local Visibility</h2>
+    <p style="color:var(--color-muted);margin-bottom:1rem">How the practice ranks across Google Maps and Apple Maps within a 5 mile radius.</p>
+    <div id="gbpSummaryRow"></div>
+    <div id="localVisContent">
+      <p style="color:var(--color-muted)">Local visibility data not yet available for this period.</p>
     </div>
   </div>
 </section>
@@ -626,131 +661,262 @@ section { padding: 4.5rem 0; }
     }
   }
 
-  function renderGbp(snap) {
-    var kpis = [
-      { label: 'Calls', value: fmt(snap.gbp_calls), delta: deltaHtml(snap.gbp_calls, snap.gbp_calls_prev) },
-      { label: 'Direction Requests', value: fmt(snap.gbp_direction_requests), delta: deltaHtml(snap.gbp_direction_requests, snap.gbp_direction_requests_prev) },
-      { label: 'Website Clicks', value: fmt(snap.gbp_website_clicks), delta: deltaHtml(snap.gbp_website_clicks, snap.gbp_website_clicks_prev) },
-      { label: 'Photo Views', value: fmt(snap.gbp_photo_views), delta: deltaHtml(snap.gbp_photo_views, snap.gbp_photo_views_prev) }
-    ];
-    document.getElementById('gbpKpis').innerHTML = kpis.map(function(k) {
-      return '<div class="kpi-card"><div class="kpi-label">' + k.label + '</div>' +
-        '<div class="kpi-value">' + k.value + '</div>' + k.delta + '</div>';
-    }).join('');
+  function renderLocalVisibility(snap) {
+    var neo = snap.neo_data || {};
+    var gbpDetail = snap.gbp_detail || {};
+    var platforms = neo.platforms || {};
 
-    var detail = snap.gbp_detail || {};
-    var html = '';
-    if (detail.reviews) {
-      html += '<div class="card" style="margin-top:1.5rem"><h3>Reviews</h3>' +
-        '<p style="margin-top:.5rem"><strong>' + detail.reviews.average + '</strong> average rating from <strong>' + detail.reviews.total + '</strong> reviews';
-      if (detail.reviews.new_this_month) {
-        html += ' (<strong>+' + detail.reviews.new_this_month + '</strong> new this month)';
+    // GBP summary row (rating + reviews)
+    var gbpHtml = '';
+    if (gbpDetail.rating || gbpDetail.reviews) {
+      gbpHtml = '<div class="gbp-summary">';
+      if (gbpDetail.rating) {
+        var stars = '';
+        for (var s = 0; s < 5; s++) stars += gbpDetail.rating >= s + 0.5 ? '★' : '☆';
+        gbpHtml += '<div class="gbp-rating"><span class="gbp-rating-val">' + gbpDetail.rating + '</span><span class="gbp-stars">' + stars + '</span></div>';
       }
-      html += '</p></div>';
-    }
-    document.getElementById('gbpDetail').innerHTML = html;
-  }
-
-  function renderGeogrids(snap) {
-    var neo = snap.neo_data;
-    if (!neo || !neo.grids || neo.grids.length === 0) return;
-
-    var grids = neo.grids;
-
-    // AGR color class: 1-3 good, 4-7 ok, 8+ poor
-    function agrClass(v) { return v <= 3 ? 'good' : v <= 7 ? 'ok' : 'poor'; }
-    // SOLV color class: 60%+ good, 30-59% ok, <30% poor
-    function solvClass(v) { var pct = (v || 0) * 100; return pct >= 60 ? 'good' : pct >= 30 ? 'ok' : 'poor'; }
-
-    // Summary stats
-    var html = '<div class="geogrid-summary">';
-    html += '<div class="geogrid-summary-stat"><div class="stat-value">' + neo.grid_count + '</div><div class="stat-label">Keywords Tracked</div></div>';
-    html += '<div class="geogrid-summary-stat"><div class="stat-value">' + neo.avg_agr + '</div><div class="stat-label">Avg Grid Rank</div></div>';
-    if (neo.avg_atgr) {
-      html += '<div class="geogrid-summary-stat"><div class="stat-value">' + neo.avg_atgr + '</div><div class="stat-label">Avg True Grid Rank</div></div>';
-    }
-    html += '<div class="geogrid-summary-stat"><div class="stat-value">' + Math.round((neo.avg_solv || 0) * 100) + '%</div><div class="stat-label">Share of Local Voice</div></div>';
-    html += '</div>';
-
-    // Individual grid cards
-    html += '<div class="geogrid-cards">';
-    grids.forEach(function(g) {
-      var label = g.label || g.search_term;
-      var solv = Math.round((g.solv || 0) * 100);
-      var imgUrl = g.headless_image_url || g.image_url;
-      var publicLink = g.public_url;
-
-      html += '<div class="geogrid-card">';
-      html += '<div class="geogrid-card-header">';
-      html += '<h4>' + esc(label) + '</h4>';
-      if (label !== g.search_term) {
-        html += '<div class="geogrid-keyword">' + esc(g.search_term) + '</div>';
+      if (gbpDetail.reviews) {
+        if (gbpDetail.rating) gbpHtml += '<div class="gbp-sep"></div>';
+        gbpHtml += '<div class="gbp-review-count">' + gbpDetail.reviews + ' Google reviews</div>';
       }
-      html += '</div>';
+      if (gbpDetail.name) {
+        gbpHtml += '<div class="gbp-sep"></div>';
+        gbpHtml += '<div class="gbp-review-count">' + esc(gbpDetail.name) + '</div>';
+      }
+      gbpHtml += '</div>';
+    }
+    document.getElementById('gbpSummaryRow').innerHTML = gbpHtml;
 
-      // Image
-      html += '<div class="geogrid-image-wrap">';
-      if (imgUrl) {
-        if (publicLink) {
-          html += '<a href="' + publicLink + '" target="_blank" rel="noopener" style="display:block;width:100%;height:100%"><img src="' + imgUrl + '" alt="Geogrid for ' + esc(g.search_term) + '" loading="lazy"></a>';
+    // Check if we have any grid data
+    var googleGrids = platforms.google || [];
+    var appleGrids = platforms.apple || [];
+    if (googleGrids.length === 0 && appleGrids.length === 0) return;
+
+    // Deduplicate: prefer largest grid_size per keyword, then best ARP within that size
+    function dedupGrids(grids) {
+      var byKeyword = {};
+      grids.forEach(function(g) {
+        var key = g.keyword || g.search_term || g.label;
+        var gSize = parseInt(g.grid_size) || 7;
+        var existing = byKeyword[key];
+        if (!existing) {
+          byKeyword[key] = g;
         } else {
-          html += '<img src="' + imgUrl + '" alt="Geogrid for ' + esc(g.search_term) + '" loading="lazy">';
+          var eSize = parseInt(existing.grid_size) || 7;
+          // Prefer larger grid; if same size, prefer better (lower) ARP
+          if (gSize > eSize || (gSize === eSize && (g.arp || 21) < (existing.arp || 21))) {
+            byKeyword[key] = g;
+          }
         }
-      } else {
-        html += '<div class="no-image">Grid image processing...</div>';
-      }
-      html += '</div>';
+      });
+      // Sort by ARP ascending (best first)
+      return Object.values(byKeyword).sort(function(a, b) { return (a.arp || 21) - (b.arp || 21); });
+    }
 
-      // Stats bar
-      html += '<div class="geogrid-card-stats">';
-      html += '<div class="gs"><div class="gs-val ' + agrClass(g.agr) + '">' + (g.agr || '-') + '</div><div class="gs-label">AGR</div></div>';
-      html += '<div class="gs"><div class="gs-val ' + agrClass(g.atgr) + '">' + (g.atgr || '-') + '</div><div class="gs-label">ATGR</div></div>';
-      html += '<div class="gs"><div class="gs-val ' + solvClass(g.solv) + '">' + solv + '%</div><div class="gs-label">SoLV</div></div>';
-      html += '<div class="gs"><div class="gs-val">' + (g.grid_size || 7) + 'x' + (g.grid_size || 7) + '</div><div class="gs-label">Grid</div></div>';
-      html += '</div>';
-      html += '</div>';
-    });
+    var dedupedGoogle = dedupGrids(googleGrids);
+    var dedupedApple = dedupGrids(appleGrids);
+
+    // Platform stats
+    function platformStats(grids) {
+      if (grids.length === 0) return null;
+      var totalArp = 0, totalSolv = 0;
+      grids.forEach(function(g) { totalArp += (g.arp || 21); totalSolv += (g.solv || 0); });
+      return { count: grids.length, avgArp: (totalArp / grids.length).toFixed(1), avgSolv: (totalSolv / grids.length).toFixed(1) };
+    }
+
+    var googleStats = platformStats(dedupedGoogle);
+    var appleStats = platformStats(dedupedApple);
+
+    // Build tabs
+    var html = '<div class="platform-tabs">';
+    if (dedupedGoogle.length > 0) {
+      html += '<button class="platform-tab active" onclick="switchPlatformTab(\'google\', this)">Google Maps<span class="tab-count">(' + dedupedGoogle.length + ')</span></button>';
+    }
+    if (dedupedApple.length > 0) {
+      html += '<button class="platform-tab' + (dedupedGoogle.length === 0 ? ' active' : '') + '" onclick="switchPlatformTab(\'apple\', this)">Apple Maps<span class="tab-count">(' + dedupedApple.length + ')</span></button>';
+    }
     html += '</div>';
+
+    // Build panel content for a platform
+    function buildPanel(grids, stats, platformLabel) {
+      var p = '';
+      // Summary stats
+      if (stats) {
+        p += '<div class="geogrid-summary">';
+        p += '<div class="geogrid-summary-stat"><div class="stat-value">' + stats.count + '</div><div class="stat-label">Keywords Tracked</div></div>';
+        p += '<div class="geogrid-summary-stat"><div class="stat-value">' + stats.avgArp + '</div><div class="stat-label">Avg Rank Position</div></div>';
+        p += '<div class="geogrid-summary-stat"><div class="stat-value">' + stats.avgSolv + '%</div><div class="stat-label">Avg Share of Local Voice</div></div>';
+        p += '</div>';
+      }
+      // Grid cards
+      p += '<div class="geogrid-cards">';
+      grids.forEach(function(g) {
+        var label = g.label || g.keyword || g.search_term;
+        var solv = Math.round((g.solv || 0) * (g.solv > 1 ? 1 : 100));
+        if (g.solv > 1) solv = Math.round(g.solv);
+        var imgUrl = g.image_url || g.heatmap_url;
+        var publicLink = g.public_url;
+        var gridSize = g.grid_size || 7;
+
+        p += '<div class="geogrid-card">';
+        p += '<div class="geogrid-card-header"><h4>' + esc(label) + '</h4>';
+        p += '<div class="geogrid-keyword">' + platformLabel + ' · ' + gridSize + 'x' + gridSize + ' grid</div></div>';
+        p += '<div class="geogrid-image-wrap">';
+        if (imgUrl) {
+          if (publicLink) {
+            p += '<a href="' + publicLink + '" target="_blank" rel="noopener" style="display:block;width:100%;height:100%"><img src="' + imgUrl + '" alt="Geogrid for ' + esc(g.keyword || label) + '" loading="lazy"></a>';
+          } else {
+            p += '<img src="' + imgUrl + '" alt="Geogrid for ' + esc(g.keyword || label) + '" loading="lazy">';
+          }
+        } else {
+          p += '<div class="no-image">Grid image processing...</div>';
+        }
+        p += '</div>';
+
+        // Stats bar
+        function arpClass(v) { return v <= 3 ? 'good' : v <= 7 ? 'ok' : 'poor'; }
+        function solvClass(v) { return v >= 60 ? 'good' : v >= 30 ? 'ok' : v > 0 ? 'poor' : 'poor'; }
+        var displaySolv = g.solv > 1 ? Math.round(g.solv) : Math.round((g.solv || 0) * 100);
+
+        p += '<div class="geogrid-card-stats">';
+        p += '<div class="gs"><div class="gs-val ' + arpClass(g.arp) + '">' + (g.arp || '-') + '</div><div class="gs-label">ARP</div></div>';
+        p += '<div class="gs"><div class="gs-val ' + arpClass(g.atrp) + '">' + (g.atrp || '-') + '</div><div class="gs-label">ATRP</div></div>';
+        p += '<div class="gs"><div class="gs-val ' + solvClass(displaySolv) + '">' + displaySolv + '%</div><div class="gs-label">SoLV</div></div>';
+        p += '<div class="gs"><div class="gs-val">' + (g.found_in || 0) + '/' + (g.data_points || (gridSize * gridSize)) + '</div><div class="gs-label">Found</div></div>';
+        p += '</div></div>';
+      });
+      p += '</div>';
+      return p;
+    }
+
+    // Google panel
+    if (dedupedGoogle.length > 0) {
+      html += '<div class="platform-panel' + (dedupedGoogle.length > 0 ? ' active' : '') + '" id="panel-google">';
+      html += buildPanel(dedupedGoogle, googleStats, 'Google Maps');
+      html += '</div>';
+    }
+
+    // Apple panel
+    if (dedupedApple.length > 0) {
+      html += '<div class="platform-panel' + (dedupedGoogle.length === 0 ? ' active' : '') + '" id="panel-apple">';
+      html += buildPanel(dedupedApple, appleStats, 'Apple Maps');
+      html += '</div>';
+    }
 
     // Explainer
     html += '<div class="geogrid-explainer">';
-    html += '<strong>Reading the grid:</strong> Each cell shows where the practice ranks in Google Maps for that keyword from that geographic point. ';
-    html += '<strong>AGR</strong> (Average Grid Rank) is the average position across all cells - lower is better, 1 is top. ';
-    html += '<strong>ATGR</strong> (Average True Grid Rank) includes cells where the practice didn\'t appear (counted as 21). ';
-    html += '<strong>SoLV</strong> (Share of Local Voice) is the percentage of grid cells where the practice appears in the top 3 results.';
+    html += '<strong>Reading the grid:</strong> Each cell shows where the practice ranks from that geographic point within a 5 mile radius. ';
+    html += '<strong>ARP</strong> (Average Rank Position) is the average position across all cells where found. Lower is better, 1 is top. ';
+    html += '<strong>ATRP</strong> (Average True Rank Position) includes cells where not found (counted as 21). ';
+    html += '<strong>SoLV</strong> (Share of Local Voice) is the percentage of grid cells ranking in the top 3.';
     html += '</div>';
 
-    document.getElementById('geogridContent').innerHTML = html;
+    document.getElementById('localVisContent').innerHTML = html;
   }
+
+  window.switchPlatformTab = function(platform, btn) {
+    document.querySelectorAll('.platform-tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.platform-panel').forEach(function(p) { p.classList.remove('active'); });
+    btn.classList.add('active');
+    var panel = document.getElementById('panel-' + platform);
+    if (panel) panel.classList.add('active');
+  };
 
   function renderAiVisibility(snap) {
     var ai = snap.ai_visibility;
     if (!ai || !ai.engines) return;
 
+    // Summary banner
     var html = '<div class="engine-summary">' +
       '<div class="engine-count">' + (ai.engines_citing || 0) + '<span style="font-size:1.25rem;opacity:.5">/' + (ai.engines_checked || 8) + '</span></div>' +
-      '<div class="engine-count-label">AI engines citing <strong>' + PRACTICE_NAME + '</strong> this month</div></div>';
+      '<div class="engine-count-label">AI platforms citing <strong>' + PRACTICE_NAME + '</strong> this month</div></div>';
 
-    html += '<div class="engine-grid">';
-    ai.engines.forEach(function(e) {
-      html += '<div class="engine-card">' +
-        '<div class="engine-status ' + (e.cited ? 'cited' : 'not-cited') + '"></div>' +
-        '<div><div class="engine-name">' + e.name + '</div>' +
-        (e.context ? '<div class="engine-context">' + e.context + '</div>' : '<div class="engine-context" style="opacity:.4">Not citing</div>') +
-        '</div></div>';
+    // Sort engines to preferred display order
+    var engineOrder = { 'Google AI Mode': 0, 'Gemini': 1, 'Google AI Overviews': 2, 'ChatGPT': 3 };
+    var sortedEngines = ai.engines.slice().sort(function(a, b) {
+      return (engineOrder[a.name] != null ? engineOrder[a.name] : 99) - (engineOrder[b.name] != null ? engineOrder[b.name] : 99);
+    });
+
+    // SoLV bars per engine
+    html += '<div class="ai-engine-bars">';
+    sortedEngines.forEach(function(e) {
+      var solv = e.avg_solv || 0;
+      var solvPct = solv > 1 ? solv : solv * 100;
+      var cls = solvPct >= 40 ? 'high' : solvPct >= 20 ? 'mid' : solvPct > 0 ? 'low' : 'zero';
+      var queriesLabel = (e.queries_cited || 0) + '/' + (e.queries_checked || 0) + ' queries cited';
+
+      html += '<div class="ai-bar-row">';
+      html += '<div class="ai-bar-status ' + (e.cited ? 'cited' : 'not-cited') + '"></div>';
+      html += '<div class="ai-bar-name">' + e.name + '</div>';
+      html += '<div class="ai-bar-track"><div class="ai-bar-fill ' + cls + '" style="width:0%" data-target="' + Math.min(solvPct, 100).toFixed(1) + '%"></div></div>';
+      html += '<div class="ai-bar-val ' + cls + '">' + solvPct.toFixed(1) + '%</div>';
+      html += '<div class="ai-bar-detail">' + queriesLabel + '</div>';
+      html += '</div>';
     });
     html += '</div>';
 
+    // Citation trend
     if (ai.citation_trend && ai.citation_trend.length > 1) {
       html += '<div class="card" style="margin-top:1.5rem"><h4>Citation Trend</h4><p style="font-size:.875rem;color:var(--color-muted);margin-top:.25rem">';
       ai.citation_trend.forEach(function(t, i) {
         if (i > 0) html += ' &#8594; ';
         html += monthLabel(t.month + '-01').split(' ')[0] + ': <strong>' + t.count + '</strong>';
       });
-      html += ' engines</p></div>';
+      html += ' platforms</p></div>';
+    }
+
+    // Keyword breakdown table
+    var kb = ai.keyword_breakdown;
+    if (kb && ((Array.isArray(kb) && kb.length > 0) || (!Array.isArray(kb) && Object.keys(kb).length > 0))) {
+      // Platform key to engine name mapping
+      var platformToEngine = { 'chatgpt': 'ChatGPT', 'gemini': 'Gemini', 'gaio': 'Google AI Overviews', 'aimode': 'Google AI Mode' };
+      var platformKeys = ['aimode', 'gemini', 'gaio', 'chatgpt'];
+
+      // Normalize: handle both list and dict formats
+      var kbList = Array.isArray(kb) ? kb : Object.keys(kb).map(function(k) { return { keyword: k, label: k, platforms: kb[k] }; });
+
+      // Sort by max SoLV across platforms
+      kbList.sort(function(a, b) {
+        var aMax = 0, bMax = 0;
+        var ap = a.platforms || {}; var bp = b.platforms || {};
+        for (var pk in ap) { if ((ap[pk].solv || 0) > aMax) aMax = ap[pk].solv || 0; }
+        for (var pk2 in bp) { if ((bp[pk2].solv || 0) > bMax) bMax = bp[pk2].solv || 0; }
+        return bMax - aMax;
+      });
+
+      html += '<div class="ai-keyword-table"><h4>Visibility by Keyword</h4>';
+      html += '<div class="data-table-wrap"><table class="data-table"><thead><tr><th>Keyword</th>';
+      platformKeys.forEach(function(pk) {
+        var shortName = (platformToEngine[pk] || pk).replace('Google ', '');
+        html += '<th style="text-align:center">' + shortName + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+
+      kbList.slice(0, 15).forEach(function(row) {
+        html += '<tr><td>' + esc(row.label || row.keyword) + '</td>';
+        platformKeys.forEach(function(pk) {
+          var pdata = (row.platforms || {})[pk] || {};
+          var solv = pdata.solv || 0;
+          if (solv > 0) {
+            var c = solv >= 40 ? 'change-up' : '';
+            html += '<td class="num ' + c + '">' + solv.toFixed(0) + '%</td>';
+          } else {
+            html += '<td class="num" style="opacity:.3">-</td>';
+          }
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table></div></div>';
     }
 
     document.getElementById('aiVisibilityContent').innerHTML = html;
+
+    // Animate SoLV bars after brief delay
+    setTimeout(function() {
+      document.querySelectorAll('.ai-bar-fill').forEach(function(bar) {
+        bar.style.width = bar.getAttribute('data-target');
+      });
+    }, 300);
   }
 
   function renderCoreScores(snap) {
@@ -831,14 +997,29 @@ section { padding: 4.5rem 0; }
     renderHighlights(highlights);
     renderGscKpis(snap);
     renderGscTables(snap);
-    renderGbp(snap);
-    renderGeogrids(snap);
     renderAiVisibility(snap);
+    renderLocalVisibility(snap);
     renderCoreScores(snap);
     renderTaskProgress(snap);
     renderDeliverables(snap);
     renderAuditNav();
     renderNotes(snap);
+
+    // Hide LF-dependent sections for national campaigns
+    if (snap.campaign_type === 'national') {
+      ['ai-visibility', 'local-visibility'].forEach(function(id) {
+        var sec = document.getElementById(id);
+        if (!sec) return;
+        // Hide the divider AFTER this section (not before, so the divider between search and core remains)
+        var next = sec.nextElementSibling;
+        if (next && next.classList.contains('divider')) next.style.display = 'none';
+        sec.style.display = 'none';
+      });
+      document.querySelectorAll('.section-nav a').forEach(function(a) {
+        var href = a.getAttribute('href');
+        if (href === '#ai-visibility' || href === '#local-visibility') a.style.display = 'none';
+      });
+    }
 
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('reportContent').style.display = 'block';
@@ -867,6 +1048,21 @@ section { padding: 4.5rem 0; }
       }
       currentSnap = snaps[0];
       renderReport(currentSnap, highlights);
+
+      // Set chatbot context so the report assistant has full data
+      window.__REPORT_CHAT_CONTEXT = {
+        snapshot: currentSnap,
+        highlights: highlights,
+        practice_name: PRACTICE_NAME,
+        campaign_month: currentSnap.campaign_month
+      };
+      // Load chatbot script dynamically (only once)
+      if (!document.getElementById('reportChatbotScript')) {
+        var s = document.createElement('script');
+        s.id = 'reportChatbotScript';
+        s.src = '/shared/report-chatbot.js';
+        document.body.appendChild(s);
+      }
     }).catch(function(err) {
       console.error('Failed to load report:', err);
       document.getElementById('loadingState').innerHTML =
@@ -945,13 +1141,11 @@ section { padding: 4.5rem 0; }
       var h = document.documentElement;
       function apply() {
         if (h.getAttribute('data-theme') === 'light') {
-          h.setAttribute('data-theme', 'dark');
-          themeBtn.innerHTML = '&#9728;&#65039;';
-          try{localStorage.setItem('moonraker-theme','dark')}catch(e){}
+          h.setAttribute('data-theme', 'dark'); themeBtn.innerHTML = '&#9728;&#65039;';
+          try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
         } else {
-          h.setAttribute('data-theme', 'light');
-          themeBtn.innerHTML = '&#x1F319;';
-          try{localStorage.setItem('moonraker-theme','light')}catch(e){}
+          h.setAttribute('data-theme', 'light'); themeBtn.innerHTML = '&#x1F319;';
+          try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
         }
       }
       if (document.startViewTransition) { document.startViewTransition(apply); } else { apply(); }
@@ -1021,4 +1215,6 @@ section { padding: 4.5rem 0; }
 </script>
 </body>
 </html>
+
+
 
