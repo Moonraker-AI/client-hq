@@ -135,19 +135,34 @@ section{padding:3.5rem 0}
   sb('contacts?slug=eq.'+SLUG+'&select=id,slug,first_name,last_name,credentials,practice_name,city,state_province&limit=1').then(function(contacts){
     if(!contacts||contacts.length===0)throw new Error('Not found');
     var c=contacts[0];
-    return sb('entity_audits?contact_id=eq.'+c.id+'&order=audit_date.desc&limit=1').then(function(audits){
-      if(!audits||audits.length===0)throw new Error('No audit');
-      render(c,audits[0]);
+    return Promise.all([
+      sb('entity_audits?contact_id=eq.'+c.id+'&order=audit_date.desc&limit=1'),
+      sb('checklist_items?client_slug=eq.'+SLUG+'&web_visible=eq.true&order=sort_order')
+    ]).then(function(res){
+      if(!res[0]||res[0].length===0)throw new Error('No audit');
+      render(c,res[0][0],res[1]||[]);
     });
   }).catch(function(){
     document.getElementById('loadingState').innerHTML='<header class="header"><div class="container header-inner"><img src="/assets/logo.png" alt="Moonraker"></div></header><div style="text-align:center;padding:6rem 2rem;"><p style="color:var(--color-danger)">Unable to load diagnosis. Contact support@moonraker.ai.</p></div>';
   });
-  function render(contact,audit){
+  function render(contact,audit,checklistItems){
     var name=contact.practice_name||((contact.first_name||'')+' '+(contact.last_name||'')).trim();
     var creds=contact.credentials?', '+contact.credentials:'';
     var loc=[contact.city,contact.state_province].filter(Boolean).join(', ');
     var scores=audit.scores||{};
     var tasks=audit.tasks||{};
+    // Fallback: build tasks from checklist_items if JSONB tasks empty
+    var hasTasks=tasks.credibility||tasks.optimization||tasks.reputation||tasks.engagement;
+    if(!hasTasks&&checklistItems.length>0){
+      var catMap={'Credibility + Entity Identity':'credibility','Optimization + Content':'optimization','Reputation + Citations':'reputation','Engagement + UX':'engagement'};
+      tasks={credibility:[],optimization:[],reputation:[],engagement:[]};
+      checklistItems.forEach(function(ci){
+        var pillar=catMap[ci.category]||'credibility';
+        var sev=ci.priority==='P1'?'critical':ci.priority==='P2'?'warning':'positive';
+        if(ci.status==='complete')sev='positive';
+        tasks[pillar].push({severity:sev,title:ci.title,detail:ci.description?ci.description.split('\n')[0]:'',owner:ci.owner});
+      });
+    }
     document.getElementById('headerName').textContent='Prepared for '+(contact.first_name||'')+' '+(contact.last_name||'')+creds;
     document.getElementById('headerMeta').textContent=name+(loc?' \u00B7 '+loc:'');
     document.getElementById('headerDate').textContent=fmtDate(audit.audit_date)+' \u00B7 Confidential';
