@@ -602,7 +602,12 @@ section { padding: 4.5rem 0; }
         return sbFetch('entity_audits?contact_id=eq.' + contact.id + '&order=audit_date.desc&limit=1')
           .then(function(audits) {
             if (!audits || audits.length === 0) throw new Error('No audit found');
-            render(contact, audits[0]);
+            var audit = audits[0];
+            // Also fetch checklist_items for this audit (fallback when JSONB tasks empty)
+            return sbFetch('checklist_items?audit_id=eq.' + audit.id + '&web_visible=eq.true&order=sort_order')
+              .then(function(items) {
+                render(contact, audit, items || []);
+              });
           });
       })
       .catch(function(err) {
@@ -611,7 +616,7 @@ section { padding: 4.5rem 0; }
       });
   }
 
-  function render(contact, audit) {
+  function render(contact, audit, checklistItems) {
     var name = contact.practice_name || ((contact.first_name || '') + ' ' + (contact.last_name || '')).trim();
     var creds = contact.credentials ? ', ' + contact.credentials : '';
     var location = [contact.city, contact.state_province].filter(Boolean).join(', ');
@@ -670,6 +675,20 @@ section { padding: 4.5rem 0; }
 
     // Findings by pillar
     var tasks = audit.tasks || {};
+    // Fallback: build tasks from checklist_items when JSONB tasks empty
+    var hasTasks = tasks.credibility || tasks.optimization || tasks.reputation || tasks.engagement;
+    if (!hasTasks && checklistItems.length > 0) {
+      var catMap = {'Credibility + Entity Identity':'credibility','Optimization + Content':'optimization','Reputation + Citations':'reputation','Engagement + UX':'engagement'};
+      tasks = {credibility:[],optimization:[],reputation:[],engagement:[]};
+      checklistItems.forEach(function(ci) {
+        var pillar = catMap[ci.category] || 'credibility';
+        var sev = ci.priority === 'P1' ? 'critical' : ci.priority === 'P2' ? 'warning' : 'positive';
+        if (ci.status === 'complete') sev = 'positive';
+        var desc = ci.description || '';
+        var parts = desc.split('\n\n');
+        tasks[pillar].push({ severity: sev, title: ci.title, detail: parts[0] || '', fix: parts.slice(1).join('\n\n'), owner: ci.owner });
+      });
+    }
     var pillars = [
       { key: 'credibility',   title: 'Credibility',   subtitle: 'Can You Prove You Exist?' },
       { key: 'optimization',  title: 'Optimization',  subtitle: 'Can AI Understand What You Do?' },
