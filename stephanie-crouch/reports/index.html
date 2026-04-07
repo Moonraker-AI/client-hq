@@ -485,14 +485,19 @@ section { padding: 4.5rem 0; }
 <script>
 (function(){
   // ============================================================
-  // CONFIG - These change per client
+  // CONFIG - Derived from URL path (e.g. /robyn-sheiniuk/reports/)
   // ============================================================
-  var CLIENT_SLUG = 'anna-skomorovskaia';
-  var CLIENT_NAME = 'Anna Skomorovskaia, MSW, BASc, RSW, RD';
-  var PRACTICE_NAME = 'Sky Therapies';
-  var PRACTICE_LOCATION = 'Toronto, Ontario';
+  var pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
+  var CLIENT_SLUG = pathParts[0] || '';
+  var CLIENT_NAME = '';
+  var PRACTICE_NAME = '';
+  var PRACTICE_LOCATION = '';
   var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
   var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
+
+  if (!CLIENT_SLUG) {
+    document.getElementById('loadingState').innerHTML = '<div class="empty-state"><h3>No Client Specified</h3><p>Could not determine client from the URL.</p></div>';
+  }
 
   // ============================================================
   // SUPABASE HELPERS
@@ -1071,6 +1076,23 @@ section { padding: 4.5rem 0; }
   }
 
   function init() {
+    if (!CLIENT_SLUG) return;
+
+    // Load client details first
+    sbFetch('contacts', 'slug=eq.' + CLIENT_SLUG + '&select=first_name,last_name,practice_name,city,state_province&limit=1')
+      .then(function(contacts) {
+        if (contacts && contacts.length > 0) {
+          var c = contacts[0];
+          CLIENT_NAME = ((c.first_name || '') + ' ' + (c.last_name || '')).trim();
+          PRACTICE_NAME = c.practice_name || CLIENT_NAME;
+          PRACTICE_LOCATION = ((c.city || '') + (c.city && c.state_province ? ', ' : '') + (c.state_province || '')).trim();
+        }
+        loadReports();
+      })
+      .catch(function() { loadReports(); });
+  }
+
+  function loadReports() {
     // Admin preview mode bypasses published filter
     var isPreview = new URLSearchParams(window.location.search).get('preview') === 'admin';
     var statusFilter = isPreview ? '' : '&report_status=eq.published';
