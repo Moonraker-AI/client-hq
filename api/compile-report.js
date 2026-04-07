@@ -174,7 +174,7 @@ module.exports = async function handler(req, res) {
       warnings.push('GSC: skipped (no credentials or property configured)');
       return null;
     }
-    var token = await getGoogleAccessToken(googleSA);
+    var token = await getDelegatedToken(googleSA, 'support@moonraker.ai', 'https://www.googleapis.com/auth/webmasters.readonly');
     if (!token || token.error) {
       warnings.push('GSC: token failed - ' + (token ? token.error : 'unknown'));
       return null;
