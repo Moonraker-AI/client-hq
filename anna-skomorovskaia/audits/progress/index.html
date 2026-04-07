@@ -68,7 +68,7 @@ section{padding:3.5rem 0}
 .progress-bar-fill .seg{height:100%}
 .seg-complete{background:var(--color-success)}
 .seg-ip{background:var(--color-info)}
-.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:.75rem;margin:1.5rem 0}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin:1.5rem 0}
 .stat-box{background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1rem;text-align:center}
 .stat-val{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.5rem;color:var(--color-heading);line-height:1}
 .stat-label{font-size:.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--color-muted);margin-top:.3rem}
@@ -224,12 +224,13 @@ section{padding:3.5rem 0}
     document.getElementById('progressBar').innerHTML=(cPct>0?'<div class="seg seg-complete" style="width:'+cPct+'%"></div>':'')+(iPct>0?'<div class="seg seg-ip" style="width:'+iPct+'%"></div>':'');
     var moon=allTasks.filter(function(t){return t.owner==='Moonraker'}).length;
     var cli=allTasks.filter(function(t){return t.owner==='Client'}).length;
+    var collab=allTasks.filter(function(t){return t.owner==='Collaboration'}).length;
     document.getElementById('statRow').innerHTML=
       '<div class="stat-box"><div class="stat-val">'+total+'</div><div class="stat-label">Total</div></div>'+
-      '<div class="stat-box"><div class="stat-val" style="color:var(--color-success)">'+complete+'</div><div class="stat-label">Complete</div></div>'+
       '<div class="stat-box"><div class="stat-val" style="color:var(--color-info)">'+ip+'</div><div class="stat-label">In Progress</div></div>'+
-      '<div class="stat-box"><div class="stat-val">'+ns+'</div><div class="stat-label">Remaining</div></div>'+
+      '<div class="stat-box"><div class="stat-val" style="color:var(--color-success)">'+complete+'</div><div class="stat-label">Complete</div></div>'+
       '<div class="stat-box"><div class="stat-val" style="color:#00b86c">'+moon+'</div><div class="stat-label">Moonraker</div></div>'+
+      '<div class="stat-box"><div class="stat-val" style="color:#D97706">'+collab+'</div><div class="stat-label">Collaboration</div></div>'+
       '<div class="stat-box"><div class="stat-val" style="color:#3B82F6">'+cli+'</div><div class="stat-label">Client</div></div>';
     var phases={};var order=[];
     allTasks.forEach(function(t){var ph=t.phase||'Other';if(!phases[ph]){phases[ph]=[];order.push(ph)}phases[ph].push(t)});
