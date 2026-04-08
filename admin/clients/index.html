@@ -545,12 +545,15 @@ strong { font-weight: 600; color: var(--color-heading); }
 /* ---- MOBILE ---- */
 .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.35); z-index: 199; }
 .sidebar.open ~ .sidebar-overlay { display: block; }
+.sidebar-close { display: none; margin-left: auto; background: none; border: none; color: var(--color-muted); font-size: 1.3rem; cursor: pointer; padding: .25rem; line-height: 1; }
+.sidebar-close:hover { color: var(--color-heading); }
 .mobile-toggle { display: none; background: none; border: none; color: var(--color-heading); font-size: 1.25rem; cursor: pointer; padding: .25rem; }
 @media (max-width: 860px) {
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,.15); }
   .main { margin-left: 0; }
   .mobile-toggle { display: block; }
+  .sidebar-close { display: block; }
   .detail-header { flex-direction: column; }
   .detail-actions { width: 100%; }
   .field-group { grid-template-columns: 1fr; }
@@ -663,6 +666,7 @@ strong { font-weight: 600; color: var(--color-heading); }
   <div class="sidebar-header">
     <img src="/assets/logo.png" alt="Moonraker">
     <span>Client HQ</span>
+    <button class="sidebar-close" id="sidebarClose" aria-label="Close menu">&times;</button>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section">Overview</div>
