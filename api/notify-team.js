@@ -48,7 +48,7 @@ module.exports = async function handler(req, res) {
     }
     var contact = contacts[0];
     var clientName = (contact.first_name || '') + ' ' + (contact.last_name || '');
-    var deepDiveUrl = 'https://clients.moonraker.ai/admin/clients#' + slug;
+    var deepDiveUrl = 'https://clients.moonraker.ai/admin/clients?slug=' + slug;
 
     var subject = '';
     var htmlBody = '';
@@ -234,3 +234,4 @@ function esc(str) {
   if (!str) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
