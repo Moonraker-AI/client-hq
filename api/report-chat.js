@@ -32,30 +32,43 @@ module.exports = async function handler(req, res) {
 
   var systemPrompt = buildSystemPrompt(context);
 
-  var aiResp;
-  try {
-    aiResp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2000,
-        system: systemPrompt,
-        messages: messages,
-        stream: true
-      })
-    });
-  } catch(e) {
-    return res.status(500).json({ error: 'Failed to reach Anthropic API' });
+  var aiResp = null;
+  var maxRetries = 2;
+  for (var attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      aiResp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2000,
+          system: systemPrompt,
+          messages: messages,
+          stream: true
+        })
+      });
+    } catch(e) {
+      if (attempt === maxRetries) return res.status(500).json({ error: 'Failed to reach Anthropic API' });
+      await new Promise(function(r) { setTimeout(r, Math.pow(2, attempt) * 1000 + Math.random() * 500); });
+      continue;
+    }
+    if (aiResp.status === 529) {
+      if (attempt < maxRetries) {
+        console.log('Anthropic 529 overloaded (attempt ' + (attempt + 1) + '/' + maxRetries + '), retrying...');
+        await new Promise(function(r) { setTimeout(r, Math.pow(2, attempt) * 1000 + Math.random() * 500); });
+        continue;
+      }
+    }
+    break;
   }
 
-  if (!aiResp.ok) {
-    var errBody = await aiResp.text();
-    return res.status(aiResp.status).json({ error: 'Anthropic API error', status: aiResp.status });
+  if (!aiResp || !aiResp.ok) {
+    var errBody = aiResp ? await aiResp.text() : 'No response';
+    return res.status(aiResp ? aiResp.status : 500).json({ error: 'Anthropic API error', status: aiResp ? aiResp.status : 500 });
   }
 
   // Stream: pipe raw Anthropic SSE bytes directly
