@@ -711,9 +711,16 @@ strong { font-weight: 600; color: var(--color-heading); }
           <button class="filter-tab" data-filter="lead">Leads</button>
           <button class="filter-tab" data-filter="lost">Lost</button>
         </div>
-        <div class="display-toggle" id="displayToggle">
-          <button class="active" data-mode="practice">Practice</button>
-          <button data-mode="name">Name</button>
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <div class="display-toggle" id="sortToggle">
+            <button class="active" data-sort="name">A-Z</button>
+            <button data-sort="campaign_start_desc">Newest</button>
+            <button data-sort="campaign_start_asc">Oldest</button>
+          </div>
+          <div class="display-toggle" id="displayToggle">
+            <button class="active" data-mode="practice">Practice</button>
+            <button data-mode="name">Name</button>
+          </div>
         </div>
       </div>
 
@@ -941,6 +948,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     allTasks: {},
     filter: 'all',
     displayMode: localStorage.getItem('moonraker-client-display') || 'practice',
+    sortField: localStorage.getItem('moonraker-client-sort') || 'name',
     sortDir: 'asc',
     taskFilter: 'all',
     taskOwnerFilter: 'all',
@@ -1223,24 +1231,42 @@ strong { font-weight: 600; color: var(--color-heading); }
     document.getElementById('th5').textContent = isLeads ? 'Audit Tier' : 'Onboarding';
     document.getElementById('th6').textContent = isLeads ? 'Referral' : 'Audit';
 
-    // Sort by display mode + direction
+    // Sort by selected field
     var dm = state.displayMode;
-    var dir = state.sortDir === 'asc' ? 1 : -1;
-    filtered.sort(function(a, b) {
-      var aName, bName;
-      if (dm === 'name') {
-        aName = ((a.first_name || '') + ' ' + (a.last_name || '')).trim().toLowerCase() || a.slug;
-        bName = ((b.first_name || '') + ' ' + (b.last_name || '')).trim().toLowerCase() || b.slug;
-      } else {
-        aName = (a.practice_name || a.slug).toLowerCase();
-        bName = (b.practice_name || b.slug).toLowerCase();
-      }
-      return aName < bName ? -dir : aName > bName ? dir : 0;
-    });
+    var sf = state.sortField;
+    if (sf === 'campaign_start_desc' || sf === 'campaign_start_asc') {
+      var csDir = sf === 'campaign_start_desc' ? -1 : 1;
+      filtered.sort(function(a, b) {
+        var aDate = a.campaign_start ? new Date(a.campaign_start).getTime() : 0;
+        var bDate = b.campaign_start ? new Date(b.campaign_start).getTime() : 0;
+        if (aDate === bDate) {
+          var aName = (a.practice_name || a.slug).toLowerCase();
+          var bName = (b.practice_name || b.slug).toLowerCase();
+          return aName < bName ? -1 : aName > bName ? 1 : 0;
+        }
+        return (aDate - bDate) * csDir;
+      });
+    } else {
+      var dir = state.sortDir === 'asc' ? 1 : -1;
+      filtered.sort(function(a, b) {
+        var aName, bName;
+        if (dm === 'name') {
+          aName = ((a.first_name || '') + ' ' + (a.last_name || '')).trim().toLowerCase() || a.slug;
+          bName = ((b.first_name || '') + ' ' + (b.last_name || '')).trim().toLowerCase() || b.slug;
+        } else {
+          aName = (a.practice_name || a.slug).toLowerCase();
+          bName = (b.practice_name || b.slug).toLowerCase();
+        }
+        return aName < bName ? -dir : aName > bName ? dir : 0;
+      });
+    }
 
-    // Update sort arrow
+    // Update sort arrow (only relevant for name sort)
     var arrow = document.getElementById('sortArrow');
-    if (arrow) arrow.classList.toggle('desc', state.sortDir === 'desc');
+    if (arrow) {
+      arrow.style.display = sf === 'name' ? '' : 'none';
+      arrow.classList.toggle('desc', state.sortDir === 'desc');
+    }
 
     var tbody = document.getElementById('dirBody');
 
@@ -1524,8 +1550,16 @@ strong { font-weight: 600; color: var(--color-heading); }
   };
 
   // ---- ONBOARDING TAB ----
+  var OB_CANONICAL_ORDER = ['confirm_info','sign_agreement','book_intro_call','connect_accounts','practice_details','bio_materials','social_profiles','checkins_and_drive','performance_guarantee'];
+
   function renderOnboarding() {
-    var steps = state.onboarding;
+    var steps = state.onboarding.slice().sort(function(a, b) {
+      var ai = OB_CANONICAL_ORDER.indexOf(a.step_key);
+      var bi = OB_CANONICAL_ORDER.indexOf(b.step_key);
+      if (ai === -1) ai = 999;
+      if (bi === -1) bi = 999;
+      return ai - bi;
+    });
     if (steps.length === 0) {
       document.getElementById('obEmpty').style.display = 'block';
       document.getElementById('obStats').style.display = 'none';
@@ -4372,11 +4406,24 @@ strong { font-weight: 600; color: var(--color-heading); }
     renderDirectory();
   });
 
-  // Sort direction toggle
+  // Sort direction toggle (for name sort)
   window.toggleSortDir = function() {
-    state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
-    renderDirectory();
+    if (state.sortField === 'name') {
+      state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+      renderDirectory();
+    }
   };
+
+  // Sort field toggle
+  document.getElementById('sortToggle').addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    document.querySelectorAll('#sortToggle button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    state.sortField = btn.dataset.sort;
+    try { localStorage.setItem('moonraker-client-sort', btn.dataset.sort); } catch(ex) {}
+    renderDirectory();
+  });
 
   // Restore display toggle active state from localStorage
   (function() {
@@ -4384,6 +4431,16 @@ strong { font-weight: 600; color: var(--color-heading); }
     if (saved === 'name') {
       document.querySelectorAll('#displayToggle button').forEach(function(b) {
         b.classList.toggle('active', b.dataset.mode === 'name');
+      });
+    }
+  })();
+
+  // Restore sort toggle active state from localStorage
+  (function() {
+    var savedSort = state.sortField;
+    if (savedSort && savedSort !== 'name') {
+      document.querySelectorAll('#sortToggle button').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.sort === savedSort);
       });
     }
   })();
@@ -4980,6 +5037,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
 
 
