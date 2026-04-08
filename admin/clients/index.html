@@ -4030,7 +4030,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     }
 
     try {
-      // Step 1: If lead, run full conversion (pages, onboarding steps, Drive folders)
+      // Step 1: If lead, convert to prospect (status, onboarding steps, Drive folders)
       if (c.status === 'lead') {
         btn.textContent = 'Converting to prospect...';
         var convertResp = await fetch('/api/convert-to-prospect', {
@@ -4043,20 +4043,6 @@ strong { font-weight: 600; color: var(--color-heading); }
           btn.disabled = false; btn.textContent = 'Create Proposal \u2192';
           return;
         }
-
-        // Save checkout_options on the contact
-        var checkoutPlans = billings.length ? billings : null;
-        if (campaigns.length === 1 && campaigns[0] === 'monthly') checkoutPlans = ['monthly'];
-        if (checkoutPlans) {
-          await fetch('/api/action', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'update_record', table: 'contacts', filters: { id: c.id },
-              data: { checkout_options: { plans: checkoutPlans } }
-            })
-          });
-        }
-
         state.contact.status = 'prospect';
         renderDetail();
       }
@@ -5037,6 +5023,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
 
 
