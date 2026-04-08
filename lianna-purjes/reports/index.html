@@ -1094,6 +1094,9 @@ section { padding: 4.5rem 0; }
           CLIENT_NAME = ((c.first_name || '') + ' ' + (c.last_name || '')).trim();
           PRACTICE_NAME = c.practice_name || CLIENT_NAME;
           PRACTICE_LOCATION = ((c.city || '') + (c.city && c.state_province ? ', ' : '') + (c.state_province || '')).trim();
+          // Set header immediately so it shows even if no reports exist
+          document.getElementById('headerName').textContent = 'Prepared for ' + CLIENT_NAME;
+          document.getElementById('headerPractice').textContent = PRACTICE_NAME + (PRACTICE_LOCATION ? ' \u00B7 ' + PRACTICE_LOCATION : '');
         }
         loadReports();
       })
