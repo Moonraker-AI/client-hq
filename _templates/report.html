@@ -304,8 +304,14 @@ section { padding: 4.5rem 0; }
 .empty-state h3 { margin-bottom: .5rem; }
 .empty-state p { color: var(--color-muted); }
 
+.suite-nav { position: fixed; top: 5rem; right: 1.25rem; z-index: 200; display: flex; flex-direction: column; gap: .35rem; }
+.suite-nav a { padding: .4rem .85rem; border: 1px solid var(--color-border); border-radius: 6px; font-weight: 600; font-size: .75rem; color: var(--color-muted); transition: all .2s; background: var(--color-surface); box-shadow: 0 2px 8px rgba(0,0,0,.06); text-align: center; text-decoration: none; }
+.suite-nav a:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.suite-nav a.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+@media (max-width: 860px) { .suite-nav { position: static; flex-direction: row; margin: 1.5rem auto; justify-content: center; } .suite-nav a { font-size: .8rem; padding: .5rem 1rem; } }
+
 @media print {
-  .section-nav, .theme-toggle, .progress-bar, .month-selector { display: none !important; }
+  .section-nav, .theme-toggle, .progress-bar, .month-selector, .suite-nav { display: none !important; }
   .reveal { opacity: 1 !important; transform: none !important; }
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
@@ -328,6 +334,8 @@ section { padding: 4.5rem 0; }
   <a href="#deliverables"><span class="nav-dot"></span>Deliverables</a>
   <a href="#next"><span class="nav-dot"></span>Next Steps</a>
 </nav>
+
+<div class="suite-nav" id="suiteNav"><a id="navDiagnosis" href="#">Diagnosis</a><a id="navActionPlan" href="#">Action Plan</a><a id="navProgress" href="#">Progress</a><a href="#" class="active">Reports</a></div>
 
 <header class="header">
   <div class="container header-inner">
@@ -1088,6 +1096,12 @@ section { padding: 4.5rem 0; }
   }
 
   function loadReports() {
+    // Set suite-nav links
+    var base = '/' + CLIENT_SLUG;
+    document.getElementById('navDiagnosis').href = base + '/audits/diagnosis';
+    document.getElementById('navActionPlan').href = base + '/audits/action-plan';
+    document.getElementById('navProgress').href = base + '/audits/progress';
+
     // Admin preview mode bypasses published filter
     var isPreview = new URLSearchParams(window.location.search).get('preview') === 'admin';
     var statusFilter = isPreview ? '' : '&report_status=eq.published';
@@ -1180,7 +1194,7 @@ section { padding: 4.5rem 0; }
   var navLinks = document.querySelectorAll('.section-nav a');
   function updateNav() {
     var current = '';
-    sections.forEach(function(s) { if (window.scrollY >= s.offsetTop - 200) current = s.id; });
+    sections.forEach(function(s) { if (s.offsetHeight > 0 && window.scrollY >= s.offsetTop - 200) current = s.id; });
     navLinks.forEach(function(l) { l.classList.toggle('active', l.getAttribute('href') === '#' + current); });
   }
 
