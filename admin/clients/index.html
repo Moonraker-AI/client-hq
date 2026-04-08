@@ -543,6 +543,8 @@ strong { font-weight: 600; color: var(--color-heading); }
 .section-desc { font-size: .82rem; color: var(--color-muted); margin-bottom: 1.25rem; }
 
 /* ---- MOBILE ---- */
+.sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.35); z-index: 199; }
+.sidebar.open ~ .sidebar-overlay { display: block; }
 .mobile-toggle { display: none; background: none; border: none; color: var(--color-heading); font-size: 1.25rem; cursor: pointer; padding: .25rem; }
 @media (max-width: 860px) {
   .sidebar { transform: translateX(-100%); }
@@ -678,6 +680,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
   </div>
 </aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <!-- MAIN -->
 <div class="main">
