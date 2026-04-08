@@ -1018,19 +1018,23 @@ section { padding: 4.5rem 0; }
     renderAuditNav();
     renderNotes(snap);
 
-    // Hide LF-dependent sections for national campaigns
-    if (snap.campaign_type === 'national') {
-      ['ai-visibility', 'local-visibility'].forEach(function(id) {
-        var sec = document.getElementById(id);
-        if (!sec) return;
-        // Hide the divider AFTER this section (not before, so the divider between search and core remains)
-        var next = sec.nextElementSibling;
-        if (next && next.classList.contains('divider')) next.style.display = 'none';
-        sec.style.display = 'none';
-      });
+    // Hide sections that have no data (data-aware, regardless of campaign_type)
+    var ai = snap.ai_visibility || {};
+    var neo = snap.neo_data || {};
+    var sectionsToHide = [];
+    if (!ai.engines || !ai.engines_checked) sectionsToHide.push('ai-visibility');
+    if ((!neo.grids || neo.grids.length === 0) && !(snap.gbp_detail && snap.gbp_detail.rating)) sectionsToHide.push('local-visibility');
+    sectionsToHide.forEach(function(id) {
+      var sec = document.getElementById(id);
+      if (!sec) return;
+      var next = sec.nextElementSibling;
+      if (next && next.classList.contains('divider')) next.style.display = 'none';
+      sec.style.display = 'none';
+    });
+    if (sectionsToHide.length > 0) {
       document.querySelectorAll('.section-nav a').forEach(function(a) {
-        var href = a.getAttribute('href');
-        if (href === '#ai-visibility' || href === '#local-visibility') a.style.display = 'none';
+        var href = (a.getAttribute('href') || '').replace('#', '');
+        if (sectionsToHide.indexOf(href) >= 0) a.style.display = 'none';
       });
     }
 
