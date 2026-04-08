@@ -420,7 +420,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
       <div id="accessAlreadyDone" class="status-signed" style="display:none;">
         <h4>&#10003; Access Granted</h4>
-        <p style="margin:0;font-size:.875rem;">We have received your access grants. Our team will confirm everything is connected.</p>
+        <p style="margin:0;font-size:.875rem;">We have received your access grants. Our team will confirm everything is connected. If your accounts have changed (new domain, new Google properties, etc.), you can use the tool below to reconnect.</p>
       </div>
 
       <div id="leadsieEmbed">
@@ -440,8 +440,10 @@ strong { font-weight: 600; color: var(--color-heading); }
           </div>
           <p style="margin:.75rem 0 0;font-size:.8125rem;">Or email us at <a href="mailto:support@moonraker.ai">support@moonraker.ai</a> and we will help you through it.</p>
         </div>
+        <div id="leadsieActions">
         <button class="btn btn-success" style="margin-top:1rem;" onclick="completeStep('connect_accounts')">Access Granted &#10003;</button>
         <button class="btn btn-outline" style="margin-top:1rem;margin-left:.75rem;" onclick="document.getElementById('accessIssuePanel').style.display = document.getElementById('accessIssuePanel').style.display === 'none' ? 'block' : 'none'">I'm Having Issues</button>
+        </div>
 
         <div id="accessIssuePanel" style="display:none;margin-top:1.25rem;background:var(--color-surface);border:1px solid var(--color-warning);border-radius:12px;padding:1.25rem;">
           <h4 style="font-size:.9rem;margin-bottom:.5rem;color:var(--color-heading);">No problem - let us know what's going on</h4>
@@ -1024,7 +1026,8 @@ strong { font-weight: 600; color: var(--color-heading); }
     }
     if (stepKey === 'connect_accounts') {
       document.getElementById('accessAlreadyDone').style.display = 'block';
-      document.getElementById('leadsieEmbed').style.display = 'none';
+      document.getElementById('leadsieActions').style.display = 'none';
+      document.getElementById('accessIssuePanel').style.display = 'none';
     }
   };
 
@@ -1682,7 +1685,8 @@ strong { font-weight: 600; color: var(--color-heading); }
         }
         if (stepData['connect_accounts'] === 'complete') {
           document.getElementById('accessAlreadyDone').style.display = 'block';
-          document.getElementById('leadsieEmbed').style.display = 'none';
+          document.getElementById('leadsieActions').style.display = 'none';
+          document.getElementById('accessIssuePanel').style.display = 'none';
         }
 
         // Render CSA
