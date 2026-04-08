@@ -593,7 +593,9 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
   var CLIENTS_FOLDER_ID = '1dymrrowTe1szsOJJPf45x4qDUit6J5jB';
   results.drive = {};
 
-  if (saJson) {
+  if (contact.drive_folder_id) {
+    results.drive.skipped = 'Drive folder already exists: ' + contact.drive_folder_id;
+  } else if (saJson) {
     try {
       var practiceName = contact.practice_name || slug;
       var driveToken = await getDelegatedToken(saJson, 'support@moonraker.ai', 'https://www.googleapis.com/auth/drive');
@@ -733,6 +735,7 @@ async function createDriveFolder(name, parentId, headers) {
     return { error: e.message || String(e) };
   }
 }
+
 
 
 
