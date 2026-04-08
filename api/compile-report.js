@@ -708,6 +708,16 @@ module.exports = async function handler(req, res) {
       }
     } catch (e) {
       warnings.push('Highlight generation: ' + e.message);
+      // Fallback: generate basic highlights from data
+      highlights = buildFallbackHighlights(snapshot, practiceName);
+      if (highlights.length > 0) {
+        await fetch(sbUrl + '/rest/v1/report_highlights?client_slug=eq.' + clientSlug + '&report_month=eq.' + reportMonth, {
+          method: 'DELETE', headers: sbHeaders()
+        });
+        await fetch(sbUrl + '/rest/v1/report_highlights', {
+          method: 'POST', headers: sbHeaders(), body: JSON.stringify(highlights)
+        });
+      }
     }
   }
 
@@ -730,7 +740,7 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({
         last_compiled_at: new Date().toISOString(),
         last_compiled_status: errors.length > 0 ? 'partial' : 'success',
-        last_compiled_errors: errors,
+        last_compiled_errors: errors.concat(warnings.length > 0 ? warnings.map(function(w) { return 'WARN: ' + w; }) : []),
         updated_at: new Date().toISOString()
       })
     });
@@ -786,6 +796,10 @@ module.exports = async function handler(req, res) {
       }
     } catch (e) { warnings.push('Resend notification: ' + e.message); }
   }
+
+  // Log warnings and errors for Vercel runtime visibility
+  if (warnings.length > 0) console.log('[' + clientSlug + '] Warnings:', warnings.join('; '));
+  if (errors.length > 0) console.log('[' + clientSlug + '] Errors:', errors.join('; '));
 
   // ─── DONE ─────────────────────────────────────────────────────
   return res.status(200).json({
@@ -993,15 +1007,24 @@ async function generateHighlights(snapshot, prevSnap, practiceName, apiKey) {
     }
   }
 
-  var claudeResp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+  var claudeResp = null;
+  for (var _attempt = 0; _attempt <= 2; _attempt++) {
+    claudeResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       messages: [{ role: 'user', content: 'Generate exactly 3 report highlights for a client\'s monthly campaign report. Each highlight should be a win or milestone.\n\nIMPORTANT CONTEXT:\n- This is Month ' + snapshot.campaign_month + ' of an ongoing SEO campaign. Do NOT describe it as a new launch, first month, or initial setup unless campaign_month is 1.\n- The practice name is "' + practiceName + '". Use the practice name in highlights, not the owner\'s personal name.\n- Focus on concrete data points and month-over-month trends when previous data is available.\n\nMetrics:\n' + metricsContext + '\n\nReturn ONLY a JSON array (no markdown, no backticks) with 3 objects, each having:\n- icon: one of "chart-up", "phone", "bot", "target", "globe", "users", "check", "map-pin"\n- headline: short punchy headline (max 8 words, no em dashes)\n- body: 1-2 sentence explanation with specific numbers. ARP = Average Rank Position (lower is better, 1 is top). ATRP = Average Top Rank Position. SoLV = Share of Local Voice (higher is better, 100% means top position everywhere in the grid).\n- metric_ref: the primary metric referenced (e.g. "gsc_clicks", "gbp_rating", "ai_visibility", "maps_geogrid")\n- highlight_type: "win" or "milestone"\n\nPrioritize AI visibility data and geogrid/maps performance when available. Always include concrete numbers.' }]
-    })
-  });
+      })
+    });
+    if (claudeResp.status !== 529) break;
+    if (_attempt < 2) await new Promise(function(r) { setTimeout(r, Math.pow(2, _attempt) * 1000 + Math.random() * 500); });
+  }
+
+  if (!claudeResp.ok) {
+    throw new Error('Claude API returned ' + claudeResp.status);
+  }
 
   var claudeData = await claudeResp.json();
   var text = '';
@@ -1029,4 +1052,79 @@ async function generateHighlights(snapshot, prevSnap, practiceName, apiKey) {
 }
 
 
+function buildFallbackHighlights(snapshot, practiceName) {
+  var highlights = [];
+  var slug = snapshot.client_slug;
+  var month = snapshot.report_month;
+
+  // Highlight 1: Campaign progress
+  if (snapshot.tasks_total) {
+    var pct = Math.round((snapshot.tasks_complete || 0) / snapshot.tasks_total * 100);
+    highlights.push({
+      client_slug: slug, report_month: month, sort_order: 1,
+      icon: 'check', headline: 'Campaign Progress at ' + pct + '%',
+      body: snapshot.tasks_complete + ' of ' + snapshot.tasks_total + ' campaign tasks complete, with ' + (snapshot.tasks_in_progress || 0) + ' currently in progress.',
+      metric_ref: 'tasks', highlight_type: 'milestone'
+    });
+  }
+
+  // Highlight 2: GSC performance
+  if (snapshot.gsc_clicks !== null) {
+    var body = practiceName + ' received ' + snapshot.gsc_clicks + ' clicks from ' + snapshot.gsc_impressions + ' search impressions.';
+    if (snapshot.gsc_clicks_prev !== null && snapshot.gsc_clicks_prev > 0) {
+      var delta = Math.round(((snapshot.gsc_clicks - snapshot.gsc_clicks_prev) / snapshot.gsc_clicks_prev) * 100);
+      body += ' That is ' + (delta >= 0 ? 'up' : 'down') + ' ' + Math.abs(delta) + '% from the previous month.';
+    }
+    highlights.push({
+      client_slug: slug, report_month: month, sort_order: 2,
+      icon: 'chart-up', headline: snapshot.gsc_clicks + ' Search Clicks This Month',
+      body: body, metric_ref: 'gsc_clicks', highlight_type: 'win'
+    });
+  }
+
+  // Highlight 3: AI visibility or Maps or CORE scores
+  var ai = snapshot.ai_visibility || {};
+  var neo = snapshot.neo_data || {};
+  if (ai.engines_citing > 0) {
+    highlights.push({
+      client_slug: slug, report_month: month, sort_order: highlights.length + 1,
+      icon: 'bot', headline: 'Visible on ' + ai.engines_citing + ' AI Platforms',
+      body: practiceName + ' is being recommended by ' + ai.engines_citing + ' of ' + ai.engines_checked + ' AI search platforms monitored.',
+      metric_ref: 'ai_visibility', highlight_type: 'win'
+    });
+  } else if (neo.avg_arp) {
+    highlights.push({
+      client_slug: slug, report_month: month, sort_order: highlights.length + 1,
+      icon: 'map-pin', headline: 'Maps Rank Position: ' + neo.avg_arp,
+      body: 'Across ' + neo.grid_count + ' tracked keywords, ' + practiceName + ' averages position ' + neo.avg_arp + ' on local maps with a ' + neo.avg_solv + '% Share of Local Voice.',
+      metric_ref: 'maps_geogrid', highlight_type: 'win'
+    });
+  } else if (snapshot.score_credibility !== null) {
+    var avg = ((snapshot.score_credibility || 0) + (snapshot.score_optimization || 0) + (snapshot.score_reputation || 0) + (snapshot.score_engagement || 0)) / 4;
+    highlights.push({
+      client_slug: slug, report_month: month, sort_order: highlights.length + 1,
+      icon: 'target', headline: 'CORE Score: ' + avg.toFixed(1) + '/10',
+      body: 'Baseline CORE assessment: Credibility ' + (snapshot.score_credibility || 0) + ', Optimization ' + (snapshot.score_optimization || 0) + ', Reputation ' + (snapshot.score_reputation || 0) + ', Engagement ' + (snapshot.score_engagement || 0) + '.',
+      metric_ref: 'core_scores', highlight_type: 'milestone'
+    });
+  }
+
+  // If we only got 1-2, pad with a generic campaign milestone
+  if (highlights.length > 0 && highlights.length < 3) {
+    highlights.push({
+      client_slug: slug, report_month: month, sort_order: highlights.length + 1,
+      icon: 'globe', headline: 'Month ' + snapshot.campaign_month + ' Underway',
+      body: 'Your Moonraker campaign is in its ' + ordinal(snapshot.campaign_month) + ' month. The team is actively building your practice\'s online visibility across search, maps, and AI platforms.',
+      metric_ref: 'campaign', highlight_type: 'milestone'
+    });
+  }
+
+  return highlights.slice(0, 3);
+}
+
+function ordinal(n) {
+  var s = ['th', 'st', 'nd', 'rd'];
+  var v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
 
