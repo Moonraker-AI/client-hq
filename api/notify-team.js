@@ -104,6 +104,8 @@ module.exports = async function handler(req, res) {
 };
 
 // ── Email builders ──
+// All team emails use a consistent light-themed branded template
+// matching the compile-report notification style.
 
 function buildPaymentEmail(contact, clientName, deepDiveUrl) {
   var plan = contact.plan_type || 'CORE Marketing System';
@@ -111,23 +113,25 @@ function buildPaymentEmail(contact, clientName, deepDiveUrl) {
   var practice = contact.practice_name || '';
 
   return emailWrapper(
-    '💳 New Client Payment',
-    '<p style="font-size:16px;color:#e0e0e0;margin:0 0 20px;">' +
-      '<strong style="color:#fff;">' + esc(clientName.trim()) + '</strong> has completed payment and has been moved to <strong style="color:#00D47E;">Onboarding</strong>.' +
+    'New Client Payment',
+    '<p style="margin:0 0 4px;color:#1E2A5E;font-size:18px;font-weight:700">' + esc(clientName.trim()) + '</p>' +
+    '<p style="margin:0 0 16px;color:#6B7599;font-size:14px">' + esc(practice) + (location ? ' \u00B7 ' + esc(location) : '') + '</p>' +
+    '<p style="margin:0 0 16px;color:#333F70;font-size:14px">' +
+      'Payment received. Status moved to <strong style="color:#00D47E">Onboarding</strong>. ' +
+      'Onboarding steps, intro call checklist, and deliverables have been automatically seeded.' +
     '</p>' +
-    detailRow('Practice', practice) +
-    detailRow('Location', location) +
-    detailRow('Email', contact.email || '') +
-    detailRow('Plan', plan) +
-    '<div style="margin-top:24px;">' +
-      actionButton('View Client', deepDiveUrl) +
-    '</div>' +
-    '<p style="font-size:13px;color:#888;margin-top:20px;">Onboarding steps and intro call checklist have been automatically seeded. Deliverables have been created.</p>'
+    detailTable([
+      ['Plan', plan],
+      ['Email', contact.email || ''],
+      ['Location', location]
+    ]) +
+    '<div style="margin-top:20px">' + actionButton('View Client', deepDiveUrl) + '</div>'
   );
 }
 
 function buildIntroCallEmail(contact, clientName, deepDiveUrl, steps) {
   var practice = contact.practice_name || '';
+  var location = [contact.city, contact.state_province].filter(Boolean).join(', ');
 
   // Group steps by category
   var categories = {};
@@ -146,88 +150,93 @@ function buildIntroCallEmail(contact, clientName, deepDiveUrl, steps) {
   var total = steps.length;
   var pending = total - completed;
 
-  var summaryHtml = '<div style="margin:20px 0;padding:16px;background:#1a1f2e;border-radius:8px;border:1px solid #2a2f3e;">' +
-    '<p style="font-size:14px;color:#00D47E;margin:0 0 12px;font-weight:600;">' +
+  // Build checklist summary
+  var checklistHtml = '<div style="margin:16px 0;padding:16px 20px;background:#fff;border-radius:8px;border:1px solid #E2E8F0">' +
+    '<p style="font-size:13px;color:#00D47E;margin:0 0 12px;font-weight:600">' +
       completed + ' of ' + total + ' tasks completed' +
-      (pending > 0 ? ' &mdash; ' + pending + ' still pending' : ' &mdash; all clear!') +
+      (pending > 0 ? ' \u2014 ' + pending + ' still pending' : ' \u2014 all clear!') +
     '</p>';
 
   var catOrder = ['platform_access', 'campaign_setup', 'expectations'];
   catOrder.forEach(function(catKey) {
     var catSteps = categories[catKey];
     if (!catSteps) return;
-    summaryHtml += '<p style="font-size:12px;color:#888;margin:12px 0 6px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">' + (catLabels[catKey] || catKey) + '</p>';
+    checklistHtml += '<p style="font-size:11px;color:#6B7599;margin:12px 0 4px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600">' + (catLabels[catKey] || catKey) + '</p>';
     catSteps.forEach(function(s) {
-      var icon = s.status === 'complete' ? '✅' : '⬜';
-      var labelColor = s.status === 'complete' ? '#888' : '#e0e0e0';
-      var textDecoration = s.status === 'complete' ? 'line-through' : 'none';
-      summaryHtml += '<p style="font-size:13px;color:' + labelColor + ';margin:3px 0;text-decoration:' + textDecoration + ';">' + icon + ' ' + esc(s.label) + '</p>';
+      var icon = s.status === 'complete' ? '\u2705' : '\u2B1C';
+      var color = s.status === 'complete' ? '#6B7599' : '#1E2A5E';
+      checklistHtml += '<p style="font-size:13px;color:' + color + ';margin:2px 0">' + icon + ' ' + esc(s.label) + '</p>';
     });
   });
-  summaryHtml += '</div>';
+  checklistHtml += '</div>';
+
+  var warningHtml = '';
+  if (pending > 0) {
+    warningHtml = '<p style="font-size:13px;color:#D97706;margin:0 0 16px">\u26A0\uFE0F ' + pending + ' task' + (pending > 1 ? 's' : '') + ' still need attention.</p>';
+  }
 
   return emailWrapper(
-    '📋 Intro Call Complete',
-    '<p style="font-size:16px;color:#e0e0e0;margin:0 0 20px;">' +
-      'The intro call for <strong style="color:#fff;">' + esc(clientName.trim()) + '</strong>' +
-      (practice ? ' (' + esc(practice) + ')' : '') +
-      ' has been completed.' +
-    '</p>' +
-    summaryHtml +
-    (pending > 0
-      ? '<p style="font-size:13px;color:#f0ad4e;margin-top:16px;">⚠️ ' + pending + ' task' + (pending > 1 ? 's' : '') + ' still need attention. Check the deep-dive for details.</p>'
-      : '') +
-    '<div style="margin-top:24px;">' +
-      actionButton('View Client', deepDiveUrl) +
-    '</div>'
+    'Intro Call Complete',
+    '<p style="margin:0 0 4px;color:#1E2A5E;font-size:18px;font-weight:700">' + esc(clientName.trim()) + '</p>' +
+    '<p style="margin:0 0 16px;color:#6B7599;font-size:14px">' + esc(practice) + (location ? ' \u00B7 ' + esc(location) : '') + '</p>' +
+    '<p style="margin:0 0 4px;color:#333F70;font-size:14px">The intro call has been completed. Below is the checklist summary.</p>' +
+    checklistHtml +
+    warningHtml +
+    '<div style="margin-top:20px">' + actionButton('View Client', deepDiveUrl) + '</div>'
   );
 }
 
 function buildOnboardingEmail(contact, clientName, deepDiveUrl) {
   var practice = contact.practice_name || '';
+  var location = [contact.city, contact.state_province].filter(Boolean).join(', ');
 
   return emailWrapper(
-    '🎉 Onboarding Complete',
-    '<p style="font-size:16px;color:#e0e0e0;margin:0 0 20px;">' +
-      '<strong style="color:#fff;">' + esc(clientName.trim()) + '</strong>' +
-      (practice ? ' (' + esc(practice) + ')' : '') +
-      ' has completed all onboarding steps and has been promoted to <strong style="color:#00D47E;">Active</strong>.' +
+    'Onboarding Complete',
+    '<p style="margin:0 0 4px;color:#1E2A5E;font-size:18px;font-weight:700">' + esc(clientName.trim()) + '</p>' +
+    '<p style="margin:0 0 16px;color:#6B7599;font-size:14px">' + esc(practice) + (location ? ' \u00B7 ' + esc(location) : '') + '</p>' +
+    '<p style="margin:0 0 16px;color:#333F70;font-size:14px">' +
+      'All onboarding steps are complete. Status promoted to <strong style="color:#00D47E">Active</strong>. ' +
+      'The client is now ready for ongoing campaign work, reporting, and deliverables.' +
     '</p>' +
-    '<p style="font-size:14px;color:#ccc;margin:0 0 20px;">The client is now ready for ongoing campaign work, reporting, and deliverables.</p>' +
-    '<div style="margin-top:24px;">' +
-      actionButton('View Client', deepDiveUrl) +
-    '</div>' +
-    '<p style="font-size:13px;color:#888;margin-top:20px;">Monthly report scheduling can now be configured in the Reports tab.</p>'
+    '<p style="margin:0 0 16px;color:#6B7599;font-size:13px">Monthly report scheduling can now be configured in the Reports tab.</p>' +
+    '<div style="margin-top:20px">' + actionButton('View Client', deepDiveUrl) + '</div>'
   );
 }
 
-// ── Shared email components ──
+// ── Shared email components (light branded template) ──
 
 function emailWrapper(title, bodyContent) {
   return '<!DOCTYPE html><html><head><meta charset="utf-8"></head>' +
-    '<body style="margin:0;padding:0;background:#0d1117;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">' +
-    '<div style="max-width:560px;margin:0 auto;padding:32px 24px;">' +
-      '<div style="margin-bottom:24px;">' +
-        '<img src="https://clients.moonraker.ai/assets/logo.png" alt="Moonraker" style="height:28px;" />' +
+    '<body style="margin:0;padding:0;background:#F0F4F8;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">' +
+    '<div style="max-width:520px;margin:0 auto;padding:32px 16px">' +
+      '<div style="text-align:center;margin-bottom:16px">' +
+        '<img src="https://clients.moonraker.ai/assets/logo.png" alt="Moonraker" style="height:32px" />' +
       '</div>' +
-      '<div style="background:#141922;border-radius:12px;border:1px solid #1e2533;padding:28px;">' +
-        '<h2 style="font-size:18px;color:#fff;margin:0 0 16px;font-weight:600;">' + title + '</h2>' +
-        bodyContent +
+      '<div style="background:#fff;border-radius:12px;padding:28px;box-shadow:0 1px 3px rgba(0,0,0,.06)">' +
+        '<div style="background:#F8FAFC;border-radius:10px;padding:24px">' +
+          '<p style="margin:0 0 16px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#00D47E">' + esc(title) + '</p>' +
+          bodyContent +
+        '</div>' +
       '</div>' +
-      '<p style="font-size:11px;color:#555;margin-top:20px;text-align:center;">Moonraker AI &middot; Team Notification</p>' +
-    '</div>' +
-    '</body></html>';
+      '<p style="font-size:11px;color:#6B7599;margin-top:16px;text-align:center">Moonraker AI \u00B7 Team Notification</p>' +
+    '</div></body></html>';
 }
 
-function detailRow(label, value) {
-  if (!value) return '';
-  return '<p style="font-size:14px;color:#ccc;margin:6px 0;">' +
-    '<span style="color:#888;">' + esc(label) + ':</span> ' + esc(value) +
-  '</p>';
+function detailTable(rows) {
+  var html = '<table style="width:100%;font-size:14px;border-collapse:collapse;margin-top:12px">';
+  rows.forEach(function(r) {
+    if (!r[1]) return;
+    html += '<tr>' +
+      '<td style="padding:8px 0;color:#6B7599;border-bottom:1px solid #E2E8F0">' + esc(r[0]) + '</td>' +
+      '<td style="padding:8px 0;text-align:right;font-weight:600;color:#1E2A5E;border-bottom:1px solid #E2E8F0">' + esc(r[1]) + '</td>' +
+    '</tr>';
+  });
+  html += '</table>';
+  return html;
 }
 
 function actionButton(label, url) {
-  return '<a href="' + esc(url) + '" style="display:inline-block;padding:10px 20px;background:#00D47E;color:#0d1117;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px;">' + esc(label) + '</a>';
+  return '<a href="' + esc(url) + '" style="display:inline-block;padding:12px 24px;background:#00D47E;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">' + esc(label) + '</a>';
 }
 
 function esc(str) {
