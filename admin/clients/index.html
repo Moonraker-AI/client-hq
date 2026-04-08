@@ -55,7 +55,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 17px; }
+html { font-size: 17px;  overflow-x: hidden; }
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.6; -webkit-font-smoothing: antialiased;  overflow-x: hidden; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
 h1,h2,h3,h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.2; }
@@ -81,7 +81,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 .sidebar-footer { padding: .75rem 1rem; border-top: 1px solid var(--sidebar-border); }
 
 /* ---- MAIN ---- */
-.main { flex: 1; margin-left: 240px; min-width: 0; transition: margin-left .2s ease; }
+.main { flex: 1; margin-left: 240px; min-width: 0; transition: margin-left .2s ease; overflow-x: hidden; }
 
 /* ---- TOP BAR ---- */
 .topbar { position: sticky; top: 0; z-index: 100; background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 0 2rem; height: 56px; display: flex; align-items: center; gap: 1rem; }
