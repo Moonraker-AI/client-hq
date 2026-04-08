@@ -160,7 +160,7 @@ section{padding:3.5rem 0}
 <div class="progress-line" id="progressLine"></div>
 <header class="header"><div class="container header-inner"><img src="/assets/logo.png" alt="Moonraker"><div class="header-meta"><p class="name" id="headerName"></p><p id="headerMeta"></p><p id="headerDate"></p></div></div></header>
 <button class="theme-toggle" id="themeBtn">&#x1F319;</button>
-<div class="suite-nav" id="suiteNav"><a href="#" class="active">Diagnosis</a><a id="navActionPlan" href="#">Action Plan</a><a id="navProgress" href="#">Progress</a></div>
+<div class="suite-nav" id="suiteNav"><a href="#" class="active">Diagnosis</a><a id="navActionPlan" href="#">Action Plan</a><a id="navProgress" href="#">Progress</a><a id="navReports" href="#">Reports</a></div>
 <nav class="section-nav" id="sectionNav">
   <a href="#hero"><span class="nav-dot"></span>Overview</a>
   <a href="#summary"><span class="nav-dot"></span>Summary</a>
@@ -309,6 +309,7 @@ section{padding:3.5rem 0}
     var base='/'+SLUG;
     document.getElementById('navActionPlan').href=base+'/audits/action-plan';
     document.getElementById('navProgress').href=base+'/audits/progress';
+    document.getElementById('navReports').href=base+'/reports';
     document.getElementById('ctaActionPlan').href=base+'/audits/action-plan';
     document.getElementById('ctaProgress').href=base+'/audits/progress';
 
