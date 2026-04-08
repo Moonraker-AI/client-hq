@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem("moonraker-theme");if(st){document.documentElement.setAttribute("data-theme",st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moonraker x HeartWise Counseling Services: Growth Proposal</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root, [data-theme="light"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00b86c;
+  --color-primary-light: #B4EEE0;
+  --color-primary-subtle: #DDF8F2;
+  --color-bg: #F7FDFB;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-heading: #1E2A5E;
+  --color-body: #333F70;
+  --color-muted: #6B7599;
+  --color-navy: #141C3A;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+}
+[data-theme="dark"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00f598;
+  --color-primary-light: #1A4A38;
+  --color-primary-subtle: #0D2E22;
+  --color-bg: #080F0B;
+  --color-surface: #0E1A14;
+  --color-border: #1E3530;
+  --color-heading: #E8F5EF;
+  --color-body: #C8D8D0;
+  --color-muted: #5A7A6E;
+  --color-navy: #0A1630;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #FF6B6B;
+  --color-info: #60A5FA;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.7; -webkit-font-smoothing: antialiased;  }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
+h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.15; }
+h1 { font-size: 2.75rem; letter-spacing: -0.02em; }
+h2 { font-size: 2rem; margin-bottom: .75rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.35rem; }
+h4 { font-size: 1.15rem; }
+p { margin-bottom: 1rem; }
+a { color: var(--color-primary); text-decoration: none; transition: color .2s; }
+a:hover { color: var(--color-primary-hover); }
+strong { font-weight: 600; color: var(--color-heading); }
+
+.progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--color-primary); width: 0%; z-index: 999; transition: width .1s linear; box-shadow: 0 0 8px rgba(0,212,126,.4); }
+
+.section-nav { position: fixed; right: 2rem; top: 50%; transform: translateY(-50%); z-index: 100; display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 1140px) { .section-nav { display: none; } }
+.section-nav a { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 8px; border-radius: 8px; font-size: .75rem; font-weight: 500; color: var(--color-muted); text-decoration: none; transition: all .25s ease; white-space: nowrap; }
+.section-nav a:hover { color: var(--color-heading); background: var(--color-surface); }
+.section-nav a.active { color: var(--color-primary); background: var(--color-primary-subtle); }
+.section-nav .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-border); flex-shrink: 0; transition: all .25s ease; }
+.section-nav a.active .nav-dot { background: var(--color-primary); width: 8px; height: 8px; box-shadow: 0 0 6px rgba(0,212,126,.5); }
+
+.container { max-width: 1060px; margin: 0 auto; padding: 0 3rem; }
+@media (max-width: 768px) { .container { padding: 0 1.5rem; } }
+section { padding: 4.5rem 0; }
+.divider { height: 1px; background: var(--color-border); border: none; margin: 0; }
+
+.theme-toggle { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 200; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; transition: all .25s ease; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.theme-toggle:hover { border-color: var(--color-primary); box-shadow: 0 2px 12px rgba(0,212,126,.15); }
+
+.header { background: var(--color-navy); padding: 2rem 0; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; top: -60%; right: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(0,212,126,.08) 0%, transparent 70%); pointer-events: none; }
+.header-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.header img { height: 36px; }
+.header-meta { text-align: right; }
+.header-meta p { margin: 0; font-size: .8125rem; color: rgba(232,245,239,.45); }
+.header-meta .name { color: #E8F5EF; font-weight: 600; font-size: .9375rem; }
+
+.hero { padding: 5.5rem 0 4rem; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; top: -100px; right: -80px; width: 500px; height: 500px; background: radial-gradient(circle at 30% 40%, rgba(0,212,126,.06) 0%, transparent 60%); pointer-events: none; }
+.hero-layout { display: grid; grid-template-columns: 1fr 280px; gap: 3rem; align-items: center; }
+@media (max-width: 768px) { .hero-layout { grid-template-columns: 1fr; } .hero-visual { display: none; } }
+.hero-content { position: relative; z-index: 1; }
+.hero h1 { margin-bottom: 1rem; }
+.hero .subtitle { font-size: 1.0625rem; color: var(--color-muted); max-width: 520px; line-height: 1.7; }
+.badge { display: inline-block; background: var(--color-primary-subtle); color: var(--color-primary); font-weight: 600; font-size: .75rem; padding: .4rem 1rem; border-radius: 100px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 1rem; }
+.hero-visual svg { width: 100%; height: auto; }
+
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 2rem; margin-bottom: 1.5rem; transition: box-shadow .3s ease, transform .3s ease; }
+.card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.05); transform: translateY(-2px); }
+.exec-summary .lead { font-size: 1.0625rem; line-height: 1.8; }
+
+.scorecard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 2.5rem 0; }
+@media (max-width: 640px) { .scorecard-grid { grid-template-columns: repeat(2, 1fr); } }
+.score-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.5rem 1rem 1.25rem; text-align: center; position: relative; overflow: hidden; transition: transform .3s, box-shadow .3s; }
+.score-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+.score-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+.score-card.score-low::after { background: var(--color-danger); }
+.score-card.score-med::after { background: var(--color-warning); }
+.ring-wrap { position: relative; width: 88px; height: 88px; margin: 0 auto 12px; }
+.ring-bg, .ring-fg { fill: none; stroke-width: 5; stroke-linecap: round; }
+.ring-bg { stroke: var(--color-border); }
+.ring-fg { transition: stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1); transform: rotate(-90deg); transform-origin: center; }
+.score-val { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.375rem; }
+.score-val span { font-size: .75rem; opacity: .4; font-weight: 400; }
+.score-low .ring-fg { stroke: var(--color-danger); }
+.score-low .score-val { color: var(--color-danger); }
+.score-med .ring-fg { stroke: var(--color-warning); }
+.score-med .score-val { color: var(--color-warning); }
+.score-label { font-size: .6875rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 2px; }
+.score-pillar { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .9375rem; color: var(--color-heading); }
+
+.collapsible { margin-bottom: .75rem; }
+.collapsible-toggle { width: 100%; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1rem; color: var(--color-heading); text-align: left; transition: all .2s ease; }
+.collapsible-toggle:hover { border-color: var(--color-primary); box-shadow: 0 2px 10px rgba(0,212,126,.06); }
+.collapsible-toggle .arrow { transition: transform .3s ease; color: var(--color-primary); font-size: 1rem; }
+.collapsible.open .collapsible-toggle .arrow { transform: rotate(180deg); }
+.collapsible.open .collapsible-toggle { border-radius: 12px 12px 0 0; }
+.collapsible-content { max-height: 0; overflow: hidden; transition: max-height .4s ease; background: var(--color-surface); border: 0 solid var(--color-border); border-width: 0 1px; border-radius: 0 0 12px 12px; }
+.collapsible.open .collapsible-content { max-height: 3000px; border-width: 0 1px 1px 1px; }
+.collapsible-content-inner { padding: 1.25rem; }
+.finding { display: flex; gap: .75rem; margin-bottom: .875rem; align-items: flex-start; }
+.finding-icon { font-size: 1.125rem; flex-shrink: 0; margin-top: .1rem; }
+.finding p { margin: 0; font-size: .9375rem; line-height: 1.7; }
+.finding .highlight { font-weight: 600; color: var(--color-heading); }
+
+.timeline { position: relative; padding-left: 2rem; margin: 2rem 0; }
+.timeline::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, var(--color-primary), var(--color-primary-light)); }
+.timeline-item { position: relative; margin-bottom: 2rem; padding-bottom: .5rem; }
+.timeline-item::before { content: ''; position: absolute; left: -2rem; top: 6px; width: 14px; height: 14px; background: var(--color-primary); border-radius: 50%; border: 3px solid var(--color-bg); }
+.timeline-item h4 { margin-bottom: .35rem; }
+.timeline-item p { margin-bottom: .25rem; font-size: .9375rem; }
+.timeline-phase { display: inline-block; font-size: .6875rem; font-weight: 600; color: var(--color-primary); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .25rem; }
+
+.investment-card { background: var(--color-surface); border: 2px solid var(--color-primary); border-radius: 18px; padding: 2.5rem; text-align: center; position: relative; overflow: hidden; }
+.investment-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--color-primary), #00f598, var(--color-primary)); background-size: 200% 100%; animation: shimmer 3s ease infinite; }
+.investment-card.recommended { border-width: 3px; box-shadow: 0 0 24px rgba(0, 209, 130, 0.2), 0 0 48px rgba(0, 209, 130, 0.08); }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.investment-price { font-size: 3.25rem; font-weight: 700; color: var(--color-heading); margin: .75rem 0 .25rem; font-family: 'Outfit', sans-serif; }
+.investment-period { color: var(--color-muted); font-size: .9375rem; margin-bottom: 1.5rem; }
+.investment-features { text-align: left; max-width: 480px; margin: 0 auto 2rem; }
+.investment-features li { list-style: none; padding: .5rem 0; border-bottom: 1px solid var(--color-border); display: flex; align-items: center; gap: .6rem; font-size: .9375rem; }
+.investment-features li:last-child { border-bottom: none; }
+.check { color: var(--color-primary); font-weight: 700; font-size: 1.125rem; }
+
+.cta-btn { display: inline-block; background: var(--color-primary); color: #fff; font-weight: 600; font-size: 1rem; padding: .875rem 2rem; border-radius: 10px; transition: all .25s ease; text-decoration: none; }
+.cta-btn:hover { background: var(--color-primary-hover); color: #fff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,212,126,.3); }
+.cta-btn-outline { display: inline-block; background: transparent; color: var(--color-primary); font-weight: 600; font-size: .9375rem; padding: .7rem 1.75rem; border-radius: 10px; border: 2px solid var(--color-primary); transition: all .2s ease; text-decoration: none; }
+.cta-btn-outline:hover { background: var(--color-primary-subtle); color: var(--color-primary); }
+.cta-group { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 2.5rem; }
+
+.roi-callout { background: var(--color-primary-subtle); border-left: 4px solid var(--color-primary); border-radius: 0 12px 12px 0; padding: 1.5rem 2rem; margin: 2rem 0; }
+.roi-callout h4 { color: var(--color-heading); margin-bottom: .5rem; font-size: 1rem; }
+.guarantee-box { background: linear-gradient(135deg, #141C3A, #1E3A5F); border-radius: 16px; padding: 2.5rem; color: #E8F5EF; margin: 2rem 0; position: relative; overflow: hidden; border: 1px solid rgba(59,130,246,.2); }
+.guarantee-box::before { content: ''; position: absolute; top: -30%; right: -5%; width: 260px; height: 260px; background: radial-gradient(circle, rgba(0,212,126,.12) 0%, transparent 70%); pointer-events: none; }
+.guarantee-box h3 { color: var(--color-primary); margin-bottom: .75rem; }
+.guarantee-box p { color: rgba(232,245,239,.9); margin-bottom: .5rem; font-size: 1rem; line-height: 1.6; }
+.assets-note { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1.75rem; display: flex; gap: 1rem; align-items: flex-start; margin: 2rem 0; }
+.assets-note .icon { font-size: 1.25rem; flex-shrink: 0; }
+.assets-note p { margin: 0; font-size: .9375rem; }
+
+.confidential { text-align: center; padding: 2rem 0; color: var(--color-muted); font-size: .8125rem; letter-spacing: .04em; }
+.footer { background: var(--color-navy); padding: 3rem 0; text-align: center; color: rgba(232,245,239,.4); font-size: .8125rem; }
+.footer img { height: 28px; margin-bottom: .75rem; opacity: .6; }
+.footer a { color: var(--color-primary); }
+
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+.investment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+.investment-grid .investment-card { margin: 0; }
+@media (max-width: 640px) { .investment-grid { grid-template-columns: 1fr; } }
+
+.results-stats-bar { display: flex; justify-content: center; gap: 3rem; margin-bottom: 2rem; }
+.results-stats-bar .stat { text-align: center; }
+.results-stats-bar .stat-value { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 2rem; color: var(--color-primary); line-height: 1.1; }
+.results-stats-bar .stat-label { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--color-muted); margin-top: .25rem; }
+.results-mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
+@media (max-width: 768px) { .results-mini-grid { grid-template-columns: 1fr; } .results-stats-bar { gap: 1.5rem; } }
+.results-mini-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform .2s, box-shadow .2s; }
+.results-mini-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+.results-mini-card:hover .card-image-wrap img { transform: scale(1.03); }
+.results-mini-card .card-image-wrap { position: relative; overflow: hidden; aspect-ratio: 16/9; background: var(--color-navy); }
+.results-mini-card .card-image-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; display: block; }
+.results-mini-card .card-badge { position: absolute; top: .75rem; right: .75rem; background: var(--color-primary); color: #fff; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .875rem; padding: .3rem .7rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+.results-mini-card .card-body { padding: .75rem 1rem; }
+.results-mini-card .card-meta { font-size: .875rem; color: var(--color-muted); display: flex; align-items: center; gap: .5rem; }
+.results-mini-card .card-type-tag { display: inline-block; background: var(--color-primary-subtle); color: var(--color-primary); font-weight: 600; font-size: .75rem; padding: .15rem .5rem; border-radius: 6px; }
+.results-see-all { text-align: center; margin-top: .5rem; }
+.results-lightbox { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(30,42,94,.65); backdrop-filter: blur(12px); align-items: center; justify-content: center; padding: 2rem; }
+[data-theme="dark"] .results-lightbox { background: rgba(8,15,11,.8); }
+.results-lightbox.open { display: flex; }
+.results-lightbox-inner { position: relative; display: inline-block; }
+.results-lightbox-inner img { max-width: 90vw; max-height: 85vh; border-radius: 12px; box-shadow: 0 12px 48px rgba(0,0,0,.3); display: block; }
+.results-lightbox-close { position: absolute; top: 1.25rem; right: 1.5rem; background: none; border: none; color: #fff; font-size: 2rem; cursor: pointer; opacity: .7; transition: opacity .2s; z-index: 1; }
+.results-lightbox-close:hover { opacity: 1; }
+.results-lightbox-caption { position: absolute; top: calc(100% + .75rem); left: 50%; transform: translateX(-50%); background: var(--color-primary); color: #fff; padding: .5rem 1.25rem; border-radius: 99px; font-size: .875rem; font-weight: 600; white-space: nowrap; box-shadow: 0 2px 12px rgba(0,0,0,.2); }
+
+@media print {
+  .section-nav, .theme-toggle, .progress-bar { display: none !important; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+  .collapsible-content { max-height: none !important; border-width: 0 1px 1px 1px !important; }
+  .collapsible-toggle .arrow { display: none; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+<button class="theme-toggle" title="Toggle dark mode" id="themeBtn" aria-label="Toggle dark mode">&#x1F319;</button>
+
+<nav class="section-nav" id="sectionNav">
+  <a href="#hero"><span class="nav-dot"></span>Overview</a>
+  <a href="#summary"><span class="nav-dot"></span>What We Heard</a>
+  <a href="#assessment"><span class="nav-dot"></span>Assessment</a>
+  <a href="#strategy"><span class="nav-dot"></span>Strategy</a>
+  <a href="#timeline"><span class="nav-dot"></span>Roadmap</a>
+  <a href="#results"><span class="nav-dot"></span>Results</a>
+  <a href="#investment"><span class="nav-dot"></span>Investment</a>
+  <a href="#next"><span class="nav-dot"></span>Next Steps</a>
+</nav>
+
+<!-- ============================================================
+     SECTION 1: HEADER
+     Variables: PROSPECT_NAME_CREDENTIALS, PRACTICE_NAME, LOCATION, DATE
+     ============================================================ -->
+<header class="header">
+  <div class="container header-inner">
+    <img src="/assets/logo.png" alt="Moonraker">
+    <div class="header-meta">
+      <p class="name">Prepared for Susan Gulka, LPC</p>
+      <p>HeartWise Counseling Services &middot; Lake Oswego, OR</p>
+      <p>April 8, 2026 &middot; Confidential</p>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================
+     SECTION 2: HERO
+     Variables: BADGE_TEXT, HERO_HEADLINE, HERO_SUBTITLE
+     Badge options: "3-Month Growth Engagement" | "12-Month CORE Campaign" | "Monthly CORE Engagement"
+     ============================================================ -->
+<section class="hero" id="hero">
+  <div class="container">
+    <div class="hero-layout">
+      <div class="hero-content">
+        <span class="badge">12-Month CORE Campaign</span>
+        <h1>Helping HeartWise Counseling Get Found by the Clients Who Need You Most</h1>
+        <p class="subtitle">Susan, you're doing meaningful work in Lake Oswego - let's make sure AI and search engines can find you and recommend you with confidence.</p>
+      </div>
+      <div class="hero-visual">
+        <svg viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="140" cy="140" r="120" stroke="var(--color-primary)" stroke-width=".5" opacity=".2"/>
+          <circle cx="140" cy="140" r="90" stroke="var(--color-primary)" stroke-width=".5" opacity=".15"/>
+          <circle cx="140" cy="140" r="60" stroke="var(--color-primary)" stroke-width=".5" opacity=".1"/>
+          <circle cx="140" cy="60" r="8" fill="var(--color-primary)" opacity=".7"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="360 140 140" dur="20s" repeatCount="indefinite"/></circle>
+          <circle cx="230" cy="140" r="6" fill="var(--color-info)" opacity=".5"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="-360 140 140" dur="25s" repeatCount="indefinite"/></circle>
+          <circle cx="140" cy="200" r="5" fill="var(--color-warning)" opacity=".4"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="360 140 140" dur="30s" repeatCount="indefinite"/></circle>
+          <text x="140" y="136" text-anchor="middle" font-family="Outfit" font-weight="700" font-size="18" fill="var(--color-heading)">CORE</text>
+          <text x="140" y="156" text-anchor="middle" font-family="Inter" font-weight="400" font-size="11" fill="var(--color-muted)" letter-spacing=".08em">MARKETING SYSTEM</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ============================================================
+     SECTION 3: EXECUTIVE SUMMARY ("What We Heard")
+     Variables: PROSPECT_FIRST_NAME, EXEC_SUMMARY_PARAGRAPHS
+     This is the most important personalization section.
+     Mirror the prospect's own words from the Fathom transcript.
+     Typically 3-4 paragraphs wrapped in <p class="lead">...</p> tags.
+     ============================================================ -->
+<section class="exec-summary reveal" id="summary">
+  <div class="container">
+    <h2>Susan, Here's What We Heard</h2>
+    <div class="card" style="margin-top:1.5rem;">
+<p class="lead">During our conversation on April 8th, you shared something that resonates with a lot of solo practitioners: you've been putting in real effort on your own marketing and SEO, even experimenting with ChatGPT, but the consistent flow of client inquiries just isn't there yet. That's not a reflection of your clinical skill - it's a signal that your digital presence hasn't yet caught up with the quality of care you provide at HeartWise Counseling Services.</p><p>What our audit revealed is that you're facing a specific and very solvable challenge. There are multiple businesses operating under similar names to "Heartwise Counseling," and inconsistent contact information across the web is creating confusion for both Google and AI platforms trying to verify who you are and where you're located in Lake Oswego. Until that foundation is clean and authoritative, even the best content on your website will struggle to be surfaced to the people searching for exactly what you offer.</p><p>The good news is that these are exactly the kinds of structural problems the CORE Marketing System was built to address. By establishing you as a verified, credible entity online - and then teaching AI platforms what you treat, who you help, and what makes HeartWise the right choice - we can build a presence that works for you consistently, without requiring you to keep doing it all yourself.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ============================================================
+     SECTION 4: CURRENT STATE ASSESSMENT
+     Variables: SCORE_C, SCORE_O, SCORE_R, SCORE_E (numbers 1-10)
+               SCORE_C_CLASS, SCORE_O_CLASS, SCORE_R_CLASS, SCORE_E_CLASS
+               (use "score-low" for 1-4, "score-med" for 5-7)
+               SCORE_C_OFFSET, SCORE_O_OFFSET, SCORE_R_OFFSET, SCORE_E_OFFSET
+               (stroke-dashoffset targets, calculated as: 251.3 - (score/10 * 251.3))
+               CREDIBILITY_FINDINGS, OPTIMIZATION_FINDINGS, REPUTATION_FINDINGS, ENGAGEMENT_FINDINGS
+     
+     Finding format (repeat for each finding):
+       <div class="finding"><span class="finding-icon">ICON</span><div><p><span class="highlight">HEADLINE</span> DETAIL_TEXT</p></div></div>
+     
+     Icons: &#9989; (checkmark/strength), &#9888;&#65039; (warning/gap), &#128308; (red dot/critical gap)
+     ============================================================ -->
+<section class="reveal" id="assessment">
+  <div class="container">
+    <h2>Your Current Digital Health</h2>
+    <p style="margin-bottom:1rem;">Every gap below is an opportunity. We've scored your presence across the four pillars of the CORE framework, the same system Google and AI platforms use (whether they know it or not) to decide who gets recommended.</p>
+    <div class="scorecard-grid">
+      <div class="score-card score-low"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="176"/></svg><div class="score-val">3<span>/10</span></div></div><div class="score-label">Pillar 1</div><div class="score-pillar">Credibility</div></div>
+      <div class="score-card score-low"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="151"/></svg><div class="score-val">4<span>/10</span></div></div><div class="score-label">Pillar 2</div><div class="score-pillar">Optimization</div></div>
+      <div class="score-card score-low"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="176"/></svg><div class="score-val">3<span>/10</span></div></div><div class="score-label">Pillar 3</div><div class="score-pillar">Reputation</div></div>
+      <div class="score-card score-low"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target="151"/></svg><div class="score-val">4<span>/10</span></div></div><div class="score-label">Pillar 4</div><div class="score-pillar">Engagement</div></div>
+    </div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>Credibility: Can You Prove You Exist?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+<div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">Name confusion is actively working against you.</span> Multiple businesses operating under names similar to "Heartwise Counseling" are creating ambiguity for Google and AI systems. When search engines can't confidently distinguish your practice from others with similar names, they're less likely to recommend you - and potential clients searching for you specifically may land somewhere else.</p></div></div><div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">Inconsistent NAP data across the web is a serious credibility gap.</span> Your name, address, and phone number appear in different formats across various directories and listings. This inconsistency signals uncertainty to Google's verification systems and makes it much harder for AI platforms like ChatGPT and Gemini to confidently cite your practice in local recommendations.</p></div></div><div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">Social profiles appear limited or unconnected.</span> A robust, interconnected set of social profiles - LinkedIn, Facebook, Instagram, YouTube, and others - signals to Google that a real human-operated practice exists behind your website. Without these connected profiles pointing back to HeartWise, your digital footprint remains thin and easy for AI to overlook.</p></div></div><div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">DNS authentication records may not be in place.</span> DKIM and DMARC records create a technical security handshake with Google that proves your domain is tied to an actively operated practice. These are small but meaningful signals that help separate legitimate practices from automated spam - and they're often missing from solo practice websites.</p></div></div>
+    </div></div></div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>Optimization: Can AI Understand What You Do?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+<div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">Your website likely lacks dedicated service pages for each specialty.</span> AI systems learn what a practice treats by finding clearly structured, standalone pages for each service or modality. A single general "services" page doesn't give Google or Gemini enough signal to recommend you for specific searches like "anxiety therapy Lake Oswego" or whatever your primary specialties are.</p></div></div><div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">Schema markup does not appear to be implemented.</span> Schema is structured code that tells AI exactly what type of business you are, what services you offer, where you're located, and who you are as a clinician. Without it, AI has to guess - and guessing often means getting overlooked in favor of practices whose data is clearly labeled.</p></div></div><div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">A dedicated bio page for you as the clinician is likely missing.</span> AI systems increasingly want to verify that a real, licensed professional is behind a practice. A well-structured bio page with your credentials, license verification links, NPI number, education, and professional affiliations is one of the highest-impact pages a solo practice can have.</p></div></div><div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">FAQ content appears limited or absent.</span> Service-specific and practice-wide FAQ sections are among the fastest ways to get cited by AI in response to questions. "People Also Ask" style questions matched to your specialties can position HeartWise as the answer people are already searching for.</p></div></div>
+    </div></div></div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>Reputation: Can You Prove You're Good?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+<div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">No visible professional endorsements or peer validation found.</span> AI systems treat third-party endorsements - from colleagues, supervisors, or professional peers - as strong trust signals. Without verifiable endorsements on your bio page or website, AI has no way to confirm that others in the field vouch for your expertise.</p></div></div><div class="finding"><span class="finding-icon">&#128308;</span><div><p><span class="highlight">No YouTube presence detected.</span> A YouTube channel with short, informative videos is one of the most powerful reputation signals available to therapists today. Video content tied to your name and practice builds authority in a way that text alone cannot - and Google's AI systems weight video-based expertise heavily.</p></div></div><div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">No press features, media mentions, or directory spotlights identified.</span> Third-party mentions - even simple press releases published to news distribution networks - act as external validation that HeartWise is a recognized, operating practice. These are meaningful signals for AI visibility and help differentiate you from practices with no external footprint.</p></div></div>
+    </div></div></div>
+
+    <div class="collapsible"><button class="collapsible-toggle"><span>Engagement: Is There a Path to Booking?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner">
+<div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">The path from visitor to booked client may not be clearly defined.</span> Even with strong traffic, practices lose potential clients when the next step isn't immediately obvious. A compelling hero section with a single, clear call to action - paired with trust signals above the fold - makes a meaningful difference in how many visitors actually reach out.</p></div></div><div class="finding"><span class="finding-icon">&#9888;&#65039;</span><div><p><span class="highlight">Calls to action may not be prominent or repeated throughout the site.</span> Prospective therapy clients often need multiple nudges before they feel ready to reach out. Strategic placement of CTAs tied to specific services - not just a generic "contact me" at the bottom - keeps the door open at every stage of their visit.</p></div></div>
+    </div></div></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ============================================================
+     SECTION 5: STRATEGY
+     Variables: STRATEGY_INTRO, STRATEGY_CARDS, STRATEGY_ROI_CALLOUT (optional)
+     
+     Strategy intro is the paragraph after the h2.
+     
+     Card format (repeat for each CORE pillar):
+       <div class="card"><h3 style="margin-bottom:1rem;">CARD_TITLE</h3><p>CARD_CONTENT</p></div>
+     
+     ROI callout format (optional, include when relevant):
+       <div class="roi-callout"><h4>CALLOUT_TITLE</h4><p style="margin-bottom:0;">CALLOUT_CONTENT</p></div>
+     ============================================================ -->
+<section class="reveal" id="strategy">
+  <div class="container">
+    <h2>The CORE Strategy for Your Practice</h2>
+    <p style="margin-bottom:2rem;">For HeartWise Counseling Services, the most urgent priorities are clarifying your identity online and establishing Susan as a verified, credible entity that AI platforms can confidently recommend. The name confusion and inconsistent contact data you're dealing with are solvable - but they require a systematic approach that addresses the root cause, not just surface-level edits. The CORE Marketing System works from the ground up: first proving you exist and are qualified, then making sure AI understands exactly what you offer in Lake Oswego, then amplifying that message with external signals, and finally ensuring every visitor who lands on your site has a clear and welcoming path to book a session.</p>
+<div class="card"><h3 style="margin-bottom:1rem;">Credibility: Prove You're Real</h3><p>We'll start by resolving the name confusion issue head-on - standardizing your NAP (name, address, phone) across 15+ directory listings and all five major data aggregators so Google sees one consistent, authoritative record for HeartWise Counseling Services in Lake Oswego. We'll build out a full suite of interconnected social profiles and configure DNS authentication records to signal that a real, active practice operates behind your domain. This foundation is what makes everything else work.</p></div><div class="card"><h3 style="margin-bottom:1rem;">Optimization: Make AI Understand You</h3><p>We'll build dedicated service pages for your top five specialties, each written with proper heading structure, target keywords in the opening content, and service-specific FAQs drawn from what people are already searching. We'll implement schema markup so AI systems know exactly what you treat, where you practice, and who you are. A structured bio page for you - complete with credentials, license links, and professional affiliations - will give Gemini and ChatGPT the verifiable professional details they need to recommend you with confidence.</p></div><div class="card"><h3 style="margin-bottom:1rem;">Reputation: Amplify the Signal</h3><p>We'll establish a YouTube channel and playlist tied to your most important keywords, create professional NEO images that reinforce your identity across platforms, publish press releases to signal external recognition, and build out peer endorsements on your bio page. Each of these pieces acts as a third-party signal that HeartWise is not only real, but respected - the kind of practice AI platforms feel confident recommending to someone in a vulnerable moment of seeking help.</p></div><div class="card"><h3 style="margin-bottom:1rem;">Engagement: Convert Visitors to Clients</h3><p>We'll review and optimize your hero section and primary call to action to ensure the first thing a visitor sees clearly communicates who you help and how to take the next step. We'll ensure CTAs are present and prominent throughout the site - especially on service pages where intent is highest. The goal is to make sure that every person who finds HeartWise online has a frictionless, welcoming path to reach out and book a session with you.</p></div>
+
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ============================================================
+     SECTION 6: TIMELINE
+     Variables: TIMELINE_TITLE, TIMELINE_INTRO, TIMELINE_ITEMS
+     
+     Title: "Your 3-Month Roadmap" | "Your 12-Month Roadmap" | "Your Monthly Roadmap"
+     
+     Timeline item format (repeat for each phase):
+       <div class="timeline-item"><span class="timeline-phase">PHASE_LABEL</span><h4>PHASE_TITLE</h4><p>PHASE_DESCRIPTION</p></div>
+     ============================================================ -->
+<section class="reveal" id="timeline">
+  <div class="container">
+    <h2>Your 12-Month Roadmap</h2>
+    <p style="margin-bottom:2rem;">Here is exactly what happens from the moment you say go. We handle the heavy lifting - your time commitment is roughly 6-8 hours in month one (mostly the onboarding call and content review), then significantly less after that.</p>
+    <div class="timeline">
+<div class="timeline-item"><span class="timeline-phase">Month 1</span><h4>Foundation and Identity Cleanup</h4><p>We begin with your onboarding call to confirm campaign targets, specialty keywords, and account access. Immediately after, we standardize your NAP data across all major directories and aggregators, configure DNS authentication records, and begin building your interconnected social profiles. This is the most critical phase - getting your identity clean and consistent so AI can start trusting what it finds about HeartWise.</p></div><div class="timeline-item"><span class="timeline-phase">Months 2-3</span><h4>Optimization and Content Build-Out</h4><p>With the foundation in place, we build out your five service pages, your bio page with full credential documentation, and your general FAQ page. Schema markup is implemented across the site. Each page is structured to answer the specific questions AI is looking for - clearly, credibly, and in plain language that also resonates with the people you want to serve.</p></div><div class="timeline-item"><span class="timeline-phase">Months 4-6</span><h4>Reputation and External Signals</h4><p>We launch your YouTube channel and initial playlist, publish NEO images across platforms, and distribute press releases to build external mentions of HeartWise Counseling Services. Peer endorsements are added to your bio page. These signals reinforce everything we've built and begin giving AI systems the third-party validation they need to confidently surface your practice in recommendations.</p></div><div class="timeline-item"><span class="timeline-phase">Months 7-12</span><h4>Refinement, Growth, and Visibility Gains</h4><p>We monitor how AI platforms are responding to the changes, make refinements based on performance data, and continue strengthening your entity signals over time. As your digital presence becomes more authoritative and consistent, you should begin seeing more consistent, qualified inquiries from people who found you through AI-powered search - without you having to do the heavy lifting yourself.</p></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ============================================================
+     SECTION 6.5: PROVEN RESULTS
+     Variable: RESULTS_SECTION
+     Built by generate-proposal.js based on practice_type (solo/group).
+     Shows top 4 GSC screenshot results matching the prospect's type,
+     aggregate stats, and CTA to full results page.
+     ============================================================ -->
+<section class="reveal" id="results">
+  <div class="container">
+    <h2>Proven Results from Practices Like Yours</h2>
+    <p style="margin-bottom:2rem;">Every number below comes directly from Google Search Console, the same tool Google provides to measure real search performance. These are results from therapy practices we work with today.</p>
+<div class="results-stats-bar"><div class="stat"><div class="stat-value">22</div><div class="stat-label">Client Results</div></div><div class="stat"><div class="stat-value">115%</div><div class="stat-label">Average Increase</div></div><div class="stat"><div class="stat-value">213%</div><div class="stat-label">Top Group Result</div></div></div><p style="text-align:center;font-size:.8125rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-muted);margin-bottom:1rem;">Featuring results from Group Practices</p><div class="results-mini-grid"><div class="results-mini-card" onclick="window._openResultLightbox(0)"><div class="card-image-wrap"><img src="https://lh3.googleusercontent.com/d/1uVfNKUBxYy3KCEJEmJU92QE3DN9khHWA=w800" alt="Group Practice result: +213% in 6 months" loading="lazy" data-hires="https://lh3.googleusercontent.com/d/1uVfNKUBxYy3KCEJEmJU92QE3DN9khHWA=w1400"><div class="card-badge">+213%</div></div><div class="card-body"><div class="card-meta"><span class="card-type-tag">Group Practice</span> 6 months</div></div></div><div class="results-mini-card" onclick="window._openResultLightbox(1)"><div class="card-image-wrap"><img src="https://lh3.googleusercontent.com/d/1spFbq2k8QOqwWbLuvz1JxLgWpM7VFfaa=w800" alt="Group Practice result: +170% in 6 months" loading="lazy" data-hires="https://lh3.googleusercontent.com/d/1spFbq2k8QOqwWbLuvz1JxLgWpM7VFfaa=w1400"><div class="card-badge">+170%</div></div><div class="card-body"><div class="card-meta"><span class="card-type-tag">Group Practice</span> 6 months</div></div></div><div class="results-mini-card" onclick="window._openResultLightbox(2)"><div class="card-image-wrap"><img src="https://lh3.googleusercontent.com/d/1jNjoiNtFgIINAyUpWyvH426qq1HTHG7X=w800" alt="Group Practice result: +156% in 3 months" loading="lazy" data-hires="https://lh3.googleusercontent.com/d/1jNjoiNtFgIINAyUpWyvH426qq1HTHG7X=w1400"><div class="card-badge">+156%</div></div><div class="card-body"><div class="card-meta"><span class="card-type-tag">Group Practice</span> 3 months</div></div></div></div><div class="results-see-all"><a href="https://clients.moonraker.ai/results" class="cta-btn-outline" target="_blank" rel="noopener">See All 22 Client Results &#8594;</a></div><div class="results-lightbox" id="resultsLightbox" onclick="window._closeResultLightbox()"><button class="results-lightbox-close" onclick="window._closeResultLightbox()">&times;</button><div class="results-lightbox-inner" onclick="event.stopPropagation()"><img id="resultsLightboxImg" src="" alt=""><div class="results-lightbox-caption" id="resultsLightboxCaption"></div></div></div><script>(function(){var rd=[{"pct":213,"time":"6 months","label":"Group Practice","hires":"https://lh3.googleusercontent.com/d/1uVfNKUBxYy3KCEJEmJU92QE3DN9khHWA=w1400"},{"pct":170,"time":"6 months","label":"Group Practice","hires":"https://lh3.googleusercontent.com/d/1spFbq2k8QOqwWbLuvz1JxLgWpM7VFfaa=w1400"},{"pct":156,"time":"3 months","label":"Group Practice","hires":"https://lh3.googleusercontent.com/d/1jNjoiNtFgIINAyUpWyvH426qq1HTHG7X=w1400"}];window._openResultLightbox=function(i){var r=rd[i],lb=document.getElementById("resultsLightbox");document.getElementById("resultsLightboxImg").src=r.hires;document.getElementById("resultsLightboxCaption").textContent=r.label+"  \u00B7  +"+r.pct+"%  \u00B7  "+r.time;lb.classList.add("open");document.body.style.overflow="hidden";};window._closeResultLightbox=function(){document.getElementById("resultsLightbox").classList.remove("open");document.body.style.overflow="";};document.addEventListener("keydown",function(e){if(e.key==="Escape")window._closeResultLightbox();});var lb=document.getElementById("resultsLightbox");if(lb)document.body.appendChild(lb);})();</script>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ============================================================
+     SECTION 7: INVESTMENT
+     Variables: INVESTMENT_BADGE, INVESTMENT_PRICE, INVESTMENT_PERIOD,
+               INVESTMENT_FEATURES, INVOICE_URL,
+               INVESTMENT_ROI_CALLOUT, GUARANTEE_BOX (annual tier only)
+     
+     Feature list item format:
+       <li><span class="check">&#10003;</span> FEATURE_TEXT</li>
+     
+     GUARANTEE_BOX: Include the full guarantee-box div ONLY for annual ($20K) tier.
+     For 3-month tier, use a "Looking Ahead" guarantee-box instead.
+     For month-to-month, omit entirely.
+     ============================================================ -->
+<section class="reveal" id="investment">
+  <div class="container">
+    <h2>Your Investment</h2>
+<div class="investment-grid"><div class="investment-card recommended"><span class="badge">12-Month CORE Campaign</span><div class="investment-price">$20,000</div><div class="investment-period">12-month campaign</div><ul class="investment-features"><li><span class="check">&#10003;</span> <strong>12-month performance guarantee: if we don't hit our shared goal in 12 months, we continue working for free until you get there</strong></li><li><span class="check">&#10003;</span> Comprehensive digital audit using our proprietary Surge platform</li><li><span class="check">&#10003;</span> 5 dedicated service pages with custom HTML, schema markup, and targeted FAQs</li><li><span class="check">&#10003;</span> Professional bio pages for each therapist at your practice</li><li><span class="check">&#10003;</span> 1 location page to clearly establish where you serve</li><li><span class="check">&#10003;</span> General FAQ page covering logistics, policies, and common client questions</li><li><span class="check">&#10003;</span> Directory listings across 50+ platforms including all major data aggregators</li><li><span class="check">&#10003;</span> Social profile buildout and optimization across 9 platforms</li><li><span class="check">&#10003;</span> Entity Veracity Hub launch to verify and ground your practice online</li><li><span class="check">&#10003;</span> YouTube channel setup with optimized playlist for your main specialty</li><li><span class="check">&#10003;</span> Press release syndication across 500+ national and international news sites</li><li><span class="check">&#10003;</span> NEO image creation and distribution to build authority across high-traffic platforms</li><li><span class="check">&#10003;</span> Ongoing social posting across 4 platforms to reinforce your digital presence</li><li><span class="check">&#10003;</span> Hero section and CTA optimization to convert visitors into consultation bookings</li><li><span class="check">&#10003;</span> Monthly progress reports with visibility and engagement metrics</li></ul><a href="/susan-gulka/checkout?plan=annual" class="cta-btn" target="_blank">Choose Your Plan &#8594;</a></div><div class="investment-card"><span class="badge">3-Month Growth Engagement</span><div class="investment-price">$5,000</div><div class="investment-period">3-month campaign</div><ul class="investment-features"><li><span class="check">&#10003;</span> Comprehensive digital audit using our proprietary Surge platform</li><li><span class="check">&#10003;</span> 5 dedicated service pages with custom HTML, schema markup, and targeted FAQs</li><li><span class="check">&#10003;</span> Professional bio pages for each therapist at your practice</li><li><span class="check">&#10003;</span> 1 location page to clearly establish where you serve</li><li><span class="check">&#10003;</span> General FAQ page covering logistics, policies, and common client questions</li><li><span class="check">&#10003;</span> Directory listings across 50+ platforms including all major data aggregators</li><li><span class="check">&#10003;</span> Social profile buildout and optimization across 9 platforms</li><li><span class="check">&#10003;</span> Entity Veracity Hub launch to verify and ground your practice online</li><li><span class="check">&#10003;</span> YouTube channel setup with optimized playlist for your main specialty</li><li><span class="check">&#10003;</span> Press release syndication across 500+ national and international news sites</li><li><span class="check">&#10003;</span> NEO image creation and distribution to build authority across high-traffic platforms</li><li><span class="check">&#10003;</span> Ongoing social posting across 4 platforms to reinforce your digital presence</li><li><span class="check">&#10003;</span> Hero section and CTA optimization to convert visitors into consultation bookings</li><li><span class="check">&#10003;</span> Monthly progress reports with visibility and engagement metrics</li></ul><a href="/susan-gulka/checkout?plan=quarterly" class="cta-btn" target="_blank">Choose Your Plan &#8594;</a></div></div>
+<div class="guarantee-box"><h3>Performance Guarantee</h3><p>Our annual program includes a performance guarantee - we set a measurable consultation benchmark together using your historical data, and we continue working for free until you hit it. No other agency in this space offers this.</p></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ============================================================
+     SECTION 8: NEXT STEPS
+     Variables: NEXT_STEPS_ITEMS, INVOICE_URL (reused from above)
+     
+     Step format (repeat for each step, typically 4):
+       <div style="display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.25rem;">
+         <div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;">NUMBER</div>
+         <div><h4>STEP_TITLE</h4><p style="margin-bottom:0;">STEP_DESCRIPTION</p></div>
+       </div>
+     
+     Last step item should omit margin-bottom:1.25rem.
+     ============================================================ -->
+<section class="reveal" id="next">
+  <div class="container">
+    <h2>What Happens Next</h2>
+    <div class="card">
+<div style="display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.25rem;"><div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;">1</div><div><h4>Review and Sign Your Agreement</h4><p style="margin-bottom:0;">Once you're ready to move forward, we'll send your client service agreement directly to sgulka@icloud.com. It's a straightforward document that outlines the scope of your 12-month CORE campaign and what you can expect from us.</p></div></div><div style="display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.25rem;"><div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;">2</div><div><h4>Onboarding Call with Scott</h4><p style="margin-bottom:0;">Your campaign officially starts on the day of your onboarding call - not when you pay. We'll use this session to confirm your top specialty keywords, walk through account access, and make sure everything is set up correctly before any work begins. This is where we get everything aligned specifically for HeartWise.</p></div></div><div style="display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.25rem;"><div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;">3</div><div><h4>Quick Start - Identity and Foundation Work</h4><p style="margin-bottom:0;">Within the first week after onboarding, we begin the highest-priority work: standardizing your NAP data, building social profiles, and configuring DNS records. You'll start to see the structural cleanup happen quickly, and we'll keep you informed as each deliverable is completed.</p></div></div><div style="display:flex;gap:1rem;align-items:flex-start;"><div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;">4</div><div><h4>Service Pages and Bio Page Go Live</h4><p style="margin-bottom:0;">Within the first 30-60 days, your dedicated service pages and your clinician bio page will be built and published to your website. These pages are the core of your AI visibility strategy, and getting them live means Google and AI platforms can begin learning - and trusting - exactly what HeartWise Counseling Services offers in Lake Oswego.</p></div></div>
+    </div>
+    <div class="assets-note"><span class="icon">&#128737;&#65039;</span><div><p><strong>Your assets are always yours.</strong> Everything we build (pages, content, social profiles, directory listings, schema markup) remains your property. If our engagement ends, nothing is removed. You keep it all.</p></div></div>
+    <div class="cta-group">
+      <a href="/susan-gulka/checkout" class="cta-btn" target="_blank">Choose Your Plan &#8594;</a>
+      <a href="https://msg.moonraker.ai/widget/bookings/scott-pope-calendar" class="cta-btn-outline" target="_blank">Book a Call with Scott</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FOOTER
+     Variables: PROSPECT_NAME_CREDENTIALS (reused from header)
+     ============================================================ -->
+<div style="text-align:center;padding:1.5rem 0;"><a href="/agreement" target="_blank" style="color:var(--color-muted);font-size:.875rem;text-decoration:underline;text-underline-offset:3px;">Review our Client Service Agreement</a></div>
+<div class="confidential"><div class="container">This proposal is confidential and prepared exclusively for Susan Gulka, LPC.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai</div></div>
+<footer class="footer"><div class="container"><img src="/assets/logo.png" alt="Moonraker"><br>moonraker.ai</div></footer>
+
+<script>
+(function() {
+  var themeBtn = document.getElementById('themeBtn');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function() {
+      var h = document.documentElement;
+      function apply() {
+        if (h.getAttribute('data-theme') === 'light') {
+          h.setAttribute('data-theme', 'dark'); themeBtn.innerHTML = '&#9728;&#65039;';
+          try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
+        } else {
+          h.setAttribute('data-theme', 'light'); themeBtn.innerHTML = '&#x1F319;';
+          try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
+        }
+      }
+      if (document.startViewTransition) { document.startViewTransition(apply); } else { apply(); }
+    });
+  }
+
+  var progressBar = document.getElementById('progressBar');
+  function updateProgress() {
+    var scrollTop = window.scrollY;
+    var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    progressBar.style.width = (docHeight > 0 ? (scrollTop / docHeight) * 100 : 0) + '%';
+  }
+
+  var sections = document.querySelectorAll('section[id]');
+  var navLinks = document.querySelectorAll('.section-nav a');
+  function updateNav() {
+    var current = '';
+    sections.forEach(function(s) { if (window.scrollY >= s.offsetTop - 200) current = s.id; });
+    navLinks.forEach(function(l) { l.classList.toggle('active', l.getAttribute('href') === '#' + current); });
+  }
+
+  var ringsAnimated = false;
+  function animateRings() {
+    if (ringsAnimated) return;
+    var grid = document.querySelector('.scorecard-grid');
+    if (!grid) return;
+    if (grid.getBoundingClientRect().top < window.innerHeight * 0.8) {
+      ringsAnimated = true;
+      document.querySelectorAll('.ring-fg').forEach(function(c) { c.style.strokeDashoffset = c.getAttribute('data-target'); });
+    }
+  }
+
+  var reveals = document.querySelectorAll('.reveal');
+  function checkReveal() {
+    reveals.forEach(function(el) { if (el.getBoundingClientRect().top < window.innerHeight * 0.88) el.classList.add('visible'); });
+  }
+
+  function onScroll() { updateProgress(); updateNav(); animateRings(); checkReveal(); }
+  window.addEventListener('scroll', onScroll);
+  onScroll();
+
+  document.querySelectorAll('.collapsible-toggle').forEach(function(t) {
+    t.addEventListener('click', function() { this.parentElement.classList.toggle('open'); });
+  });
+})();
+</script>
+<script src="/shared/proposal-chatbot.js"></script>
+
+<script>
+(function(){
+  var params = new URLSearchParams(window.location.search);
+  if (params.has('preview')) return;
+  var SB='https://ofmmwcjhdrhvxxkhcuww.supabase.co';
+  var K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
+  fetch(SB+'/rest/v1/rpc/track_proposal_view',{method:'POST',headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify({p_slug:'susan-gulka'})}).catch(function(){});
+})();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
