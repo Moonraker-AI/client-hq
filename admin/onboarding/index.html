@@ -76,7 +76,7 @@ a:hover { color: var(--color-primary-hover); }
 .main { flex: 1; margin-left: 240px; min-width: 0; transition: margin-left .2s ease; }
 .topbar { position: sticky; top: 0; z-index: 100; background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 0 2rem; height: 56px; display: flex; align-items: center; gap: 1rem; }
 .topbar-right { display: flex; align-items: center; gap: .5rem; margin-left: auto; }
-.content { padding: 2rem; }
+.content { padding: 2rem; overflow-x: hidden; }
 
 /* Buttons */
 .btn { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .85rem; border-radius: 8px; font-size: .82rem; font-weight: 500; border: none; cursor: pointer; transition: all .2s; font-family: inherit; }
@@ -104,8 +104,9 @@ a:hover { color: var(--color-primary-hover); }
 .section-desc { font-size: .84rem; color: var(--color-muted); margin-bottom: 1.5rem; }
 
 /* Filter tabs */
-.filter-bar { display: flex; align-items: center; gap: .25rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--color-border); }
-.filter-tab { padding: .55rem 1rem; font-size: .82rem; font-weight: 500; color: var(--color-muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; font-family: inherit; transition: all .15s; }
+.filter-bar { display: flex; align-items: center; gap: .25rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--color-border); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.filter-bar::-webkit-scrollbar { display: none; }
+.filter-tab { padding: .55rem 1rem; font-size: .82rem; font-weight: 500; color: var(--color-muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; font-family: inherit; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
 .filter-tab:hover { color: var(--color-heading); }
 .filter-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
 .filter-tab .count { font-size: .7rem; padding: .05rem .4rem; border-radius: 4px; background: var(--color-bg); margin-left: .3rem; }
@@ -301,7 +302,7 @@ a:hover { color: var(--color-primary-hover); }
     <div id="cardsView" class="ob-cards"></div>
 
     <!-- Matrix View -->
-    <div id="matrixView" style="display:none;"></div>
+    <div id="matrixView" style="display:none;overflow-x:auto;-webkit-overflow-scrolling:touch;"></div>
 
     <!-- Loading -->
     <div id="loadingState" style="text-align:center;padding:4rem;">
