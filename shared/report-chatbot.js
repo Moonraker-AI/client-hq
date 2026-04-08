@@ -406,6 +406,9 @@
               if (parsed.type === 'content_block_delta' && parsed.delta && parsed.delta.text) {
                 fullText += parsed.delta.text;
                 startTypewriter();
+              } else if (parsed.type === 'error') {
+                fullText = 'Sorry, I had trouble connecting. Please try again in a moment.';
+                break;
               } else if (parsed.type === 'message_stop') {
                 break;
               }
@@ -415,6 +418,7 @@
       }
 
       if (renderTimer) clearInterval(renderTimer);
+      if (!fullText) fullText = 'Sorry, I was unable to generate a response. Please try again.';
       bubble.innerHTML = formatContent(fullText);
     } catch(e) {
       if (!fullText) bubble.textContent = 'Sorry, something went wrong. Please try again.';
