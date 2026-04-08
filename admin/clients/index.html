@@ -1813,7 +1813,7 @@ strong { font-weight: 600; color: var(--color-heading); }
             var isNew = (kw.notes || '').toLowerCase().indexOf('new page') >= 0;
             var pageVal = isNew ? 'new' : 'existing';
             html += '<div style="display:grid;grid-template-columns:.5fr 1fr auto auto auto;gap:.5rem;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--color-border);font-size:.82rem;">';
-            html += '<input type="text" value="' + esc(kw.keyword) + '" data-orig="' + esc(kw.keyword) + '" style="font-family:inherit;font-size:.82rem;font-weight:500;padding:.25rem .4rem;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--color-heading);width:100%;transition:border-color .15s,background .15s;" onfocus="this.style.borderColor=\'var(--color-primary)\';this.style.background=\'var(--color-bg)\'" onblur="this.style.borderColor=\'transparent\';this.style.background=\'transparent\';if(this.value.trim()!==this.dataset.orig)updateKeyword(\'' + kw.id + '\', \'keyword\', this.value)">';
+            html += '<div style="color:var(--color-heading);font-weight:500;">' + esc(kw.keyword) + '</div>';
             html += '<input type="text" value="' + esc(kw.target_page || '') + '" placeholder="e.g. /anxiety-therapy/" style="font-family:inherit;font-size:.78rem;padding:.25rem .4rem;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--color-muted);width:100%;transition:border-color .15s,background .15s;" onfocus="this.style.borderColor=\'var(--color-primary)\';this.style.background=\'var(--color-bg)\'" onblur="this.style.borderColor=\'transparent\';this.style.background=\'transparent\';updateKeyword(\'' + kw.id + '\', \'target_page\', this.value)">';
             html += '<select onchange="updateKeyword(\'' + kw.id + '\', \'priority\', parseInt(this.value))" style="font-family:inherit;font-size:.72rem;font-weight:600;padding:.15rem .3rem;border:1px solid transparent;border-radius:4px;background:' + (kw.priority === 1 ? 'rgba(0,212,126,.1)' : 'rgba(59,130,246,.1)') + ';color:' + (kw.priority === 1 ? '#00b86c' : '#3B82F6') + ';cursor:pointer;appearance:none;-webkit-appearance:none;text-align:center;"><option value="1"' + (kw.priority === 1 ? ' selected' : '') + '>P1</option><option value="2"' + (kw.priority !== 1 ? ' selected' : '') + '>P2</option></select>';
             html += '<select onchange="updateKeyword(\'' + kw.id + '\', \'notes\', this.value === \'new\' ? \'New page to create\' : \'Existing page\')" style="font-family:inherit;font-size:.72rem;font-weight:500;padding:.15rem .3rem;border:1px solid transparent;border-radius:4px;background:transparent;color:' + (isNew ? 'var(--color-primary)' : 'var(--color-info)') + ';cursor:pointer;appearance:none;-webkit-appearance:none;"><option value="existing"' + (pageVal === 'existing' ? ' selected' : '') + '>Existing</option><option value="new"' + (pageVal === 'new' ? ' selected' : '') + '>New</option></select>';
@@ -1868,14 +1868,12 @@ strong { font-weight: 600; color: var(--color-heading); }
 
   window.updateKeyword = function(kwId, field, value) {
     var data = {};
-    if (field === 'keyword') { var v = (value || '').trim(); if (!v) { alert('Keyword cannot be empty'); renderKeywordForm(); return; } data.keyword = v; data.label = v; }
-    else if (field === 'target_page') { data.target_page = (value || '').trim() || null; }
+    if (field === 'target_page') { data.target_page = (value || '').trim() || null; }
     else if (field === 'priority') { data.priority = value; }
     else if (field === 'notes') { data.notes = value; }
     else return;
     fetch('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update_record', table: 'tracked_keywords', filters: { id: kwId }, data: data }) }).then(function(r) { return r.json(); }).then(function(res) {
       if (res.success && field !== 'target_page') renderKeywordForm();
-      else if (!res.success && field === 'keyword') { alert('Could not update keyword. It may already exist for this client.'); renderKeywordForm(); }
     }).catch(function() { alert('Error updating keyword'); });
   };
 
@@ -3304,7 +3302,6 @@ strong { font-weight: 600; color: var(--color-heading); }
     var gscVal = (cfg && cfg.gsc_property) || (c && c.gsc_property) || '';
     var gscOk = !!gscVal;
     var lfOk = !!(cfg && cfg.localfalcon_place_id);
-      var gbpOk = !!(cfg && cfg.gbp_location_id);
     var isActive = cfg && cfg.active;
     var publishedReports = snaps.filter(function(s) { return s.report_status === 'published'; }).length;
     var pendingReview = snaps.filter(function(s) { return s.report_status === 'internal_review'; }).length;
@@ -3328,9 +3325,6 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     fHtml += '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.3rem;">LocalFalcon Place ID</label>';
     fHtml += '<input type="text" id="rptLfPlaceId" value="' + esc((cfg && cfg.localfalcon_place_id) || '') + '" placeholder="e.g. ChIJmboQ0neYg4MRToYJnDPhbs4" style="width:100%;font-family:inherit;font-size:.84rem;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);"></div>';
-
-    fHtml += '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.3rem;">GBP Location ID</label>';
-    fHtml += '<input type="text" id="rptGbpLocId" value="' + esc((cfg && cfg.gbp_location_id) || '') + '" placeholder="e.g. 8lgo2w1z" style="width:100%;font-family:inherit;font-size:.84rem;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);"></div>';
 
     fHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">';
     fHtml += '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.3rem;">Report Day (1-28)</label>';
@@ -3686,7 +3680,6 @@ strong { font-weight: 600; color: var(--color-heading); }
     if (!c) return;
     var gscVal = (document.getElementById('rptGsc') || {}).value || '';
     var lfPlaceVal = (document.getElementById('rptLfPlaceId') || {}).value || '';
-    var gbpLocVal = (document.getElementById('rptGbpLocId') || {}).value || '';
     var dayVal = parseInt((document.getElementById('rptDay') || {}).value) || 1;
     var activeVal = (document.getElementById('rptActive') || {}).value === 'true';
 
@@ -3694,7 +3687,6 @@ strong { font-weight: 600; color: var(--color-heading); }
       client_slug: c.slug,
       gsc_property: gscVal || null,
       localfalcon_place_id: lfPlaceVal || null,
-      gbp_location_id: gbpLocVal || null,
       report_day: dayVal,
       active: activeVal
     };
