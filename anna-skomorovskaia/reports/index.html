@@ -760,7 +760,6 @@ section { padding: 4.5rem 0; }
         var solv = Math.round((g.solv || 0) * (g.solv > 1 ? 1 : 100));
         if (g.solv > 1) solv = Math.round(g.solv);
         var imgUrl = g.image_url || g.heatmap_url;
-        var publicLink = g.public_url;
         var gridSize = g.grid_size || 7;
 
         p += '<div class="geogrid-card">';
@@ -768,11 +767,7 @@ section { padding: 4.5rem 0; }
         p += '<div class="geogrid-keyword">' + platformLabel + ' · ' + gridSize + 'x' + gridSize + ' grid</div></div>';
         p += '<div class="geogrid-image-wrap">';
         if (imgUrl) {
-          if (publicLink) {
-            p += '<a href="' + publicLink + '" target="_blank" rel="noopener" style="display:block;width:100%;height:100%"><img src="' + imgUrl + '" alt="Geogrid for ' + esc(g.keyword || label) + '" loading="lazy"></a>';
-          } else {
-            p += '<img src="' + imgUrl + '" alt="Geogrid for ' + esc(g.keyword || label) + '" loading="lazy">';
-          }
+          p += '<img src="' + imgUrl + '" alt="Geogrid for ' + esc(g.keyword || label) + '" loading="lazy">';
         } else {
           p += '<div class="no-image">Grid image processing...</div>';
         }
@@ -1237,6 +1232,7 @@ section { padding: 4.5rem 0; }
 </script>
 </body>
 </html>
+
 
 
 
