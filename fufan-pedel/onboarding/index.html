@@ -1260,6 +1260,13 @@ strong { font-weight: 600; color: var(--color-heading); }
       if (b.clinical_approach) document.getElementById('bio_clinical_approach').value = b.clinical_approach;
       // NPI from contact
       if (contact.npi_number) document.getElementById('bio_npi').value = contact.npi_number;
+      // Restore JSONB array fields as newline-separated text
+      if (b.education_details && Array.isArray(b.education_details)) document.getElementById('bio_education').value = b.education_details.join('\n');
+      if (b.license_details && Array.isArray(b.license_details)) document.getElementById('bio_licenses').value = b.license_details.join('\n');
+      if (b.certification_details && Array.isArray(b.certification_details)) document.getElementById('bio_certifications').value = b.certification_details.join('\n');
+      if (b.association_details && Array.isArray(b.association_details)) document.getElementById('bio_associations').value = b.association_details.join('\n');
+      if (b.awards) document.getElementById('bio_awards').value = b.awards;
+      if (b.media_publications && Array.isArray(b.media_publications)) document.getElementById('bio_media').value = b.media_publications.join('\n');
     } else {
       // Pre-fill from contact if no bio row yet
       var fullName = ((contact.first_name || '') + ' ' + (contact.last_name || '')).trim();
@@ -1379,6 +1386,13 @@ strong { font-weight: 600; color: var(--color-heading); }
   // ============================================================
   // FORM: Save Step 5 - Bio Materials
   // ============================================================
+  // Helper: convert newline-separated textarea to JSON array (filter blanks)
+  function textareaToArray(id) {
+    var val = document.getElementById(id).value.trim();
+    if (!val) return null;
+    return val.split('\n').map(function(l) { return l.trim(); }).filter(Boolean);
+  }
+
   window.saveBioMaterials = function() {
     var data = {
       contact_id: contact.id,
@@ -1386,6 +1400,12 @@ strong { font-weight: 600; color: var(--color-heading); }
       therapist_credentials: document.getElementById('bio_credentials').value.trim(),
       professional_bio: document.getElementById('bio_professional_bio').value.trim(),
       clinical_approach: document.getElementById('bio_clinical_approach').value.trim(),
+      education_details: textareaToArray('bio_education'),
+      license_details: textareaToArray('bio_licenses'),
+      certification_details: textareaToArray('bio_certifications'),
+      association_details: textareaToArray('bio_associations'),
+      awards: document.getElementById('bio_awards').value.trim() || null,
+      media_publications: textareaToArray('bio_media'),
       is_primary: true
     };
 
