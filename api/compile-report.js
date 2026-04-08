@@ -740,7 +740,7 @@ module.exports = async function handler(req, res) {
   var notificationSent = false;
   if (resendKey) {
     try {
-      var reviewUrl = 'https://clients.moonraker.ai/' + clientSlug + '/reports';
+      var reviewUrl = 'https://clients.moonraker.ai/' + clientSlug + '/reports?preview=admin';
       var gscSummary = gscData ? (gscData.clicks + ' clicks, ' + gscData.impressions + ' impressions') : null;
       var aiSummary = aiData ? (aiData.engines_citing + '/' + aiData.engines_checked + ' platforms citing') : null;
       var mapsSummary = geogridData && geogridData.grid_count > 0
