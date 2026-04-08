@@ -213,6 +213,8 @@ strong { font-weight: 600; color: var(--color-heading); }
 .main { flex: 1; margin-left: 240px; min-width: 0; transition: margin-left .25s ease; }
 .topbar { position: sticky; top: 0; z-index: 100; background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 0 2rem; height: 56px; display: flex; align-items: center; gap: 1rem; }
 .topbar-right { display: flex; align-items: center; gap: .5rem; margin-left: auto; }
+.sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.35); z-index: 199; }
+.sidebar.open ~ .sidebar-overlay { display: block; }
 .mobile-toggle { display: none; background: none; border: none; color: var(--color-heading); font-size: 1.25rem; cursor: pointer; padding: .25rem; }
 
 
@@ -383,6 +385,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
   </div>
 </aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <div class="main">
   <div class="topbar">
