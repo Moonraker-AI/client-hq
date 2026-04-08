@@ -2,6 +2,11 @@
 // Converts a lead to a prospect: flips Supabase status, seeds onboarding steps,
 // deploys router/proposal/checkout/onboarding pages from templates to GitHub,
 // and creates Google Drive folder hierarchy for the client.
+// Drive structure: Client Name > Creative (Headshots, Logos, Pics, Vids, Other),
+//                                Docs (GBP Posts, Press Releases), Optimization, Web Design
+// NOTE: generate-proposal.js now handles the full conversion flow automatically.
+// This endpoint remains as a manual fallback for cases where conversion is needed
+// without proposal generation.
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -27,7 +32,12 @@ module.exports = async function handler(req, res) {
   var REPO = 'Moonraker-AI/client-hq';
   var BRANCH = 'main';
   var CLIENTS_FOLDER_ID = '1dymrrowTe1szsOJJPf45x4qDUit6J5jB';
-  var DRIVE_SUBFOLDERS = ['Creative', 'Correspondence', 'Optimization', 'Web Design', 'SEO', 'Docs', 'Automation AI'];
+  var DRIVE_SUBFOLDERS = [
+    { name: 'Creative', children: ['Headshots', 'Logos', 'Pics', 'Vids', 'Other'] },
+    { name: 'Docs', children: ['GBP Posts', 'Press Releases'] },
+    { name: 'Optimization', children: [] },
+    { name: 'Web Design', children: [] }
+  ];
   var sbHeaders = {
     'apikey': sbKey,
     'Authorization': 'Bearer ' + sbKey,
@@ -201,19 +211,26 @@ module.exports = async function handler(req, res) {
           if (parentFolder && parentFolder.id) {
             results.drive.parent = { id: parentFolder.id, name: practiceName };
 
-            // Create all subfolders
+            // Create all subfolders with nested children
             var createdSubs = [];
             var creativeFolderId = null;
             var creativeFolderUrl = null;
 
             for (var s = 0; s < DRIVE_SUBFOLDERS.length; s++) {
-              var subName = DRIVE_SUBFOLDERS[s];
-              var subFolder = await createDriveFolder(subName, parentFolder.id, driveHeaders);
+              var node = DRIVE_SUBFOLDERS[s];
+              var subFolder = await createDriveFolder(node.name, parentFolder.id, driveHeaders);
               if (subFolder && subFolder.id) {
-                createdSubs.push(subName);
-                if (subName === 'Creative') {
+                createdSubs.push(node.name);
+                if (node.name === 'Creative') {
                   creativeFolderId = subFolder.id;
                   creativeFolderUrl = 'https://drive.google.com/drive/folders/' + subFolder.id;
+                }
+                // Create children inside this subfolder
+                for (var ch = 0; ch < node.children.length; ch++) {
+                  var childFolder = await createDriveFolder(node.children[ch], subFolder.id, driveHeaders);
+                  if (childFolder && childFolder.id) {
+                    createdSubs.push(node.name + '/' + node.children[ch]);
+                  }
                 }
               }
             }
@@ -329,3 +346,4 @@ async function createDriveFolder(name, parentId, headers) {
     return { error: e.message || String(e) };
   }
 }
+
