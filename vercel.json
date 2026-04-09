@@ -124,6 +124,9 @@
     },
     "api/poll-agent.js": {
       "maxDuration": 15
+    },
+    "api/analyze-design-spec.js": {
+      "maxDuration": 60
     }
   },
   "crons": [
