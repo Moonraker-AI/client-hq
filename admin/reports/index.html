@@ -144,8 +144,8 @@ strong { font-weight: 600; color: var(--color-heading); }
 .filter-tab.active[data-filter="configured"] .count { background: rgba(0,212,126,.12); }
 .filter-tab.active[data-filter="needs_config"] { color: #d97706; border-bottom-color: #d97706; }
 .filter-tab.active[data-filter="needs_config"] .count { background: rgba(245,158,11,.12); }
-.filter-tab.active[data-filter="compiled"] { color: #3b82f6; border-bottom-color: #3b82f6; }
-.filter-tab.active[data-filter="compiled"] .count { background: rgba(59,130,246,.12); }
+.filter-tab.active[data-filter="review"] { color: #d97706; border-bottom-color: #d97706; }
+.filter-tab.active[data-filter="review"] .count { background: rgba(245,158,11,.12); }
 .filter-tab.active[data-filter="published"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
 .filter-tab .count { font-size: .7rem; padding: .05rem .4rem; border-radius: 4px; background: var(--color-bg); margin-left: .3rem; }
 .filter-tab.active .count { background: var(--color-primary-subtle); }
@@ -458,9 +458,9 @@ strong { font-weight: 600; color: var(--color-heading); }
   <!-- Report Status Filters -->
   <div class="filter-bar" id="rptFilterBar" style="margin-bottom:1rem;">
     <button class="filter-tab active" data-filter="all">All</button>
-    <button class="filter-tab" data-filter="configured">Configured</button>
     <button class="filter-tab" data-filter="needs_config">Needs Config</button>
-    <button class="filter-tab" data-filter="compiled">Compiled</button>
+    <button class="filter-tab" data-filter="configured">Configured</button>
+    <button class="filter-tab" data-filter="review">Review</button>
     <button class="filter-tab" data-filter="published">Published</button>
   </div>
 
@@ -932,13 +932,14 @@ strong { font-weight: 600; color: var(--color-heading); }
     var thisMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 
     // Classify clients for filtering
-    var filterCounts = { all: clients.length, configured: 0, needs_config: 0, compiled: 0, published: 0 };
+    var filterCounts = { all: clients.length, configured: 0, needs_config: 0, review: 0, published: 0 };
     clients.forEach(function(c) {
       var cfg = state.configs[c.slug];
       var isConfigured = cfg && cfg.tracked_queries && cfg.tracked_queries.length > 0;
       if (isConfigured) { configured++; filterCounts.configured++; } else { filterCounts.needs_config++; }
       var snap = state.snapshots[c.slug];
-      if (snap && snap.report_month && snap.report_month.substring(0, 7) === thisMonth) { compiled++; filterCounts.compiled++; }
+      if (snap && snap.report_month && snap.report_month.substring(0, 7) === thisMonth) compiled++;
+      if (snap && snap.report_status && snap.report_status !== 'published' && snap.report_status !== 'sent') filterCounts.review++;
       if (cfg && cfg.last_published_at) filterCounts.published++;
     });
 
@@ -966,11 +967,11 @@ strong { font-weight: 600; color: var(--color-heading); }
         var cfg = state.configs[c.slug];
         var isConfigured = cfg && cfg.tracked_queries && cfg.tracked_queries.length > 0;
         var snap = state.snapshots[c.slug];
-        var isCompiled = snap && snap.report_month && snap.report_month.substring(0, 7) === thisMonth;
+        var isCompiled = snap && snap.report_status && snap.report_status !== 'published' && snap.report_status !== 'sent';
         var isPublished = cfg && cfg.last_published_at;
         if (rptFilter === 'configured') return isConfigured;
         if (rptFilter === 'needs_config') return !isConfigured;
-        if (rptFilter === 'compiled') return isCompiled;
+        if (rptFilter === 'review') return isCompiled;
         if (rptFilter === 'published') return isPublished;
         return true;
       });
