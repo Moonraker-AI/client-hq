@@ -479,6 +479,50 @@ strong { font-weight: 600; color: var(--color-heading); }
 .sortable-th:hover { color: var(--color-primary); }
 .sort-arrow { font-size: .6rem; margin-left: .25rem; display: inline-block; transition: transform .2s; opacity: .5; }
 .sortable-th:hover .sort-arrow { opacity: 1; }
+
+/* Profile tab */
+.bio-card { border: 1px solid var(--color-border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: .75rem; }
+.bio-card-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.bio-card-header h4 { margin: 0; font-size: .9rem; }
+.bio-card-body { margin-top: 1rem; display: none; }
+.bio-card.expanded .bio-card-body { display: block; }
+.bio-card.expanded .bio-expand { transform: rotate(180deg); }
+.bio-expand { transition: transform .2s; font-size: .7rem; color: var(--color-muted); }
+.bio-badge { font-size: .68rem; padding: .1rem .45rem; border-radius: 4px; background: var(--color-primary-subtle); color: var(--color-primary); font-weight: 600; margin-left: .5rem; }
+
+/* Rising Tide */
+.rt-platform-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .75rem; padding: 1rem; }
+.rt-platform-card { border: 1px solid var(--color-border); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: .65rem; }
+.rt-platform-header { display: flex; justify-content: space-between; align-items: center; }
+.rt-platform-name { font-weight: 600; font-size: .88rem; }
+.rt-status-badge { font-size: .68rem; padding: .15rem .5rem; border-radius: 4px; font-weight: 600; text-transform: capitalize; }
+.rt-status-badge.st-live { background: rgba(0,212,126,.12); color: #00b368; }
+.rt-status-badge.st-in_progress { background: rgba(59,130,246,.12); color: #3b82f6; }
+.rt-status-badge.st-not_created { background: var(--color-bg); color: var(--color-muted); }
+.rt-status-badge.st-needs_update { background: rgba(245,158,11,.12); color: #d97706; }
+.rt-status-badge.st-opted_out { background: rgba(107,114,128,.1); color: #6b7280; text-decoration: line-through; }
+.rt-url { font-size: .78rem; color: var(--color-primary); text-decoration: none; word-break: break-all; }
+.rt-url:hover { text-decoration: underline; }
+.rt-meta { display: flex; gap: .75rem; font-size: .75rem; color: var(--color-muted); }
+.rt-status-select { font-size: .75rem; padding: .2rem .4rem; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface); color: var(--color-heading); font-family: inherit; cursor: pointer; }
+.rt-access-toggle { font-size: .72rem; padding: .15rem .45rem; border-radius: 4px; cursor: pointer; border: 1px solid var(--color-border); background: var(--color-bg); color: var(--color-muted); font-family: inherit; }
+.rt-access-toggle.granted { background: rgba(0,212,126,.12); color: #00b368; border-color: rgba(0,212,126,.3); }
+
+/* Workspace credentials */
+.ws-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem .75rem; padding: 1rem; font-size: .84rem; }
+.ws-field { display: flex; flex-direction: column; gap: .15rem; }
+.ws-label { font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); }
+.ws-value { color: var(--color-heading); font-family: 'Inter', sans-serif; }
+.ws-masked { font-family: monospace; letter-spacing: .1em; cursor: pointer; user-select: none; }
+.ws-masked:hover { color: var(--color-primary); }
+.ws-full-width { grid-column: 1 / -1; }
+
+/* Directory listings */
+.dir-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .5rem; padding: 1rem; }
+.dir-item { display: flex; justify-content: space-between; align-items: center; padding: .5rem .75rem; border: 1px solid var(--color-border); border-radius: 8px; font-size: .82rem; }
+.dir-name { font-weight: 500; }
+.dir-item.dir-live { border-color: rgba(0,212,126,.3); background: rgba(0,212,126,.04); }
+.dir-item.dir-live .dir-name { color: var(--color-heading); }
 .sort-arrow.desc { transform: rotate(180deg); }
 .filter-bar { display: flex; align-items: center; gap: .25rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--color-border); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .filter-bar::-webkit-scrollbar { display: none; }
@@ -567,7 +611,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 }
 
 /* ---- COLLAPSIBLE SIDEBAR ---- */
-.sidebar { transition: width .2s ease, transform .25s ease; overflow: hidden; }
+.sidebar { transition: width .2s ease; overflow: hidden; }
 .sidebar-header { white-space: nowrap; }
 .sidebar-header span { transition: color .15s; }
 .sidebar-nav .nav-icon { width: 18px; min-width: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -777,27 +821,23 @@ strong { font-weight: 600; color: var(--color-heading); }
       <!-- Tabs -->
       <div class="tab-bar" id="tabBar">
         <button class="tab-btn active" data-tab="overview">Overview</button>
-        <button class="tab-btn" data-tab="proposals">Proposals</button>
-        <button class="tab-btn" data-tab="onboarding">Onboarding</button>
-        <button class="tab-btn" data-tab="intro-call">Intro Call</button>
+        <button class="tab-btn" data-tab="profile">Profile</button>
+        <button class="tab-btn" data-tab="rising-tide">Rising Tide</button>
         <button class="tab-btn" data-tab="deliverables">Deliverables</button>
         <button class="tab-btn" data-tab="audit">Audit</button>
         <button class="tab-btn" data-tab="reports">Reports</button>
         <button class="tab-btn" data-tab="billing">Billing</button>
+        <button class="tab-btn" data-tab="proposals">Proposals</button>
+        <button class="tab-btn" data-tab="onboarding">Onboarding</button>
+        <button class="tab-btn" data-tab="intro-call">Intro Call</button>
         <button class="history-toggle tab-hidden" id="historyToggle" onclick="toggleHistoryTabs()"><span class="ht-icon">&#9654;</span>History</button>
       </div>
 
       <!-- TAB: Overview -->
       <div class="tab-panel active" id="tab-overview">
-        <div class="card-grid card-grid-2">
-          <div class="card">
-            <div class="card-header"><h3>Contact Information</h3></div>
-            <div class="field-group" id="contactFields"></div>
-          </div>
-          <div class="card">
-            <div class="card-header"><h3>Practice Details</h3></div>
-            <div class="field-group" id="practiceFields"></div>
-          </div>
+        <div class="card" style="margin-bottom:1rem;">
+          <div class="card-header"><h3>Contact Information</h3></div>
+          <div class="field-group" id="contactFields"></div>
         </div>
         <div style="margin-top:1rem;">
           <div class="card">
@@ -811,12 +851,7 @@ strong { font-weight: 600; color: var(--color-heading); }
             <div class="field-group" id="crmFields"></div>
           </div>
         </div>
-        <div style="margin-top:1rem;">
-          <div class="card">
-            <div class="card-header"><h3>Social Profiles</h3></div>
-            <div class="field-group" id="socialFields"></div>
-          </div>
-        </div>
+
         <div style="margin-top:1rem;">
           <div class="card">
             <div class="card-header"><h3>Notes</h3></div>
@@ -825,6 +860,58 @@ strong { font-weight: 600; color: var(--color-heading); }
         </div>
       </div>
 
+
+      <!-- TAB: Profile -->
+      <div class="tab-panel" id="tab-profile">
+        <div id="profileContent">
+          <div class="card" style="margin-bottom:1rem;">
+            <div class="card-header collapsible-header" onclick="toggleProfileSection('practice')">
+              <h3>Practice Details <span class="collapse-icon" id="profilePracticeIcon">&#9660;</span></h3>
+            </div>
+            <div id="profilePractice" class="collapsible-body"></div>
+          </div>
+          <div class="card" style="margin-bottom:1rem;">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+              <h3>Bio Materials</h3>
+              <button class="btn-sm" onclick="addBioClinician()" style="padding:.35rem .85rem;font-size:.75rem;font-weight:600;border:1px solid var(--color-primary);background:var(--color-primary-subtle);color:var(--color-primary);border-radius:6px;cursor:pointer;font-family:inherit;">+ Add Clinician</button>
+            </div>
+            <div id="profileBio"></div>
+          </div>
+          <div class="card-grid card-grid-2" style="margin-bottom:1rem;">
+            <div class="card">
+              <div class="card-header"><h3>Account Access</h3></div>
+              <div id="profileAccess"></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><h3>Performance Guarantee</h3></div>
+              <div id="profileGuarantee"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Rising Tide -->
+      <div class="tab-panel" id="tab-rising-tide">
+        <div id="risingTideContent">
+          <div class="card" style="margin-bottom:1rem;">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+              <h3>Google Workspace</h3>
+              <button class="btn-sm" id="wsEditBtn" onclick="toggleWorkspaceEdit()" style="padding:.35rem .85rem;font-size:.75rem;font-weight:600;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-heading);border-radius:6px;cursor:pointer;font-family:inherit;">Edit</button>
+            </div>
+            <div id="rtWorkspace"></div>
+          </div>
+          <div class="card" style="margin-bottom:1rem;">
+            <div class="card-header"><h3>Social Platforms</h3></div>
+            <div id="rtSocials"></div>
+          </div>
+          <div class="card">
+            <div class="card-header collapsible-header" onclick="toggleProfileSection('directories')">
+              <h3>Therapy Directories <span class="collapse-icon" id="profileDirectoriesIcon">&#9660;</span></h3>
+            </div>
+            <div id="rtDirectories" class="collapsible-body"></div>
+          </div>
+        </div>
+      </div>
 
       <!-- TAB: Proposals -->
       <div class="tab-panel" id="tab-proposals">
@@ -923,6 +1010,7 @@ strong { font-weight: 600; color: var(--color-heading); }
           <div class="card">
             <div class="card-header"><h3>Agreement</h3></div>
             <div id="agreementInfo"></div>
+            <div id="csaLink" style="display:none;padding:0 1rem 1rem;"></div>
           </div>
         </div>
       </div>
@@ -1112,7 +1200,13 @@ strong { font-weight: 600; color: var(--color-heading); }
         fetch(SB + '/rest/v1/intro_call_steps?select=*&order=sort_order&contact_id=eq.' + cid, { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
         fetch(SB + '/rest/v1/proposals?select=*&contact_id=eq.' + cid + '&order=created_at.desc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
         fetch(SB + '/rest/v1/entity_audits?select=*&contact_id=eq.' + cid + '&order=created_at.desc&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
-        fetch(SB + '/rest/v1/tracked_keywords?select=id,keyword&client_slug=eq.' + slug + '&active=eq.true', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; })
+        fetch(SB + '/rest/v1/tracked_keywords?select=id,keyword&client_slug=eq.' + slug + '&active=eq.true', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch(SB + '/rest/v1/bio_materials?select=*&contact_id=eq.' + cid + '&order=sort_order,is_primary.desc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch(SB + '/rest/v1/workspace_credentials?select=*&contact_id=eq.' + cid + '&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch(SB + '/rest/v1/social_platforms?select=*&contact_id=eq.' + cid + '&order=platform', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch(SB + '/rest/v1/directory_listings?select=*&contact_id=eq.' + cid + '&order=directory', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch(SB + '/rest/v1/account_access?select=*&contact_id=eq.' + cid, { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch(SB + '/rest/v1/performance_guarantees?select=*&contact_id=eq.' + cid + '&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; })
       ]);
     }).then(function(res) {
       if (!res) return; // Contact not found, already handled
@@ -1129,6 +1223,12 @@ strong { font-weight: 600; color: var(--color-heading); }
       state.proposals = res[9] || [];
       state.entityAudit = (state.allAudits.length > 0) ? state.allAudits[0] : ((res[10] && res[10][0]) || null);
       state.trackedKeywords = res[11] || [];
+      state.bioMaterials = res[12] || [];
+      state.workspace = (res[13] && res[13][0]) || null;
+      state.socialPlatforms = res[14] || [];
+      state.directoryListings = res[15] || [];
+      state.accountAccess = res[16] || [];
+      state.guarantee = (res[17] && res[17][0]) || null;
       state.proposalFollowups = {};
 
       // Derive CORE scores from entity_audits (replaces audit_scores table)
@@ -1424,6 +1524,8 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     renderOverview(c, p);
     updateTabVisibility();
+    renderProfile();
+    renderRisingTide();
     renderProposals();
     renderOnboarding();
     renderIntroCall();
@@ -1464,19 +1566,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       + editField('contacts', 'team_size', 'Team Size', c.team_size)
       + editField('contacts', 'source', 'Source', c.source);
 
-    var pf = document.getElementById('practiceFields');
-    if (p) {
-      pf.innerHTML = editField('practice_details', 'practice_type', 'Practice Type', p.practice_type)
-        + editField('practice_details', 'num_therapists', 'Num Therapists', p.num_therapists)
-        + editField('practice_details', 'specialties', 'Specialties', p.specialties, {isArray:true})
-        + editField('practice_details', 'modalities', 'Modalities', p.modalities, {isArray:true})
-        + editField('practice_details', 'populations', 'Populations', p.populations, {isArray:true})
-        + editField('practice_details', 'insurance_or_private_pay', 'Insurance/Private Pay', p.insurance_or_private_pay)
-        + editField('practice_details', 'licensed_states', 'Licensed States', p.licensed_states, {isArray:true})
-        + editField('practice_details', 'content_approval', 'Content Approval', p.content_approval);
-    } else {
-      pf.innerHTML = '<div class="empty-state" style="padding:1rem;"><p>No practice details yet.</p></div>';
-    }
+
 
     var campf = document.getElementById('campaignFields');
     campf.innerHTML = editField('contacts', 'campaign_start', 'Campaign Start', c.campaign_start, {isDate:true})
@@ -1506,15 +1596,7 @@ strong { font-weight: 600; color: var(--color-heading); }
         + (c.lost ? '' : '<div style="margin-top:.75rem;display:flex;gap:.5rem;flex-wrap:wrap;"><button class="btn-mark-lost" onclick="markAsLost()">Mark as Lost</button><button class="btn-mark-lost" style="background:rgba(239,68,68,.08);color:var(--color-danger);border-color:rgba(239,68,68,.2);" onclick="deleteContact()">Delete Contact</button></div>');
     }
 
-    var sf = document.getElementById('socialFields');
-    sf.innerHTML = editField('contacts', 'youtube_url', 'YouTube', c.youtube_url)
-      + editField('contacts', 'linkedin_url', 'LinkedIn', c.linkedin_url)
-      + editField('contacts', 'facebook_url', 'Facebook', c.facebook_url)
-      + editField('contacts', 'instagram_url', 'Instagram', c.instagram_url)
-      + editField('contacts', 'tiktok_url', 'TikTok', c.tiktok_url)
-      + editField('contacts', 'pinterest_url', 'Pinterest', c.pinterest_url)
-      + editField('contacts', 'quora_url', 'Quora', c.quora_url)
-      + editField('contacts', 'x_url', 'X / Twitter', c.x_url);
+
 
     var notes = document.getElementById('notesContent');
     notes.className = 'notes-editable';
@@ -1568,6 +1650,426 @@ strong { font-weight: 600; color: var(--color-heading); }
 
   // ---- ONBOARDING TAB ----
   var OB_CANONICAL_ORDER = ['confirm_info','sign_agreement','book_intro_call','connect_accounts','practice_details','bio_materials','social_profiles','checkins_and_drive','performance_guarantee'];
+
+  // ---- PROFILE TAB ----
+  var PLATFORM_LABELS = { youtube: 'YouTube', linkedin: 'LinkedIn', facebook: 'Facebook', instagram: 'Instagram', tiktok: 'TikTok', pinterest: 'Pinterest', quora: 'Quora', x: 'X / Twitter', gbp: 'Google Business Profile' };
+  var ACCESS_PLATFORMS = ['youtube', 'linkedin', 'facebook', 'quora'];
+  var DIR_LABELS = { psychology_today: 'Psychology Today', yelp: 'Yelp', goodtherapy: 'GoodTherapy', therapyden: 'TherapyDen', zencare: 'Zencare', theravive: 'Theravive', monarch: 'Monarch', openpath: 'Open Path', inclusive_therapists: 'Inclusive Therapists', network_therapy: 'NetworkTherapy', headway: 'Headway', alma: 'Alma', zocdoc: 'Zocdoc', grow_therapy: 'Grow Therapy', sondermind: 'SonderMind', emdria: 'EMDRIA', ifs_institute: 'IFS Institute', tfbg: 'AAMFT / TFBG', latinx_therapy: 'LatinX Therapy', amhc: 'AMHC', ementalhealth: 'eMentalHealth', first_session: 'First Session' };
+
+  window.toggleProfileSection = function(section) {
+    var body, icon;
+    if (section === 'practice') { body = document.getElementById('profilePractice'); icon = document.getElementById('profilePracticeIcon'); }
+    else if (section === 'directories') { body = document.getElementById('rtDirectories'); icon = document.getElementById('profileDirectoriesIcon'); }
+    if (body && icon) {
+      var open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'block';
+      icon.textContent = open ? '\u25B6' : '\u25BC';
+    }
+  };
+
+  function renderProfile() {
+    var p = state.practice;
+    var container = document.getElementById('profilePractice');
+
+    if (p) {
+      var fields = [
+        ['Practice Type', p.practice_type], ['Num Therapists', p.num_therapists],
+        ['Specialties', Array.isArray(p.specialties) ? p.specialties.join(', ') : p.specialties],
+        ['Modalities', Array.isArray(p.modalities) ? p.modalities.join(', ') : p.modalities],
+        ['Populations', Array.isArray(p.populations) ? p.populations.join(', ') : p.populations],
+        ['Insurance/Private Pay', p.insurance_or_private_pay],
+        ['Insurance Panels', p.insurance_panels],
+        ['Licensed States', Array.isArray(p.licensed_states) ? p.licensed_states.join(', ') : p.licensed_states],
+        ['Session Cost', p.session_cost], ['Session Frequency', p.session_frequency],
+        ['Booking URL', p.booking_url], ['Offers Consultation', p.offers_consultation === true ? 'Yes' : (p.offers_consultation === false ? 'No' : '')],
+        ['Consultation Length', p.consultation_length],
+        ['Content Approval', p.content_approval], ['Pronoun Usage', p.pronoun_usage],
+        ['Brand Voice Sources', p.brand_voice_sources], ['Current Marketing', p.current_marketing],
+        ['Ideal Client', p.ideal_client], ['Differentiators', p.differentiators],
+        ['Intake Process', p.intake_process], ['After Care', p.after_care],
+        ['Campaign Objectives', p.campaign_objectives],
+        ['Current Caseload', p.current_caseload], ['Target Caseload', p.target_caseload],
+        ['Target Keywords', Array.isArray(p.target_keywords) ? p.target_keywords.join(', ') : p.target_keywords],
+        ['Content to Omit', p.content_to_omit]
+      ];
+      var h = '<div class="field-group" style="padding:.75rem 1rem;">';
+      fields.forEach(function(f) {
+        var val = f[1];
+        if (val != null && val !== '' && val !== false) {
+          var display = (typeof val === 'string' && val.startsWith('http')) ? '<a href="' + esc(val) + '" target="_blank" style="color:var(--color-primary);text-decoration:none;">' + esc(val) + '</a>' : esc(String(val));
+          h += '<div class="field-row"><span class="field-label">' + esc(f[0]) + '</span><span class="field-value">' + display + '</span></div>';
+        }
+      });
+      h += '</div>';
+      container.innerHTML = h;
+    } else {
+      container.innerHTML = '<div class="empty-state" style="padding:1.5rem;"><p>No practice details yet. Collected during onboarding.</p></div>';
+    }
+
+    // Bio Materials
+    var bioEl = document.getElementById('profileBio');
+    var bios = state.bioMaterials || [];
+    if (bios.length === 0) {
+      bioEl.innerHTML = '<div class="empty-state" style="padding:1.5rem;"><p>No bio materials yet.</p></div>';
+    } else {
+      var bh = '';
+      bios.forEach(function(b, i) {
+        var expanded = i === 0 ? ' expanded' : '';
+        bh += '<div class="bio-card' + expanded + '" data-bio-id="' + b.id + '">';
+        bh += '<div class="bio-card-header" onclick="this.parentElement.classList.toggle(\'expanded\')">';
+        bh += '<h4>' + esc(b.therapist_name || 'Unnamed') + (b.therapist_credentials ? ', ' + esc(b.therapist_credentials) : '') + (b.is_primary ? '<span class=\"bio-badge\">Primary</span>' : '') + '</h4>';
+        bh += '<span class="bio-expand">&#9660;</span>';
+        bh += '</div>';
+        bh += '<div class="bio-card-body">';
+
+        var bioFields = [
+          ['Professional Bio', b.professional_bio],
+          ['Clinical Approach', b.clinical_approach],
+          ['Education', Array.isArray(b.education_details) ? b.education_details.join('\n') : b.education_details],
+          ['Licenses', Array.isArray(b.license_details) ? b.license_details.join('\n') : b.license_details],
+          ['Certifications', Array.isArray(b.certification_details) ? b.certification_details.join('\n') : b.certification_details],
+          ['Associations', Array.isArray(b.association_details) ? b.association_details.join('\n') : b.association_details],
+          ['Awards', b.awards],
+          ['Media & Publications', Array.isArray(b.media_publications) ? b.media_publications.join('\n') : b.media_publications]
+        ];
+        bh += '<div class="field-group">';
+        bioFields.forEach(function(f) {
+          if (f[1]) {
+            var display = esc(String(f[1])).replace(/\n/g, '<br>');
+            bh += '<div class="field-row" style="align-items:flex-start;"><span class="field-label">' + esc(f[0]) + '</span><span class="field-value" style="white-space:pre-wrap;">' + display + '</span></div>';
+          }
+        });
+        bh += '</div>';
+        bh += '</div></div>';
+      });
+      bioEl.innerHTML = bh;
+    }
+
+    // Account Access
+    var accEl = document.getElementById('profileAccess');
+    var acc = state.accountAccess || [];
+    if (acc.length === 0) {
+      accEl.innerHTML = '<div class="empty-state" style="padding:1rem;"><p>No access records yet.</p></div>';
+    } else {
+      var ah = '<div class="field-group" style="padding:.75rem 1rem;">';
+      acc.forEach(function(a) {
+        var st = a.status === 'granted' ? '<span style="color:var(--color-success);">Granted</span>' : '<span style="color:var(--color-warning);">' + esc(a.status || 'Pending') + '</span>';
+        ah += '<div class="field-row"><span class="field-label">' + esc(a.platform || a.service || 'Platform') + '</span><span class="field-value">' + st + '</span></div>';
+      });
+      ah += '</div>';
+      accEl.innerHTML = ah;
+    }
+
+    // Performance Guarantee
+    var pgEl = document.getElementById('profileGuarantee');
+    var pg = state.guarantee;
+    if (!pg) {
+      pgEl.innerHTML = '<div class="empty-state" style="padding:1rem;"><p>No guarantee configured.</p></div>';
+    } else {
+      var status = pg.status === 'locked' ? '<span style="color:var(--color-success);font-weight:600;">Locked</span>' : '<span style="color:var(--color-warning);">' + esc(pg.status || 'Draft') + '</span>';
+      pgEl.innerHTML = '<div class="field-group" style="padding:.75rem 1rem;">'
+        + '<div class="field-row"><span class="field-label">Status</span><span class="field-value">' + status + '</span></div>'
+        + '<div class="field-row"><span class="field-label">Guarantee Calls</span><span class="field-value">' + (pg.guarantee_calls || 0) + ' calls in 12 months</span></div>'
+        + '<div class="field-row"><span class="field-label">Total Benchmark</span><span class="field-value">' + (pg.total_benchmark || 0) + ' total organic calls</span></div>'
+        + '<div class="field-row"><span class="field-label">Avg Client LTV</span><span class="field-value">$' + ((pg.avg_client_ltv_cents || 0) / 100).toLocaleString() + '</span></div>'
+        + '<div class="field-row"><span class="field-label">Conversion Rate</span><span class="field-value">' + Math.round((pg.conversion_rate || 0) * 100) + '%</span></div>'
+        + '<div class="field-row"><span class="field-label">Investment</span><span class="field-value">$' + ((pg.investment_cents || 0) / 100).toLocaleString() + '</span></div>'
+        + '</div>';
+    }
+  }
+
+  window.addBioClinician = function() {
+    if (!state.contact) return;
+    var name = prompt('Clinician full name:');
+    if (!name || !name.trim()) return;
+    var nextOrder = (state.bioMaterials || []).length;
+    fetch('/api/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create_record', table: 'bio_materials', data: { contact_id: state.contact.id, therapist_name: name.trim(), is_primary: false, sort_order: nextOrder } })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success && res.data) {
+        var row = Array.isArray(res.data) ? res.data[0] : res.data;
+        state.bioMaterials.push(row);
+        renderProfile();
+      }
+    });
+  };
+
+  // ---- RISING TIDE TAB ----
+  var wsRevealedFields = {};
+
+  window.toggleWorkspaceEdit = function() {
+    var wsEl = document.getElementById('rtWorkspace');
+    if (wsEl.dataset.editing === 'true') {
+      saveWorkspaceCredentials();
+    } else {
+      renderWorkspaceEdit();
+    }
+  };
+
+  function renderRisingTide() {
+    renderWorkspace();
+    renderSocialPlatforms();
+    renderDirectories();
+  }
+
+  function renderWorkspace() {
+    var ws = state.workspace;
+    var el = document.getElementById('rtWorkspace');
+    el.dataset.editing = 'false';
+    var btn = document.getElementById('wsEditBtn');
+    if (btn) btn.textContent = 'Edit';
+
+    if (!ws) {
+      el.innerHTML = '<div class="empty-state" style="padding:1.5rem;"><p>No Google Workspace configured yet.</p><button class="btn-sm" onclick="createWorkspace()" style="margin-top:.5rem;padding:.4rem 1rem;font-size:.78rem;font-weight:600;border:1px solid var(--color-primary);background:var(--color-primary-subtle);color:var(--color-primary);border-radius:6px;cursor:pointer;font-family:inherit;">Set Up Workspace</button></div>';
+      return;
+    }
+
+    var maskedFields = ['gmail_password', 'app_password', 'authenticator_secret_key'];
+
+    function maskVal(key, val) {
+      if (!val) return '<span style="color:var(--color-muted);font-style:italic;">Not set</span>';
+      if (maskedFields.indexOf(key) !== -1 && !wsRevealedFields[key]) {
+        return '<span class="ws-masked" onclick="revealWsField(\'' + key + '\')" title="Click to reveal">' + '\u2022'.repeat(Math.min(val.length, 16)) + '</span>';
+      }
+      return esc(val);
+    }
+
+    var h = '<div class="ws-grid">';
+    h += '<div class="ws-field"><span class="ws-label">Gmail Address</span><span class="ws-value">' + maskVal('gmail_address', ws.gmail_address) + '</span></div>';
+    h += '<div class="ws-field"><span class="ws-label">Password</span><span class="ws-value">' + maskVal('gmail_password', ws.gmail_password) + '</span></div>';
+    h += '<div class="ws-field"><span class="ws-label">Backup Email</span><span class="ws-value">' + maskVal('backup_email', ws.backup_email) + '</span></div>';
+    h += '<div class="ws-field"><span class="ws-label">Backup Phone</span><span class="ws-value">' + maskVal('backup_phone', ws.backup_phone) + '</span></div>';
+    h += '<div class="ws-field"><span class="ws-label">2FA Enabled</span><span class="ws-value">' + (ws.two_fa_enabled ? '<span style="color:var(--color-success);">Yes</span>' : '<span style="color:var(--color-danger);">No</span>') + '</span></div>';
+    h += '<div class="ws-field"><span class="ws-label">App Password</span><span class="ws-value">' + maskVal('app_password', ws.app_password) + '</span></div>';
+    h += '<div class="ws-field ws-full-width"><span class="ws-label">Authenticator Secret</span><span class="ws-value">' + maskVal('authenticator_secret_key', ws.authenticator_secret_key) + '</span></div>';
+    if (ws.authenticator_backup_codes && ws.authenticator_backup_codes.length > 0) {
+      h += '<div class="ws-field ws-full-width"><span class="ws-label">Backup Codes</span><span class="ws-value ws-masked" onclick="revealWsField(\'backup_codes\')" title="Click to reveal">' + (wsRevealedFields['backup_codes'] ? ws.authenticator_backup_codes.join(', ') : '\u2022\u2022\u2022\u2022 (' + ws.authenticator_backup_codes.length + ' codes)') + '</span></div>';
+    }
+    h += '</div>';
+    el.innerHTML = h;
+  }
+
+  window.revealWsField = function(key) {
+    wsRevealedFields[key] = true;
+    renderWorkspace();
+  };
+
+  window.createWorkspace = function() {
+    if (!state.contact) return;
+    fetch('/api/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create_record', table: 'workspace_credentials', data: { contact_id: state.contact.id } })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success && res.data) {
+        state.workspace = Array.isArray(res.data) ? res.data[0] : res.data;
+        renderWorkspaceEdit();
+      }
+    });
+  };
+
+  function renderWorkspaceEdit() {
+    var ws = state.workspace;
+    if (!ws) return;
+    var el = document.getElementById('rtWorkspace');
+    el.dataset.editing = 'true';
+    var btn = document.getElementById('wsEditBtn');
+    if (btn) btn.textContent = 'Save';
+
+    function inp(id, val, placeholder, type) {
+      return '<input type="' + (type || 'text') + '" id="ws_' + id + '" value="' + esc(val || '') + '" placeholder="' + esc(placeholder || '') + '" style="width:100%;padding:.4rem .6rem;border:1px solid var(--color-border);border-radius:6px;font-size:.84rem;background:var(--color-surface);color:var(--color-heading);font-family:inherit;">';
+    }
+
+    var h = '<div class="ws-grid">';
+    h += '<div class="ws-field"><span class="ws-label">Gmail Address</span>' + inp('gmail_address', ws.gmail_address, 'marketing@practice.com') + '</div>';
+    h += '<div class="ws-field"><span class="ws-label">Password</span>' + inp('gmail_password', ws.gmail_password, 'Password') + '</div>';
+    h += '<div class="ws-field"><span class="ws-label">Backup Email</span>' + inp('backup_email', ws.backup_email, 'Recovery email') + '</div>';
+    h += '<div class="ws-field"><span class="ws-label">Backup Phone</span>' + inp('backup_phone', ws.backup_phone, 'Recovery phone') + '</div>';
+    h += '<div class="ws-field"><span class="ws-label">2FA Enabled</span><select id="ws_two_fa" style="width:100%;padding:.4rem .6rem;border:1px solid var(--color-border);border-radius:6px;font-size:.84rem;background:var(--color-surface);color:var(--color-heading);font-family:inherit;"><option value="false"' + (!ws.two_fa_enabled ? ' selected' : '') + '>No</option><option value="true"' + (ws.two_fa_enabled ? ' selected' : '') + '>Yes</option></select></div>';
+    h += '<div class="ws-field"><span class="ws-label">App Password</span>' + inp('app_password', ws.app_password, '16-char app password') + '</div>';
+    h += '<div class="ws-field ws-full-width"><span class="ws-label">Authenticator Secret</span>' + inp('authenticator_secret_key', ws.authenticator_secret_key, 'Secret key') + '</div>';
+    h += '<div class="ws-field ws-full-width"><span class="ws-label">Backup Codes (comma-separated)</span>' + inp('backup_codes', (ws.authenticator_backup_codes || []).join(', '), '1234 5678, 9012 3456, ...') + '</div>';
+    h += '</div>';
+    el.innerHTML = h;
+  }
+
+  function saveWorkspaceCredentials() {
+    var ws = state.workspace;
+    if (!ws) return;
+    var codesRaw = document.getElementById('ws_backup_codes').value.trim();
+    var codes = codesRaw ? codesRaw.split(',').map(function(c) { return c.trim(); }).filter(Boolean) : [];
+    var data = {
+      gmail_address: document.getElementById('ws_gmail_address').value.trim() || null,
+      gmail_password: document.getElementById('ws_gmail_password').value.trim() || null,
+      backup_email: document.getElementById('ws_backup_email').value.trim() || null,
+      backup_phone: document.getElementById('ws_backup_phone').value.trim() || null,
+      two_fa_enabled: document.getElementById('ws_two_fa').value === 'true',
+      app_password: document.getElementById('ws_app_password').value.trim() || null,
+      authenticator_secret_key: document.getElementById('ws_authenticator_secret_key').value.trim() || null,
+      authenticator_backup_codes: codes.length > 0 ? codes : null,
+      updated_at: new Date().toISOString()
+    };
+    fetch('/api/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'workspace_credentials', filters: { id: ws.id }, data: data })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success) {
+        Object.assign(state.workspace, data);
+        wsRevealedFields = {};
+        renderWorkspace();
+      }
+    });
+  }
+
+  function renderSocialPlatforms() {
+    var el = document.getElementById('rtSocials');
+    var platforms = state.socialPlatforms || [];
+    if (platforms.length === 0) {
+      el.innerHTML = '<div class="empty-state" style="padding:1.5rem;"><p>No social platforms configured.</p></div>';
+      return;
+    }
+    var h = '<div class="rt-platform-grid">';
+    platforms.forEach(function(p) {
+      var label = PLATFORM_LABELS[p.platform] || p.platform;
+      var hasAccess = ACCESS_PLATFORMS.indexOf(p.platform) !== -1;
+      h += '<div class="rt-platform-card">';
+      h += '<div class="rt-platform-header"><span class="rt-platform-name">' + esc(label) + '</span>';
+      h += '<select class="rt-status-select" onchange="updatePlatformStatus(\'' + p.id + '\', this.value)">';
+      ['not_created','in_progress','live','needs_update','opted_out'].forEach(function(s) {
+        var sl = s.replace(/_/g, ' ');
+        h += '<option value="' + s + '"' + (p.status === s ? ' selected' : '') + '>' + sl.charAt(0).toUpperCase() + sl.slice(1) + '</option>';
+      });
+      h += '</select></div>';
+      if (p.profile_url) {
+        h += '<a href="' + esc(p.profile_url) + '" target="_blank" class="rt-url">' + esc(p.profile_url.replace(/^https?:\/\//, '').slice(0, 50)) + '</a>';
+      } else {
+        h += '<span style="font-size:.78rem;color:var(--color-muted);font-style:italic;">No URL set</span>';
+      }
+      h += '<div class="rt-meta">';
+      h += '<span style="cursor:pointer;color:var(--color-primary);font-size:.75rem;" onclick="editPlatformUrl(\'' + p.id + '\')">Edit URL</span>';
+      if (hasAccess) {
+        h += '<button class="rt-access-toggle' + (p.admin_access ? ' granted' : '') + '" onclick="togglePlatformAccess(\'' + p.id + '\')">' + (p.admin_access ? '\u2713 Access Granted' : 'No Access') + '</button>';
+      }
+      h += '</div></div>';
+    });
+    h += '</div>';
+    el.innerHTML = h;
+  }
+
+  window.updatePlatformStatus = function(id, newStatus) {
+    var p = state.socialPlatforms.find(function(p) { return p.id === id; });
+    if (!p) return;
+    p.status = newStatus;
+    fetch('/api/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'social_platforms', filters: { id: id }, data: { status: newStatus, updated_at: new Date().toISOString() } })
+    });
+  };
+
+  window.togglePlatformAccess = function(id) {
+    var p = state.socialPlatforms.find(function(p) { return p.id === id; });
+    if (!p) return;
+    var newAccess = !p.admin_access;
+    p.admin_access = newAccess;
+    fetch('/api/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'social_platforms', filters: { id: id }, data: { admin_access: newAccess, updated_at: new Date().toISOString() } })
+    });
+    renderSocialPlatforms();
+  };
+
+  window.editPlatformUrl = function(id) {
+    var p = state.socialPlatforms.find(function(p) { return p.id === id; });
+    if (!p) return;
+    var url = prompt('Profile URL for ' + (PLATFORM_LABELS[p.platform] || p.platform) + ':', p.profile_url || '');
+    if (url === null) return;
+    p.profile_url = url.trim() || null;
+    if (url.trim() && p.status === 'not_created') p.status = 'live';
+    fetch('/api/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'social_platforms', filters: { id: id }, data: { profile_url: p.profile_url, status: p.status, updated_at: new Date().toISOString() } })
+    });
+    renderSocialPlatforms();
+  };
+
+  function renderDirectories() {
+    var el = document.getElementById('rtDirectories');
+    var dirs = state.directoryListings || [];
+    if (dirs.length === 0) {
+      el.innerHTML = '<div class="empty-state" style="padding:1.5rem;"><p>No directory listings tracked.</p></div>';
+      return;
+    }
+
+    // Sort: live first, then by name
+    var sorted = dirs.slice().sort(function(a, b) {
+      if (a.status === 'live' && b.status !== 'live') return -1;
+      if (b.status === 'live' && a.status !== 'live') return 1;
+      return (a.directory || '').localeCompare(b.directory || '');
+    });
+
+    var liveCount = sorted.filter(function(d) { return d.status === 'live'; }).length;
+    var h = '<div style="padding:.75rem 1rem .25rem;font-size:.82rem;color:var(--color-muted);">' + liveCount + ' of ' + sorted.length + ' directories active</div>';
+    h += '<div class="dir-grid">';
+    sorted.forEach(function(d) {
+      var label = DIR_LABELS[d.directory] || d.directory.replace(/_/g, ' ');
+      var isLive = d.status === 'live';
+      h += '<div class="dir-item' + (isLive ? ' dir-live' : '') + '">';
+      h += '<span class="dir-name">' + esc(label) + '</span>';
+      if (isLive && d.profile_url) {
+        h += '<a href="' + esc(d.profile_url) + '" target="_blank" style="font-size:.75rem;color:var(--color-primary);text-decoration:none;">View &#8599;</a>';
+      } else {
+        h += '<select class="rt-status-select" onchange="updateDirStatus(\'' + d.id + '\', this.value)" style="font-size:.72rem;">';
+        ['not_listed','claimed','live','needs_update'].forEach(function(s) {
+          var sl = s.replace(/_/g, ' ');
+          h += '<option value="' + s + '"' + (d.status === s ? ' selected' : '') + '>' + sl.charAt(0).toUpperCase() + sl.slice(1) + '</option>';
+        });
+        h += '</select>';
+      }
+      h += '</div>';
+    });
+    h += '</div>';
+    el.innerHTML = h;
+  }
+
+  window.updateDirStatus = function(id, newStatus) {
+    var d = state.directoryListings.find(function(d) { return d.id === id; });
+    if (!d) return;
+    if (newStatus === 'live' && !d.profile_url) {
+      var url = prompt('Enter the directory listing URL:');
+      if (!url || !url.trim()) return;
+      d.profile_url = url.trim();
+    }
+    d.status = newStatus;
+    fetch('/api/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'directory_listings', filters: { id: id }, data: { status: newStatus, profile_url: d.profile_url, updated_at: new Date().toISOString() } })
+    });
+    renderDirectories();
+  };
+
+  // ---- BILLING TAB CSA LINK ----
+  function renderCsaLink() {
+    var csaEl = document.getElementById('csaLink');
+    if (!csaEl) return;
+    var signed = state.signed;
+    if (signed && signed.document_html) {
+      csaEl.style.display = 'block';
+      csaEl.innerHTML = '<a href="#" onclick="viewSignedCsa();return false;" style="font-size:.82rem;color:var(--color-primary);text-decoration:none;">&#128196; View Signed Client Service Agreement</a>';
+    }
+  }
+
+  window.viewSignedCsa = function() {
+    var signed = state.signed;
+    if (!signed || !signed.document_html) return;
+    var w = window.open('', '_blank', 'width=800,height=900');
+    w.document.write('<html><head><title>Signed CSA - ' + esc(state.contact.practice_name || state.contact.slug) + '</title>');
+    w.document.write('<style>body{font-family:Inter,sans-serif;max-width:800px;margin:2rem auto;padding:0 2rem;color:#1a1a2e;line-height:1.7;font-size:.9rem;}h1,h2,h3{font-family:Outfit,sans-serif;}p{margin:.5rem 0;}</style></head><body>');
+    w.document.write(signed.document_html);
+    w.document.write('<hr style="margin:2rem 0;"><p><strong>Signed by:</strong> ' + esc(signed.signer_name || '') + '</p>');
+    w.document.write('<p><strong>Date:</strong> ' + (signed.signed_at ? new Date(signed.signed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '') + '</p>');
+    w.document.write('</body></html>');
+    w.document.close();
+  };
 
   function renderOnboarding() {
     var steps = state.onboarding.slice().sort(function(a, b) {
@@ -3930,6 +4432,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       + fieldRow('SPP Client ID', c.spp_client_id);
 
     var agr = document.getElementById('agreementInfo');
+    renderCsaLink();
     if (c.agreement_signed) {
       var signedAt = c.agreement_signed_at ? formatDateTime(c.agreement_signed_at) : 'Unknown date';
       var signerName = state.signed ? state.signed.signer_name : '';
@@ -4498,12 +5001,12 @@ strong { font-weight: 600; color: var(--color-heading); }
   // TAB VISIBILITY (status-aware)
   // ============================================================
   var TAB_VISIBILITY = {
-    lead:       ['overview', 'proposals', 'audit'],
-    prospect:   ['overview', 'proposals', 'audit'],
-    onboarding: ['overview', 'proposals', 'onboarding', 'intro-call', 'deliverables', 'audit', 'reports', 'billing'],
-    active:     ['overview', 'proposals', 'onboarding', 'intro-call', 'deliverables', 'audit', 'reports', 'billing']
+    lead:       ['overview', 'profile', 'proposals', 'audit'],
+    prospect:   ['overview', 'profile', 'proposals', 'audit'],
+    onboarding: ['overview', 'profile', 'rising-tide', 'proposals', 'onboarding', 'intro-call', 'deliverables', 'audit', 'reports', 'billing'],
+    active:     ['overview', 'profile', 'rising-tide', 'proposals', 'onboarding', 'intro-call', 'deliverables', 'audit', 'reports', 'billing']
   };
-  var HISTORY_TABS = ['onboarding', 'intro-call'];
+  var HISTORY_TABS = ['proposals', 'onboarding', 'intro-call'];
 
   function updateTabVisibility() {
     if (!state.contact) return;
@@ -5118,10 +5621,6 @@ strong { font-weight: 600; color: var(--color-heading); }
   // Mobile sidebar
   var mobileToggle = document.getElementById('mobileToggle');
   if (mobileToggle) mobileToggle.addEventListener('click', function() { sidebar.classList.toggle('open'); });
-  var sidebarOverlay = document.getElementById('sidebarOverlay');
-  if (sidebarOverlay) sidebarOverlay.addEventListener('click', function() { sidebar.classList.remove('open'); });
-  var sidebarClose = document.getElementById('sidebarClose');
-  if (sidebarClose) sidebarClose.addEventListener('click', function() { sidebar.classList.remove('open'); });
   // Theme
   var themeBtn = document.getElementById('themeBtn');
   var _curTheme = document.documentElement.getAttribute('data-theme');
