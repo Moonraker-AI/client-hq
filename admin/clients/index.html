@@ -3522,7 +3522,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       // Auto-discover services when platform deliverables are marked delivered
       if (newStatus === 'delivered') {
         if (del.deliverable_type === 'gsc_setup') discoverService('gsc');
-        if (del.deliverable_type === 'localfalcon_setup' || del.deliverable_type === 'report_config') discoverService('localfalcon');
+        if (del.deliverable_type === 'report_config') discoverService('localfalcon');
       }
     }).catch(function() {
       del.status = oldStatus;
@@ -3667,8 +3667,8 @@ strong { font-weight: 600; color: var(--color-heading); }
       }
 
       // Update local deliverable statuses
-      ['localfalcon_setup', 'ga4_setup', 'gtm_setup', 'report_config'].forEach(function(dt) {
-        var svcKey = { localfalcon_setup: 'localfalcon', ga4_setup: 'ga4', gtm_setup: 'gtm', report_config: null }[dt];
+      ['ga4_setup', 'gtm_setup', 'report_config'].forEach(function(dt) {
+        var svcKey = { ga4_setup: 'ga4', gtm_setup: 'gtm', report_config: null }[dt];
         var r = svcKey ? (data.results && data.results[svcKey]) : null;
         if (r && r.success) {
           var del = state.deliverables.find(function(d) { return d.deliverable_type === dt; });
@@ -3759,7 +3759,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     // Phase category filter bar
     var phaseMap = {
-      setup: ['gsc_setup','ga4_setup','gtm_setup','gbp_setup','localfalcon_setup','report_config','instant_page'],
+      setup: ['gsc_setup','ga4_setup','gtm_setup','gbp_setup','report_config','instant_page'],
       content: ['surge_entity','surge_page','surge_sitewide','target_page','bio_page','faq_page','location_page','audit_diagnosis','audit_action_plan','audit_progress'],
       offpage: ['gbp_optimization','citations','press_release','social_profiles','entity_veracity_hub'],
       ongoing: ['social_posts','neo_images','neo_distribution','livedrive','youtube_video','endorsement']
@@ -3801,7 +3801,6 @@ strong { font-weight: 600; color: var(--color-heading); }
       schema: '&#128295;',
       social_profiles: '&#128100;',
       gbp_optimization: '&#128205;',
-      localfalcon_setup: '&#128205;',
       report_config: '&#128200;',
       video: '&#127909;'
     };
@@ -3810,7 +3809,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     var typeSortOrder = {
       // Setup (dependency order)
       gsc_setup: 1, ga4_setup: 2, gtm_setup: 3, gbp_setup: 4,
-      localfalcon_setup: 5, report_config: 6, instant_page: 7,
+      report_config: 5, instant_page: 7,
       // Content & Audits
       surge_entity: 10, surge_page: 11, surge_sitewide: 12,
       target_page: 13, bio_page: 14, faq_page: 15, location_page: 16,
