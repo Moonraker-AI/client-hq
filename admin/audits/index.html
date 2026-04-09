@@ -193,6 +193,13 @@ a:hover { color: var(--color-primary-hover); }
 .sub-tab { padding: .55rem 1rem; font-size: .82rem; font-weight: 500; color: var(--color-muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: inherit; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
 .sub-tab:hover { color: var(--color-heading); }
 .sub-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.sub-tab.active[data-filter="lead"] { color: #6b7280; border-bottom-color: #6b7280; }
+.sub-tab.active[data-filter="lead"] .tab-count { background: rgba(107,114,128,.12); }
+.sub-tab.active[data-filter="active"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.sub-tab.active[data-filter="pending"] { color: var(--color-muted); border-bottom-color: var(--color-muted); }
+.sub-tab.active[data-filter="pending"] .tab-count { background: rgba(107,114,128,.12); }
+.sub-tab.active[data-filter="needs_audit"] { color: #d97706; border-bottom-color: #d97706; }
+.sub-tab.active[data-filter="needs_audit"] .tab-count { background: rgba(245,158,11,.12); }
 .sub-tab .tab-count { font-size: .7rem; padding: .05rem .4rem; border-radius: 4px; background: var(--color-bg); margin-left: .3rem; }
 .sub-tab.active .tab-count { background: var(--color-primary-subtle); }
 .tab-content { display: none; }
