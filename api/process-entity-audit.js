@@ -168,8 +168,8 @@ TASK RULES:
 - Be specific with metric values from the Surge data
 - Each pillar should have 3-6 findings (mix of critical, warning, and positive)
 - Do not use em dashes anywhere
-- "owner" should be: "Moonraker" for technical SEO tasks (schema, code, structured data, content writing, citations, social profiles), "Client" for tasks requiring their direct involvement (GBP verification, review responses, credential documentation, booking calendar), "Collaboration" for tasks requiring both parties (content review, bio updates, media/photos)
-- "scope" should be: "on-page" for website/content changes, "off-page" for GBP, directories, social, reviews, citations
+- "owner" should be: "Moonraker" for technical SEO tasks we control (schema markup, code changes, structured data, content writing, on-site optimization, BrightLocal citations, data aggregator submissions), "Client" for tasks requiring their direct involvement (GBP verification/optimization, review responses, credential documentation, booking calendar, AND all paid or third-party directory profiles such as Psychology Today, TherapyDen, ZocDoc, GoodTherapy, TherapyRoute, Healthgrades, Vitals, Open Path, Alma, Headway, or any similar platform where the client must create/manage their own account), "Collaboration" for tasks requiring both parties (content review, bio updates, media/photos)
+- "scope" should be: "on-page" for changes to the practice website itself, "off-page" for everything external including GBP, directories, social media, reviews, citations, and third-party profiles
 
 SURGE DATA:
 ${surgeData}`;
@@ -543,4 +543,5 @@ ${surgeData}`;
     return res.end();
   }
 };
+
 
