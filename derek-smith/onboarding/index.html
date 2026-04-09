@@ -208,6 +208,15 @@ strong { font-weight: 600; color: var(--color-heading); }
 
 /* Print */
 @media print { .sidebar, .theme-toggle, .step-actions { display: none !important; } .onboarding-layout { grid-template-columns: 1fr; } .csa-document { max-height: none; overflow: visible; } }
+.additional-clinician { border: 1px solid var(--color-border); border-radius: 12px; margin-bottom: 1rem; overflow: hidden; }
+.additional-clinician-header { display: flex; justify-content: space-between; align-items: center; padding: .85rem 1.25rem; cursor: pointer; background: var(--color-surface); }
+.additional-clinician-header h4 { margin: 0; font-size: .9375rem; font-weight: 600; }
+.additional-clinician-body { padding: 1.25rem; display: none; }
+.additional-clinician.expanded .additional-clinician-body { display: block; }
+.additional-clinician .expand-arrow { transition: transform .2s; font-size: .7rem; color: var(--color-muted); }
+.additional-clinician.expanded .expand-arrow { transform: rotate(180deg); }
+.remove-clinician { font-size: .75rem; color: var(--color-danger); background: none; border: 1px solid rgba(239,68,68,.2); padding: .25rem .6rem; border-radius: 5px; cursor: pointer; font-family: inherit; }
+.remove-clinician:hover { background: rgba(239,68,68,.06); }
 </style>
 </head>
 <body>
@@ -578,6 +587,19 @@ strong { font-weight: 600; color: var(--color-heading); }
       </div>
 
 
+
+      <div id="additionalCliniciansSection" style="margin-top:2rem;display:none;">
+        <div class="form-section" style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:1.5rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <div>
+              <h3 style="margin:0;">Additional Clinicians</h3>
+              <p style="color:var(--color-muted);font-size:.875rem;margin:.25rem 0 0;">We will build a dedicated bio page for each clinician at your practice.</p>
+            </div>
+            <button class="btn btn-outline" onclick="addClinician()" style="padding:.45rem 1rem;font-size:.84rem;white-space:nowrap;">+ Add Clinician</button>
+          </div>
+          <div id="additionalCliniciansList"></div>
+        </div>
+      </div>
 
       <div class="step-actions">
         <button class="btn btn-outline" onclick="goToStep(4)">&#8592; Back</button>
@@ -1190,6 +1212,7 @@ strong { font-weight: 600; color: var(--color-heading); }
   // ============================================================
   var practiceData = null;
   var bioData = null;
+  var additionalBios = [];
 
   function prefillForms() {
     if (!contact) return;
@@ -1276,6 +1299,18 @@ strong { font-weight: 600; color: var(--color-heading); }
       if (fullName) document.getElementById('bio_name').value = fullName;
       if (contact.credentials) document.getElementById('bio_credentials').value = contact.credentials;
       if (contact.npi_number) document.getElementById('bio_npi').value = contact.npi_number;
+    }
+
+    // Show additional clinicians section once primary has a name
+    if (bioData && bioData.therapist_name) {
+      document.getElementById('additionalCliniciansSection').style.display = 'block';
+    }
+    renderAdditionalClinicians();
+
+    // Prefill sp_omit from contacts.platforms_to_omit
+    if (contact.platforms_to_omit) {
+      var omitEl = document.getElementById('sp_omit');
+      if (omitEl) omitEl.value = contact.platforms_to_omit;
     }
 
     // Step 7: Social Profiles - fill from contact record
@@ -1429,6 +1464,25 @@ strong { font-weight: 600; color: var(--color-heading); }
   // ============================================================
   // FORM: Save Step 7 - Social Profiles
   // ============================================================
+  // Map form IDs to social_platforms platform keys
+  var SOCIAL_PLATFORM_MAP = {
+    sp_youtube: 'youtube', sp_linkedin: 'linkedin', sp_facebook: 'facebook',
+    sp_instagram: 'instagram', sp_quora: 'quora', sp_pinterest: 'pinterest',
+    sp_tiktok: 'tiktok', sp_x: 'x', sp_gbp: 'gbp'
+  };
+
+  // Map form IDs to directory_listings directory keys
+  var DIR_MAP = {
+    dir_yelp: 'yelp', dir_goodtherapy: 'goodtherapy', dir_therapyden: 'therapyden',
+    dir_zencare: 'zencare', dir_theravive: 'theravive', dir_monarch: 'monarch',
+    dir_openpath: 'openpath', dir_inclusive: 'inclusive_therapists',
+    dir_networktherapy: 'network_therapy', dir_headway: 'headway', dir_alma: 'alma',
+    dir_zocdoc: 'zocdoc', dir_growtherapy: 'grow_therapy', dir_sondermind: 'sondermind',
+    dir_emdria: 'emdria', dir_aamft: 'tfbg', dir_tfbg: 'tfbg',
+    dir_latinx: 'latinx_therapy', dir_amhc: 'amhc', dir_ifs: 'ifs_institute',
+    dir_ementalhealth: 'ementalhealth', dir_firstsession: 'first_session'
+  };
+
   window.saveSocialProfiles = function() {
     var socialData = {
       youtube_url: document.getElementById('sp_youtube').value.trim() || null,
@@ -1443,7 +1497,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       gbp_url: document.getElementById('sp_gbp').value.trim() || null
     };
 
-    // Collect all directory URLs into a JSON string
+    // Collect directory URLs (still saved to practice_details.additional_services for backward compat)
     var dirIds = ['dir_yelp','dir_goodtherapy','dir_therapyden','dir_zencare','dir_theravive','dir_monarch','dir_openpath','dir_inclusive','dir_networktherapy','dir_headway','dir_alma','dir_zocdoc','dir_growtherapy','dir_sondermind','dir_emdria','dir_aamft','dir_tfbg','dir_latinx','dir_amhc','dir_ifs','dir_ementalhealth','dir_firstsession'];
     var directories = {};
     dirIds.forEach(function(id) {
@@ -1452,16 +1506,41 @@ strong { font-weight: 600; color: var(--color-heading); }
     });
     var otherDirs = document.getElementById('dir_other').value.trim();
     if (otherDirs) directories['dir_other'] = otherDirs;
-    var omit = document.getElementById('sp_omit').value.trim();
 
-    // Save socials + GBP + PT to contacts
+    // Save platforms_to_omit to contacts (not practice_details.content_to_omit)
+    var omit = document.getElementById('sp_omit').value.trim();
+    socialData.platforms_to_omit = omit || null;
+
+    // Save socials + omit to contacts
     return sbPatch('contacts', 'id=eq.' + contact.id, socialData).then(function() {
       Object.assign(contact, socialData);
 
-      // Save directories to practice_details via API (service role key)
-      var pdUpdate = { additional_services: JSON.stringify(directories) };
-      if (omit) pdUpdate.content_to_omit = omit;
+      // Sync to social_platforms table via API
+      Object.keys(SOCIAL_PLATFORM_MAP).forEach(function(formId) {
+        var platform = SOCIAL_PLATFORM_MAP[formId];
+        var url = document.getElementById(formId).value.trim() || null;
+        var status = url ? 'live' : 'not_created';
+        apiAction('update_record', 'social_platforms', { contact_id: contact.id, platform: 'eq.' + platform }, { profile_url: url, status: status, updated_at: new Date().toISOString() });
+      });
 
+      // Sync PT to directory_listings
+      var ptUrl = document.getElementById('sp_psychtoday').value.trim() || null;
+      if (ptUrl) {
+        apiAction('update_record', 'directory_listings', { contact_id: contact.id, directory: 'eq.psychology_today' }, { profile_url: ptUrl, status: 'live', updated_at: new Date().toISOString() });
+      }
+
+      // Sync directory URLs to directory_listings table
+      dirIds.forEach(function(formId) {
+        var dirKey = DIR_MAP[formId];
+        if (!dirKey) return;
+        var url = document.getElementById(formId).value.trim() || null;
+        if (url) {
+          apiAction('update_record', 'directory_listings', { contact_id: contact.id, directory: 'eq.' + dirKey }, { profile_url: url, status: 'live', updated_at: new Date().toISOString() });
+        }
+      });
+
+      // Still save directories to practice_details for backward compatibility
+      var pdUpdate = { additional_services: JSON.stringify(directories) };
       if (practiceData) {
         return apiAction('update_record', 'practice_details', { contact_id: contact.id }, pdUpdate)
           .then(function(res) { practiceData = (res.data && res.data[0]) || practiceData; });
@@ -1637,6 +1716,286 @@ strong { font-weight: 600; color: var(--color-heading); }
   };
 
   // ============================================================
+  // FORM: Step 9 - Performance Guarantee
+  // ============================================================
+  var guaranteeData = null;
+
+  function loadGuaranteeData() {
+    if (!contact) return;
+
+    // Three states based on plan_type
+    if (!contact.plan_type) {
+      // Pre-checkout: show teaser, hide configurator
+      document.getElementById('pgTeaser').style.display = 'block';
+      document.getElementById('pgConfigurator').style.display = 'none';
+      document.getElementById('pgNotAnnual').style.display = 'none';
+      document.getElementById('pgLocked').style.display = 'none';
+      return;
+    }
+
+    if (contact.plan_type !== 'annual') {
+      // Quarterly/monthly: show lockout
+      document.getElementById('pgConfigurator').style.display = 'none';
+      document.getElementById('pgTeaser').style.display = 'none';
+      document.getElementById('pgNotAnnual').style.display = 'block';
+      document.getElementById('pgLocked').style.display = 'none';
+      return;
+    }
+
+    // Annual: show full configurator
+    document.getElementById('pgTeaser').style.display = 'none';
+    document.getElementById('pgNotAnnual').style.display = 'none';
+
+    // Pre-fill investment if we know plan_amount_cents
+    if (contact.plan_amount_cents) {
+      document.getElementById('pgInvestment').value = Math.round(contact.plan_amount_cents / 100);
+    }
+
+    // Load existing guarantee draft
+    sbFetch('performance_guarantees', 'contact_id=eq.' + contact.id + '&select=*&limit=1')
+      .then(function(rows) {
+        if (rows && rows.length > 0) {
+          guaranteeData = rows[0];
+          if (guaranteeData.avg_client_ltv_cents) document.getElementById('pgLtv').value = Math.round(guaranteeData.avg_client_ltv_cents / 100);
+          if (guaranteeData.conversion_rate) document.getElementById('pgConversion').value = Math.round(guaranteeData.conversion_rate * 100);
+          if (guaranteeData.attendance_rate) document.getElementById('pgAttendance').value = Math.round(guaranteeData.attendance_rate * 100);
+          if (guaranteeData.current_monthly_organic_calls != null) document.getElementById('pgCurrentCalls').value = guaranteeData.current_monthly_organic_calls;
+          if (guaranteeData.investment_cents) document.getElementById('pgInvestment').value = Math.round(guaranteeData.investment_cents / 100);
+
+          if (guaranteeData.status === 'locked') {
+            document.getElementById('pgConfigurator').style.display = 'none';
+            document.getElementById('pgLocked').style.display = 'block';
+            document.getElementById('pgLockedCalls').textContent = guaranteeData.guarantee_calls || 0;
+            document.getElementById('pgLockedBenchmark').textContent = guaranteeData.total_benchmark || 0;
+            document.getElementById('pgCompleteBtn').style.display = 'inline-flex';
+          }
+
+          recalcGuarantee();
+        }
+      })
+      .catch(function() {});
+  }
+
+  window.recalcGuarantee = function() {
+    var ltv = parseFloat(document.getElementById('pgLtv').value) || 0;
+    var conv = parseFloat(document.getElementById('pgConversion').value) / 100 || 0;
+    var att = parseFloat(document.getElementById('pgAttendance').value) / 100 || 0;
+    var currentCalls = parseInt(document.getElementById('pgCurrentCalls').value) || 0;
+    var investment = parseFloat(document.getElementById('pgInvestment').value) || 0;
+
+    var allFilled = ltv > 0 && conv > 0 && att > 0 && investment > 0;
+    document.getElementById('pgSaveBtn').disabled = !allFilled;
+
+    if (!allFilled) {
+      document.getElementById('pgCalculation').style.display = 'none';
+      return;
+    }
+
+    var valuePerCall = ltv * conv * att;
+    var doubleInvestment = investment * 2;
+    var guaranteeCalls = Math.ceil(doubleInvestment / valuePerCall);
+    var totalBenchmark = (currentCalls * 12) + guaranteeCalls;
+
+    document.getElementById('pgLtvDisplay').textContent = '$' + ltv.toLocaleString();
+    document.getElementById('pgConvDisplay').textContent = Math.round(conv * 100) + '%';
+    document.getElementById('pgAttDisplay').textContent = Math.round(att * 100) + '%';
+    document.getElementById('pgValuePerCall').textContent = '$' + valuePerCall.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('pgValuePerCallRepeat').textContent = '$' + valuePerCall.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('pgDoubleInvestment').textContent = '$' + doubleInvestment.toLocaleString();
+    document.getElementById('pgGuaranteeCalls').textContent = guaranteeCalls;
+    document.getElementById('pgCallsDisplay').textContent = guaranteeCalls;
+    document.getElementById('pgCurrentDisplay').textContent = currentCalls;
+    document.getElementById('pgBenchmarkDisplay').textContent = totalBenchmark;
+
+    document.getElementById('pgCalculation').style.display = 'block';
+  };
+
+  window.saveGuaranteeDraft = function() {
+    var ltv = parseFloat(document.getElementById('pgLtv').value) || 0;
+    var conv = parseFloat(document.getElementById('pgConversion').value) / 100 || 0;
+    var att = parseFloat(document.getElementById('pgAttendance').value) / 100 || 0;
+    var currentCalls = parseInt(document.getElementById('pgCurrentCalls').value) || 0;
+    var investment = parseFloat(document.getElementById('pgInvestment').value) || 0;
+
+    var valuePerCall = ltv * conv * att;
+    var doubleInvestment = investment * 2;
+    var guaranteeCalls = Math.ceil(doubleInvestment / valuePerCall);
+    var totalBenchmark = (currentCalls * 12) + guaranteeCalls;
+
+    var payload = {
+      contact_id: contact.id,
+      avg_client_ltv_cents: Math.round(ltv * 100),
+      conversion_rate: conv,
+      attendance_rate: att,
+      current_monthly_organic_calls: currentCalls,
+      investment_cents: Math.round(investment * 100),
+      value_per_call_cents: Math.round(valuePerCall * 100),
+      guarantee_calls: guaranteeCalls,
+      total_benchmark: totalBenchmark,
+      status: 'draft',
+      updated_at: new Date().toISOString()
+    };
+
+    var statusEl = document.getElementById('pgSaveStatus');
+    statusEl.textContent = 'Saving...';
+    statusEl.style.color = 'var(--color-muted)';
+
+    var method, url;
+    if (guaranteeData && guaranteeData.id) {
+      method = 'PATCH';
+      url = SB_URL + '/rest/v1/performance_guarantees?id=eq.' + guaranteeData.id;
+    } else {
+      method = 'POST';
+      url = SB_URL + '/rest/v1/performance_guarantees';
+    }
+
+    fetch(url, {
+      method: method,
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify(payload)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var row = Array.isArray(data) ? data[0] : data;
+      if (row && row.id) {
+        guaranteeData = row;
+        statusEl.textContent = 'Draft saved';
+        statusEl.style.color = 'var(--color-success)';
+        // Mark step in progress
+        sbPatch('onboarding_steps', 'contact_id=eq.' + contact.id + '&step_key=eq.performance_guarantee',
+          { status: 'in_progress', notes: 'Draft: ' + guaranteeCalls + ' calls / ' + totalBenchmark + ' benchmark' });
+        stepData['performance_guarantee'] = 'in_progress';
+        buildNav();
+        setTimeout(function() { statusEl.textContent = ''; }, 3000);
+      } else {
+        statusEl.textContent = 'Error saving';
+        statusEl.style.color = 'var(--color-danger)';
+      }
+    })
+    .catch(function() {
+      statusEl.textContent = 'Error saving';
+      statusEl.style.color = 'var(--color-danger)';
+    });
+  };
+
+  // ============================================================
+  // MULTI-CLINICIAN: Add / Remove / Save / Render
+  // ============================================================
+  function clinicianFormHtml(bio, index) {
+    var prefix = 'add_bio_' + index + '_';
+    var h = '';
+    h += '<div class="form-row"><div class="form-group"><label>Full Name</label><input type="text" id="' + prefix + 'name" value="' + escAttr(bio.therapist_name || '') + '"></div>';
+    h += '<div class="form-group"><label>Credentials</label><input type="text" id="' + prefix + 'credentials" value="' + escAttr(bio.therapist_credentials || '') + '" placeholder="e.g. PhD, LCSW, LMFT"></div></div>';
+    h += '<div class="form-group"><label>NPI Number</label><input type="text" id="' + prefix + 'npi" value="" placeholder="e.g. 1234567890"></div>';
+    h += '<div class="form-group"><label>Professional Bio</label><textarea id="' + prefix + 'bio" style="min-height:100px;" placeholder="Background, approach, and what drives their work.">' + escAttr(bio.professional_bio || '') + '</textarea></div>';
+    h += '<div class="form-group"><label>Clinical Approach Keywords</label><input type="text" id="' + prefix + 'approach" value="' + escAttr(bio.clinical_approach || '') + '" placeholder="e.g. trauma-informed, attachment-based"></div>';
+    h += '<div class="form-group"><label>Education</label><textarea id="' + prefix + 'education" placeholder="One per line">' + (Array.isArray(bio.education_details) ? bio.education_details.join('\n') : (bio.education_details || '')) + '</textarea></div>';
+    h += '<div class="form-group"><label>License Details</label><textarea id="' + prefix + 'licenses" placeholder="One per line">' + (Array.isArray(bio.license_details) ? bio.license_details.join('\n') : (bio.license_details || '')) + '</textarea></div>';
+    h += '<div class="form-group"><label>Certifications</label><textarea id="' + prefix + 'certifications" placeholder="One per line">' + (Array.isArray(bio.certification_details) ? bio.certification_details.join('\n') : (bio.certification_details || '')) + '</textarea></div>';
+    h += '<div class="form-group"><label>Associations</label><textarea id="' + prefix + 'associations" placeholder="One per line">' + (Array.isArray(bio.association_details) ? bio.association_details.join('\n') : (bio.association_details || '')) + '</textarea></div>';
+    h += '<div class="form-group"><label>Awards</label><input type="text" id="' + prefix + 'awards" value="' + escAttr(bio.awards || '') + '"></div>';
+    h += '<div class="form-group"><label>Media &amp; Publications</label><textarea id="' + prefix + 'media" placeholder="One per line">' + (Array.isArray(bio.media_publications) ? bio.media_publications.join('\n') : (bio.media_publications || '')) + '</textarea></div>';
+    return h;
+  }
+
+  function escAttr(s) { return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+  function textareaToArrayById(id) {
+    var el = document.getElementById(id);
+    if (!el) return null;
+    var val = el.value.trim();
+    if (!val) return null;
+    return val.split('\n').map(function(l) { return l.trim(); }).filter(Boolean);
+  }
+
+  function renderAdditionalClinicians() {
+    var container = document.getElementById('additionalCliniciansList');
+    if (!container) return;
+    if (additionalBios.length === 0) {
+      container.innerHTML = '<p style="color:var(--color-muted);font-size:.875rem;font-style:italic;">No additional clinicians added yet.</p>';
+      return;
+    }
+    var h = '';
+    additionalBios.forEach(function(bio, i) {
+      h += '<div class="additional-clinician" data-bio-id="' + bio.id + '">';
+      h += '<div class="additional-clinician-header" onclick="this.parentElement.classList.toggle(\'expanded\')">';
+      h += '<h4>' + escAttr(bio.therapist_name || 'New Clinician') + (bio.therapist_credentials ? ', ' + escAttr(bio.therapist_credentials) : '') + '</h4>';
+      h += '<div style="display:flex;align-items:center;gap:.75rem;"><span class="expand-arrow">&#9660;</span>';
+      h += '<button class="remove-clinician" onclick="event.stopPropagation();removeClinician(\'' + bio.id + '\')">Remove</button></div>';
+      h += '</div>';
+      h += '<div class="additional-clinician-body">';
+      h += clinicianFormHtml(bio, i);
+      h += '<button class="btn btn-outline" onclick="saveAdditionalClinician(' + i + ')" style="margin-top:.75rem;padding:.4rem 1rem;font-size:.84rem;">Save</button>';
+      h += '<span id="add_bio_' + i + '_status" style="margin-left:.75rem;font-size:.78rem;color:var(--color-muted);"></span>';
+      h += '</div></div>';
+    });
+    container.innerHTML = h;
+  }
+
+  window.addClinician = function() {
+    var name = prompt('Full name of the clinician:');
+    if (!name || !name.trim()) return;
+    var nextOrder = (additionalBios.length + 1);
+    apiAction('create_record', 'bio_materials', null, {
+      contact_id: contact.id,
+      therapist_name: name.trim(),
+      is_primary: false,
+      sort_order: nextOrder
+    }).then(function(res) {
+      if (res.success && res.data) {
+        var row = Array.isArray(res.data) ? res.data[0] : res.data;
+        additionalBios.push(row);
+        renderAdditionalClinicians();
+        // Auto-expand the new one
+        var cards = document.querySelectorAll('.additional-clinician');
+        if (cards.length > 0) cards[cards.length - 1].classList.add('expanded');
+      }
+    });
+  };
+
+  window.removeClinician = function(bioId) {
+    if (!confirm('Remove this clinician? This cannot be undone.')) return;
+    apiAction('delete_record', 'bio_materials', { id: bioId }).then(function() {
+      additionalBios = additionalBios.filter(function(b) { return b.id !== bioId; });
+      renderAdditionalClinicians();
+    });
+  };
+
+  window.saveAdditionalClinician = function(index) {
+    var bio = additionalBios[index];
+    if (!bio) return;
+    var prefix = 'add_bio_' + index + '_';
+    var statusEl = document.getElementById(prefix + 'status');
+
+    var data = {
+      therapist_name: document.getElementById(prefix + 'name').value.trim(),
+      therapist_credentials: document.getElementById(prefix + 'credentials').value.trim(),
+      professional_bio: document.getElementById(prefix + 'bio').value.trim(),
+      clinical_approach: document.getElementById(prefix + 'approach').value.trim(),
+      education_details: textareaToArrayById(prefix + 'education'),
+      license_details: textareaToArrayById(prefix + 'licenses'),
+      certification_details: textareaToArrayById(prefix + 'certifications'),
+      association_details: textareaToArrayById(prefix + 'associations'),
+      awards: document.getElementById(prefix + 'awards').value.trim() || null,
+      media_publications: textareaToArrayById(prefix + 'media'),
+      updated_at: new Date().toISOString()
+    };
+
+    if (statusEl) { statusEl.textContent = 'Saving...'; statusEl.style.color = 'var(--color-muted)'; }
+    apiAction('update_record', 'bio_materials', { id: bio.id }, data).then(function(res) {
+      if (res.success) {
+        Object.assign(bio, data);
+        if (statusEl) { statusEl.textContent = 'Saved'; statusEl.style.color = 'var(--color-success)'; setTimeout(function() { statusEl.textContent = ''; }, 2500); }
+        // Update the header name
+        renderAdditionalClinicians();
+        // Re-expand the card we just saved
+        var cards = document.querySelectorAll('.additional-clinician');
+        if (cards[index]) cards[index].classList.add('expanded');
+      }
+    });
+  };
+
+  // ============================================================
   // INIT
   // ============================================================
   function init() {
@@ -1657,7 +2016,7 @@ strong { font-weight: 600; color: var(--color-heading); }
           sbFetch('onboarding_steps', 'contact_id=eq.' + contact.id + '&select=step_key,status&order=sort_order'),
           sbFetch('signed_agreements', 'contact_id=eq.' + contact.id + '&agreement_type=eq.csa&select=signer_name,signed_at&limit=1'),
           sbFetch('practice_details', 'contact_id=eq.' + contact.id + '&select=*&limit=1'),
-          sbFetch('bio_materials', 'contact_id=eq.' + contact.id + '&is_primary=eq.true&select=*&limit=1')
+          sbFetch('bio_materials', 'contact_id=eq.' + contact.id + '&select=*&order=is_primary.desc,sort_order')
         ]);
       })
       .then(function(allData) {
@@ -1666,7 +2025,9 @@ strong { font-weight: 600; color: var(--color-heading); }
         var steps = allData[0] || [];
         var agreements = allData[1] || [];
         practiceData = (allData[2] && allData[2][0]) ? allData[2][0] : null;
-        bioData = (allData[3] && allData[3][0]) ? allData[3][0] : null;
+        var allBios = allData[3] || [];
+        bioData = allBios.find(function(b) { return b.is_primary; }) || (allBios.length > 0 ? allBios[0] : null);
+        additionalBios = allBios.filter(function(b) { return b.id !== (bioData && bioData.id); });
 
         steps.forEach(function(s) { stepData[s.step_key] = s.status; });
 
