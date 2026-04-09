@@ -56,7 +56,7 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 17px;  overflow-x: hidden; }
-body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.6; -webkit-font-smoothing: antialiased;  overflow-x: hidden; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.6; -webkit-font-smoothing: antialiased; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
 h1,h2,h3,h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.2; }
 a { color: var(--color-primary); text-decoration: none; }
@@ -85,6 +85,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
 /* ---- TOP BAR ---- */
 .topbar { position: sticky; top: 0; z-index: 100; background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 0 2rem; height: 56px; display: flex; align-items: center; gap: 1rem; }
+.dir-controls { position: sticky; top: 56px; z-index: 50; background: var(--color-bg); }
 .search-box { flex: 1; max-width: 480px; position: relative; }
 .search-box input { width: 100%; padding: .45rem .75rem .45rem 2.25rem; border: 1px solid var(--color-border); border-radius: 8px; font-size: .82rem; font-family: inherit; color: var(--color-body); background: var(--color-bg); transition: border-color .2s, box-shadow .2s; }
 .search-box input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(0,212,126,.1); }
@@ -597,7 +598,6 @@ strong { font-weight: 600; color: var(--color-heading); }
   .sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,.15); }
   .main { margin-left: 0; }
   .mobile-toggle { display: block; }
-  .dir-controls { position: sticky; top: 56px; z-index: 50; background: var(--color-bg); padding-bottom: .5rem; flex-wrap: wrap; gap: .5rem; }
   .sidebar-close { display: block; }
   .detail-header { flex-direction: column; }
   .detail-actions { width: 100%; }
