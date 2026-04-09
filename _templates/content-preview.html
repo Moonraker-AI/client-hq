@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>{{PAGE_NAME}} - Content Preview</title>
+<link rel="icon" href="/assets/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-primary: #00D47E;
+    --color-primary-hover: #00B86C;
+    --color-primary-subtle: #DDF8F2;
+    --color-bg: #F0F4F8;
+    --color-surface: #FFFFFF;
+    --color-border: #E2E8F0;
+    --color-heading: #1E2A5E;
+    --color-body: #333F70;
+    --color-muted: #6B7599;
+  }
+  [data-theme="dark"] {
+    --color-bg: #0D1117;
+    --color-surface: #161B22;
+    --color-border: #30363D;
+    --color-heading: #E6EDF3;
+    --color-body: #B1BAC4;
+    --color-muted: #7D8590;
+    --color-primary-subtle: #0D2818;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--color-bg);
+    color: var(--color-body);
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+
+  .preview-header {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: .65rem 1.25rem;
+    display: flex; align-items: center; gap: 1rem;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .preview-logo {
+    width: 28px; height: 28px; border-radius: 6px;
+  }
+  .preview-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: .9rem; font-weight: 600;
+    color: var(--color-heading);
+    flex: 1;
+  }
+  .preview-badge {
+    font-size: .68rem; font-weight: 600; padding: .2rem .55rem;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: .04em;
+    background: rgba(236,72,153,.12); color: #EC4899;
+  }
+  .preview-actions { display: flex; gap: .5rem; align-items: center; }
+  .btn-approve {
+    padding: .4rem .85rem; border-radius: 6px; border: none;
+    font-size: .78rem; font-weight: 600; font-family: inherit;
+    background: var(--color-primary); color: #fff; cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-approve:hover { background: var(--color-primary-hover); }
+  .btn-approve:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-approve.approved {
+    background: rgba(0,212,126,.12); color: #00b86c;
+    cursor: default; pointer-events: none;
+  }
+
+  .preview-frame-container {
+    flex: 1; display: flex; justify-content: center;
+    padding: 1rem;
+  }
+  #contentPreviewFrame {
+    width: 100%; max-width: 1400px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: #fff;
+    min-height: 600px;
+  }
+
+  .loading-state {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 4rem; text-align: center; flex: 1;
+  }
+  .loading-state .spinner {
+    width: 28px; height: 28px; border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%; animation: spin .8s linear infinite;
+  }
+  .loading-state p { margin-top: .75rem; font-size: .85rem; color: var(--color-muted); }
+  .error-state {
+    padding: 3rem; text-align: center;
+    color: var(--color-muted); font-size: .9rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+</head>
+<body>
+
+<div class="preview-header">
+  <img src="/assets/logo.png" alt="Moonraker" class="preview-logo">
+  <div class="preview-title">{{PAGE_NAME}}</div>
+  <span class="preview-badge">Preview</span>
+  <div class="preview-actions">
+    <button class="btn-approve" id="approveBtn" onclick="approvePage()">Approve</button>
+  </div>
+</div>
+
+<div id="loadingState" class="loading-state">
+  <div class="spinner"></div>
+  <p>Loading your page preview...</p>
+</div>
+
+<div class="preview-frame-container" id="frameContainer" style="display:none;">
+  <iframe id="contentPreviewFrame" frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+</div>
+
+<div id="errorState" class="error-state" style="display:none;"></div>
+
+<script>
+(function() {
+  var CONTENT_PAGE_ID = '{{CONTENT_PAGE_ID}}';
+  var CLIENT_SLUG = '{{CLIENT_SLUG}}';
+  var SB = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
+  var SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
+
+  // Expose for chatbot
+  window.__CONTENT_PAGE_ID = CONTENT_PAGE_ID;
+  window.__CLIENT_SLUG = CLIENT_SLUG;
+
+  // Load content
+  fetch(SB + '/rest/v1/content_pages?id=eq.' + CONTENT_PAGE_ID + '&select=generated_html,status,page_name&limit=1', {
+    headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    document.getElementById('loadingState').style.display = 'none';
+
+    if (!data || data.length === 0 || !data[0].generated_html) {
+      document.getElementById('errorState').style.display = 'block';
+      document.getElementById('errorState').textContent = 'This page preview is not available yet. Please check back later.';
+      return;
+    }
+
+    var page = data[0];
+    document.getElementById('frameContainer').style.display = 'flex';
+    var iframe = document.getElementById('contentPreviewFrame');
+    iframe.srcdoc = page.generated_html;
+
+    // Auto-resize iframe
+    iframe.onload = function() {
+      try {
+        var h = iframe.contentDocument.body.scrollHeight;
+        iframe.style.height = Math.max(h + 40, 600) + 'px';
+      } catch(e) {
+        iframe.style.height = '2000px';
+      }
+    };
+
+    // Update approve button if already approved
+    if (page.status === 'approved' || page.status === 'delivered') {
+      var btn = document.getElementById('approveBtn');
+      btn.textContent = 'Approved';
+      btn.classList.add('approved');
+    }
+  }).catch(function() {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('errorState').style.display = 'block';
+    document.getElementById('errorState').textContent = 'Something went wrong loading the preview. Please try refreshing.';
+  });
+
+  // Approve
+  window.approvePage = function() {
+    var btn = document.getElementById('approveBtn');
+    if (btn.classList.contains('approved')) return;
+    btn.disabled = true;
+    btn.textContent = 'Approving...';
+
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_record',
+        table: 'content_pages',
+        id: CONTENT_PAGE_ID,
+        data: { status: 'approved' }
+      })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success) {
+        btn.textContent = 'Approved';
+        btn.classList.add('approved');
+      } else {
+        btn.textContent = 'Approve';
+        btn.disabled = false;
+      }
+    }).catch(function() {
+      btn.textContent = 'Approve';
+      btn.disabled = false;
+    });
+  };
+})();
+</script>
+<script src="/shared/content-chatbot.js"></script>
+</body>
+</html>
