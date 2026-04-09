@@ -168,7 +168,7 @@ module.exports = async function handler(req, res) {
 
   // ─── STEPS 3-5: Pull all data sources IN PARALLEL ─────────────
 
-  // --- 3. GSC (unchanged) ---
+  // --- 3. GSC (with self-healing property resolution) ---
   var gscFn = safe('gsc', async function() {
     if (!googleSA || !config.gsc_property) {
       warnings.push('GSC: skipped (no credentials or property configured)');
@@ -180,21 +180,43 @@ module.exports = async function handler(req, res) {
       return null;
     }
 
-    var gscBase = 'https://www.googleapis.com/webmasters/v3/sites/' + encodeURIComponent(config.gsc_property) + '/searchAnalytics/query';
     var gscHeaders = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
 
-    var results = await Promise.all([
-      fetchT(gscBase, { method: 'POST', headers: gscHeaders, body: JSON.stringify({ startDate: range.start, endDate: range.end, dimensions: [], rowLimit: 1 }) }, 15000),
-      fetchT(gscBase, { method: 'POST', headers: gscHeaders, body: JSON.stringify({ startDate: range.start, endDate: range.end, dimensions: ['page'], rowLimit: 10, orderBy: [{ fieldName: 'clicks', sortOrder: 'DESCENDING' }] }) }, 15000),
-      fetchT(gscBase, { method: 'POST', headers: gscHeaders, body: JSON.stringify({ startDate: range.start, endDate: range.end, dimensions: ['query'], rowLimit: 10, orderBy: [{ fieldName: 'clicks', sortOrder: 'DESCENDING' }] }) }, 15000)
-    ]);
+    function buildGscQueries(property) {
+      var base = 'https://www.googleapis.com/webmasters/v3/sites/' + encodeURIComponent(property) + '/searchAnalytics/query';
+      return Promise.all([
+        fetchT(base, { method: 'POST', headers: gscHeaders, body: JSON.stringify({ startDate: range.start, endDate: range.end, dimensions: [], rowLimit: 1 }) }, 15000),
+        fetchT(base, { method: 'POST', headers: gscHeaders, body: JSON.stringify({ startDate: range.start, endDate: range.end, dimensions: ['page'], rowLimit: 10, orderBy: [{ fieldName: 'clicks', sortOrder: 'DESCENDING' }] }) }, 15000),
+        fetchT(base, { method: 'POST', headers: gscHeaders, body: JSON.stringify({ startDate: range.start, endDate: range.end, dimensions: ['query'], rowLimit: 10, orderBy: [{ fieldName: 'clicks', sortOrder: 'DESCENDING' }] }) }, 15000)
+      ]);
+    }
 
-    // Check for auth/permission errors
+    var results = await buildGscQueries(config.gsc_property);
+
+    // Self-healing: on 403/404, resolve the correct property and retry
+    if (!results[0].ok && (results[0].status === 403 || results[0].status === 404)) {
+      var oldProp = config.gsc_property;
+      var corrected = await resolveGscProperty(token, config.gsc_property);
+      if (corrected && corrected !== config.gsc_property) {
+        // Update report_configs with the corrected property
+        await fetch(sbUrl + '/rest/v1/report_configs?client_slug=eq.' + clientSlug, {
+          method: 'PATCH', headers: sbHeaders(),
+          body: JSON.stringify({ gsc_property: corrected, updated_at: new Date().toISOString() })
+        });
+        config.gsc_property = corrected;
+        warnings.push('GSC: auto-corrected property from ' + oldProp + ' to ' + corrected);
+
+        // Retry with the corrected property
+        results = await buildGscQueries(corrected);
+      }
+    }
+
+    // Final error check after potential self-heal
     if (!results[0].ok) {
       var errBody = await results[0].text().catch(function() { return ''; });
       var errMsg = 'GSC API ' + results[0].status;
-      if (results[0].status === 403) errMsg += ' - support@moonraker.ai may not have access to ' + config.gsc_property;
-      else if (results[0].status === 404) errMsg += ' - property ' + config.gsc_property + ' not found';
+      if (results[0].status === 403) errMsg += ' - no accessible property found for ' + config.gsc_property;
+      else if (results[0].status === 404) errMsg += ' - property ' + config.gsc_property + ' not found in GSC';
       if (errBody) errMsg += ' (' + errBody.substring(0, 200) + ')';
       warnings.push(errMsg);
       return null;
@@ -906,6 +928,64 @@ async function getGoogleAccessToken(saJson, scope) {
 
 
 // ═══════════════════════════════════════════════════════════════════
+// Helper: Resolve correct GSC property when configured value fails
+// Lists all accessible sites, matches domain, returns best property
+// Preference: sc-domain > https://www. > https:// > http://
+// ═══════════════════════════════════════════════════════════════════
+async function resolveGscProperty(token, currentProp) {
+  try {
+    // Extract domain from current property (works for both sc-domain: and URL-prefix)
+    var domain = currentProp
+      .replace(/^sc-domain:/, '')
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/\/+$/, '')
+      .toLowerCase();
+
+    if (!domain) return null;
+
+    // List all sites accessible to the service account
+    var sitesResp = await fetch('https://www.googleapis.com/webmasters/v3/sites', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!sitesResp.ok) return null;
+    var sitesData = await sitesResp.json();
+    var allSites = (sitesData.siteEntry || []).map(function(s) { return s.siteUrl; });
+
+    // Find all properties matching this domain
+    var matches = allSites.filter(function(siteUrl) {
+      var siteDomain = siteUrl
+        .replace(/^sc-domain:/, '')
+        .replace(/^https?:\/\//, '')
+        .replace(/^www\./, '')
+        .replace(/\/+$/, '')
+        .toLowerCase();
+      return siteDomain === domain;
+    });
+
+    if (matches.length === 0) return null;
+    if (matches.length === 1) return matches[0];
+
+    // Rank by preference: sc-domain (broadest) > https://www. > https:// > http://
+    matches.sort(function(a, b) {
+      function rank(url) {
+        if (url.startsWith('sc-domain:')) return 0;
+        if (url.startsWith('https://www.')) return 1;
+        if (url.startsWith('https://')) return 2;
+        if (url.startsWith('http://www.')) return 3;
+        return 4;
+      }
+      return rank(a) - rank(b);
+    });
+
+    return matches[0];
+  } catch (e) {
+    return null;
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
 // Helper: Get access token via domain-wide delegation
 // ═══════════════════════════════════════════════════════════════════
 async function getDelegatedToken(saJson, impersonateEmail, scope) {
@@ -1127,4 +1207,5 @@ function ordinal(n) {
   var v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
+
 
