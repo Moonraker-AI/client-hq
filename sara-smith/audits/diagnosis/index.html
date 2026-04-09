@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="/assets/logo.png">
+<title>CORE Diagnosis - Moonraker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+:root,[data-theme="light"]{--color-primary:#00D47E;--color-primary-hover:#00b86c;--color-primary-subtle:#DDF8F2;--color-bg:#F7FDFB;--color-surface:#FFFFFF;--color-border:#E2E8F0;--color-heading:#1E2A5E;--color-body:#333F70;--color-muted:#6B7599;--color-navy:#141C3A;--color-success:#00D47E;--color-warning:#F59E0B;--color-danger:#EF4444;--color-info:#3B82F6}
+[data-theme="dark"]{--color-primary:#00D47E;--color-primary-hover:#00f598;--color-primary-subtle:#0D2E22;--color-bg:#080F0B;--color-surface:#0E1A14;--color-border:#1E3530;--color-heading:#E8F5EF;--color-body:#C8D8D0;--color-muted:#5A7A6E;--color-navy:#0A1630;--color-success:#00D47E;--color-warning:#F59E0B;--color-danger:#FF6B6B;--color-info:#60A5FA}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+section[id]{scroll-margin-top:2rem}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;font-weight:400;color:var(--color-body);background:var(--color-bg);line-height:1.7;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:'Outfit',sans-serif;font-weight:700;color:var(--color-heading);line-height:1.15}
+h1{font-size:2.75rem;font-weight:800;letter-spacing:-0.02em}
+h2{font-size:2rem;margin-bottom:.75rem}
+h3{font-size:1.35rem}
+p{margin-bottom:1rem}
+a{color:var(--color-primary);text-decoration:none}
+strong{font-weight:600;color:var(--color-heading)}
+.container{max-width:1060px;margin:0 auto;padding:0 3rem}
+@media(max-width:768px){.container{padding:0 1.5rem}h1{font-size:2rem}}
+section{padding:3.5rem 0}
+.divider{height:1px;background:var(--color-border);border:none;margin:0}
+.lead{font-size:1.0625rem;line-height:1.8}
+
+/* Header */
+.header{background:var(--color-navy);padding:2rem 0;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;top:-60%;right:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(0,212,126,.08) 0%,transparent 70%);pointer-events:none}
+.header-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.header img{height:36px}
+.header-meta{text-align:right}
+.header-meta p{margin:0;font-size:.8125rem;color:rgba(232,245,239,.45)}
+.header-meta .name{color:#E8F5EF;font-weight:600;font-size:.9375rem}
+
+/* Suite nav - stacked vertically below theme toggle */
+.suite-nav{position:fixed;top:5rem;right:1.25rem;z-index:200;display:flex;flex-direction:column;gap:.35rem}
+.suite-nav a{padding:.4rem .85rem;border:1px solid var(--color-border);border-radius:6px;font-weight:600;font-size:.75rem;color:var(--color-muted);transition:all .2s;background:var(--color-surface);box-shadow:0 2px 8px rgba(0,0,0,.06);text-align:center}
+.suite-nav a:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.suite-nav a.active{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
+@media(max-width:860px){.suite-nav{position:static;flex-direction:row;margin:1.5rem auto;justify-content:center}.suite-nav a{font-size:.8rem;padding:.5rem 1rem}}
+
+/* Theme toggle */
+.theme-toggle{position:fixed;top:1.25rem;right:1.25rem;z-index:200;background:var(--color-surface);border:1px solid var(--color-border);border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.15rem;transition:all .25s;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.theme-toggle:hover{border-color:var(--color-primary)}
+
+/* Progress bar */
+.progress-line{position:fixed;top:0;left:0;height:3px;background:var(--color-primary);width:0%;z-index:999;transition:width .1s linear;box-shadow:0 0 8px rgba(0,212,126,.4)}
+
+/* Section nav (right-hand dots) */
+.section-nav{position:fixed;right:2rem;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:2px}
+@media(max-width:1140px){.section-nav{display:none}}
+.section-nav a{display:flex;align-items:center;gap:10px;padding:6px 12px 6px 8px;border-radius:8px;font-size:.75rem;font-weight:500;color:var(--color-muted);text-decoration:none;transition:all .25s;white-space:nowrap}
+.section-nav a:hover{color:var(--color-heading);background:var(--color-surface)}
+.section-nav a.active{color:var(--color-primary);background:var(--color-primary-subtle)}
+.section-nav .nav-dot{width:6px;height:6px;border-radius:50%;background:var(--color-border);flex-shrink:0;transition:all .25s}
+.section-nav a.active .nav-dot{background:var(--color-primary);width:8px;height:8px;box-shadow:0 0 6px rgba(0,212,126,.5)}
+
+/* Hero (matches entity-audit exactly) */
+.hero{padding:5.5rem 0 4rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-100px;right:-80px;width:500px;height:500px;background:radial-gradient(circle at 30% 40%,rgba(0,212,126,.06) 0%,transparent 60%);pointer-events:none}
+.hero-layout{display:grid;grid-template-columns:1fr 280px;gap:3rem;align-items:center}
+@media(max-width:768px){.hero-layout{grid-template-columns:1fr}.hero-visual{display:none}}
+.hero-content{position:relative;z-index:1}
+.hero h1{margin-bottom:1rem}
+.hero .subtitle{font-size:1.0625rem;color:var(--color-muted);max-width:520px;line-height:1.7}
+.badge{display:inline-block;background:var(--color-primary-subtle);color:var(--color-primary);font-weight:600;font-size:.75rem;padding:.4rem 1rem;border-radius:100px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:1rem}
+.hero-visual svg{width:100%;height:auto}
+
+/* Card */
+.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:2rem;margin-bottom:1.5rem}
+
+/* Variance box (matches entity-audit exactly) */
+.variance-box{background:linear-gradient(135deg,var(--color-navy),#1a2f5a);border-radius:16px;padding:2.5rem;color:#E8F5EF;margin:2rem 0;position:relative;overflow:hidden;text-align:center}
+.variance-box::before{content:'';position:absolute;top:-30%;right:-5%;width:260px;height:260px;background:radial-gradient(circle,rgba(0,212,126,.12) 0%,transparent 70%);pointer-events:none}
+.variance-box .v-label{font-size:1rem;color:rgba(232,245,239,.6);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.variance-box .v-score{font-size:4rem;font-weight:700;font-family:'Outfit',sans-serif;margin:.5rem 0}
+.variance-box .v-score span{font-size:1.5rem;opacity:.5}
+.variance-box .v-desc{color:rgba(232,245,239,.8);max-width:600px;margin:1rem auto 0;font-size:.9375rem}
+
+/* Quick Wins (matches entity-audit exactly) */
+.quick-wins{background:var(--color-primary-subtle);border-left:4px solid var(--color-primary);border-radius:0 14px 14px 0;padding:1.5rem 2rem;margin-top:1.5rem}
+.quick-wins h4{font-size:1.15rem;margin-bottom:1rem}
+.quick-wins ul{list-style:none;padding:0}
+.quick-wins li{padding:.5rem 0;padding-left:1.5rem;position:relative;font-size:.9375rem;border-bottom:1px solid rgba(0,212,126,.12)}
+.quick-wins li:last-child{border-bottom:none}
+.quick-wins li::before{content:'\2022';color:var(--color-primary);position:absolute;left:0;font-weight:700;font-size:1.2rem;line-height:1.5}
+
+/* Score cards (matches entity-audit exactly) */
+.scorecard-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin:2.5rem 0}
+@media(max-width:640px){.scorecard-grid{grid-template-columns:repeat(2,1fr)}}
+.score-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:1.5rem 1rem 1.25rem;text-align:center;position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s}
+.score-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.06)}
+.score-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.score-card.score-low::after{background:var(--color-danger)}
+.score-card.score-med::after{background:var(--color-warning)}
+.score-card.score-high::after{background:var(--color-success)}
+.ring-wrap{position:relative;width:88px;height:88px;margin:0 auto 12px}
+.ring-bg,.ring-fg{fill:none;stroke-width:5;stroke-linecap:round}
+.ring-bg{stroke:var(--color-border)}
+.ring-fg{transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1);transform:rotate(-90deg);transform-origin:center}
+.score-val{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Outfit',sans-serif;font-weight:700;font-size:1.375rem}
+.score-val span{font-size:.75rem;opacity:.4;font-weight:400}
+.score-low .ring-fg{stroke:var(--color-danger)}.score-low .score-val{color:var(--color-danger)}
+.score-med .ring-fg{stroke:var(--color-warning)}.score-med .score-val{color:var(--color-warning)}
+.score-high .ring-fg{stroke:var(--color-success)}.score-high .score-val{color:var(--color-success)}
+.score-label{font-size:.6875rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--color-muted);margin-bottom:2px}
+.score-pillar{font-family:'Outfit',sans-serif;font-weight:700;font-size:.9375rem;color:var(--color-heading)}
+
+/* Citation grid */
+.citation-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin-top:1rem}
+.citation-item{display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;border-radius:10px;border:1px solid var(--color-border);font-size:.875rem;font-weight:500}
+.citation-item.cited{border-color:rgba(0,212,126,.3);background:rgba(0,212,126,.04)}
+.citation-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.citation-dot.yes{background:var(--color-success)}.citation-dot.no{background:var(--color-border)}
+
+/* Findings (matches entity-audit collapsible pattern) */
+.collapsible{margin-bottom:.75rem}
+.collapsible-toggle{width:100%;background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600;font-size:1rem;color:var(--color-heading);text-align:left;transition:all .2s}
+.collapsible-toggle:hover{border-color:var(--color-primary);box-shadow:0 2px 10px rgba(0,212,126,.06)}
+.collapsible-toggle .arrow{transition:transform .3s;color:var(--color-primary);font-size:1rem}
+.collapsible.open .collapsible-toggle .arrow{transform:rotate(180deg)}
+.collapsible.open .collapsible-toggle{border-radius:12px 12px 0 0}
+.collapsible-content{max-height:0;overflow:hidden;transition:max-height .4s ease;background:var(--color-surface);border:0 solid var(--color-border);border-width:0 1px;border-radius:0 0 12px 12px}
+.collapsible.open .collapsible-content{max-height:5000px;border-width:0 1px 1px 1px}
+.collapsible-content-inner{padding:1.25rem;overflow:hidden}
+.finding{display:flex;gap:.75rem;padding-bottom:1.25rem;margin-bottom:1.25rem;align-items:flex-start;border-bottom:1px solid var(--color-border)}
+.finding:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.finding-icon{font-size:1.125rem;flex-shrink:0;margin-top:.1rem}
+.finding>div{min-width:0;overflow-wrap:break-word}
+.finding p{margin:0;font-size:.9375rem;line-height:1.7}
+.finding .highlight{font-weight:600;color:var(--color-heading)}
+.finding-owner{display:inline-block;font-size:.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;padding:.15rem .45rem;border-radius:4px;margin-left:.5rem}
+.finding-owner.moonraker{background:rgba(0,212,126,.1);color:#00b86c}
+.finding-owner.client{background:rgba(59,130,246,.1);color:#3B82F6}
+.finding-owner.collaboration{background:rgba(245,158,11,.1);color:#D97706}
+
+/* Code boxes (schema code in findings) */
+.finding code{background:rgba(0,212,126,.08);border:1px solid rgba(0,212,126,.2);border-radius:6px;padding:.15rem .4rem;font-size:.8125rem;font-family:'SF Mono','Fira Code',monospace;color:var(--color-heading);overflow-wrap:break-word;word-break:break-all}
+.finding pre{background:var(--color-navy);color:#E8F5EF;border-radius:10px;padding:1rem 1.25rem;margin:.75rem 0;overflow-x:auto;font-size:.8125rem;line-height:1.6;max-width:100%;box-sizing:border-box}
+.finding pre code{background:none;border:none;padding:0;color:inherit;white-space:pre-wrap;word-break:break-word}
+
+::view-transition-old(root),::view-transition-new(root){animation-duration:.25s}
+
+.footer{text-align:center;padding:3rem 0;font-size:.8125rem;color:var(--color-muted)}
+.loading-state{text-align:center;padding:8rem 2rem}
+.spinner{width:32px;height:32px;border:3px solid var(--color-border);border-top-color:var(--color-primary);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media print{.section-nav,.theme-toggle,.progress-line,.suite-nav{display:none !important}}
+</style>
+</head>
+<body>
+<div id="loadingState" class="loading-state"><div class="spinner"></div><p style="margin-top:1rem;color:var(--color-muted);">Loading diagnosis...</p></div>
+<div id="mainContent" style="display:none;">
+<div class="progress-line" id="progressLine"></div>
+<header class="header"><div class="container header-inner"><img src="/assets/logo.png" alt="Moonraker"><div class="header-meta"><p class="name" id="headerName"></p><p id="headerMeta"></p><p id="headerDate"></p></div></div></header>
+<button class="theme-toggle" id="themeBtn">&#x1F319;</button>
+<div class="suite-nav" id="suiteNav"><a href="#" class="active">Diagnosis</a><a id="navActionPlan" href="#">Action Plan</a><a id="navProgress" href="#">Progress</a><a id="navReports" href="#">Reports</a></div>
+<nav class="section-nav" id="sectionNav">
+  <a href="#hero"><span class="nav-dot"></span>Overview</a>
+  <a href="#summary"><span class="nav-dot"></span>Summary</a>
+  <a href="#scores"><span class="nav-dot"></span>CORE Scores</a>
+  <a href="#citations"><span class="nav-dot"></span>Citations</a>
+  <a href="#findings"><span class="nav-dot"></span>Findings</a>
+  <a href="#next"><span class="nav-dot"></span>Next Steps</a>
+</nav>
+
+<section class="hero" id="hero"><div class="container">
+  <div class="hero-layout">
+    <div class="hero-content">
+      <span class="badge">CORE Diagnosis</span>
+      <h1 id="heroTitle">Your CORE Diagnosis</h1>
+      <p class="subtitle">Here is where your practice stands in AI search, and exactly what your campaign will address.</p>
+    </div>
+    <div class="hero-visual">
+      <svg viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="140" cy="140" r="120" stroke="var(--color-primary)" stroke-width=".5" opacity=".2"/>
+        <circle cx="140" cy="140" r="90" stroke="var(--color-primary)" stroke-width=".5" opacity=".15"/>
+        <circle cx="140" cy="140" r="60" stroke="var(--color-primary)" stroke-width=".5" opacity=".1"/>
+        <circle cx="140" cy="60" r="8" fill="var(--color-primary)" opacity=".7"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="360 140 140" dur="20s" repeatCount="indefinite"/></circle>
+        <circle cx="230" cy="140" r="6" fill="var(--color-info)" opacity=".5"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="-360 140 140" dur="25s" repeatCount="indefinite"/></circle>
+        <circle cx="140" cy="200" r="5" fill="var(--color-warning)" opacity=".4"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="360 140 140" dur="30s" repeatCount="indefinite"/></circle>
+        <text x="140" y="130" text-anchor="middle" font-family="Outfit" font-weight="700" font-size="16" fill="var(--color-heading)">CORE</text>
+        <text x="140" y="148" text-anchor="middle" font-family="Inter" font-weight="400" font-size="10" fill="var(--color-muted)" letter-spacing=".06em">DIAGNOSIS</text>
+      </svg>
+    </div>
+  </div>
+</div></section>
+
+<hr class="divider">
+
+<section id="summary"><div class="container">
+  <h2>Overview</h2>
+  <div class="card" style="margin-top:1.5rem;">
+    <p class="lead" id="summaryText"></p>
+  </div>
+  <div class="variance-box">
+    <div class="v-label">Variance Score</div>
+    <div class="v-score" id="varianceScore">--<span>/100</span></div>
+    <div class="v-label" id="varianceLabel"></div>
+    <p class="v-desc" id="varianceDesc"></p>
+  </div>
+  <div class="quick-wins" id="quickWins" style="display:none;">
+    <h4>&#9889; Quick Wins</h4>
+    <ul id="quickWinsList"></ul>
+  </div>
+</div></section>
+
+<hr class="divider">
+
+<section id="scores"><div class="container">
+  <h2>CORE Assessment</h2>
+  <p style="margin-bottom:1rem;">Your digital presence scored across the four pillars AI platforms use when deciding who to recommend.</p>
+  <div class="scorecard-grid" id="scorecardGrid"></div>
+</div></section>
+
+<hr class="divider">
+
+<section id="citations"><div class="container">
+  <h2>AI Citation Status</h2>
+  <p>Which AI platforms currently mention or cite your practice.</p>
+  <div class="citation-grid" id="citationGrid"></div>
+</div></section>
+
+<hr class="divider">
+
+<section id="findings"><div class="container">
+  <h2>Detailed Findings</h2>
+  <p style="margin-bottom:1rem;">Expand each pillar to see what AI search engines found, and the action steps for your campaign.</p>
+  <div id="findingsContainer"></div>
+</div></section>
+
+<hr class="divider">
+
+<section id="next"><div class="container" style="text-align:center;">
+  <h2>What Comes Next</h2>
+  <p style="color:var(--color-muted);max-width:500px;margin:0 auto 1.5rem;">Review the action plan for prioritized tasks, or track progress as work gets completed.</p>
+  <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
+    <a id="ctaActionPlan" href="#" style="padding:.75rem 1.75rem;background:var(--color-primary);color:#fff;border-radius:8px;font-weight:600;font-family:'Outfit',sans-serif;font-size:.9375rem;">View Action Plan</a>
+    <a id="ctaProgress" href="#" style="padding:.75rem 1.75rem;border:1px solid var(--color-border);color:var(--color-heading);border-radius:8px;font-weight:600;font-family:'Outfit',sans-serif;font-size:.9375rem;">Track Progress</a>
+  </div>
+</div></section>
+
+<footer class="footer"><div class="container">
+  <p id="footerConf"></p>
+  <p style="margin-top:.5rem;">Questions about your findings? Reach out to <a href="mailto:support@moonraker.ai">support@moonraker.ai</a></p>
+  <p style="margin-top:1.5rem;"><img src="/assets/logo.png" alt="Moonraker" style="height:24px;opacity:.5;"><br>moonraker.ai</p>
+</div></footer>
+
+</div>
+<script>
+(function(){
+  var SB='https://ofmmwcjhdrhvxxkhcuww.supabase.co';
+  var SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
+  var parts=window.location.pathname.replace(/\/+$/,'').split('/');
+  var SLUG=parts[1]||'';
+  function sb(p){return fetch(SB+'/rest/v1/'+p,{headers:{'apikey':SK,'Authorization':'Bearer '+SK}}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})}
+  function esc(s){if(!s)return '';var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+  function fmtDate(d){if(!d)return '';try{return new Date(d).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}catch(e){return d}}
+
+  if(!SLUG){document.getElementById('loadingState').innerHTML='<div style="text-align:center;padding:6rem 2rem;"><p style="color:var(--color-danger)">No client found. Check URL.</p></div>';return}
+
+  sb('contacts?slug=eq.'+SLUG+'&select=id,slug,first_name,last_name,credentials,practice_name,city,state_province&limit=1').then(function(contacts){
+    if(!contacts||contacts.length===0)throw new Error('Not found');
+    var c=contacts[0];
+    return Promise.all([
+      sb('entity_audits?contact_id=eq.'+c.id+'&order=audit_date.desc&limit=1'),
+      sb('checklist_items?client_slug=eq.'+SLUG+'&web_visible=eq.true&order=sort_order')
+    ]).then(function(res){
+      if(!res[0]||res[0].length===0)throw new Error('No audit');
+      render(c,res[0][0],res[1]||[]);
+    });
+  }).catch(function(){
+    document.getElementById('loadingState').innerHTML='<header class="header"><div class="container header-inner"><img src="/assets/logo.png" alt="Moonraker"></div></header><div style="text-align:center;padding:6rem 2rem;"><p style="color:var(--color-danger)">Unable to load diagnosis. Contact support@moonraker.ai.</p></div>';
+  });
+
+  function render(contact,audit,checklistItems){
+    var name=contact.practice_name||((contact.first_name||'')+' '+(contact.last_name||'')).trim();
+    var creds=contact.credentials?', '+contact.credentials:'';
+    var loc=[contact.city,contact.state_province].filter(Boolean).join(', ');
+    var scores=audit.scores||{};
+    var tasks=audit.tasks||{};
+
+    // Fallback: build tasks from checklist_items if JSONB tasks empty
+    var hasTasks=tasks.credibility||tasks.optimization||tasks.reputation||tasks.engagement;
+    if(!hasTasks&&checklistItems.length>0){
+      var catMap={'Credibility + Entity Identity':'credibility','Optimization + Content':'optimization','Reputation + Citations':'reputation','Engagement + UX':'engagement'};
+      tasks={credibility:[],optimization:[],reputation:[],engagement:[]};
+      checklistItems.forEach(function(ci){
+        var pillar=catMap[ci.category]||'credibility';
+        var sev=ci.priority==='P1'?'critical':ci.priority==='P2'?'warning':'positive';
+        if(ci.status==='complete')sev='positive';
+        tasks[pillar].push({severity:sev,title:ci.title,detail:ci.description?ci.description.split('\n')[0]:'',owner:ci.owner});
+      });
+    }
+
+    // Header
+    document.getElementById('headerName').textContent='Prepared for '+(contact.first_name||'')+' '+(contact.last_name||'')+creds;
+    document.getElementById('headerMeta').textContent=name+(loc?' \u00B7 '+loc:'');
+    document.getElementById('headerDate').textContent=fmtDate(audit.audit_date)+' \u00B7 Confidential';
+    document.title='CORE Diagnosis - '+name+' - Moonraker';
+
+    // Suite navigation
+    var base='/'+SLUG;
+    document.getElementById('navActionPlan').href=base+'/audits/action-plan';
+    document.getElementById('navProgress').href=base+'/audits/progress';
+    document.getElementById('navReports').href=base+'/reports';
+    document.getElementById('ctaActionPlan').href=base+'/audits/action-plan';
+    document.getElementById('ctaProgress').href=base+'/audits/progress';
+
+    // Hero
+    document.getElementById('heroTitle').textContent=name+': CORE Diagnosis';
+
+    // Summary (in card, like entity-audit)
+    if(scores.summary){document.getElementById('summaryText').innerHTML=scores.summary}
+
+    // Variance (matches entity-audit dark box exactly)
+    var variance=audit.variance_score!=null?audit.variance_score:(scores.variance||0);
+    var vEl=document.getElementById('varianceScore');
+    var vColor=variance<=30?'var(--color-success)':variance<=60?'var(--color-warning)':'var(--color-danger)';
+    vEl.innerHTML=variance+'<span>/100</span>';
+    vEl.style.color=vColor;
+    // Short label for uppercase line, full description for normal text below
+    var shortLabel=variance<=20?'Low Variance':variance<=40?'Moderate Variance':variance<=60?'High Variance':'Critical Variance';
+    document.getElementById('varianceLabel').textContent=shortLabel;
+    if(scores.variance_desc){document.getElementById('varianceDesc').textContent=scores.variance_desc}
+
+    // Quick wins
+    if(scores.quick_wins&&scores.quick_wins.length>0){
+      document.getElementById('quickWins').style.display='block';
+      var qwHtml='';
+      scores.quick_wins.forEach(function(w){qwHtml+='<li>'+esc(w)+'</li>'});
+      document.getElementById('quickWinsList').innerHTML=qwHtml;
+    }
+
+    // CORE Score cards (matches entity-audit ring pattern exactly)
+    var circumference=2*Math.PI*40;
+    var pillars=[
+      {key:'credibility',pk:'score_credibility',label:'Credibility',sub:'Prove You Exist',color:'#00D47E'},
+      {key:'optimization',pk:'score_optimization',label:'Optimization',sub:'Teach AI About You',color:'#3B82F6'},
+      {key:'reputation',pk:'score_reputation',label:'Reputation',sub:'Prove You\'re Good',color:'#F59E0B'},
+      {key:'engagement',pk:'score_engagement',label:'Engagement',sub:'Guide to Booking',color:'#8B5CF6'}
+    ];
+    function scoreClass(v){return v<=3?'score-low':v<=6?'score-med':'score-high'}
+    function renderScoreCard(pillarLabel,pillarName,val,sub){
+      var cls=scoreClass(val);
+      var offset=circumference-(val/10*circumference);
+      return '<div class="score-card '+cls+'">'+
+        '<div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88">'+
+        '<circle class="ring-bg" cx="50" cy="50" r="40"/>'+
+        '<circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="'+circumference.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/></svg>'+
+        '<div class="score-val">'+val+'<span>/10</span></div></div>'+
+        '<div class="score-label">'+pillarLabel+'</div>'+
+        '<div class="score-pillar">'+pillarName+'</div></div>';
+    }
+    var gh='';
+    pillars.forEach(function(p){
+      var val=audit[p.pk]!=null?audit[p.pk]:(scores[p.key]||0);
+      gh+=renderScoreCard(p.sub,p.label,val);
+    });
+    document.getElementById('scorecardGrid').innerHTML=gh;
+
+    // Citations
+    var cits=[{key:'cited_google_ai',label:'Google AI'},{key:'cited_chatgpt',label:'ChatGPT'},{key:'cited_claude',label:'Claude'},{key:'cited_perplexity',label:'Perplexity'},{key:'cited_bing',label:'Bing Copilot'},{key:'cited_youtube',label:'YouTube'},{key:'cited_reddit',label:'Reddit'},{key:'cited_meta',label:'Meta AI'}];
+    var ch='';
+    cits.forEach(function(ci){var y=audit[ci.key]===true;ch+='<div class="citation-item'+(y?' cited':'')+'"><span class="citation-dot '+(y?'yes':'no')+'"></span>'+esc(ci.label)+'</div>'});
+    document.getElementById('citationGrid').innerHTML=ch;
+
+    // Findings (collapsible pillars, matches entity-audit pattern)
+    var pDefs=[
+      {key:'credibility',title:'Credibility',sub:'Can You Prove You Exist?'},
+      {key:'optimization',title:'Optimization',sub:'Can AI Understand What You Do?'},
+      {key:'reputation',title:'Reputation',sub:'Can You Prove You\'re Good?'},
+      {key:'engagement',title:'Engagement',sub:'Is There a Path to Booking?'}
+    ];
+    var fh='';
+    pDefs.forEach(function(p){
+      var findings=tasks[p.key]||[];
+      if(findings.length===0)return;
+      // Sort: critical first, warning second, positive last
+      var sevOrder={critical:0,warning:1,positive:2};
+      findings.sort(function(a,b){return (sevOrder[a.severity]||1)-(sevOrder[b.severity]||1)});
+      var critCount=findings.filter(function(f){return f.severity==='critical'}).length;
+      var warnCount=findings.filter(function(f){return f.severity==='warning'}).length;
+      var goodCount=findings.filter(function(f){return f.severity==='positive'}).length;
+      var badge='';
+      if(critCount>0)badge+='<span style="color:var(--color-danger);font-size:.8rem;margin-left:.5rem;">'+critCount+' critical</span>';
+      if(warnCount>0)badge+='<span style="color:var(--color-warning);font-size:.8rem;margin-left:.5rem;">'+warnCount+' warning</span>';
+      if(goodCount>0)badge+='<span style="color:var(--color-success);font-size:.8rem;margin-left:.5rem;">'+goodCount+' good</span>';
+
+      fh+='<div class="collapsible">';
+      fh+='<button class="collapsible-toggle" onclick="this.parentElement.classList.toggle(\'open\')"><span>'+esc(p.title)+': '+esc(p.sub)+badge+'</span><span class="arrow">&#9660;</span></button>';
+      fh+='<div class="collapsible-content"><div class="collapsible-content-inner">';
+      findings.forEach(function(f){
+        var icon=f.severity==='critical'?'&#128308;':f.severity==='warning'?'&#9888;&#65039;':'&#9989;';
+        var ow=f.owner?'<span class="finding-owner '+f.owner.toLowerCase()+'">'+esc(f.owner)+'</span>':'';
+        fh+='<div class="finding"><span class="finding-icon">'+icon+'</span><div>';
+        fh+='<p><span class="highlight">'+esc(f.title)+'</span>'+ow+'</p>';
+        if(f.detail)fh+='<p style="margin-top:.35rem;">'+esc(f.detail)+'</p>';
+        fh+='</div></div>';
+      });
+      fh+='</div></div></div>';
+    });
+    document.getElementById('findingsContainer').innerHTML=fh;
+
+    // Footer
+    document.getElementById('footerConf').textContent='This report is confidential and prepared exclusively for '+(contact.first_name||'')+' '+(contact.last_name||'')+creds+' \u00B7 '+name;
+
+    // Show content
+    document.getElementById('loadingState').style.display='none';
+    document.getElementById('mainContent').style.display='block';
+    setTimeout(function(){
+      document.querySelectorAll('.hero-visual animateTransform').forEach(function(a){if(a.beginElement)a.beginElement()});
+      var svg=document.querySelector('.hero-visual svg');
+      if(svg){svg.style.display='none';svg.offsetHeight;svg.style.display=''}
+    },50);
+    setTimeout(function(){onScroll()},100);
+  }
+
+  // Theme toggle
+  var tb=document.getElementById('themeBtn');
+  var ct=document.documentElement.getAttribute('data-theme');
+  if(tb){tb.innerHTML=ct==='dark'?'&#9728;&#65039;':'&#x1F319;';tb.addEventListener('click',function(){
+    var h=document.documentElement;
+    function apply(){
+      if(h.getAttribute('data-theme')==='light'){h.setAttribute('data-theme','dark');tb.innerHTML='&#9728;&#65039;';try{localStorage.setItem('moonraker-theme','dark')}catch(e){}}
+      else{h.setAttribute('data-theme','light');tb.innerHTML='&#x1F319;';try{localStorage.setItem('moonraker-theme','light')}catch(e){}}
+    }
+    if(document.startViewTransition){document.startViewTransition(apply)}else{apply()}
+  })}
+
+  // Scroll tracking
+  var pLine=document.getElementById('progressLine');
+  var navLinks=document.querySelectorAll('.section-nav a');
+  function onScroll(){
+    var st=window.scrollY;var dh=document.documentElement.scrollHeight-window.innerHeight;
+    if(pLine)pLine.style.width=(dh>0?(st/dh)*100:0)+'%';
+    var secs=document.querySelectorAll('section[id]');var cur='';
+    secs.forEach(function(s){if(st>=s.offsetTop-200)cur=s.id});
+    navLinks.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+cur)});
+  }
+  window.addEventListener('scroll',onScroll);
+})();
+</script>
+</body>
+</html>
