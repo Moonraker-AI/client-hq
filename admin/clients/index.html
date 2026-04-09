@@ -527,10 +527,14 @@ strong { font-weight: 600; color: var(--color-heading); }
 
 /* Directory listings */
 .dir-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .5rem; padding: 1rem; }
-.dir-item { display: flex; justify-content: space-between; align-items: center; padding: .5rem .75rem; border: 1px solid var(--color-border); border-radius: 8px; font-size: .82rem; }
+.dir-item { display: flex; flex-direction: column; padding: .5rem .75rem; border: 1px solid var(--color-border); border-radius: 8px; font-size: .82rem; transition: background .15s, border-color .15s; }
 .dir-name { font-weight: 500; }
 .dir-item.dir-live { border-color: rgba(0,212,126,.3); background: rgba(0,212,126,.04); }
 .dir-item.dir-live .dir-name { color: var(--color-heading); }
+.dir-item.dir-claimed { border-color: rgba(59,130,246,.25); background: rgba(59,130,246,.04); }
+.dir-item.dir-needs_update { border-color: rgba(245,158,11,.25); background: rgba(245,158,11,.04); }
+.dir-url-input { flex: 1; font-size: .75rem; padding: .25rem .4rem; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface); color: var(--color-heading); font-family: inherit; min-width: 0; }
+.dir-url-input:focus { border-color: var(--color-primary); outline: none; }
 .rt-delete-url { font-size: 1.1rem; color: var(--color-muted); cursor: pointer; line-height: 1; padding: .1rem .25rem; border-radius: 3px; transition: all .15s; }
 .rt-delete-url:hover { color: var(--color-danger); background: rgba(239,68,68,.08); }
 .sort-arrow.desc { transform: rotate(180deg); }
@@ -2011,6 +2015,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'update_record', table: 'social_platforms', filters: { id: id }, data: { status: newStatus, updated_at: new Date().toISOString() } })
     });
+    renderSocialPlatforms();
   };
 
   window.togglePlatformAccess = function(id) {
@@ -2073,7 +2078,6 @@ strong { font-weight: 600; color: var(--color-heading); }
       return;
     }
 
-    // Sort: live first, then by name
     var sorted = dirs.slice().sort(function(a, b) {
       if (a.status === 'live' && b.status !== 'live') return -1;
       if (b.status === 'live' && a.status !== 'live') return 1;
@@ -2085,23 +2089,25 @@ strong { font-weight: 600; color: var(--color-heading); }
     h += '<div class="dir-grid">';
     sorted.forEach(function(d) {
       var label = DIR_LABELS[d.directory] || d.directory.replace(/_/g, ' ');
-      var isLive = d.status === 'live';
-      h += '<div class="dir-item' + (isLive ? ' dir-live' : '') + '">';
+      var statusClass = d.status === 'live' ? ' dir-live' : (d.status === 'claimed' ? ' dir-claimed' : (d.status === 'needs_update' ? ' dir-needs_update' : ''));
+      h += '<div class="dir-item' + statusClass + '">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;width:100%;gap:.5rem;">';
       h += '<span class="dir-name">' + esc(label) + '</span>';
-      if (isLive && d.profile_url) {
+      h += '<select class="rt-status-select" onchange="updateDirStatus(\'' + d.id + '\', this.value)" style="font-size:.72rem;flex-shrink:0;">';
+      ['not_listed','claimed','live','needs_update'].forEach(function(s) {
+        var sl = s.replace(/_/g, ' ');
+        h += '<option value="' + s + '"' + (d.status === s ? ' selected' : '') + '>' + sl.charAt(0).toUpperCase() + sl.slice(1) + '</option>';
+      });
+      h += '</select>';
+      h += '</div>';
+      if (d.profile_url) {
         var safeDirUrl = normalizeUrl(d.profile_url);
-        h += '<div style="display:flex;align-items:center;gap:.4rem;">';
-        h += '<a href="' + esc(safeDirUrl) + '" target="_blank" style="font-size:.75rem;color:var(--color-primary);text-decoration:none;">View &#8599;</a>';
-        h += '<span style="font-size:.7rem;cursor:pointer;color:var(--color-primary);" onclick="editDirUrl(\'' + d.id + '\')" title="Edit">&#9998;</span>';
-        h += '<span class="rt-delete-url" onclick="clearDirUrl(\'' + d.id + '\')" title="Remove">&times;</span>';
+        h += '<div style="display:flex;align-items:center;gap:.4rem;margin-top:.25rem;">';
+        h += '<a href="' + esc(safeDirUrl) + '" target="_blank" style="font-size:.72rem;color:var(--color-primary);text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(d.profile_url.replace(/^https?:\/\//, '').slice(0, 35)) + '</a>';
+        h += '<span class="rt-delete-url" onclick="clearDirUrl(\'' + d.id + '\')" title="Remove URL" style="font-size:.9rem;">&times;</span>';
         h += '</div>';
       } else {
-        h += '<select class="rt-status-select" onchange="updateDirStatus(\'' + d.id + '\', this.value)" style="font-size:.72rem;">';
-        ['not_listed','claimed','live','needs_update'].forEach(function(s) {
-          var sl = s.replace(/_/g, ' ');
-          h += '<option value="' + s + '"' + (d.status === s ? ' selected' : '') + '>' + sl.charAt(0).toUpperCase() + sl.slice(1) + '</option>';
-        });
-        h += '</select>';
+        h += '<div style="margin-top:.25rem;"><input type="text" class="dir-url-input" placeholder="Paste listing URL..." onkeydown="if(event.key===\'Enter\')saveDirUrlInline(\'' + d.id + '\',this.value)" onblur="saveDirUrlInline(\'' + d.id + '\',this.value)"></div>';
       }
       h += '</div>';
     });
@@ -2112,15 +2118,24 @@ strong { font-weight: 600; color: var(--color-heading); }
   window.updateDirStatus = function(id, newStatus) {
     var d = state.directoryListings.find(function(d) { return d.id === id; });
     if (!d) return;
-    if (newStatus === 'live' && !d.profile_url) {
-      var url = prompt('Enter the directory listing URL:');
-      if (!url || !url.trim()) return;
-      d.profile_url = normalizeUrl(url);
-    }
     d.status = newStatus;
     fetch('/api/action', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'update_record', table: 'directory_listings', filters: { id: id }, data: { status: newStatus, profile_url: d.profile_url, updated_at: new Date().toISOString() } })
+    });
+    renderDirectories();
+  };
+
+  window.saveDirUrlInline = function(id, rawUrl) {
+    var url = normalizeUrl(rawUrl);
+    if (!url) return;
+    var d = state.directoryListings.find(function(d) { return d.id === id; });
+    if (!d) return;
+    d.profile_url = url;
+    if (d.status === 'not_listed') d.status = 'live';
+    fetch('/api/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'directory_listings', filters: { id: id }, data: { profile_url: url, status: d.status, updated_at: new Date().toISOString() } })
     });
     renderDirectories();
   };
