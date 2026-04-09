@@ -52,7 +52,8 @@ module.exports = async function handler(req, res) {
       fetch(sbUrl + '/rest/v1/contacts?id=eq.' + contactId + '&limit=1', { headers: headers }).then(function(r) { return r.json(); }).catch(function() { return []; }),
       fetch(sbUrl + '/rest/v1/practice_details?contact_id=eq.' + contactId + '&limit=1', { headers: headers }).then(function(r) { return r.json(); }).catch(function() { return []; }),
       fetch(sbUrl + '/rest/v1/bio_materials?contact_id=eq.' + contactId + '&order=sort_order,is_primary.desc', { headers: headers }).then(function(r) { return r.json(); }).catch(function() { return []; }),
-      fetch(sbUrl + '/rest/v1/entity_audits?contact_id=eq.' + contactId + '&order=created_at.desc&limit=1', { headers: headers }).then(function(r) { return r.json(); }).catch(function() { return []; })
+      fetch(sbUrl + '/rest/v1/entity_audits?contact_id=eq.' + contactId + '&order=created_at.desc&limit=1', { headers: headers }).then(function(r) { return r.json(); }).catch(function() { return []; }),
+      fetch(sbUrl + '/rest/v1/endorsements?contact_id=eq.' + contactId + '&status=eq.processed&order=sort_order,created_at.desc', { headers: headers }).then(function(r) { return r.json(); }).catch(function() { return []; })
     ]);
 
     var spec = results[0] && results[0][0];
@@ -60,6 +61,7 @@ module.exports = async function handler(req, res) {
     var practice = results[2] && results[2][0];
     var bios = results[3] || [];
     var entityAudit = results[4] && results[4][0];
+    var endorsements = results[5] || [];
 
     if (!contact) { send({ step: 'error', message: 'Contact not found' }); return res.end(); }
 
@@ -104,7 +106,7 @@ module.exports = async function handler(req, res) {
     var systemPrompt = buildSystemPrompt(platform, siteUrl);
 
     // 4. Build the user message with all context
-    var userMessage = buildUserMessage(cp, spec, contact, practice, bios, rtpba, schemaRecs, platform, siteUrl);
+    var userMessage = buildUserMessage(cp, spec, contact, practice, bios, endorsements, rtpba, schemaRecs, platform, siteUrl);
 
     // 5. Call Claude with heartbeat
     var heartbeat = setInterval(function() {
@@ -185,7 +187,8 @@ module.exports = async function handler(req, res) {
     var updateData = {
       generated_html: html,
       status: 'review',
-      generation_notes: notes || null
+      generation_notes: notes || null,
+      stale: false
     };
 
     await fetch(sbUrl + '/rest/v1/content_pages?id=eq.' + contentPageId, {
@@ -296,7 +299,7 @@ PLATFORM: ${platform.toUpperCase()} (Hybrid Styling Mode)
 // ============================================================
 // USER MESSAGE BUILDER
 // ============================================================
-function buildUserMessage(cp, spec, contact, practice, bios, rtpba, schemaRecs, platform, siteUrl) {
+function buildUserMessage(cp, spec, contact, practice, bios, endorsements, rtpba, schemaRecs, platform, siteUrl) {
   var msg = 'Build a production-ready HTML page with the following context:\n\n';
 
   // Page info
@@ -379,6 +382,33 @@ function buildUserMessage(cp, spec, contact, practice, bios, rtpba, schemaRecs, 
       if (bio.association_details) msg += 'Associations: ' + JSON.stringify(bio.association_details) + '\n';
       msg += '\n';
     });
+
+    // Include processed endorsements for this clinician
+    var bioEndorsements = endorsements;
+    if (cp.bio_material_id) {
+      bioEndorsements = endorsements.filter(function(e) {
+        return e.bio_material_id === cp.bio_material_id || !e.bio_material_id;
+      });
+    }
+    if (bioEndorsements.length > 0) {
+      msg += '=== ENDORSEMENTS (include in a dedicated section near the bottom of the page) ===\n';
+      msg += 'Include these endorsements in a visually distinct "What Others Say" or "Professional Endorsements" section.\n';
+      msg += 'Each endorsement should include the endorser name, title/org, and the quote. Use proper schema markup (Review/Recommendation).\n';
+      msg += 'IMPORTANT: Wrap the endorsement section in a container with id="endorsement-section" so it can be dynamically updated.\n\n';
+      bioEndorsements.forEach(function(e, idx) {
+        msg += 'Endorsement ' + (idx + 1) + ':\n';
+        msg += '  From: ' + (e.endorser_name || 'Anonymous');
+        if (e.endorser_title) msg += ', ' + e.endorser_title;
+        if (e.endorser_org) msg += ' at ' + e.endorser_org;
+        msg += '\n';
+        if (e.relationship) msg += '  Relationship: ' + e.relationship + '\n';
+        if (e.content) msg += '  Quote: "' + e.content + '"\n';
+        msg += '\n';
+      });
+    } else {
+      msg += '=== ENDORSEMENTS ===\n';
+      msg += 'No endorsements available yet. Include an empty endorsement section placeholder with id="endorsement-section" and a brief note like "Professional endorsements coming soon."\n\n';
+    }
   } else if (rtpba) {
     msg += '=== READY-TO-PUBLISH BEST ANSWER (VERBATIM, DO NOT REWRITE) ===\n';
     msg += rtpba.substring(0, 25000) + '\n\n';
