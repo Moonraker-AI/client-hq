@@ -110,6 +110,11 @@ a:hover { color: var(--color-primary-hover); }
 .filter-tab { padding: .55rem 1rem; font-size: .82rem; font-weight: 500; color: var(--color-muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; font-family: inherit; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
 .filter-tab:hover { color: var(--color-heading); }
 .filter-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.filter-tab.active[data-filter="onboarding"] { color: #3b82f6; border-bottom-color: #3b82f6; }
+.filter-tab.active[data-filter="onboarding"] .count { background: rgba(59,130,246,.12); }
+.filter-tab.active[data-filter="active"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.filter-tab.active[data-filter="needs_attention"] { color: #d97706; border-bottom-color: #d97706; }
+.filter-tab.active[data-filter="needs_attention"] .count { background: rgba(245,158,11,.12); }
 .filter-tab .count { font-size: .7rem; padding: .05rem .4rem; border-radius: 4px; background: var(--color-bg); margin-left: .3rem; }
 .filter-tab.active .count { background: var(--color-primary-subtle); }
 
