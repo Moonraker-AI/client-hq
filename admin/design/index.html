@@ -637,10 +637,10 @@ window.toast = toast;</code></pre>
     <h3>Tab Navigation</h3>
     <div style="display:flex;gap:0;border-bottom:2px solid var(--color-border);">
       <button style="padding:.5rem 1rem;font-family:inherit;font-size:.84rem;font-weight:500;color:var(--color-muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-2px;">Overview</button>
-      <button style="padding:.5rem 1rem;font-family:inherit;font-size:.84rem;font-weight:600;color:var(--color-primary);background:none;border:none;border-bottom:2px solid var(--color-primary);cursor:pointer;margin-bottom:-2px;">Deliverables <span style="font-size:.72rem;font-weight:600;padding:.1rem .4rem;border-radius:4px;background:rgba(245,158,11,.15);color:#D97706;margin-left:.25rem;">27</span></button>
+      <button style="padding:.5rem 1rem;font-family:inherit;font-size:.84rem;font-weight:600;color:var(--color-primary);background:none;border:none;border-bottom:2px solid var(--color-primary);cursor:pointer;margin-bottom:-2px;">Deliverables <span style="font-size:.72rem;font-weight:600;padding:.1rem .4rem;border-radius:4px;background:var(--color-primary-subtle);color:var(--color-primary);margin-left:.25rem;">27</span></button>
       <button style="padding:.5rem 1rem;font-family:inherit;font-size:.84rem;font-weight:500;color:var(--color-muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-2px;">Reports <span style="font-size:.72rem;font-weight:500;padding:.1rem .4rem;border-radius:4px;background:rgba(107,117,153,.08);color:#6B7599;margin-left:.25rem;">2</span></button>
     </div>
-    <p style="font-size:.72rem;color:var(--color-muted);margin-top:.5rem;">Active: primary color + 2px bottom border. Badge: amber for outstanding items, muted for info-only counts.</p>
+    <p style="font-size:.72rem;color:var(--color-muted);margin-top:.5rem;">Active: primary color + 2px bottom border. Badge color matches the active tab's highlight color. Inactive badges use muted styling.</p>
   </div>
 
   <div class="ds-subsection">
@@ -799,7 +799,7 @@ fetch('https://api.resend.com/emails', {
     <tr><td>Event propagation</td><td>Dropdowns, links, delete buttons use <code>onclick="event.stopPropagation()"</code> inside clickable rows</td></tr>
     <tr><td>Status naming</td><td>Deliverables end-state: <code>delivered</code>. Checklist end-state: <code>complete</code>. Intentionally different semantics.</td></tr>
     <tr><td>Expand state</td><td>Single <code>expandedXxxId</code> variable per tab. Toggled by <code>toggleXxxExpand(id)</code>. Re-render on toggle.</td></tr>
-    <tr><td>Tab count badges</td><td>Show outstanding items (non-complete/non-delivered). Amber when > 0, muted when info-only.</td></tr>
+    <tr><td>Tab count badges</td><td>Badge color matches the active filter's highlight color (e.g., green for Active, blue for Onboarding, orange for Prospects). Inactive tabs use muted badge styling.</td></tr>
     <tr><td>Supabase reads</td><td>Direct <code>fetch(SB + '/rest/v1/' + path, { headers: { apikey: SK, Authorization: 'Bearer ' + SK } })</code> with anon key. Two-step lookup for PostgREST (no subqueries).</td></tr>
     <tr><td>Supabase writes</td><td><code>POST /api/action</code> with <code>{ action, table, filters, data }</code>. Service role key handled server-side. See Data Access section below.</td></tr>
     <tr><td>GitHub push (large files)</td><td>Write payload to <code>/home/claude/push.json</code> then <code>curl -d @push.json</code></td></tr>
