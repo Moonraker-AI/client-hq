@@ -524,6 +524,8 @@ strong { font-weight: 600; color: var(--color-heading); }
 .dir-name { font-weight: 500; }
 .dir-item.dir-live { border-color: rgba(0,212,126,.3); background: rgba(0,212,126,.04); }
 .dir-item.dir-live .dir-name { color: var(--color-heading); }
+.rt-delete-url { font-size: 1.1rem; color: var(--color-muted); cursor: pointer; line-height: 1; padding: .1rem .25rem; border-radius: 3px; transition: all .15s; }
+.rt-delete-url:hover { color: var(--color-danger); background: rgba(239,68,68,.08); }
 .sort-arrow.desc { transform: rotate(180deg); }
 .filter-bar { display: flex; align-items: center; gap: .25rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--color-border); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .filter-bar::-webkit-scrollbar { display: none; }
@@ -821,15 +823,15 @@ strong { font-weight: 600; color: var(--color-heading); }
       <!-- Tabs -->
       <div class="tab-bar" id="tabBar">
         <button class="tab-btn active" data-tab="overview">Overview</button>
+        <button class="tab-btn" data-tab="proposals">Proposals</button>
+        <button class="tab-btn" data-tab="onboarding">Onboarding</button>
+        <button class="tab-btn" data-tab="intro-call">Intro Call</button>
         <button class="tab-btn" data-tab="profile">Profile</button>
         <button class="tab-btn" data-tab="rising-tide">Rising Tide</button>
         <button class="tab-btn" data-tab="deliverables">Deliverables</button>
         <button class="tab-btn" data-tab="audit">Audit</button>
         <button class="tab-btn" data-tab="reports">Reports</button>
         <button class="tab-btn" data-tab="billing">Billing</button>
-        <button class="tab-btn" data-tab="proposals">Proposals</button>
-        <button class="tab-btn" data-tab="onboarding">Onboarding</button>
-        <button class="tab-btn" data-tab="intro-call">Intro Call</button>
         <button class="history-toggle tab-hidden" id="historyToggle" onclick="toggleHistoryTabs()"><span class="ht-icon">&#9654;</span>History</button>
       </div>
 
@@ -1653,6 +1655,24 @@ strong { font-weight: 600; color: var(--color-heading); }
 
   // ---- PROFILE TAB ----
   var PLATFORM_LABELS = { youtube: 'YouTube', linkedin: 'LinkedIn', facebook: 'Facebook', instagram: 'Instagram', tiktok: 'TikTok', pinterest: 'Pinterest', quora: 'Quora', x: 'X / Twitter', gbp: 'Google Business Profile' };
+  var PLATFORM_ICONS = {
+    youtube: '<svg viewBox="0 0 24 24" width="20" height="20" fill="#FF0000"><path d="M23.5 6.2c-.3-1-1-1.8-2-2.1C19.6 3.6 12 3.6 12 3.6s-7.6 0-9.5.5c-1 .3-1.7 1.1-2 2.1C0 8.1 0 12 0 12s0 3.9.5 5.8c.3 1 1 1.8 2 2.1 1.9.5 9.5.5 9.5.5s7.6 0 9.5-.5c1-.3 1.7-1.1 2-2.1.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.5 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg>',
+    linkedin: '<svg viewBox="0 0 24 24" width="20" height="20" fill="#0A66C2"><path d="M20.4 20.5h-3.6v-5.6c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9v5.7H9.3V9h3.4v1.6h.1c.5-.9 1.6-1.8 3.3-1.8 3.5 0 4.2 2.3 4.2 5.4v6.3zM5.3 7.4c-1.1 0-2.1-.9-2.1-2.1s.9-2.1 2.1-2.1 2.1.9 2.1 2.1-.9 2.1-2.1 2.1zM7.1 20.5H3.5V9h3.6v11.5z"/></svg>',
+    facebook: '<svg viewBox="0 0 24 24" width="20" height="20" fill="#1877F2"><path d="M24 12c0-6.6-5.4-12-12-12S0 5.4 0 12c0 6 4.4 10.9 10.1 11.9v-8.4H7.1V12h3V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9V12h3.3l-.5 3.5h-2.8v8.4C19.6 22.9 24 18 24 12z"/></svg>',
+    instagram: '<svg viewBox="0 0 24 24" width="20" height="20" fill="#E4405F"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1.1.4 2.2.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.9c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1.1.4-2.2.4-1.3.1-1.6.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1.1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1.1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2zM12 0C8.7 0 8.3 0 7 .1 5.7.1 4.8.3 4 .6c-.8.3-1.5.7-2.2 1.4C1.1 2.7.7 3.4.4 4.2.2 5 0 5.9 0 7.2 0 8.5 0 8.9 0 12.2s0 3.7.1 5c.1 1.3.3 2.2.6 3 .3.8.7 1.5 1.4 2.2.7.7 1.4 1.1 2.2 1.4.8.3 1.7.5 3 .6 1.3.1 1.7.1 5 .1s3.7 0 5-.1c1.3-.1 2.2-.3 3-.6.8-.3 1.5-.7 2.2-1.4.7-.7 1.1-1.4 1.4-2.2.3-.8.5-1.7.6-3 .1-1.3.1-1.7.1-5s0-3.7-.1-5c-.1-1.3-.3-2.2-.6-3-.3-.8-.7-1.5-1.4-2.2C21.3 1.1 20.6.7 19.8.4 19 .2 18.1 0 16.8 0 15.5 0 15.1 0 12 0zm0 5.8a6.2 6.2 0 100 12.4 6.2 6.2 0 000-12.4zM12 16a4 4 0 110-8 4 4 0 010 8zm6.4-11.8a1.4 1.4 0 100 2.8 1.4 1.4 0 000-2.8z"/></svg>',
+    tiktok: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.3 5.4A5.3 5.3 0 0117.1 1.8h-3.5v13.7a3.1 3.1 0 11-2.1-2.9V9a6.5 6.5 0 106.5 6.5V9.5a8.5 8.5 0 004.5 1.5V7.5a5.3 5.3 0 01-3.2-2.1z"/></svg>',
+    pinterest: '<svg viewBox="0 0 24 24" width="20" height="20" fill="#BD081C"><path d="M12 0C5.4 0 0 5.4 0 12c0 4.7 2.7 8.7 6.6 10.7-.1-.8-.2-2.1 0-3l1.4-5.9s-.3-.7-.3-1.8c0-1.7 1-3 2.2-3 1 0 1.5.8 1.5 1.7 0 1-.7 2.6-1 4-.3 1.2.6 2.2 1.8 2.2 2.1 0 3.7-2.2 3.7-5.5 0-2.9-2.1-4.9-5-4.9-3.4 0-5.4 2.6-5.4 5.2 0 1 .4 2.1.9 2.7.1.1.1.2.1.3l-.3 1.3c-.1.3-.2.3-.4.2-1.5-.7-2.4-2.8-2.4-4.5 0-3.7 2.7-7.1 7.7-7.1 4 0 7.2 2.9 7.2 6.7 0 4-2.5 7.3-6 7.3-1.2 0-2.3-.6-2.6-1.3l-.7 2.8c-.3 1-1 2.3-1.5 3 1.1.3 2.3.5 3.5.5 6.6 0 12-5.4 12-12S18.6 0 12 0z"/></svg>',
+    quora: '<svg viewBox="0 0 24 24" width="20" height="20" fill="#B92B27"><path d="M12.7 19.3c-.7-1.3-1.5-2.7-2.8-2.7-.4 0-.9.2-1.1.6l-.9-.9c.7-1.1 1.7-1.6 3-1.6 1.7 0 2.8 1 3.7 2.3.8-1.5 1.2-3.5 1.2-5.9 0-5.6-2-8.4-5.8-8.4-3.8 0-5.8 2.8-5.8 8.4 0 5.5 2 8.3 5.8 8.3.9 0 1.8-.2 2.5-.5l.2.4zM10 24c-5.5 0-10-3.5-10-12S4.5 0 10 0s10 3.5 10 12c0 4.3-1.3 7.4-3.4 9.3 1 1.4 2.1 2 3.4 2v.7c-2.2 0-3.9-1-5.3-3-.9.3-1.7.4-2.7.4z"/></svg>',
+    x: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.2 2.3h3.5l-7.7 8.8L23 21.7h-7.1l-5.5-7.2-6.3 7.2H.6l8.2-9.4L.4 2.3h7.3l5 6.6 5.5-6.6zm-1.2 17.5h1.9L6.4 4.2H4.3l12.7 15.6z"/></svg>',
+    gbp: '<svg viewBox="0 0 24 24" width="20" height="20" fill="#4285F4"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>'
+  };
+  function normalizeUrl(url) {
+    if (!url) return null;
+    url = url.trim();
+    if (!url) return null;
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    return url;
+  }
   var ACCESS_PLATFORMS = ['youtube', 'linkedin', 'facebook', 'quora'];
   var DIR_LABELS = { psychology_today: 'Psychology Today', yelp: 'Yelp', goodtherapy: 'GoodTherapy', therapyden: 'TherapyDen', zencare: 'Zencare', theravive: 'Theravive', monarch: 'Monarch', openpath: 'Open Path', inclusive_therapists: 'Inclusive Therapists', network_therapy: 'NetworkTherapy', headway: 'Headway', alma: 'Alma', zocdoc: 'Zocdoc', grow_therapy: 'Grow Therapy', sondermind: 'SonderMind', emdria: 'EMDRIA', ifs_institute: 'IFS Institute', tfbg: 'AAMFT / TFBG', latinx_therapy: 'LatinX Therapy', amhc: 'AMHC', ementalhealth: 'eMentalHealth', first_session: 'First Session' };
 
@@ -1672,34 +1692,18 @@ strong { font-weight: 600; color: var(--color-heading); }
     var container = document.getElementById('profilePractice');
 
     if (p) {
-      var fields = [
-        ['Practice Type', p.practice_type], ['Num Therapists', p.num_therapists],
-        ['Specialties', Array.isArray(p.specialties) ? p.specialties.join(', ') : p.specialties],
-        ['Modalities', Array.isArray(p.modalities) ? p.modalities.join(', ') : p.modalities],
-        ['Populations', Array.isArray(p.populations) ? p.populations.join(', ') : p.populations],
-        ['Insurance/Private Pay', p.insurance_or_private_pay],
-        ['Insurance Panels', p.insurance_panels],
-        ['Licensed States', Array.isArray(p.licensed_states) ? p.licensed_states.join(', ') : p.licensed_states],
-        ['Session Cost', p.session_cost], ['Session Frequency', p.session_frequency],
-        ['Booking URL', p.booking_url], ['Offers Consultation', p.offers_consultation === true ? 'Yes' : (p.offers_consultation === false ? 'No' : '')],
-        ['Consultation Length', p.consultation_length],
-        ['Content Approval', p.content_approval], ['Pronoun Usage', p.pronoun_usage],
-        ['Brand Voice Sources', p.brand_voice_sources], ['Current Marketing', p.current_marketing],
-        ['Ideal Client', p.ideal_client], ['Differentiators', p.differentiators],
-        ['Intake Process', p.intake_process], ['After Care', p.after_care],
-        ['Campaign Objectives', p.campaign_objectives],
-        ['Current Caseload', p.current_caseload], ['Target Caseload', p.target_caseload],
-        ['Target Keywords', Array.isArray(p.target_keywords) ? p.target_keywords.join(', ') : p.target_keywords],
-        ['Content to Omit', p.content_to_omit]
-      ];
-      var h = '<div class="field-group" style="padding:.75rem 1rem;">';
-      fields.forEach(function(f) {
-        var val = f[1];
-        if (val != null && val !== '' && val !== false) {
-          var display = (typeof val === 'string' && val.startsWith('http')) ? '<a href="' + esc(val) + '" target="_blank" style="color:var(--color-primary);text-decoration:none;">' + esc(val) + '</a>' : esc(String(val));
-          h += '<div class="field-row"><span class="field-label">' + esc(f[0]) + '</span><span class="field-value">' + display + '</span></div>';
-        }
-      });
+      function pdLabel(t) { return '<div style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);margin-bottom:.15rem;">' + esc(t) + '</div>'; }
+      var shortFields = [['Num Therapists', p.num_therapists], ['Insurance/Private Pay', p.insurance_or_private_pay], ['Session Cost', p.session_cost], ['Session Frequency', p.session_frequency], ['Offers Consultation', p.offers_consultation === true ? 'Yes' : (p.offers_consultation === false ? 'No' : '')], ['Consultation Length', p.consultation_length], ['Content Approval', p.content_approval], ['Pronoun Usage', p.pronoun_usage], ['Current Caseload', p.current_caseload], ['Target Caseload', p.target_caseload], ['Current Marketing', p.current_marketing]];
+      var mediumFields = [['Specialties', Array.isArray(p.specialties) ? p.specialties.join(', ') : p.specialties], ['Modalities', Array.isArray(p.modalities) ? p.modalities.join(', ') : p.modalities], ['Populations', Array.isArray(p.populations) ? p.populations.join(', ') : p.populations], ['Licensed States', Array.isArray(p.licensed_states) ? p.licensed_states.join(', ') : p.licensed_states], ['Insurance Panels', p.insurance_panels], ['Target Keywords', Array.isArray(p.target_keywords) ? p.target_keywords.join(', ') : p.target_keywords], ['Booking URL', p.booking_url], ['Brand Voice Sources', p.brand_voice_sources], ['Campaign Objectives', p.campaign_objectives], ['Content to Omit', p.content_to_omit]];
+      var longFields = [['Ideal Client', p.ideal_client], ['Differentiators', p.differentiators], ['Intake Process', p.intake_process], ['After Care', p.after_care]];
+      var h = '<div style="padding:1rem;">';
+      h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.5rem .75rem;margin-bottom:1.25rem;">';
+      shortFields.forEach(function(f) { if (f[1] != null && f[1] !== '' && f[1] !== false) { h += '<div>' + pdLabel(f[0]) + '<div style="font-size:.84rem;color:var(--color-heading);">' + esc(String(f[1])) + '</div></div>'; } });
+      h += '</div>';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem .75rem;margin-bottom:1.25rem;">';
+      mediumFields.forEach(function(f) { if (f[1] != null && f[1] !== '' && f[1] !== false) { var d = (typeof f[1] === 'string' && f[1].startsWith('http')) ? '<a href="' + esc(f[1]) + '" target="_blank" style="color:var(--color-primary);text-decoration:none;word-break:break-all;">' + esc(f[1]) + '</a>' : esc(String(f[1])); h += '<div>' + pdLabel(f[0]) + '<div style="font-size:.84rem;color:var(--color-heading);line-height:1.5;">' + d + '</div></div>'; } });
+      h += '</div>';
+      longFields.forEach(function(f) { if (f[1] != null && f[1] !== '') { h += '<div style="margin-bottom:1rem;">' + pdLabel(f[0]) + '<div style="font-size:.84rem;color:var(--color-heading);line-height:1.65;white-space:pre-wrap;">' + esc(String(f[1])) + '</div></div>'; } });
       h += '</div>';
       container.innerHTML = h;
     } else {
@@ -1825,7 +1829,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       return;
     }
 
-    var maskedFields = ['gmail_password', 'app_password', 'authenticator_secret_key'];
+    var maskedFields = ['gmail_password', 'app_password'];
 
     function maskVal(key, val) {
       if (!val) return '<span style="color:var(--color-muted);font-style:italic;">Not set</span>';
@@ -1842,7 +1846,6 @@ strong { font-weight: 600; color: var(--color-heading); }
     h += '<div class="ws-field"><span class="ws-label">Backup Phone</span><span class="ws-value">' + maskVal('backup_phone', ws.backup_phone) + '</span></div>';
     h += '<div class="ws-field"><span class="ws-label">2FA Enabled</span><span class="ws-value">' + (ws.two_fa_enabled ? '<span style="color:var(--color-success);">Yes</span>' : '<span style="color:var(--color-danger);">No</span>') + '</span></div>';
     h += '<div class="ws-field"><span class="ws-label">App Password</span><span class="ws-value">' + maskVal('app_password', ws.app_password) + '</span></div>';
-    h += '<div class="ws-field ws-full-width"><span class="ws-label">Authenticator Secret</span><span class="ws-value">' + maskVal('authenticator_secret_key', ws.authenticator_secret_key) + '</span></div>';
     if (ws.authenticator_backup_codes && ws.authenticator_backup_codes.length > 0) {
       h += '<div class="ws-field ws-full-width"><span class="ws-label">Backup Codes</span><span class="ws-value ws-masked" onclick="revealWsField(\'backup_codes\')" title="Click to reveal">' + (wsRevealedFields['backup_codes'] ? ws.authenticator_backup_codes.join(', ') : '\u2022\u2022\u2022\u2022 (' + ws.authenticator_backup_codes.length + ' codes)') + '</span></div>';
     }
@@ -1887,7 +1890,6 @@ strong { font-weight: 600; color: var(--color-heading); }
     h += '<div class="ws-field"><span class="ws-label">Backup Phone</span>' + inp('backup_phone', ws.backup_phone, 'Recovery phone') + '</div>';
     h += '<div class="ws-field"><span class="ws-label">2FA Enabled</span><select id="ws_two_fa" style="width:100%;padding:.4rem .6rem;border:1px solid var(--color-border);border-radius:6px;font-size:.84rem;background:var(--color-surface);color:var(--color-heading);font-family:inherit;"><option value="false"' + (!ws.two_fa_enabled ? ' selected' : '') + '>No</option><option value="true"' + (ws.two_fa_enabled ? ' selected' : '') + '>Yes</option></select></div>';
     h += '<div class="ws-field"><span class="ws-label">App Password</span>' + inp('app_password', ws.app_password, '16-char app password') + '</div>';
-    h += '<div class="ws-field ws-full-width"><span class="ws-label">Authenticator Secret</span>' + inp('authenticator_secret_key', ws.authenticator_secret_key, 'Secret key') + '</div>';
     h += '<div class="ws-field ws-full-width"><span class="ws-label">Backup Codes (comma-separated)</span>' + inp('backup_codes', (ws.authenticator_backup_codes || []).join(', '), '1234 5678, 9012 3456, ...') + '</div>';
     h += '</div>';
     el.innerHTML = h;
@@ -1905,7 +1907,6 @@ strong { font-weight: 600; color: var(--color-heading); }
       backup_phone: document.getElementById('ws_backup_phone').value.trim() || null,
       two_fa_enabled: document.getElementById('ws_two_fa').value === 'true',
       app_password: document.getElementById('ws_app_password').value.trim() || null,
-      authenticator_secret_key: document.getElementById('ws_authenticator_secret_key').value.trim() || null,
       authenticator_backup_codes: codes.length > 0 ? codes : null,
       updated_at: new Date().toISOString()
     };
@@ -1933,7 +1934,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       var label = PLATFORM_LABELS[p.platform] || p.platform;
       var hasAccess = ACCESS_PLATFORMS.indexOf(p.platform) !== -1;
       h += '<div class="rt-platform-card">';
-      h += '<div class="rt-platform-header"><span class="rt-platform-name">' + esc(label) + '</span>';
+      h += '<div class="rt-platform-header"><div style="display:flex;align-items:center;gap:.5rem;"><span style="flex-shrink:0;display:flex;">' + (PLATFORM_ICONS[p.platform] || '') + '</span><span class="rt-platform-name">' + esc(label) + '</span></div>';
       h += '<select class="rt-status-select" onchange="updatePlatformStatus(\'' + p.id + '\', this.value)">';
       ['not_created','in_progress','live','needs_update','opted_out'].forEach(function(s) {
         var sl = s.replace(/_/g, ' ');
@@ -1941,7 +1942,11 @@ strong { font-weight: 600; color: var(--color-heading); }
       });
       h += '</select></div>';
       if (p.profile_url) {
-        h += '<a href="' + esc(p.profile_url) + '" target="_blank" class="rt-url">' + esc(p.profile_url.replace(/^https?:\/\//, '').slice(0, 50)) + '</a>';
+        var safeUrl = normalizeUrl(p.profile_url);
+        h += '<div style="display:flex;align-items:center;gap:.5rem;">';
+        h += '<a href="' + esc(safeUrl) + '" target="_blank" class="rt-url" style="flex:1;">' + esc(p.profile_url.replace(/^https?:\/\//, '').slice(0, 45)) + '</a>';
+        h += '<span class="rt-delete-url" onclick="clearPlatformUrl(\'' + p.id + '\')" title="Remove URL">&times;</span>';
+        h += '</div>';
       } else {
         h += '<span style="font-size:.78rem;color:var(--color-muted);font-style:italic;">No URL set</span>';
       }
@@ -1983,11 +1988,23 @@ strong { font-weight: 600; color: var(--color-heading); }
     if (!p) return;
     var url = prompt('Profile URL for ' + (PLATFORM_LABELS[p.platform] || p.platform) + ':', p.profile_url || '');
     if (url === null) return;
-    p.profile_url = url.trim() || null;
+    p.profile_url = normalizeUrl(url);
     if (url.trim() && p.status === 'not_created') p.status = 'live';
     fetch('/api/action', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'update_record', table: 'social_platforms', filters: { id: id }, data: { profile_url: p.profile_url, status: p.status, updated_at: new Date().toISOString() } })
+    });
+    renderSocialPlatforms();
+  };
+
+  window.clearPlatformUrl = function(id) {
+    var p = state.socialPlatforms.find(function(p) { return p.id === id; });
+    if (!p) return;
+    p.profile_url = null;
+    p.status = 'not_created';
+    fetch('/api/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'social_platforms', filters: { id: id }, data: { profile_url: null, status: 'not_created', updated_at: new Date().toISOString() } })
     });
     renderSocialPlatforms();
   };
@@ -2016,7 +2033,12 @@ strong { font-weight: 600; color: var(--color-heading); }
       h += '<div class="dir-item' + (isLive ? ' dir-live' : '') + '">';
       h += '<span class="dir-name">' + esc(label) + '</span>';
       if (isLive && d.profile_url) {
-        h += '<a href="' + esc(d.profile_url) + '" target="_blank" style="font-size:.75rem;color:var(--color-primary);text-decoration:none;">View &#8599;</a>';
+        var safeDirUrl = normalizeUrl(d.profile_url);
+        h += '<div style="display:flex;align-items:center;gap:.4rem;">';
+        h += '<a href="' + esc(safeDirUrl) + '" target="_blank" style="font-size:.75rem;color:var(--color-primary);text-decoration:none;">View &#8599;</a>';
+        h += '<span style="font-size:.7rem;cursor:pointer;color:var(--color-primary);" onclick="editDirUrl(\'' + d.id + '\')" title="Edit">&#9998;</span>';
+        h += '<span class="rt-delete-url" onclick="clearDirUrl(\'' + d.id + '\')" title="Remove">&times;</span>';
+        h += '</div>';
       } else {
         h += '<select class="rt-status-select" onchange="updateDirStatus(\'' + d.id + '\', this.value)" style="font-size:.72rem;">';
         ['not_listed','claimed','live','needs_update'].forEach(function(s) {
@@ -2037,12 +2059,38 @@ strong { font-weight: 600; color: var(--color-heading); }
     if (newStatus === 'live' && !d.profile_url) {
       var url = prompt('Enter the directory listing URL:');
       if (!url || !url.trim()) return;
-      d.profile_url = url.trim();
+      d.profile_url = normalizeUrl(url);
     }
     d.status = newStatus;
     fetch('/api/action', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'update_record', table: 'directory_listings', filters: { id: id }, data: { status: newStatus, profile_url: d.profile_url, updated_at: new Date().toISOString() } })
+    });
+    renderDirectories();
+  };
+
+  window.editDirUrl = function(id) {
+    var d = state.directoryListings.find(function(d) { return d.id === id; });
+    if (!d) return;
+    var url = prompt('Directory URL for ' + (DIR_LABELS[d.directory] || d.directory) + ':', d.profile_url || '');
+    if (url === null) return;
+    d.profile_url = normalizeUrl(url);
+    if (!d.profile_url) d.status = 'not_listed';
+    fetch('/api/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'directory_listings', filters: { id: id }, data: { profile_url: d.profile_url, status: d.status, updated_at: new Date().toISOString() } })
+    });
+    renderDirectories();
+  };
+
+  window.clearDirUrl = function(id) {
+    var d = state.directoryListings.find(function(d) { return d.id === id; });
+    if (!d) return;
+    d.profile_url = null;
+    d.status = 'not_listed';
+    fetch('/api/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'directory_listings', filters: { id: id }, data: { profile_url: null, status: 'not_listed', updated_at: new Date().toISOString() } })
     });
     renderDirectories();
   };
@@ -5001,10 +5049,10 @@ strong { font-weight: 600; color: var(--color-heading); }
   // TAB VISIBILITY (status-aware)
   // ============================================================
   var TAB_VISIBILITY = {
-    lead:       ['overview', 'profile', 'proposals', 'audit'],
-    prospect:   ['overview', 'profile', 'proposals', 'audit'],
-    onboarding: ['overview', 'profile', 'rising-tide', 'proposals', 'onboarding', 'intro-call', 'deliverables', 'audit', 'reports', 'billing'],
-    active:     ['overview', 'profile', 'rising-tide', 'proposals', 'onboarding', 'intro-call', 'deliverables', 'audit', 'reports', 'billing']
+    lead:       ['overview', 'proposals', 'profile', 'audit'],
+    prospect:   ['overview', 'proposals', 'profile', 'audit'],
+    onboarding: ['overview', 'proposals', 'onboarding', 'intro-call', 'profile', 'rising-tide', 'deliverables', 'audit', 'reports', 'billing'],
+    active:     ['overview', 'proposals', 'onboarding', 'intro-call', 'profile', 'rising-tide', 'deliverables', 'audit', 'reports', 'billing']
   };
   var HISTORY_TABS = ['proposals', 'onboarding', 'intro-call'];
 
