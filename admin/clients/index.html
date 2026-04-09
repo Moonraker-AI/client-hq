@@ -436,6 +436,52 @@ strong { font-weight: 600; color: var(--color-heading); }
 .del-phase-pill { padding: .3rem .65rem; border-radius: 6px; font-size: .72rem; font-weight: 500; border: 1px solid var(--color-border); background: transparent; color: var(--color-muted); cursor: pointer; font-family: inherit; transition: all .15s; }
 .del-phase-pill:hover { border-color: var(--color-primary); color: var(--color-heading); }
 .del-phase-pill.active { background: var(--color-primary-subtle); border-color: var(--color-primary); color: var(--color-primary); }
+/* ---- CONTENT TAB ---- */
+.content-page-row { display: flex; align-items: center; gap: .75rem; padding: .65rem .75rem; border-bottom: 1px solid var(--color-border); font-size: .84rem; cursor: pointer; transition: background .1s; }
+.content-page-row:hover { background: var(--sidebar-hover); }
+.content-page-row.expanded { background: var(--color-bg); }
+.cp-expand-icon { font-size: .65rem; color: var(--color-muted); transition: transform .2s; flex-shrink: 0; }
+.content-page-row.expanded .cp-expand-icon { transform: rotate(90deg); }
+.cp-type-badge { font-size: .65rem; font-weight: 600; padding: .15rem .45rem; border-radius: 4px; text-transform: uppercase; letter-spacing: .03em; flex-shrink: 0; }
+.cp-type-badge.homepage { background: rgba(139,92,246,.12); color: #8B5CF6; }
+.cp-type-badge.service { background: rgba(59,130,246,.12); color: #3B82F6; }
+.cp-type-badge.location { background: rgba(245,158,11,.12); color: #D97706; }
+.cp-type-badge.faq { background: rgba(0,212,126,.12); color: #00b86c; }
+.cp-type-badge.bio { background: rgba(236,72,153,.12); color: #EC4899; }
+.cp-info { flex: 1; min-width: 0; }
+.cp-title { font-weight: 500; color: var(--color-heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cp-keyword { font-size: .72rem; color: var(--color-muted); margin-top: .1rem; }
+.cp-status-select { padding: .25rem .4rem; border-radius: 6px; font-size: .72rem; font-weight: 500; font-family: inherit; cursor: pointer; border: 1px solid transparent; transition: border-color .15s; min-width: 120px; }
+.cp-status-select:hover { border-color: var(--color-border); }
+.cp-status-select option { background: var(--color-surface); color: var(--color-body); }
+.cp-status-select.st-pending_audit { background: rgba(107,117,153,.1); color: var(--color-muted); }
+.cp-status-select.st-audit_loaded { background: rgba(245,158,11,.1); color: #D97706; }
+.cp-status-select.st-generating { background: rgba(59,130,246,.1); color: #3B82F6; }
+.cp-status-select.st-review { background: rgba(139,92,246,.1); color: #8B5CF6; }
+.cp-status-select.st-client_review { background: rgba(236,72,153,.1); color: #EC4899; }
+.cp-status-select.st-approved { background: rgba(0,212,126,.1); color: #00b86c; }
+.cp-status-select.st-delivered { background: rgba(0,212,126,.15); color: #00964a; }
+.cp-expand-panel { max-height: 0; overflow: hidden; transition: max-height .3s ease; border-bottom: 1px solid transparent; }
+.cp-expand-panel.show { max-height: 1200px; border-bottom-color: var(--color-border); }
+.cp-expand-inner { padding: .75rem .75rem .75rem 3.25rem; }
+.cp-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: .75rem; }
+.cp-detail-item label { font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); display: block; margin-bottom: .2rem; }
+.cp-detail-item .val { font-size: .82rem; color: var(--color-body); }
+.cp-rtpba-preview { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 8px; padding: .65rem; font-size: .78rem; color: var(--color-body); line-height: 1.5; max-height: 150px; overflow-y: auto; white-space: pre-wrap; margin-bottom: .75rem; }
+.cp-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.cp-actions .btn { font-size: .75rem; padding: .35rem .65rem; }
+.content-filter-pill { padding: .3rem .65rem; border-radius: 6px; font-size: .72rem; font-weight: 500; border: 1px solid var(--color-border); background: transparent; color: var(--color-muted); cursor: pointer; font-family: inherit; transition: all .15s; }
+.content-filter-pill:hover { border-color: var(--color-primary); color: var(--color-heading); }
+.content-filter-pill.active { background: var(--color-primary-subtle); border-color: var(--color-primary); color: var(--color-primary); }
+.neo-row { display: flex; align-items: center; gap: .75rem; padding: .5rem .75rem; border-bottom: 1px solid var(--color-border); font-size: .82rem; }
+.neo-row .neo-name { font-weight: 500; flex: 1; }
+.neo-row .neo-url { font-size: .72rem; color: var(--color-muted); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.neo-row .neo-url:hover { color: var(--color-primary); }
+.endorsement-row { display: flex; align-items: center; gap: .75rem; padding: .5rem .75rem; border-bottom: 1px solid var(--color-border); font-size: .82rem; }
+.endorsement-row .end-name { font-weight: 500; flex: 1; }
+.endorsement-row .end-type { font-size: .68rem; font-weight: 600; padding: .1rem .35rem; border-radius: 4px; text-transform: uppercase; letter-spacing: .03em; background: rgba(107,117,153,.1); color: var(--color-muted); }
+.paste-surge-area { width: 100%; min-height: 100px; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 8px; padding: .65rem; font-size: .78rem; font-family: 'Inter', sans-serif; color: var(--color-body); resize: vertical; margin-bottom: .5rem; }
+.paste-surge-area:focus { outline: none; border-color: var(--color-primary); }
 .field-value.editable { cursor: pointer; padding: .15rem .35rem; margin: -.15rem -.35rem; border-radius: 4px; transition: background .15s; border: 1px solid transparent; min-height: 1.4em; }
 .field-value.editable:hover { background: var(--color-bg); border-color: var(--color-border); }
 .field-value.editable.empty { color: var(--color-muted); font-style: italic; }
@@ -1299,7 +1345,11 @@ strong { font-weight: 600; color: var(--color-heading); }
         fetch(SB + '/rest/v1/social_platforms?select=*&contact_id=eq.' + cid + '&order=platform', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
         fetch(SB + '/rest/v1/directory_listings?select=*&contact_id=eq.' + cid + '&order=directory', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
         fetch(SB + '/rest/v1/account_access?select=*&contact_id=eq.' + cid, { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
-        fetch(SB + '/rest/v1/performance_guarantees?select=*&contact_id=eq.' + cid + '&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; })
+        fetch(SB + '/rest/v1/performance_guarantees?select=*&contact_id=eq.' + cid + '&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch(SB + '/rest/v1/content_pages?select=*&contact_id=eq.' + cid + '&order=created_at.desc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch(SB + '/rest/v1/design_specs?select=*&contact_id=eq.' + cid + '&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch(SB + '/rest/v1/neo_images?select=*&contact_id=eq.' + cid + '&order=created_at.desc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch(SB + '/rest/v1/endorsements?select=*&contact_id=eq.' + cid + '&order=created_at.desc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; })
       ]);
     }).then(function(res) {
       if (!res) return; // Contact not found, already handled
@@ -1322,6 +1372,10 @@ strong { font-weight: 600; color: var(--color-heading); }
       state.directoryListings = res[15] || [];
       state.accountAccess = res[16] || [];
       state.guarantee = (res[17] && res[17][0]) || null;
+      state.contentPages = res[18] || [];
+      state.designSpec = (res[19] && res[19][0]) || null;
+      state.neoImages = res[20] || [];
+      state.endorsements = res[21] || [];
       state.proposalFollowups = {};
 
       // Derive CORE scores from entity_audits (replaces audit_scores table)
@@ -1639,6 +1693,9 @@ strong { font-weight: 600; color: var(--color-heading); }
     renderAudit();
     renderReports();
     renderBilling(c);
+    renderContent();
+    var contentCount = state.contentPages.filter(function(cp) { return cp.status !== 'delivered' && cp.status !== 'approved'; }).length;
+    setTabCount('content', contentCount);
   }
 
   function setTabCount(tab, count) {
@@ -3941,6 +3998,376 @@ strong { font-weight: 600; color: var(--color-heading); }
     document.getElementById('delList').innerHTML = html;
   }
 
+
+  // ---- CONTENT TAB (Pagemaster) ----
+  var contentFilter = 'all';
+  var expandedContentId = null;
+
+  window.toggleContentSection = function(section) {
+    var body = document.getElementById(section === 'designSpec' ? 'designSpecBody' : null);
+    var icon = document.getElementById(section === 'designSpec' ? 'designSpecIcon' : null);
+    if (!body) return;
+    var collapsed = body.classList.contains('collapsed');
+    body.classList.toggle('collapsed', !collapsed);
+    body.style.maxHeight = collapsed ? '600px' : '0';
+    if (icon) icon.style.transform = collapsed ? 'rotate(90deg)' : '';
+  };
+
+  window.switchAssetTab = function(tab) {
+    document.getElementById('assetTabNeo').classList.toggle('active', tab === 'neo');
+    document.getElementById('assetTabEndorsements').classList.toggle('active', tab === 'endorsements');
+    document.getElementById('assetNeoSection').style.display = tab === 'neo' ? 'block' : 'none';
+    document.getElementById('assetEndorsementSection').style.display = tab === 'endorsements' ? 'block' : 'none';
+  };
+
+  window.setContentFilter = function(f) { contentFilter = f; renderContent(); };
+  window.toggleContentExpand = function(id) { expandedContentId = expandedContentId === id ? null : id; renderContent(); };
+
+  window.setContentPageStatus = function(id, newStatus) {
+    var cp = state.contentPages.find(function(p) { return p.id === id; });
+    if (!cp) return;
+    var oldStatus = cp.status;
+    cp.status = newStatus;
+    renderContent();
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'content_pages', id: id, data: { status: newStatus } })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (!res.success) { cp.status = oldStatus; renderContent(); }
+    }).catch(function() { cp.status = oldStatus; renderContent(); });
+  };
+
+  window.pasteSurgeData = function(cpId) {
+    var ta = document.getElementById('surge-paste-' + cpId);
+    if (!ta || !ta.value.trim()) return;
+    var raw = ta.value.trim();
+    var cp = state.contentPages.find(function(p) { return p.id === cpId; });
+    if (!cp) return;
+    var surgeData = {};
+    try { surgeData = JSON.parse(raw); } catch(e) { surgeData = { raw_text: raw }; }
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'content_pages', id: cpId, data: { surge_data: surgeData, status: 'audit_loaded' } })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success) {
+        cp.surge_data = surgeData;
+        cp.status = 'audit_loaded';
+        toast('Surge data loaded', 'success');
+        renderContent();
+      }
+    });
+  };
+
+  window.deleteContentPage = function(id, name) {
+    if (!confirm('Delete content page "' + name + '"?')) return;
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_record', table: 'content_pages', id: id })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success) {
+        state.contentPages = state.contentPages.filter(function(p) { return p.id !== id; });
+        renderContent();
+        toast('Content page deleted', 'success');
+      }
+    });
+  };
+
+  window.addContentPage = function() {
+    var name = prompt('Page name (e.g. Anxiety Therapy, EMDR, FAQ):');
+    if (!name || !name.trim()) return;
+    var types = ['service','homepage','location','faq','bio'];
+    var guess = 'service';
+    var lower = name.toLowerCase();
+    if (lower.indexOf('home') !== -1) guess = 'homepage';
+    else if (lower.indexOf('faq') !== -1) guess = 'faq';
+    else if (lower.indexOf('bio') !== -1) guess = 'bio';
+    else if (lower.indexOf('location') !== -1 || lower.match(/\b[A-Z]{2}\b/)) guess = 'location';
+    var pageType = prompt('Page type (service, homepage, location, faq, bio):', guess);
+    if (!pageType || types.indexOf(pageType) === -1) return;
+    var pageSlug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create_record', table: 'content_pages', data: {
+        contact_id: state.contact.id,
+        client_slug: slug,
+        page_type: pageType,
+        page_name: name.trim(),
+        page_slug: pageSlug,
+        status: 'pending_audit'
+      }})
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success && res.data && res.data[0]) {
+        state.contentPages.unshift(res.data[0]);
+        renderContent();
+        toast('Content page added', 'success');
+      }
+    });
+  };
+
+  window.addNeoImage = function() {
+    var name = prompt('Image name:');
+    if (!name || !name.trim()) return;
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create_record', table: 'neo_images', data: {
+        contact_id: state.contact.id,
+        client_slug: slug,
+        image_name: name.trim()
+      }})
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success && res.data && res.data[0]) {
+        state.neoImages.unshift(res.data[0]);
+        renderContent();
+        toast('NEO image added', 'success');
+      }
+    });
+  };
+
+  window.generateAllContent = function() {
+    toast('Batch generation coming soon. Generate pages individually for now.', 'info');
+  };
+
+  window.copyGeneratedHtml = function(cpId) {
+    var cp = state.contentPages.find(function(p) { return p.id === cpId; });
+    if (cp && cp.generated_html) {
+      navigator.clipboard.writeText(cp.generated_html).then(function() { toast('HTML copied', 'success'); });
+    }
+  };
+
+  function renderContent() {
+    var c = state.contact;
+    var spec = state.designSpec;
+    var pages = state.contentPages;
+
+    // -- DESIGN SPEC --
+    var badge = document.getElementById('designSpecBadge');
+    if (badge) {
+      if (spec) {
+        badge.textContent = 'Configured';
+        badge.style.background = 'rgba(0,212,126,.1)';
+        badge.style.color = '#00b86c';
+      } else {
+        badge.textContent = 'Not Set';
+        badge.style.background = 'rgba(245,158,11,.1)';
+        badge.style.color = '#D97706';
+      }
+    }
+
+    var specEl = document.getElementById('designSpecContent');
+    if (specEl) {
+      var sHtml = '';
+      if (!spec) {
+        sHtml += '<p style="font-size:.82rem;color:var(--color-muted);margin-bottom:.5rem;">The design spec captures your client\'s website styling (typography, colors, layout, voice DNA) and is used by all page builds.</p>';
+        sHtml += '<p style="font-size:.82rem;margin-bottom:.5rem;">Platform: <strong>' + esc(c.website_platform || 'Not set') + '</strong> &middot; Site: <strong>' + esc(c.website_url || 'Not set') + '</strong></p>';
+        sHtml += '<button class="btn btn-primary btn-sm" style="font-size:.78rem;" onclick="toast(\'Design spec creation coming soon.\', \'info\')">Create Design Spec</button>';
+      } else {
+        sHtml += '<p style="font-size:.78rem;color:var(--color-muted);margin-bottom:.5rem;">Platform: ' + esc(c.website_platform || '?') + ' &middot; Updated: ' + formatDate(spec.updated_at) + '</p>';
+        if (spec.summary_text) {
+          sHtml += '<div style="font-size:.82rem;color:var(--color-body);line-height:1.6;white-space:pre-line;max-height:200px;overflow-y:auto;margin-bottom:.5rem;">' + esc(spec.summary_text).substring(0, 600) + (spec.summary_text.length > 600 ? '...' : '') + '</div>';
+        }
+        var pills = [];
+        if (spec.typography && spec.typography.heading_font) pills.push(spec.typography.heading_font);
+        if (spec.typography && spec.typography.body_font) pills.push(spec.typography.body_font);
+        if (spec.color_palette && spec.color_palette.primary) pills.push(spec.color_palette.primary);
+        if (pills.length) {
+          sHtml += '<div style="display:flex;gap:.35rem;flex-wrap:wrap;">';
+          pills.forEach(function(p) {
+            var isColor = p.startsWith('#') || p.startsWith('rgb');
+            sHtml += '<span style="display:inline-flex;align-items:center;gap:.25rem;font-size:.68rem;padding:.15rem .4rem;border-radius:4px;background:var(--color-bg);border:1px solid var(--color-border);">';
+            if (isColor) sHtml += '<span style="width:10px;height:10px;border-radius:2px;background:' + esc(p) + ';"></span>';
+            sHtml += esc(p) + '</span>';
+          });
+          sHtml += '</div>';
+        }
+      }
+      specEl.innerHTML = sHtml;
+    }
+
+    // -- FILTER BAR --
+    var filterEl = document.getElementById('contentPhaseBar');
+    if (filterEl) {
+      if (pages.length === 0) {
+        filterEl.innerHTML = '';
+      } else {
+        var fls = [
+          {key:'all',label:'All'},
+          {key:'homepage',label:'Homepage'},{key:'service',label:'Service'},{key:'location',label:'Location'},
+          {key:'faq',label:'FAQ'},{key:'bio',label:'Bio'},
+          {key:'pending_audit',label:'Pending'},{key:'audit_loaded',label:'Loaded'},
+          {key:'review',label:'Review'},{key:'client_review',label:'Client Review'},
+          {key:'delivered',label:'Delivered'}
+        ];
+        var fHtml = '<div style="display:flex;gap:.25rem;flex-wrap:wrap;padding:.5rem 0;border-bottom:1px solid var(--color-border);margin-bottom:.75rem;">';
+        fls.forEach(function(fl) {
+          var cnt = fl.key === 'all' ? pages.length
+            : ['homepage','service','location','faq','bio'].indexOf(fl.key) !== -1
+              ? pages.filter(function(p) { return p.page_type === fl.key; }).length
+              : pages.filter(function(p) { return p.status === fl.key; }).length;
+          if (fl.key !== 'all' && cnt === 0) return;
+          fHtml += '<button class="content-filter-pill' + (contentFilter === fl.key ? ' active' : '') + '" onclick="setContentFilter(\'' + fl.key + '\')">' + fl.label + ' <span style="opacity:.5;">' + cnt + '</span></button>';
+        });
+        fHtml += '</div>';
+        filterEl.innerHTML = fHtml;
+      }
+    }
+
+    // Show/hide generate all
+    var readyCount = pages.filter(function(p) { return p.status === 'audit_loaded'; }).length;
+    var genBtn = document.getElementById('btnGenerateAll');
+    if (genBtn) genBtn.style.display = readyCount > 0 ? 'inline-flex' : 'none';
+
+    // -- PAGE LIST --
+    var emptyEl = document.getElementById('contentPagesEmpty');
+    var listEl = document.getElementById('contentPageList');
+    if (!listEl) return;
+
+    if (pages.length === 0) {
+      listEl.innerHTML = '';
+      if (emptyEl) emptyEl.style.display = 'block';
+      renderContentAssets();
+      return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    var filtered = pages;
+    if (['homepage','service','location','faq','bio'].indexOf(contentFilter) !== -1) {
+      filtered = pages.filter(function(p) { return p.page_type === contentFilter; });
+    } else if (contentFilter !== 'all') {
+      filtered = pages.filter(function(p) { return p.status === contentFilter; });
+    }
+
+    var typeOrder = {homepage:1,service:2,location:3,faq:4,bio:5};
+    var statusOrder = {pending_audit:1,audit_loaded:2,generating:3,review:4,client_review:5,approved:6,delivered:7};
+    filtered.sort(function(a,b) {
+      var ta = typeOrder[a.page_type]||9, tb = typeOrder[b.page_type]||9;
+      return ta !== tb ? ta - tb : (statusOrder[a.status]||9) - (statusOrder[b.status]||9);
+    });
+
+    var statusLabels = {pending_audit:'Pending Audit',audit_loaded:'Audit Loaded',generating:'Generating',review:'In Review',client_review:'Client Review',approved:'Approved',delivered:'Delivered'};
+
+    var h = '';
+    if (filtered.length === 0) {
+      h = '<div style="padding:1rem;text-align:center;color:var(--color-muted);font-size:.84rem;">No pages match this filter.</div>';
+    } else {
+      filtered.forEach(function(cp) {
+        var isExp = expandedContentId === cp.id;
+        h += '<div class="content-page-row' + (isExp ? ' expanded' : '') + '" onclick="toggleContentExpand(\'' + cp.id + '\')">';
+        h += '<div class="cp-expand-icon">&#9654;</div>';
+        h += '<span class="cp-type-badge ' + cp.page_type + '">' + cp.page_type + '</span>';
+        h += '<div class="cp-info"><div class="cp-title">' + esc(cp.page_name) + '</div>';
+        if (cp.target_keyword) h += '<div class="cp-keyword">' + esc(cp.target_keyword) + '</div>';
+        h += '</div>';
+        h += '<select class="cp-status-select st-' + cp.status + '" onchange="setContentPageStatus(\'' + cp.id + '\', this.value)" onclick="event.stopPropagation()">';
+        Object.keys(statusLabels).forEach(function(s) {
+          h += '<option value="' + s + '"' + (cp.status === s ? ' selected' : '') + '>' + statusLabels[s] + '</option>';
+        });
+        h += '</select>';
+        if (['client_review','approved','delivered'].indexOf(cp.status) !== -1) {
+          h += '<a href="/' + esc(cp.client_slug) + '/content/' + esc(cp.page_slug) + '/" target="_blank" class="btn btn-ghost btn-sm" title="Preview" onclick="event.stopPropagation()">&#128279;</a>';
+        }
+        h += '<button class="del-delete" onclick="event.stopPropagation(); deleteContentPage(\'' + cp.id + '\', \'' + esc(cp.page_name).replace(/'/g,'') + '\')" title="Delete">&#10005;</button>';
+        h += '</div>';
+
+        h += '<div class="cp-expand-panel' + (isExp ? ' show' : '') + '"><div class="cp-expand-inner">';
+        h += '<div class="cp-detail-grid">';
+        h += '<div class="cp-detail-item"><label>Type</label><div class="val">' + esc(cp.page_type) + '</div></div>';
+        h += '<div class="cp-detail-item"><label>Slug</label><div class="val">' + esc(cp.page_slug || '') + '</div></div>';
+        h += '<div class="cp-detail-item"><label>Surge Data</label><div class="val">' + (cp.surge_data ? '<span style="color:var(--color-success);">Loaded</span>' : '<span style="color:var(--color-muted);">Not loaded</span>') + '</div></div>';
+        h += '<div class="cp-detail-item"><label>HTML</label><div class="val">' + (cp.generated_html ? '<span style="color:var(--color-success);">' + Math.round(cp.generated_html.length/1024) + 'KB</span>' : '<span style="color:var(--color-muted);">Not generated</span>') + '</div></div>';
+        h += '</div>';
+        if (cp.rtpba) {
+          h += '<label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.25rem;">RTPBA Preview</label>';
+          h += '<div class="cp-rtpba-preview">' + esc(cp.rtpba).substring(0,500) + (cp.rtpba.length > 500 ? '...' : '') + '</div>';
+        }
+        if (cp.generation_notes) {
+          h += '<div style="margin-bottom:.5rem;padding:.5rem;background:rgba(245,158,11,.08);border-radius:6px;font-size:.78rem;color:#D97706;">' + esc(cp.generation_notes) + '</div>';
+        }
+        if (cp.status === 'pending_audit') {
+          h += '<label style="font-size:.72rem;font-weight:600;color:var(--color-muted);display:block;margin-bottom:.25rem;margin-top:.5rem;">Paste Surge Data</label>';
+          h += '<textarea class="paste-surge-area" id="surge-paste-' + cp.id + '" placeholder="Paste the full Surge audit output here..." onclick="event.stopPropagation()"></textarea>';
+          h += '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); pasteSurgeData(\'' + cp.id + '\')" style="font-size:.75rem;">Load Surge Data</button>';
+        }
+        h += '<div class="cp-actions" style="margin-top:.75rem;">';
+        if (cp.status === 'audit_loaded') {
+          h += '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); toast(\'Page generation coming soon.\', \'info\')">Generate HTML</button>';
+        }
+        if (cp.status === 'review' && cp.generated_html) {
+          h += '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); toast(\'Preview deployment coming soon.\', \'info\')">Deploy Preview</button>';
+        }
+        if (cp.generated_html) {
+          h += '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); copyGeneratedHtml(\'' + cp.id + '\')">Copy HTML</button>';
+        }
+        h += '</div></div></div>';
+      });
+    }
+    listEl.innerHTML = h;
+    renderContentAssets();
+  }
+
+  function renderContentAssets() {
+    var neos = state.neoImages;
+    var endorse = state.endorsements;
+
+    var neoList = document.getElementById('neoImageList');
+    var neoEmpty = document.getElementById('neoEmpty');
+    if (neoList) {
+      if (neos.length === 0) {
+        neoList.innerHTML = '';
+        if (neoEmpty) neoEmpty.style.display = 'block';
+      } else {
+        if (neoEmpty) neoEmpty.style.display = 'none';
+        var nh = '';
+        neos.forEach(function(n) {
+          nh += '<div class="neo-row">';
+          nh += '<div class="neo-name">' + esc(n.image_name) + '</div>';
+          if (n.hosted_url) {
+            nh += '<div class="neo-url" onclick="navigator.clipboard.writeText(\'' + esc(n.hosted_url) + '\'); toast(\'Copied\', \'success\')" title="Click to copy">' + esc(n.hosted_url) + '</div>';
+          } else {
+            nh += '<span style="font-size:.72rem;color:var(--color-warning);">Not hosted</span>';
+          }
+          if (n.source_url) {
+            nh += '<a href="' + esc(n.source_url) + '" target="_blank" class="btn btn-ghost btn-sm" style="font-size:.7rem;">Source</a>';
+          }
+          nh += '</div>';
+        });
+        neoList.innerHTML = nh;
+      }
+    }
+
+    var endList = document.getElementById('endorsementList');
+    var endEmpty = document.getElementById('endorsementEmpty');
+    var endLink = document.getElementById('endorsementLink');
+    if (endList) {
+      if (endorse.length === 0) {
+        endList.innerHTML = '';
+        if (endEmpty) endEmpty.style.display = 'block';
+      } else {
+        if (endEmpty) endEmpty.style.display = 'none';
+        var eh = '';
+        endorse.forEach(function(e) {
+          eh += '<div class="endorsement-row">';
+          eh += '<div class="end-name">' + esc(e.endorser_name || 'Anonymous') + '</div>';
+          if (e.endorsement_type) eh += '<span class="end-type">' + esc(e.endorsement_type) + '</span>';
+          eh += '<span style="font-size:.72rem;color:' + (e.status === 'processed' ? 'var(--color-success)' : '#D97706') + ';">' + (e.status === 'processed' ? 'Processed' : 'Submitted') + '</span>';
+          if (e.status !== 'processed') {
+            eh += '<button class="btn btn-ghost btn-sm" onclick="toast(\'Code block generation coming soon.\', \'info\')" style="font-size:.7rem;">Generate Code</button>';
+          }
+          eh += '</div>';
+        });
+        endList.innerHTML = eh;
+      }
+    }
+    if (endLink && state.contact) {
+      endLink.innerHTML = '<a href="/' + esc(state.contact.slug) + '/endorsements/" target="_blank" style="font-size:.78rem;color:var(--color-primary);">Client endorsement form &#8599;</a>';
+    }
+  }
+
+
   // ---- REPORTS TAB ----
   window.toggleReportSection = function(section) {
     var bodyId = section === 'config' ? 'rptConfigForm' : section === 'keywords' ? 'rptKeywordForm' : 'rptCampaignReadiness';
@@ -5193,8 +5620,8 @@ strong { font-weight: 600; color: var(--color-heading); }
   var TAB_VISIBILITY = {
     lead:       ['overview', 'proposals', 'profile', 'audit'],
     prospect:   ['overview', 'proposals', 'profile', 'audit'],
-    onboarding: ['overview', 'proposals', 'onboarding', 'intro-call', 'profile', 'rising-tide', 'deliverables', 'audit', 'reports', 'billing'],
-    active:     ['overview', 'proposals', 'onboarding', 'intro-call', 'profile', 'rising-tide', 'deliverables', 'audit', 'reports', 'billing']
+    onboarding: ['overview', 'proposals', 'onboarding', 'intro-call', 'profile', 'rising-tide', 'deliverables', 'content', 'audit', 'reports', 'billing'],
+    active:     ['overview', 'proposals', 'onboarding', 'intro-call', 'profile', 'rising-tide', 'deliverables', 'content', 'audit', 'reports', 'billing']
   };
   var HISTORY_TABS = ['proposals', 'onboarding', 'intro-call'];
 
