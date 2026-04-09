@@ -1298,11 +1298,7 @@ strong { font-weight: 600; color: var(--color-heading); }
         fetch(SB + '/rest/v1/social_platforms?select=*&contact_id=eq.' + cid + '&order=platform', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
         fetch(SB + '/rest/v1/directory_listings?select=*&contact_id=eq.' + cid + '&order=directory', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
         fetch(SB + '/rest/v1/account_access?select=*&contact_id=eq.' + cid, { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
-        fetch(SB + '/rest/v1/performance_guarantees?select=*&contact_id=eq.' + cid + '&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
-        fetch(SB + '/rest/v1/content_pages?select=*&contact_id=eq.' + cid + '&order=created_at.desc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
-        fetch(SB + '/rest/v1/design_specs?select=*&contact_id=eq.' + cid + '&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
-        fetch(SB + '/rest/v1/neo_images?select=*&contact_id=eq.' + cid + '&order=created_at.desc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; }),
-        fetch(SB + '/rest/v1/endorsements?select=*&contact_id=eq.' + cid + '&order=created_at.desc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; })
+        fetch(SB + '/rest/v1/performance_guarantees?select=*&contact_id=eq.' + cid + '&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).catch(function() { return []; })
       ]);
     }).then(function(res) {
       if (!res) return; // Contact not found, already handled
@@ -1325,10 +1321,6 @@ strong { font-weight: 600; color: var(--color-heading); }
       state.directoryListings = res[15] || [];
       state.accountAccess = res[16] || [];
       state.guarantee = (res[17] && res[17][0]) || null;
-      state.contentPages = res[18] || [];
-      state.designSpec = (res[19] && res[19][0]) || null;
-      state.neoImages = res[20] || [];
-      state.endorsements = res[21] || [];
       state.proposalFollowups = {};
 
       // Derive CORE scores from entity_audits (replaces audit_scores table)
@@ -1646,9 +1638,6 @@ strong { font-weight: 600; color: var(--color-heading); }
     renderAudit();
     renderReports();
     renderBilling(c);
-    renderContent();
-    var contentCount = state.contentPages.filter(function(cp) { return cp.status !== 'delivered' && cp.status !== 'approved'; }).length;
-    setTabCount('content', contentCount);
   }
 
   function setTabCount(tab, count) {
@@ -2644,47 +2633,20 @@ strong { font-weight: 600; color: var(--color-heading); }
       h += '</div>';
     }
 
-    // CORE Scores (if available)
-    var hasPromotedScores = ea.score_credibility != null || ea.score_optimization != null;
-    var scoreSource = hasPromotedScores ? 'promoted' : (ea.scores ? 'jsonb' : null);
-
-    if (scoreSource) {
-      var pillars = [
-        { key: 'credibility', promoted: 'score_credibility', label: 'Credibility', color: '#00D47E' },
-        { key: 'optimization', promoted: 'score_optimization', label: 'Optimization', color: '#3B82F6' },
-        { key: 'reputation', promoted: 'score_reputation', label: 'Reputation', color: '#F59E0B' },
-        { key: 'engagement', promoted: 'score_engagement', label: 'Engagement', color: '#8B5CF6' }
-      ];
-      var circumference = 2 * Math.PI * 34;
-
-      h += '<div class="card" style="margin-bottom:1rem;"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;"><h3>CORE Assessment</h3>';
-      h += '<div style="display:flex;gap:.5rem;align-items:center;">';
-      if (ea.variance_score != null) {
-        h += '<span style="font-size:.75rem;color:var(--color-muted);">Variance: ' + ea.variance_score + '/100</span>';
-      }
-      h += '<span class="tag tag-' + (ea.audit_tier === 'premium' ? 'active' : 'prospect') + '" style="font-size:.7rem;">' + (ea.audit_tier === 'premium' ? 'Premium' : 'Free') + '</span>';
-      h += '</div></div>';
-      h += '<div class="score-grid">';
-      pillars.forEach(function(p) {
-        var val = (scoreSource === 'promoted') ? (ea[p.promoted] || 0) : ((ea.scores && ea.scores[p.key]) || 0);
-        var offset = circumference - (val / 10 * circumference);
-        h += '<div class="score-item"><div class="score-ring">';
-        h += '<svg viewBox="0 0 76 76"><circle class="ring-bg" cx="38" cy="38" r="34"/>';
-        h += '<circle class="ring-fg" cx="38" cy="38" r="34" stroke="' + p.color + '" stroke-dasharray="' + circumference.toFixed(1) + '" stroke-dashoffset="' + offset.toFixed(1) + '"/></svg>';
-        h += '<div class="ring-label">' + val + '/10</div></div>';
-        h += '<div class="score-name">' + p.label + '</div></div>';
-      });
-      h += '</div></div>';
-    }
-
-    // Status + Actions card
-    h += '<div class="card" style="margin-bottom:1rem;"><div class="card-header"><h3>Entity Audit Details</h3></div>';
+    // ── Entity Audit Details (collapsible, collapsed by default) ──
+    var statusLabel = { pending: 'Pending', processing: 'Processing', agent_running: 'Agent Running', agent_error: 'Agent Error', complete: 'Complete', delivered: 'Delivered' };
+    var statusColor = { pending: 'var(--color-muted)', processing: 'var(--color-info)', agent_running: 'var(--color-info)', agent_error: 'var(--color-danger)', complete: 'var(--color-warning)', delivered: 'var(--color-success)' };
+    var eaCollapsed = state._eaDetailsCollapsed !== false;
+    h += '<div class="card" style="margin-bottom:1rem;">';
+    h += '<div class="card-header" style="cursor:pointer;" onclick="state._eaDetailsCollapsed = !state._eaDetailsCollapsed; renderEntityAudit();">';
+    h += '<h3 style="display:flex;align-items:center;gap:.5rem;">Entity Audit Details <span style="font-size:.7rem;color:' + (statusColor[ea.status] || 'var(--color-muted)') + ';font-weight:500;font-family:Inter,sans-serif;">' + (statusLabel[ea.status] || ea.status) + '</span></h3>';
+    h += '<span style="font-size:.75rem;color:var(--color-muted);transition:transform .2s;display:inline-block;' + (eaCollapsed ? '' : 'transform:rotate(90deg);') + '">&#9654;</span>';
+    h += '</div>';
+    if (!eaCollapsed) {
     h += '<div style="padding:.75rem 0;">';
     h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">';
 
     // Status
-    var statusLabel = { pending: 'Pending', processing: 'Processing', agent_running: 'Agent Running', agent_error: 'Agent Error', complete: 'Complete', delivered: 'Delivered' };
-    var statusColor = { pending: 'var(--color-muted)', processing: 'var(--color-info)', agent_running: 'var(--color-info)', agent_error: 'var(--color-danger)', complete: 'var(--color-warning)', delivered: 'var(--color-success)' };
     h += '<div><div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);margin-bottom:.25rem;">Status</div>';
     h += '<select id="eaStatusSelect" onchange="updateEntityAuditField(\'status\',this.value)" style="width:100%;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;font-size:.84rem;background:var(--color-surface);color:var(--color-heading);font-family:inherit;">';
     ['pending','processing','agent_running','agent_error','complete','delivered'].forEach(function(s) {
@@ -2710,7 +2672,9 @@ strong { font-weight: 600; color: var(--color-heading); }
     h += '<div style="display:flex;gap:.5rem;"><input id="eaLoomUrl" type="url" value="' + esc(ea.loom_url || '') + '" placeholder="https://loom.com/share/..." style="flex:1;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;font-size:.84rem;background:var(--color-surface);color:var(--color-heading);font-family:inherit;">';
     h += '<button onclick="updateEntityAuditField(\'loom_url\',document.getElementById(\'eaLoomUrl\').value)" style="padding:.45rem .85rem;border:1px solid var(--color-primary);background:var(--color-primary-subtle);color:var(--color-primary);border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;">Save</button></div></div>';
 
-    h += '</div></div>';
+    h += '</div>';
+    } // end !eaCollapsed
+    h += '</div>';
 
     // Actions row
     h += '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem;">';
@@ -2745,6 +2709,39 @@ strong { font-weight: 600; color: var(--color-heading); }
     }
     h += '<button onclick="deleteEntityAudit()" style="padding:.5rem 1rem;border:1px solid var(--color-danger);color:var(--color-danger);background:rgba(239,68,68,.04);border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;margin-left:auto;">Delete Audit</button>';
     h += '</div>';
+
+    // ── CORE Scores (if available) ──
+    var hasPromotedScores = ea.score_credibility != null || ea.score_optimization != null;
+    var scoreSource = hasPromotedScores ? 'promoted' : (ea.scores ? 'jsonb' : null);
+
+    if (scoreSource) {
+      var pillars = [
+        { key: 'credibility', promoted: 'score_credibility', label: 'Credibility', color: '#00D47E' },
+        { key: 'optimization', promoted: 'score_optimization', label: 'Optimization', color: '#3B82F6' },
+        { key: 'reputation', promoted: 'score_reputation', label: 'Reputation', color: '#F59E0B' },
+        { key: 'engagement', promoted: 'score_engagement', label: 'Engagement', color: '#8B5CF6' }
+      ];
+      var circumference = 2 * Math.PI * 34;
+
+      h += '<div class="card" style="margin-bottom:1rem;"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;"><h3>CORE Assessment</h3>';
+      h += '<div style="display:flex;gap:.5rem;align-items:center;">';
+      if (ea.variance_score != null) {
+        h += '<span style="font-size:.75rem;color:var(--color-muted);">Variance: ' + ea.variance_score + '/100</span>';
+      }
+      h += '<span class="tag tag-' + (ea.audit_tier === 'premium' ? 'active' : 'prospect') + '" style="font-size:.7rem;">' + (ea.audit_tier === 'premium' ? 'Premium' : 'Free') + '</span>';
+      h += '</div></div>';
+      h += '<div class="score-grid">';
+      pillars.forEach(function(p) {
+        var val = (scoreSource === 'promoted') ? (ea[p.promoted] || 0) : ((ea.scores && ea.scores[p.key]) || 0);
+        var offset = circumference - (val / 10 * circumference);
+        h += '<div class="score-item"><div class="score-ring">';
+        h += '<svg viewBox="0 0 76 76"><circle class="ring-bg" cx="38" cy="38" r="34"/>';
+        h += '<circle class="ring-fg" cx="38" cy="38" r="34" stroke="' + p.color + '" stroke-dasharray="' + circumference.toFixed(1) + '" stroke-dashoffset="' + offset.toFixed(1) + '"/></svg>';
+        h += '<div class="ring-label">' + val + '/10</div></div>';
+        h += '<div class="score-name">' + p.label + '</div></div>';
+      });
+      h += '</div></div>';
+    }
 
     // ── Follow-up Sequence (only for leads after delivery) ──
     if (isLeadOrProspect && ea.status === 'delivered') {
@@ -3942,359 +3939,6 @@ strong { font-weight: 600; color: var(--color-heading); }
     });
     document.getElementById('delList').innerHTML = html;
   }
-
-
-  // ---- CONTENT TAB (Pagemaster) ----
-  var contentFilter = 'all';
-  var expandedContentId = null;
-  var assetTab = 'neo';
-
-  window.setContentFilter = function(f) { contentFilter = f; renderContent(); };
-  window.setAssetTab = function(tab) {
-    assetTab = tab;
-    document.querySelectorAll('#assetTabs .asset-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.asset === tab); });
-    document.getElementById('assetNeoList').style.display = tab === 'neo' ? 'block' : 'none';
-    document.getElementById('assetEndorsementList').style.display = tab === 'endorsements' ? 'block' : 'none';
-  };
-  window.toggleContentExpand = function(id) { expandedContentId = expandedContentId === id ? null : id; renderContent(); };
-
-  window.setContentPageStatus = function(id, newStatus) {
-    var cp = state.contentPages.find(function(p) { return p.id === id; });
-    if (!cp) return;
-    var oldStatus = cp.status;
-    cp.status = newStatus;
-    renderContent();
-    fetch('/api/action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update_record', table: 'content_pages', id: id, data: { status: newStatus } })
-    }).then(function(r) { return r.json(); }).then(function(res) {
-      if (!res.success) { cp.status = oldStatus; renderContent(); }
-    }).catch(function() { cp.status = oldStatus; renderContent(); });
-  };
-
-  window.copyHostedUrl = function(url) {
-    navigator.clipboard.writeText(url).then(function() {
-      toast('URL copied to clipboard', 'success');
-    });
-  };
-
-  window.pasteSurgeData = function(cpId) {
-    var ta = document.getElementById('surge-paste-' + cpId);
-    if (!ta || !ta.value.trim()) return;
-    var raw = ta.value.trim();
-    var cp = state.contentPages.find(function(p) { return p.id === cpId; });
-    if (!cp) return;
-    var surgeData = {};
-    try { surgeData = JSON.parse(raw); } catch(e) { surgeData = { raw_text: raw }; }
-    fetch('/api/action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update_record', table: 'content_pages', id: cpId, data: { surge_data: surgeData, status: 'audit_loaded' } })
-    }).then(function(r) { return r.json(); }).then(function(res) {
-      if (res.success) {
-        cp.surge_data = surgeData;
-        cp.status = 'audit_loaded';
-        toast('Surge data loaded', 'success');
-        renderContent();
-      }
-    });
-  };
-
-  window.deleteContentPage = function(id, name) {
-    if (!confirm('Delete content page "' + name + '"?')) return;
-    fetch('/api/action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete_record', table: 'content_pages', id: id })
-    }).then(function(r) { return r.json(); }).then(function(res) {
-      if (res.success) {
-        state.contentPages = state.contentPages.filter(function(p) { return p.id !== id; });
-        renderContent();
-        toast('Content page deleted', 'success');
-      }
-    });
-  };
-
-  window.addContentPage = function() {
-    var typeEl = document.getElementById('newCpType');
-    var nameEl = document.getElementById('newCpName');
-    if (!typeEl || !nameEl || !typeEl.value || !nameEl.value.trim()) return;
-    var pageType = typeEl.value;
-    var pageName = nameEl.value.trim();
-    var pageSlug = pageName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    fetch('/api/action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'create_record', table: 'content_pages', data: {
-        contact_id: state.contact.id,
-        client_slug: slug,
-        page_type: pageType,
-        page_name: pageName,
-        page_slug: pageSlug,
-        status: 'pending_audit'
-      }})
-    }).then(function(r) { return r.json(); }).then(function(res) {
-      if (res.success && res.data && res.data[0]) {
-        state.contentPages.unshift(res.data[0]);
-        typeEl.value = '';
-        nameEl.value = '';
-        renderContent();
-        toast('Content page added', 'success');
-      }
-    });
-  };
-
-  window.generateAllContent = function() {
-    toast('Batch generation coming soon. Generate pages individually for now.', 'info');
-  };
-
-  window.copyGeneratedHtml = function(cpId) {
-    var cp = state.contentPages.find(function(p) { return p.id === cpId; });
-    if (cp && cp.generated_html) {
-      navigator.clipboard.writeText(cp.generated_html).then(function() {
-        toast('HTML copied to clipboard', 'success');
-      });
-    }
-  };
-
-  function renderContent() {
-    var c = state.contact;
-    var spec = state.designSpec;
-    var pages = state.contentPages;
-    var neos = state.neoImages;
-    var endorse = state.endorsements;
-
-    // -- DESIGN SPEC CARD --
-    var specHtml = '<div class="content-section-header"><h3>Design Spec</h3>';
-    if (spec) {
-      specHtml += '<button class="btn btn-ghost btn-sm" style="font-size:.75rem;" onclick="toast(\'Design spec editing coming soon.\', \'info\')">Edit</button>';
-    }
-    specHtml += '</div>';
-
-    if (!spec) {
-      specHtml += '<div class="spec-status"><span class="dot missing"></span> No design spec configured</div>';
-      specHtml += '<p style="font-size:.78rem;color:var(--color-muted);margin:.5rem 0;">The design spec captures your client\'s website styling (typography, colors, layout, voice) and is used by all page builds. Platform: <strong>' + esc(c.website_platform || 'Not set') + '</strong></p>';
-      specHtml += '<button class="btn btn-primary btn-sm" style="margin-top:.5rem;font-size:.78rem;" onclick="toast(\'Design spec creation coming soon.\', \'info\')">Create Design Spec</button>';
-    } else {
-      specHtml += '<div class="spec-status"><span class="dot configured"></span> Configured';
-      specHtml += ' <span style="color:var(--color-muted);font-size:.72rem;">&middot; ' + esc(c.website_platform || 'Unknown platform') + ' &middot; Updated ' + formatDate(spec.updated_at) + '</span>';
-      specHtml += '</div>';
-      if (spec.summary_text) {
-        specHtml += '<div class="design-spec-summary">' + esc(spec.summary_text).substring(0, 500) + (spec.summary_text.length > 500 ? '...' : '') + '</div>';
-      }
-      var pills = [];
-      if (spec.typography && spec.typography.heading_font) pills.push(spec.typography.heading_font);
-      if (spec.typography && spec.typography.body_font) pills.push(spec.typography.body_font);
-      if (spec.color_palette && spec.color_palette.primary) pills.push(spec.color_palette.primary);
-      if (pills.length > 0) {
-        specHtml += '<div style="display:flex;gap:.35rem;margin-top:.5rem;flex-wrap:wrap;">';
-        pills.forEach(function(p) {
-          var isColor = p.startsWith('#') || p.startsWith('rgb');
-          if (isColor) {
-            specHtml += '<span style="display:inline-flex;align-items:center;gap:.25rem;font-size:.68rem;padding:.15rem .4rem;border-radius:4px;background:var(--color-bg);border:1px solid var(--color-border);"><span style="width:10px;height:10px;border-radius:2px;background:' + esc(p) + ';"></span>' + esc(p) + '</span>';
-          } else {
-            specHtml += '<span style="font-size:.68rem;padding:.15rem .4rem;border-radius:4px;background:var(--color-bg);border:1px solid var(--color-border);">' + esc(p) + '</span>';
-          }
-        });
-        specHtml += '</div>';
-      }
-    }
-    document.getElementById('designSpecCard').innerHTML = specHtml;
-
-    // -- ADD CONTENT PAGE FORM --
-    var addHtml = '<div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;">';
-    addHtml += '<select id="newCpType" style="padding:.35rem .5rem;border-radius:6px;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-heading);font-size:.82rem;font-family:inherit;">';
-    addHtml += '<option value="">Page type...</option>';
-    addHtml += '<option value="homepage">Homepage</option>';
-    addHtml += '<option value="service">Service Page</option>';
-    addHtml += '<option value="location">Location Page</option>';
-    addHtml += '<option value="faq">FAQ Page</option>';
-    addHtml += '<option value="bio">Bio Page</option>';
-    addHtml += '</select>';
-    addHtml += '<input type="text" id="newCpName" placeholder="Page name (e.g. Anxiety Therapy)" style="flex:1;padding:.35rem .5rem;border-radius:6px;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-heading);font-size:.82rem;font-family:inherit;">';
-    addHtml += '<button class="btn btn-primary btn-sm" onclick="addContentPage()" style="font-size:.78rem;white-space:nowrap;">+ Add Page</button>';
-    addHtml += '</div>';
-
-    // -- PAGES FILTER BAR --
-    if (pages.length === 0) {
-      document.getElementById('contentFilterBar').innerHTML = addHtml;
-      document.getElementById('contentPageList').innerHTML = '';
-      document.getElementById('contentEmpty').style.display = 'block';
-      var genBtn = document.getElementById('btnGenerateAll');
-      if (genBtn) genBtn.style.display = 'none';
-      renderContentAssets(neos, endorse);
-      return;
-    }
-    document.getElementById('contentEmpty').style.display = 'none';
-
-    var filterLabels = [
-      {key:'all',label:'All'},
-      {key:'homepage',label:'Homepage'},{key:'service',label:'Service'},{key:'location',label:'Location'},
-      {key:'faq',label:'FAQ'},{key:'bio',label:'Bio'},
-      {key:'pending_audit',label:'Pending Audit'},{key:'audit_loaded',label:'Audit Loaded'},
-      {key:'review',label:'In Review'},{key:'client_review',label:'Client Review'},
-      {key:'approved',label:'Approved'},{key:'delivered',label:'Delivered'}
-    ];
-    var filterHtml = addHtml + '<div class="content-filter-bar">';
-    filterLabels.forEach(function(fl) {
-      var cnt = 0;
-      if (fl.key === 'all') cnt = pages.length;
-      else if (['homepage','service','location','faq','bio'].indexOf(fl.key) !== -1) cnt = pages.filter(function(p) { return p.page_type === fl.key; }).length;
-      else cnt = pages.filter(function(p) { return p.status === fl.key; }).length;
-      if (fl.key !== 'all' && cnt === 0) return;
-      filterHtml += '<button class="content-filter-pill' + (contentFilter === fl.key ? ' active' : '') + '" onclick="setContentFilter(\'' + fl.key + '\')">' + fl.label + ' <span style="opacity:.5;">' + cnt + '</span></button>';
-    });
-    filterHtml += '</div>';
-    document.getElementById('contentFilterBar').innerHTML = filterHtml;
-
-    var readyCount = pages.filter(function(p) { return p.status === 'audit_loaded'; }).length;
-    var genBtn = document.getElementById('btnGenerateAll');
-    if (genBtn) genBtn.style.display = readyCount > 0 ? 'inline-flex' : 'none';
-
-    // -- FILTER + SORT PAGES --
-    var filtered = pages;
-    if (['homepage','service','location','faq','bio'].indexOf(contentFilter) !== -1) {
-      filtered = pages.filter(function(p) { return p.page_type === contentFilter; });
-    } else if (contentFilter !== 'all') {
-      filtered = pages.filter(function(p) { return p.status === contentFilter; });
-    }
-
-    var typeOrder = { homepage: 1, service: 2, location: 3, faq: 4, bio: 5 };
-    var statusOrder = { pending_audit: 1, audit_loaded: 2, generating: 3, review: 4, client_review: 5, approved: 6, delivered: 7 };
-    filtered.sort(function(a, b) {
-      var ta = typeOrder[a.page_type] || 9;
-      var tb = typeOrder[b.page_type] || 9;
-      if (ta !== tb) return ta - tb;
-      return (statusOrder[a.status] || 9) - (statusOrder[b.status] || 9);
-    });
-
-    // -- RENDER PAGE ROWS --
-    var statusLabels = {
-      pending_audit: 'Pending Audit', audit_loaded: 'Audit Loaded', generating: 'Generating',
-      review: 'In Review', client_review: 'Client Review', approved: 'Approved', delivered: 'Delivered'
-    };
-    var pHtml = '';
-    if (filtered.length === 0) {
-      pHtml = '<div style="padding:1rem;text-align:center;color:var(--color-muted);font-size:.84rem;">No pages match this filter.</div>';
-    } else {
-      filtered.forEach(function(cp) {
-        var isExp = expandedContentId === cp.id;
-        pHtml += '<div class="content-page-row' + (isExp ? ' expanded' : '') + '" onclick="toggleContentExpand(\'' + cp.id + '\')">';
-        pHtml += '<div class="cp-expand-icon">&#9654;</div>';
-        pHtml += '<span class="cp-type-badge ' + cp.page_type + '">' + cp.page_type + '</span>';
-        pHtml += '<div class="cp-info"><div class="cp-title">' + esc(cp.page_name) + '</div>';
-        if (cp.target_keyword) pHtml += '<div class="cp-keyword">' + esc(cp.target_keyword) + '</div>';
-        pHtml += '</div>';
-
-        pHtml += '<select class="cp-status-select st-' + cp.status + '" onchange="setContentPageStatus(\'' + cp.id + '\', this.value)" onclick="event.stopPropagation()">';
-        Object.keys(statusLabels).forEach(function(s) {
-          pHtml += '<option value="' + s + '"' + (cp.status === s ? ' selected' : '') + '>' + statusLabels[s] + '</option>';
-        });
-        pHtml += '</select>';
-
-        if (cp.status === 'client_review' || cp.status === 'approved' || cp.status === 'delivered') {
-          pHtml += '<a href="/' + esc(cp.client_slug) + '/content/' + esc(cp.page_slug) + '/" target="_blank" class="btn btn-ghost btn-sm" title="Preview" onclick="event.stopPropagation()">&#128279;</a>';
-        }
-
-        pHtml += '<button class="del-delete" onclick="event.stopPropagation(); deleteContentPage(\'' + cp.id + '\', \'' + esc(cp.page_name).replace(/'/g, '') + '\')" title="Delete">&#10005;</button>';
-        pHtml += '</div>';
-
-        // -- EXPANDED PANEL --
-        pHtml += '<div class="cp-expand-panel' + (isExp ? ' show' : '') + '">';
-        pHtml += '<div class="cp-expand-inner">';
-
-        pHtml += '<div class="cp-detail-grid">';
-        pHtml += '<div class="cp-detail-item"><label>Type</label><div class="val">' + esc(cp.page_type) + '</div></div>';
-        pHtml += '<div class="cp-detail-item"><label>Slug</label><div class="val">' + esc(cp.page_slug || 'Not set') + '</div></div>';
-        pHtml += '<div class="cp-detail-item"><label>Surge Data</label><div class="val">' + (cp.surge_data ? '<span style="color:var(--color-success);">Loaded</span>' : '<span style="color:var(--color-muted);">Not loaded</span>') + '</div></div>';
-        pHtml += '<div class="cp-detail-item"><label>HTML Generated</label><div class="val">' + (cp.generated_html ? '<span style="color:var(--color-success);">Yes (' + Math.round(cp.generated_html.length / 1024) + 'KB)</span>' : '<span style="color:var(--color-muted);">No</span>') + '</div></div>';
-        pHtml += '</div>';
-
-        if (cp.rtpba) {
-          pHtml += '<div style="margin-bottom:.5rem;"><label style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.25rem;">Ready-to-Publish Best Answer</label>';
-          pHtml += '<div class="cp-rtpba-preview">' + esc(cp.rtpba).substring(0, 500) + (cp.rtpba.length > 500 ? '...' : '') + '</div></div>';
-        }
-
-        if (cp.generation_notes) {
-          pHtml += '<div style="margin-bottom:.5rem;padding:.5rem;background:rgba(245,158,11,.08);border-radius:6px;font-size:.78rem;color:#D97706;">' + esc(cp.generation_notes) + '</div>';
-        }
-
-        if (cp.status === 'pending_audit') {
-          pHtml += '<div style="margin-top:.5rem;">';
-          pHtml += '<label style="font-size:.72rem;font-weight:600;color:var(--color-muted);display:block;margin-bottom:.25rem;">Paste Surge Data</label>';
-          pHtml += '<textarea class="paste-surge-area" id="surge-paste-' + cp.id + '" placeholder="Paste the full Surge audit output here..." onclick="event.stopPropagation()"></textarea>';
-          pHtml += '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); pasteSurgeData(\'' + cp.id + '\')" style="font-size:.75rem;">Load Surge Data</button>';
-          pHtml += '</div>';
-        }
-
-        pHtml += '<div class="cp-actions" style="margin-top:.75rem;">';
-        if (cp.status === 'audit_loaded' && spec) {
-          pHtml += '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); toast(\'Page generation coming soon.\', \'info\')">Generate HTML</button>';
-        } else if (cp.status === 'audit_loaded' && !spec) {
-          pHtml += '<button class="btn btn-ghost btn-sm" disabled title="Create a design spec first">Generate HTML (needs design spec)</button>';
-        }
-        if (cp.status === 'review' && cp.generated_html) {
-          pHtml += '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); toast(\'Preview deployment coming soon.\', \'info\')">Deploy Preview</button>';
-        }
-        if (cp.generated_html) {
-          pHtml += '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); copyGeneratedHtml(\'' + cp.id + '\')">Copy HTML</button>';
-        }
-        pHtml += '</div>';
-
-        pHtml += '</div></div>';
-      });
-    }
-    document.getElementById('contentPageList').innerHTML = pHtml;
-
-    renderContentAssets(neos, endorse);
-  }
-
-  function renderContentAssets(neos, endorse) {
-    var neoHtml = '';
-    if (neos.length === 0) {
-      neoHtml = '<div style="padding:.75rem;text-align:center;color:var(--color-muted);font-size:.82rem;">No NEO images yet.</div>';
-    } else {
-      neos.forEach(function(n) {
-        neoHtml += '<div class="neo-row">';
-        neoHtml += '<div class="neo-name">' + esc(n.image_name) + '</div>';
-        if (n.hosted_url) {
-          neoHtml += '<div class="neo-url" onclick="copyHostedUrl(\'' + esc(n.hosted_url) + '\')" title="Click to copy">' + esc(n.hosted_url) + '</div>';
-        } else {
-          neoHtml += '<span style="font-size:.72rem;color:var(--color-warning);">Not hosted yet</span>';
-        }
-        if (n.source_url) {
-          neoHtml += '<a href="' + esc(n.source_url) + '" target="_blank" class="btn btn-ghost btn-sm" title="Source" style="font-size:.7rem;">Source</a>';
-        }
-        neoHtml += '</div>';
-      });
-    }
-    document.getElementById('assetNeoList').innerHTML = neoHtml;
-
-    var endHtml = '';
-    if (endorse.length === 0) {
-      endHtml = '<div style="padding:.75rem;text-align:center;color:var(--color-muted);font-size:.82rem;">No endorsements submitted yet.</div>';
-      if (state.contact) {
-        endHtml += '<div style="text-align:center;margin-top:.25rem;"><a href="/' + esc(state.contact.slug) + '/endorsements/" target="_blank" style="font-size:.78rem;color:var(--color-primary);">Client endorsement form &#8599;</a></div>';
-      }
-    } else {
-      if (state.contact) {
-        endHtml += '<div style="padding:.5rem .75rem;font-size:.72rem;color:var(--color-muted);border-bottom:1px solid var(--color-border);">Client form: <a href="/' + esc(state.contact.slug) + '/endorsements/" target="_blank" style="color:var(--color-primary);">/' + esc(state.contact.slug) + '/endorsements/ &#8599;</a></div>';
-      }
-      endorse.forEach(function(e) {
-        endHtml += '<div class="endorsement-row">';
-        endHtml += '<div class="end-name">' + esc(e.endorser_name || 'Anonymous') + '</div>';
-        if (e.endorsement_type) endHtml += '<span class="end-type">' + esc(e.endorsement_type) + '</span>';
-        endHtml += '<span class="end-status ' + (e.status || 'submitted') + '">' + esc(e.status === 'processed' ? 'Processed' : 'Submitted') + '</span>';
-        if (e.status !== 'processed') {
-          endHtml += '<button class="btn btn-ghost btn-sm" onclick="toast(\'Code block generation coming soon.\', \'info\')" style="font-size:.7rem;">Generate Code</button>';
-        }
-        endHtml += '</div>';
-      });
-    }
-    document.getElementById('assetEndorsementList').innerHTML = endHtml;
-  }
-
 
   // ---- REPORTS TAB ----
   window.toggleReportSection = function(section) {
@@ -5548,8 +5192,8 @@ strong { font-weight: 600; color: var(--color-heading); }
   var TAB_VISIBILITY = {
     lead:       ['overview', 'proposals', 'profile', 'audit'],
     prospect:   ['overview', 'proposals', 'profile', 'audit'],
-    onboarding: ['overview', 'proposals', 'onboarding', 'intro-call', 'profile', 'rising-tide', 'deliverables', 'content', 'audit', 'reports', 'billing'],
-    active:     ['overview', 'proposals', 'onboarding', 'intro-call', 'profile', 'rising-tide', 'deliverables', 'content', 'audit', 'reports', 'billing']
+    onboarding: ['overview', 'proposals', 'onboarding', 'intro-call', 'profile', 'rising-tide', 'deliverables', 'audit', 'reports', 'billing'],
+    active:     ['overview', 'proposals', 'onboarding', 'intro-call', 'profile', 'rising-tide', 'deliverables', 'audit', 'reports', 'billing']
   };
   var HISTORY_TABS = ['proposals', 'onboarding', 'intro-call'];
 
