@@ -2,6 +2,8 @@
 // Called every 5 minutes by Vercel Cron, or manually
 // Picks ONE pending item where scheduled_for <= now, compiles it
 
+var sb = require('../_lib/supabase');
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST' && req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -17,24 +19,17 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  var serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  var sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
 
-  if (!serviceKey) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
+  if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
 
-  var sbHeaders = {
-    'apikey': serviceKey,
-    'Authorization': 'Bearer ' + serviceKey,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation'
-  };
+  var sbHeaders = sb.headers('return=representation');
 
   try {
     // Find the next pending item where scheduled_for <= now
     var now = new Date().toISOString();
     var queueResp = await fetch(
-      sbUrl + '/rest/v1/report_queue?status=eq.pending&scheduled_for=lte.' + now + '&order=scheduled_for.asc&limit=1',
-      { headers: { 'apikey': serviceKey, 'Authorization': 'Bearer ' + serviceKey } }
+      sb.url() + '/rest/v1/report_queue?status=eq.pending&scheduled_for=lte.' + now + '&order=scheduled_for.asc&limit=1',
+      { headers: sb.headers() }
     );
     var items = await queueResp.json();
 
@@ -45,7 +40,7 @@ module.exports = async function handler(req, res) {
     var item = items[0];
 
     // Mark as processing
-    await fetch(sbUrl + '/rest/v1/report_queue?id=eq.' + item.id, {
+    await fetch(sb.url() + '/rest/v1/report_queue?id=eq.' + item.id, {
       method: 'PATCH',
       headers: sbHeaders,
       body: JSON.stringify({ status: 'processing', started_at: now, attempt: (item.attempt || 0) + 1 })
@@ -71,7 +66,7 @@ module.exports = async function handler(req, res) {
     } catch (e) {
       // Non-JSON response (HTML error page, timeout, etc.)
       var errorMsg = 'Compile returned non-JSON (HTTP ' + compileResp.status + '): ' + compileText.substring(0, 200);
-      await fetch(sbUrl + '/rest/v1/report_queue?id=eq.' + item.id, {
+      await fetch(sb.url() + '/rest/v1/report_queue?id=eq.' + item.id, {
         method: 'PATCH',
         headers: sbHeaders,
         body: JSON.stringify({ status: 'failed', completed_at: new Date().toISOString(), error_message: errorMsg })
@@ -81,7 +76,7 @@ module.exports = async function handler(req, res) {
 
     if (compileResult.success) {
       // Mark complete
-      await fetch(sbUrl + '/rest/v1/report_queue?id=eq.' + item.id, {
+      await fetch(sb.url() + '/rest/v1/report_queue?id=eq.' + item.id, {
         method: 'PATCH',
         headers: sbHeaders,
         body: JSON.stringify({
@@ -104,7 +99,7 @@ module.exports = async function handler(req, res) {
     } else {
       // Mark failed
       var errorMsg = compileResult.error || compileResult.errors?.join('; ') || 'Unknown compile error';
-      await fetch(sbUrl + '/rest/v1/report_queue?id=eq.' + item.id, {
+      await fetch(sb.url() + '/rest/v1/report_queue?id=eq.' + item.id, {
         method: 'PATCH',
         headers: sbHeaders,
         body: JSON.stringify({
