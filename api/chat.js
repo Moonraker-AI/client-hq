@@ -248,7 +248,6 @@ Rules for actions:
 - report_snapshots: id, client_slug, report_month, report_status (draft/published), campaign_month, gsc_clicks, gsc_impressions, ga4_sessions, ga4_users, gbp_calls, gbp_website_clicks + JSONB detail columns
 - report_configs: id, client_slug, gsc_property, ga4_property, lbm_location_id, lbm_report_id, tracked_queries[], active, report_day
 - bio_materials: id, contact_id, full_name, credentials, license_type, professional_bio
-- social_profiles: id, contact_id, platform, url
 - activity_log: id, contact_id, client_slug, table_name, record_id, field_name, old_value, new_value, changed_by, created_at — records every status/owner change for weekly digests
 
 ## The CORE Marketing System
@@ -271,7 +270,7 @@ You have access to a client index listing all clients in the system. You can ref
 
 Only use read_records when you need data NOT already available in context:
 - Data for a DIFFERENT client than the one on screen
-- Tables not in the Live Data (e.g., report_configs, tracked_keywords, bio_materials, social_profiles)
+- Tables not in the Live Data (e.g., report_configs, tracked_keywords, bio_materials)
 - You are on a summary page with no client data in context
 
 Example — cross-client lookup:
