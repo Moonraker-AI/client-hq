@@ -107,6 +107,23 @@ select.form-input { cursor: pointer; }
 
 .empty-state { text-align: center; padding: 1.5rem; font-size: .84rem; color: var(--color-muted); }
 
+.links-section {
+  border: 1px solid var(--color-border); border-radius: 10px; padding: 1rem;
+  margin-bottom: 1rem; background: var(--color-bg);
+}
+.links-header { margin-bottom: .75rem; }
+.links-section .form-group { margin-bottom: .65rem; }
+.links-section .form-row { margin-bottom: 0; }
+.endorser-links { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .25rem; }
+.endorser-link {
+  display: inline-flex; align-items: center; gap: .25rem;
+  font-size: .72rem; color: var(--color-primary); text-decoration: none;
+  padding: .15rem .5rem; border-radius: 4px;
+  background: var(--color-primary-subtle); font-weight: 500;
+  transition: opacity .15s;
+}
+.endorser-link:hover { opacity: .8; }
+
 .loading-state { text-align: center; padding: 3rem; }
 .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -196,6 +213,35 @@ select.form-input { cursor: pointer; }
           <label>Source URL</label>
           <div class="hint">Link to the original endorsement (if available)</div>
           <input type="text" class="form-input" id="endorsementUrl" placeholder="https://...">
+        </div>
+      </div>
+
+      <!-- Endorser Profile Links -->
+      <div class="links-section">
+        <div class="links-header">
+          <label style="margin-bottom:0;">Endorser Profile Links</label>
+          <div class="hint" style="margin-bottom:0;">These help verify your endorser's identity and credentials. The more links you provide, the stronger the endorsement becomes.</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Practice Website</label>
+            <input type="text" class="form-input" id="linkWebsite" placeholder="https://their-practice.com">
+          </div>
+          <div class="form-group">
+            <label>Psychology Today</label>
+            <input type="text" class="form-input" id="linkPsychToday" placeholder="https://psychologytoday.com/us/therapists/...">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>LinkedIn</label>
+            <input type="text" class="form-input" id="linkLinkedin" placeholder="https://linkedin.com/in/...">
+          </div>
+          <div class="form-group">
+            <label>Other Profile</label>
+            <div class="hint">TherapyDen, GoodTherapy, university page, etc.</div>
+            <input type="text" class="form-input" id="linkOther" placeholder="https://...">
+          </div>
         </div>
       </div>
 
@@ -318,6 +364,15 @@ select.form-input { cursor: pointer; }
       if (e.endorser_org) html += ' &middot; ' + esc(e.endorser_org);
       html += ' &middot; ' + formatDate(e.created_at);
       html += '</div>';
+      // Show endorser profile links
+      var links = e.endorser_links || {};
+      var linkLabels = { website: 'Website', psychology_today: 'Psych Today', linkedin: 'LinkedIn', other: 'Other' };
+      var linkKeys = Object.keys(links);
+      if (linkKeys.length > 0) {
+        html += '<div class="endorser-links">';
+        linkKeys.forEach(function(k) { if (links[k]) html += '<a href="' + esc(links[k]) + '" target="_blank" rel="noopener" class="endorser-link">' + (linkLabels[k] || k) + ' &#8599;</a>'; });
+        html += '</div>';
+      }
       html += '</div>';
       html += '<span class="submitted-status ' + (e.status || 'submitted') + '">' + (e.status === 'processed' ? 'Live' : 'In Review') + '</span>';
       html += '</div>';
@@ -362,6 +417,18 @@ select.form-input { cursor: pointer; }
       status: 'submitted'
     };
 
+    // Collect endorser profile links
+    var links = {};
+    var lw = document.getElementById('linkWebsite').value.trim();
+    var lp = document.getElementById('linkPsychToday').value.trim();
+    var ll = document.getElementById('linkLinkedin').value.trim();
+    var lo = document.getElementById('linkOther').value.trim();
+    if (lw) links.website = lw;
+    if (lp) links.psychology_today = lp;
+    if (ll) links.linkedin = ll;
+    if (lo) links.other = lo;
+    if (Object.keys(links).length > 0) data.endorser_links = links;
+
     var btn = document.getElementById('submitBtn');
     btn.disabled = true;
     btn.textContent = 'Submitting...';
@@ -387,6 +454,10 @@ select.form-input { cursor: pointer; }
         document.getElementById('endorsementSource').value = '';
         document.getElementById('endorsementUrl').value = '';
         document.getElementById('endorsementContent').value = '';
+        document.getElementById('linkWebsite').value = '';
+        document.getElementById('linkPsychToday').value = '';
+        document.getElementById('linkLinkedin').value = '';
+        document.getElementById('linkOther').value = '';
         if (document.getElementById('clinicianSelect')) document.getElementById('clinicianSelect').value = '';
 
         // Reload endorsements list
