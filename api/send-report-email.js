@@ -3,16 +3,14 @@
 // From: reports@clients.moonraker.ai, reply-to support@, CC scott@
 
 var email = require('./_lib/email-template');
+var sb = require('./_lib/supabase');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   var resendKey = process.env.RESEND_API_KEY;
-  var serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  var sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
-
   if (!resendKey) return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
-  if (!serviceKey) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
+  if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
 
   try {
     var body = req.body;
@@ -21,29 +19,17 @@ module.exports = async function handler(req, res) {
 
     if (!snapshotId) return res.status(400).json({ error: 'snapshot_id required' });
 
-    var headers = {
-      'apikey': serviceKey,
-      'Authorization': 'Bearer ' + serviceKey,
-      'Accept': 'application/json'
-    };
-
     // Fetch snapshot
-    var snapResp = await fetch(sbUrl + '/rest/v1/report_snapshots?id=eq.' + snapshotId + '&select=*&limit=1', { headers: headers });
-    var snaps = await snapResp.json();
-    if (!snaps || snaps.length === 0) return res.status(404).json({ error: 'Snapshot not found' });
-    var snap = snaps[0];
+    var snap = await sb.one('report_snapshots?id=eq.' + snapshotId + '&select=*&limit=1');
+    if (!snap) return res.status(404).json({ error: 'Snapshot not found' });
 
     // Fetch contact
-    var contactResp = await fetch(sbUrl + '/rest/v1/contacts?slug=eq.' + snap.client_slug + '&select=first_name,last_name,email,practice_name,credentials,slug&limit=1', { headers: headers });
-    var contacts = await contactResp.json();
-    if (!contacts || contacts.length === 0) return res.status(404).json({ error: 'Contact not found' });
-    var contact = contacts[0];
-
+    var contact = await sb.one('contacts?slug=eq.' + snap.client_slug + '&select=first_name,last_name,email,practice_name,credentials,slug&limit=1');
+    if (!contact) return res.status(404).json({ error: 'Contact not found' });
     if (!contact.email) return res.status(400).json({ error: 'Client has no email address' });
 
     // Fetch highlights
-    var hlResp = await fetch(sbUrl + '/rest/v1/report_highlights?client_slug=eq.' + snap.client_slug + '&report_month=eq.' + snap.report_month + '&order=sort_order&limit=5', { headers: headers });
-    var highlights = await hlResp.json();
+    var highlights = await sb.query('report_highlights?client_slug=eq.' + snap.client_slug + '&report_month=eq.' + snap.report_month + '&order=sort_order&limit=5');
 
     // Build month label
     var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -92,7 +78,7 @@ module.exports = async function handler(req, res) {
       kpiHtml += kpiCell('Tasks Complete', snap.tasks_complete + '/' + snap.tasks_total);
     }
 
-    // Geogrid summary (stats only, no images)
+    // Geogrid summary
     var geogridHtml = '';
     var neo = snap.neo_data || {};
     if (neo.grids && neo.grids.length > 0) {
@@ -156,16 +142,12 @@ module.exports = async function handler(req, res) {
 
     var subject = 'Your ' + monthLabel + ' Campaign Report is Ready \uD83D\uDCCA';
 
-    // Preview mode - return the HTML without sending
+    // Preview mode
     if (previewOnly) {
       return res.status(200).json({
-        success: true,
-        preview: true,
-        to: contact.email,
-        cc: 'scott@moonraker.ai',
-        reply_to: 'support@moonraker.ai',
-        subject: subject,
-        html: emailHtml
+        success: true, preview: true,
+        to: contact.email, cc: 'scott@moonraker.ai',
+        reply_to: 'support@moonraker.ai', subject: subject, html: emailHtml
       });
     }
 
@@ -174,12 +156,9 @@ module.exports = async function handler(req, res) {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: email.FROM.reports,
-        to: [contact.email],
-        cc: ['scott@moonraker.ai'],
-        reply_to: 'support@moonraker.ai',
-        subject: subject,
-        html: emailHtml
+        from: email.FROM.reports, to: [contact.email],
+        cc: ['scott@moonraker.ai'], reply_to: 'support@moonraker.ai',
+        subject: subject, html: emailHtml
       })
     });
 
