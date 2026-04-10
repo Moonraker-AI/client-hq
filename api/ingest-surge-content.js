@@ -38,11 +38,7 @@ module.exports = async function(req, res) {
     return res.status(400).json({ error: 'surge_data required' });
   }
 
-  var sbHeaders = {
-    'apikey': sb.key(),
-    'Authorization': 'Bearer ' + sb.key(),
-    'Content-Type': 'application/json'
-  };
+  var sbHeaders = sb.headers();
 
   try {
     // 1. Fetch current content page
