@@ -11,16 +11,16 @@
 //   SUPABASE_SERVICE_ROLE_KEY, GOOGLE_SERVICE_ACCOUNT_JSON,
 //   FATHOM_API_CHRIS, FATHOM_API_SCOTT
 
+var sb = require('./_lib/supabase');
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  var sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   var googleSA = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   var fathomChris = process.env.FATHOM_API_CHRIS;
   var fathomScott = process.env.FATHOM_API_SCOTT;
-  var sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
 
-  if (!sbKey) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
+  if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
 
   var body = req.body;
   var proposalId = body.proposal_id;
@@ -46,14 +46,14 @@ module.exports = async function handler(req, res) {
 
   try {
     if (proposalId) {
-      var pResp = await fetch(sbUrl + '/rest/v1/proposals?id=eq.' + proposalId + '&select=*,contacts(*)&limit=1', { headers: sbHeaders() });
+      var pResp = await fetch(sb.url() + '/rest/v1/proposals?id=eq.' + proposalId + '&select=*,contacts(*)&limit=1', { headers: sb.headers() });
       var proposals = await pResp.json();
       if (!proposals || proposals.length === 0) return res.status(404).json({ error: 'Proposal not found' });
       proposal = proposals[0];
       contact = proposal.contacts;
       contactId = contact.id;
     } else {
-      var cResp = await fetch(sbUrl + '/rest/v1/contacts?id=eq.' + contactId + '&select=*&limit=1', { headers: sbHeaders() });
+      var cResp = await fetch(sb.url() + '/rest/v1/contacts?id=eq.' + contactId + '&select=*&limit=1', { headers: sb.headers() });
       var contacts = await cResp.json();
       if (!contacts || contacts.length === 0) return res.status(404).json({ error: 'Contact not found' });
       contact = contacts[0];
@@ -79,8 +79,8 @@ module.exports = async function handler(req, res) {
 
   // Update proposal status to enriching
   if (proposalId) {
-    await fetch(sbUrl + '/rest/v1/proposals?id=eq.' + proposalId, {
-      method: 'PATCH', headers: sbHeaders(),
+    await fetch(sb.url() + '/rest/v1/proposals?id=eq.' + proposalId, {
+      method: 'PATCH', headers: sb.headers(),
       body: JSON.stringify({ status: 'enriching' })
     });
   }
@@ -294,8 +294,8 @@ module.exports = async function handler(req, res) {
   // ─── 3. Entity Audit Data ─────────────────────────────────────
   try {
     var auditResp = await fetch(
-      sbUrl + '/rest/v1/entity_audits?contact_id=eq.' + contactId + '&select=*&order=created_at.desc&limit=1',
-      { headers: sbHeaders() }
+      sb.url() + '/rest/v1/entity_audits?contact_id=eq.' + contactId + '&select=*&order=created_at.desc&limit=1',
+      { headers: sb.headers() }
     );
     var audits = await auditResp.json();
     if (audits && audits.length > 0) {
@@ -310,8 +310,8 @@ module.exports = async function handler(req, res) {
   // ─── 4. Also check campaign audit scores ──────────────────────
   try {
     var coreResp = await fetch(
-      sbUrl + '/rest/v1/audit_scores?client_slug=eq.' + contact.slug + '&select=*&order=audit_date.desc&limit=1',
-      { headers: sbHeaders() }
+      sb.url() + '/rest/v1/audit_scores?client_slug=eq.' + contact.slug + '&select=*&order=audit_date.desc&limit=1',
+      { headers: sb.headers() }
     );
     var coreAudits = await coreResp.json();
     if (coreAudits && coreAudits.length > 0) {
@@ -366,8 +366,8 @@ module.exports = async function handler(req, res) {
   // ─── 6. Practice details from Supabase ────────────────────────
   try {
     var pdResp = await fetch(
-      sbUrl + '/rest/v1/practice_details?contact_id=eq.' + contactId + '&select=*&limit=1',
-      { headers: sbHeaders() }
+      sb.url() + '/rest/v1/practice_details?contact_id=eq.' + contactId + '&select=*&limit=1',
+      { headers: sb.headers() }
     );
     var pdData = await pdResp.json();
     if (pdData && pdData.length > 0) {
@@ -378,8 +378,8 @@ module.exports = async function handler(req, res) {
   // ─── Save enrichment to proposal ──────────────────────────────
   if (proposalId) {
     try {
-      await fetch(sbUrl + '/rest/v1/proposals?id=eq.' + proposalId, {
-        method: 'PATCH', headers: sbHeaders(),
+      await fetch(sb.url() + '/rest/v1/proposals?id=eq.' + proposalId, {
+        method: 'PATCH', headers: sb.headers(),
         body: JSON.stringify({
           status: 'review',
           enrichment_sources: enrichment.sources,
