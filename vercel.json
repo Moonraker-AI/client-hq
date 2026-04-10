@@ -125,6 +125,12 @@
     "api/submit-entity-audit.js": {
       "maxDuration": 30
     },
+    "api/setup-audit-schedule.js": {
+      "maxDuration": 30
+    },
+    "api/cron/trigger-quarterly-audits.js": {
+      "maxDuration": 60
+    },
     "api/poll-agent.js": {
       "maxDuration": 15
     },
@@ -172,6 +178,10 @@
     {
       "path": "/api/cron/process-followups",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/trigger-quarterly-audits",
+      "schedule": "0 11 * * *"
     }
   ]
 }
