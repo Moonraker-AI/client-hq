@@ -45,7 +45,6 @@ module.exports = async function handler(req, res) {
       { table: 'onboarding_steps', filter: 'contact_id=eq.' + contactId },
       { table: 'bio_materials', filter: 'contact_id=eq.' + contactId },
       { table: 'social_platforms', filter: 'contact_id=eq.' + contactId },
-      { table: 'social_profiles', filter: 'contact_id=eq.' + contactId },
       { table: 'directory_listings', filter: 'contact_id=eq.' + contactId },
       { table: 'signed_agreements', filter: 'contact_id=eq.' + contactId },
       { table: 'practice_details', filter: 'contact_id=eq.' + contactId },
