@@ -16,7 +16,7 @@ module.exports = async function handler(req, res) {
 
     if (!action || !table) return res.status(400).json({ error: 'action and table required' });
 
-    var allowed = ['contacts','practice_details','onboarding_steps','deliverables','checklist_items','report_snapshots','report_highlights','report_configs','bio_materials','signed_agreements','activity_log','settings','entity_audits','account_access','payments','scheduled_touchpoints','intro_call_steps','tracked_keywords','report_queue','performance_guarantees','proposals','proposal_followups','audit_followups','workspace_credentials','social_platforms','directory_listings','content_pages','content_page_versions','content_chat_messages','design_specs','neo_images','endorsements'];
+    var allowed = ['contacts','practice_details','onboarding_steps','deliverables','checklist_items','report_snapshots','report_highlights','report_configs','bio_materials','signed_agreements','activity_log','settings','entity_audits','account_access','payments','scheduled_touchpoints','intro_call_steps','tracked_keywords','report_queue','performance_guarantees','proposals','proposal_followups','audit_followups','workspace_credentials','social_platforms','directory_listings','content_pages','content_page_versions','content_chat_messages','design_specs','neo_images','endorsements','error_log'];
     if (allowed.indexOf(table) === -1) return res.status(400).json({ error: 'Table not allowed: ' + table });
 
     var isCredentials = (table === 'workspace_credentials');
