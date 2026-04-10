@@ -7,7 +7,6 @@
 
 var email = require('./_lib/email-template');
 var sb = require('./_lib/supabase');
-var sb = require('./_lib/supabase');
 
 var FOOTER_NOTE = 'Questions? Reply to this email or <a href="' + email.CALENDAR_URL + '" style="font-family:Inter,sans-serif;color:#00D47E;text-decoration:none;font-weight:500;">book a call with Scott</a>.';
 
