@@ -24,6 +24,7 @@ module.exports = async function handler(req, res) {
   var city = (body.city || '').trim();
   var state = (body.state || '').trim();
   var gbpLink = (body.gbp_link || '').trim();
+  var marketingConsent = body.marketing_consent !== false;
 
   // Validation
   if (!firstName || !lastName || !websiteUrl || !email) {
@@ -73,7 +74,8 @@ module.exports = async function handler(req, res) {
       referral_code: referralName || null,
       audit_tier: 'free',
       city: city || null,
-      state_province: state || null
+      state_province: state || null,
+      marketing_consent: marketingConsent
     });
 
     var contact = contactRows[0];
