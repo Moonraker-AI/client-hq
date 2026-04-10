@@ -22,14 +22,12 @@ module.exports = async function handler(req, res) {
   if (!clientSlug) return res.status(400).json({ error: 'client_slug required' });
   if (!service || !['gsc', 'localfalcon'].includes(service)) return res.status(400).json({ error: 'service must be "gsc" or "localfalcon"' });
 
-  function sbHeaders() {
-    return { 'apikey': sbKey, 'Authorization': 'Bearer ' + sbKey, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
-  }
+  // Supabase calls via sb helper
 
   try {
     // Fetch contact
     var contactResp = await fetch(sb.url() + '/rest/v1/contacts?slug=eq.' + clientSlug + '&limit=1', {
-      headers: { 'apikey': sbKey, 'Authorization': 'Bearer ' + sbKey }
+      headers: sb.headers()
     });
     var contacts = await contactResp.json();
     if (!contacts || contacts.length === 0) return res.status(404).json({ error: 'Contact not found: ' + clientSlug });
@@ -91,7 +89,7 @@ module.exports = async function handler(req, res) {
         });
 
         // Upsert report_configs
-        await upsertReportConfig(sbUrl, sbHeaders(), clientSlug, { gsc_property: matched });
+        await upsertReportConfig(clientSlug, { gsc_property: matched });
 
         return res.status(200).json({
           success: true,
@@ -145,7 +143,7 @@ module.exports = async function handler(req, res) {
 
       if (existingLocation) {
         // Already saved - just store the place_id on report_configs
-        await upsertReportConfig(sbUrl, sbHeaders(), clientSlug, { localfalcon_place_id: existingLocation.place_id });
+        await upsertReportConfig(clientSlug, { localfalcon_place_id: existingLocation.place_id });
         return res.status(200).json({
           success: true,
           service: 'localfalcon',
@@ -181,7 +179,7 @@ module.exports = async function handler(req, res) {
           return (l.name || '').toLowerCase().indexOf(practiceName.toLowerCase()) >= 0;
         });
         if (nameMatch) {
-          await upsertReportConfig(sbUrl, sbHeaders(), clientSlug, { localfalcon_place_id: nameMatch.place_id });
+          await upsertReportConfig(clientSlug, { localfalcon_place_id: nameMatch.place_id });
           return res.status(200).json({
             success: true,
             service: 'localfalcon',
@@ -229,7 +227,7 @@ module.exports = async function handler(req, res) {
       }
 
       // Step 4: Save place_id to report_configs
-      await upsertReportConfig(sbUrl, sbHeaders(), clientSlug, { localfalcon_place_id: best.place_id });
+      await upsertReportConfig(clientSlug, { localfalcon_place_id: best.place_id });
 
       return res.status(200).json({
         success: true,
@@ -253,10 +251,10 @@ module.exports = async function handler(req, res) {
 
 // ─── Helpers ───
 
-async function upsertReportConfig(sbUrl, headers, clientSlug, data) {
+async function upsertReportConfig(clientSlug, data) {
   // Check if config exists
   var checkResp = await fetch(sb.url() + '/rest/v1/report_configs?client_slug=eq.' + clientSlug + '&limit=1', {
-    headers: { 'apikey': headers['apikey'], 'Authorization': headers['Authorization'] }
+    headers: sb.headers()
   });
   var existing = await checkResp.json();
 
