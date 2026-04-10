@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Endorsements - Moonraker</title>
+<link rel="icon" href="/assets/logo.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root, [data-theme="light"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00b86c;
+  --color-primary-subtle: #DDF8F2;
+  --color-bg: #F7FDFB;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F0FAF5;
+  --color-border: #E2E8F0;
+  --color-heading: #1E2A5E;
+  --color-body: #333F70;
+  --color-muted: #6B7599;
+  --color-navy: #141C3A;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+}
+[data-theme="dark"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00f598;
+  --color-primary-subtle: #0D2E22;
+  --color-bg: #080F0B;
+  --color-surface: #0E1A14;
+  --color-border: #1E3530;
+  --color-heading: #E8F5EF;
+  --color-body: #C8D8D0;
+  --color-muted: #5A7A6E;
+  --color-navy: #0A1630;
+  --color-success: #00D47E;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--color-bg); color: var(--color-body); min-height: 100vh; }
+
+.page-container { max-width: 680px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+.header { text-align: center; margin-bottom: 2rem; }
+.header img { width: 40px; height: 40px; border-radius: 8px; margin-bottom: .75rem; }
+.header h1 { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--color-heading); margin-bottom: .35rem; }
+.header p { font-size: .88rem; color: var(--color-muted); line-height: 1.6; max-width: 480px; margin: 0 auto; }
+
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.5rem; margin-bottom: 1.25rem; }
+.card h2 { font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 600; color: var(--color-heading); margin-bottom: .75rem; }
+.card p.intro { font-size: .84rem; color: var(--color-muted); line-height: 1.6; margin-bottom: 1rem; }
+
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); margin-bottom: .3rem; }
+.form-group .hint { font-size: .72rem; color: var(--color-muted); margin-bottom: .3rem; font-style: italic; }
+.form-input {
+  width: 100%; padding: .55rem .75rem; border: 1px solid var(--color-border); border-radius: 8px;
+  font-family: inherit; font-size: .88rem; color: var(--color-heading); background: var(--color-bg);
+  transition: border-color .2s; outline: none;
+}
+.form-input:focus { border-color: var(--color-primary); }
+textarea.form-input { resize: vertical; min-height: 100px; line-height: 1.5; }
+select.form-input { cursor: pointer; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+.btn-submit {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .65rem 1.5rem; border-radius: 8px; border: none;
+  font-family: inherit; font-size: .88rem; font-weight: 600;
+  background: var(--color-primary); color: #fff; cursor: pointer;
+  transition: background .15s;
+}
+.btn-submit:hover { background: var(--color-primary-hover); }
+.btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+.success-msg {
+  display: none; padding: .75rem 1rem; border-radius: 8px;
+  background: var(--color-primary-subtle); color: var(--color-heading);
+  font-size: .84rem; margin-top: 1rem; line-height: 1.5;
+}
+.success-msg.show { display: block; }
+
+.submitted-list { margin-top: .5rem; }
+.submitted-item {
+  padding: .65rem .75rem; border-bottom: 1px solid var(--color-border);
+  display: flex; align-items: center; gap: .75rem;
+}
+.submitted-item:last-child { border-bottom: none; }
+.submitted-icon { font-size: 1rem; flex-shrink: 0; }
+.submitted-info { flex: 1; }
+.submitted-name { font-weight: 500; font-size: .84rem; color: var(--color-heading); }
+.submitted-meta { font-size: .72rem; color: var(--color-muted); margin-top: .1rem; }
+.submitted-status {
+  font-size: .68rem; font-weight: 600; padding: .15rem .45rem;
+  border-radius: 4px; text-transform: uppercase; letter-spacing: .03em;
+}
+.submitted-status.submitted { background: rgba(245,158,11,.1); color: #D97706; }
+.submitted-status.processed { background: rgba(0,212,126,.1); color: #00b86c; }
+
+.empty-state { text-align: center; padding: 1.5rem; font-size: .84rem; color: var(--color-muted); }
+
+.loading-state { text-align: center; padding: 3rem; }
+.spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.theme-toggle {
+  position: fixed; top: 1rem; right: 1rem; z-index: 100;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: 8px; width: 36px; height: 36px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; transition: background .15s;
+}
+.theme-toggle:hover { background: var(--color-bg); }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" onclick="toggleTheme()">
+  <span id="themeIcon">&#9790;</span>
+</button>
+
+<div class="page-container">
+  <div id="loadingState" class="loading-state">
+    <div class="spinner"></div>
+    <p style="margin-top:.75rem;font-size:.85rem;color:var(--color-muted);">Loading...</p>
+  </div>
+
+  <div id="mainContent" style="display:none;">
+    <div class="header">
+      <img src="/assets/logo.png" alt="Moonraker">
+      <h1 id="pageTitle">Professional Endorsements</h1>
+      <p>Help us showcase your expertise. Submit endorsements from colleagues, clients, or platforms, and we will convert them into powerful trust signals on your website.</p>
+    </div>
+
+    <!-- Submit Form -->
+    <div class="card">
+      <h2>Submit an Endorsement</h2>
+      <p class="intro">Share an endorsement you have received, whether from a colleague, a client review, a Psychology Today profile, or any other professional source.</p>
+
+      <!-- Clinician selector (shown for multi-provider practices) -->
+      <div class="form-group" id="clinicianGroup" style="display:none;">
+        <label>Who is this endorsement for? *</label>
+        <select class="form-input" id="clinicianSelect">
+          <option value="">Select clinician...</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Endorser Name *</label>
+          <input type="text" class="form-input" id="endorserName" placeholder="Dr. Jane Smith">
+        </div>
+        <div class="form-group">
+          <label>Their Title</label>
+          <input type="text" class="form-input" id="endorserTitle" placeholder="Licensed Clinical Psychologist">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Their Organization</label>
+          <input type="text" class="form-input" id="endorserOrg" placeholder="Bay Area Counseling Center">
+        </div>
+        <div class="form-group">
+          <label>Relationship</label>
+          <div class="hint">How do they know you professionally?</div>
+          <input type="text" class="form-input" id="endorserRelationship" placeholder="Colleague, Referral partner, Supervisor...">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Source</label>
+          <select class="form-input" id="endorsementSource">
+            <option value="">Where is this from?</option>
+            <option value="colleague">Colleague / Professional Peer</option>
+            <option value="psych_today">Psychology Today</option>
+            <option value="google">Google Review</option>
+            <option value="client">Client Testimonial</option>
+            <option value="supervisor">Clinical Supervisor</option>
+            <option value="linkedin">LinkedIn Recommendation</option>
+            <option value="email">Email / Direct Communication</option>
+            <option value="publication">Publication / Article</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Source URL</label>
+          <div class="hint">Link to the original endorsement (if available)</div>
+          <input type="text" class="form-input" id="endorsementUrl" placeholder="https://...">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Endorsement Text *</label>
+        <div class="hint">The actual endorsement, recommendation, or review text</div>
+        <textarea class="form-input" id="endorsementContent" placeholder="Paste or type the endorsement here..."></textarea>
+      </div>
+
+      <button class="btn-submit" id="submitBtn" onclick="submitEndorsement()">Submit Endorsement</button>
+
+      <div class="success-msg" id="successMsg">
+        <strong>Endorsement submitted!</strong> Our team will review it and add it to your website. You can submit more endorsements anytime.
+      </div>
+    </div>
+
+    <!-- Previously Submitted -->
+    <div class="card">
+      <h2>Your Endorsements</h2>
+      <div id="endorsementList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
+
+  // Extract slug from URL: /{slug}/endorsements/
+  var pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
+  var CLIENT_SLUG = pathParts[0] || '';
+
+  if (!CLIENT_SLUG) {
+    document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">No client specified.</p>';
+    return;
+  }
+
+  var contactId = null;
+  var bioMaterials = [];
+
+  function sbHeaders() {
+    return { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
+  }
+
+  // Load contact and existing endorsements
+  fetch(SB_URL + '/rest/v1/contacts?slug=eq.' + CLIENT_SLUG + '&select=id,practice_name,first_name,last_name&limit=1', { headers: sbHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(contacts) {
+      if (!contacts || contacts.length === 0) {
+        document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">Account not found.</p>';
+        return;
+      }
+      var contact = contacts[0];
+      contactId = contact.id;
+
+      document.title = 'Endorsements - ' + (contact.practice_name || CLIENT_SLUG) + ' - Moonraker';
+      document.getElementById('pageTitle').textContent = (contact.practice_name || contact.first_name || 'Your') + ' Endorsements';
+
+      // Load bio materials (for clinician selector) and existing endorsements
+      return Promise.all([
+        fetch(SB_URL + '/rest/v1/bio_materials?contact_id=eq.' + contactId + '&order=sort_order,is_primary.desc', { headers: sbHeaders() }).then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch(SB_URL + '/rest/v1/endorsements?contact_id=eq.' + contactId + '&order=created_at.desc', { headers: sbHeaders() })
+        .then(function(r) { return r.json(); })
+      ]).then(function(results) {
+          bioMaterials = results[0] || [];
+          var endorsements = results[1] || [];
+
+          // Show clinician selector if multiple providers
+          if (bioMaterials.length > 1) {
+            var grp = document.getElementById('clinicianGroup');
+            var sel = document.getElementById('clinicianSelect');
+            if (grp && sel) {
+              grp.style.display = 'block';
+              bioMaterials.forEach(function(bm) {
+                var opt = document.createElement('option');
+                opt.value = bm.id;
+                opt.textContent = bm.therapist_name + (bm.therapist_credentials ? ', ' + bm.therapist_credentials : '');
+                sel.appendChild(opt);
+              });
+            }
+          }
+
+          document.getElementById('loadingState').style.display = 'none';
+          document.getElementById('mainContent').style.display = 'block';
+          renderEndorsements(endorsements);
+        });
+    })
+    .catch(function() {
+      document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">Something went wrong. Please try refreshing.</p>';
+    });
+
+  function renderEndorsements(endorsements) {
+    var listEl = document.getElementById('endorsementList');
+    if (endorsements.length === 0) {
+      listEl.innerHTML = '<div class="empty-state">No endorsements submitted yet. Use the form above to add your first one.</div>';
+      return;
+    }
+
+    var html = '<div class="submitted-list">';
+    endorsements.forEach(function(e) {
+      var sourceLabels = {
+        colleague: 'Colleague', psych_today: 'Psychology Today', google: 'Google Review',
+        client: 'Client', supervisor: 'Supervisor', linkedin: 'LinkedIn',
+        email: 'Email', publication: 'Publication', other: 'Other'
+      };
+      html += '<div class="submitted-item">';
+      html += '<div class="submitted-icon">&#128172;</div>';
+      html += '<div class="submitted-info">';
+      html += '<div class="submitted-name">' + esc(e.endorser_name || 'Anonymous');
+      if (e.endorser_title) html += ' <span style="font-weight:400;color:var(--color-muted);">' + esc(e.endorser_title) + '</span>';
+      html += '</div>';
+      // Show clinician name if multi-provider
+      var bm = e.bio_material_id ? bioMaterials.find(function(b) { return b.id === e.bio_material_id; }) : null;
+      if (bm) html += '<div class="submitted-meta" style="margin-top:0;">For: ' + esc(bm.therapist_name) + '</div>';
+      html += '<div class="submitted-meta">';
+      if (e.source_platform) html += (sourceLabels[e.source_platform] || e.source_platform);
+      if (e.endorser_org) html += ' &middot; ' + esc(e.endorser_org);
+      html += ' &middot; ' + formatDate(e.created_at);
+      html += '</div>';
+      html += '</div>';
+      html += '<span class="submitted-status ' + (e.status || 'submitted') + '">' + (e.status === 'processed' ? 'Live' : 'In Review') + '</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+    listEl.innerHTML = html;
+  }
+
+  window.submitEndorsement = function() {
+    var name = document.getElementById('endorserName').value.trim();
+    var content = document.getElementById('endorsementContent').value.trim();
+
+    if (!name || !content) {
+      alert('Please fill in at least the endorser name and the endorsement text.');
+      return;
+    }
+
+    // Check clinician selection for multi-provider
+    var bioMaterialId = null;
+    if (bioMaterials.length > 1) {
+      bioMaterialId = document.getElementById('clinicianSelect').value;
+      if (!bioMaterialId) {
+        alert('Please select which clinician this endorsement is for.');
+        return;
+      }
+    } else if (bioMaterials.length === 1) {
+      bioMaterialId = bioMaterials[0].id;
+    }
+
+    var data = {
+      contact_id: contactId,
+      client_slug: CLIENT_SLUG,
+      bio_material_id: bioMaterialId,
+      endorser_name: name,
+      endorser_title: document.getElementById('endorserTitle').value.trim() || null,
+      endorser_org: document.getElementById('endorserOrg').value.trim() || null,
+      relationship: document.getElementById('endorserRelationship').value.trim() || null,
+      source_platform: document.getElementById('endorsementSource').value || null,
+      source_url: document.getElementById('endorsementUrl').value.trim() || null,
+      content: content,
+      endorsement_type: document.getElementById('endorsementSource').value || 'other',
+      status: 'submitted'
+    };
+
+    var btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    fetch(SB_URL + '/rest/v1/endorsements', {
+      method: 'POST',
+      headers: Object.assign({}, sbHeaders(), { 'Prefer': 'return=representation' }),
+      body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); }).then(function(result) {
+      btn.disabled = false;
+      btn.textContent = 'Submit Endorsement';
+
+      if (result && (Array.isArray(result) ? result.length > 0 : result.id)) {
+        // Show success
+        document.getElementById('successMsg').classList.add('show');
+        setTimeout(function() { document.getElementById('successMsg').classList.remove('show'); }, 5000);
+
+        // Clear form
+        document.getElementById('endorserName').value = '';
+        document.getElementById('endorserTitle').value = '';
+        document.getElementById('endorserOrg').value = '';
+        document.getElementById('endorserRelationship').value = '';
+        document.getElementById('endorsementSource').value = '';
+        document.getElementById('endorsementUrl').value = '';
+        document.getElementById('endorsementContent').value = '';
+        if (document.getElementById('clinicianSelect')) document.getElementById('clinicianSelect').value = '';
+
+        // Reload endorsements list
+        fetch(SB_URL + '/rest/v1/endorsements?contact_id=eq.' + contactId + '&order=created_at.desc', { headers: sbHeaders() })
+          .then(function(r) { return r.json(); })
+          .then(function(endorsements) { renderEndorsements(endorsements || []); });
+      } else {
+        alert('Something went wrong. Please try again.');
+      }
+    }).catch(function() {
+      btn.disabled = false;
+      btn.textContent = 'Submit Endorsement';
+      alert('Connection error. Please try again.');
+    });
+  };
+
+  function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  function formatDate(d) {
+    if (!d) return '';
+    var dt = new Date(d);
+    return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // Theme toggle
+  window.toggleTheme = function() {
+    var current = document.documentElement.getAttribute('data-theme') || 'light';
+    var next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('moonraker-theme', next); } catch(e) {}
+    document.getElementById('themeIcon').textContent = next === 'dark' ? '&#9728;' : '&#9790;';
+  };
+  // Set initial icon
+  var t = document.documentElement.getAttribute('data-theme');
+  if (t === 'dark') document.getElementById('themeIcon').innerHTML = '&#9728;';
+})();
+</script>
+</body>
+</html>
