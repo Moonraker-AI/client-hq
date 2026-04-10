@@ -502,9 +502,57 @@ ${surgeData}`;
     }
 
     // ============================================================
-    // STEP 7: Finalize
+    // STEP 7: Finalize + auto-delivery for lead audits
     // ============================================================
     send({ step: 'finalize', message: 'Finalizing...' });
+
+    // Auto-deliver for lead entity audits
+    if (contact.status === 'lead' && audit.audit_tier === 'free') {
+      send({ step: 'auto_send', message: 'Sending scorecard email automatically (free lead audit)...' });
+      try {
+        var sendResp = await fetch('https://clients.moonraker.ai/api/send-audit-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ audit_id: auditId })
+        });
+        if (sendResp.ok) {
+          send({ step: 'auto_send_done', message: 'Scorecard email sent to ' + (contact.email || 'client') });
+        } else {
+          var sendErr = '';
+          try { sendErr = (await sendResp.json()).error || ''; } catch(e) {}
+          send({ step: 'auto_send_warning', message: 'Auto-send failed (' + sendResp.status + '): ' + sendErr + '. Team can send manually.' });
+        }
+      } catch (sendEx) {
+        send({ step: 'auto_send_warning', message: 'Auto-send error: ' + sendEx.message + '. Team can send manually.' });
+      }
+    } else if (contact.status === 'lead' && audit.audit_tier === 'premium') {
+      // Premium lead audit: notify team to add Loom and review
+      send({ step: 'notify_team', message: 'Notifying team to review premium audit...' });
+      try {
+        var resendKey = process.env.RESEND_API_KEY;
+        if (resendKey) {
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: 'Moonraker Notifications <notifications@clients.moonraker.ai>',
+              to: ['notifications@clients.moonraker.ai'],
+              subject: 'Premium Entity Audit Ready for Review - ' + practiceName,
+              html: '<p>A premium entity audit has been processed and is ready for your review.</p>' +
+                '<p><strong>Client:</strong> ' + contact.first_name + ' ' + contact.last_name + '</p>' +
+                '<p><strong>Practice:</strong> ' + practiceName + '</p>' +
+                '<p><strong>CRES Score:</strong> ' + (cresScore || 'N/A') + '</p>' +
+                '<p style="margin-top:16px;"><strong>Next steps:</strong></p>' +
+                '<ol><li>Record a personalized Loom walkthrough</li><li>Add the Loom URL to the audit in admin</li><li>Send the delivery email from admin</li></ol>' +
+                '<p><a href="https://clients.moonraker.ai/admin/clients#audit-' + auditId + '">Open in Admin</a></p>'
+            })
+          });
+          send({ step: 'notify_team_done', message: 'Team notified. Premium audit awaiting Loom review.' });
+        }
+      } catch (notifyEx) {
+        send({ step: 'notify_team_warning', message: 'Team notification failed: ' + notifyEx.message });
+      }
+    }
 
     send({
       step: 'done',
@@ -542,5 +590,6 @@ ${surgeData}`;
     return res.end();
   }
 };
+
 
 
