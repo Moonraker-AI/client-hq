@@ -22,11 +22,7 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'from, to, and recipients required' });
     }
 
-    var headers = {
-      'apikey': sb.key(),
-      'Authorization': 'Bearer ' + sb.key(),
-      'Content-Type': 'application/json'
-    };
+    var headers = sb.headers();
 
     var fromStart = from + 'T00:00:00Z';
     var toEnd = to + 'T23:59:59Z';
