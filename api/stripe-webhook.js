@@ -14,6 +14,7 @@
 
 var crypto = require('crypto');
 var sb = require('./_lib/supabase');
+var monitor = require('./_lib/monitor');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -150,7 +151,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ received: true, results: results });
 
   } catch (err) {
-    console.error('Stripe webhook error:', err);
+    monitor.logError('Stripe webhook', err);
     return res.status(500).json({ error: 'Internal error', detail: err.message });
   }
 };
