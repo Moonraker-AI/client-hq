@@ -14,49 +14,28 @@
  * 5. Returns task_id for client-side polling
  */
 
-module.exports = async function(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+var sb = require('./_lib/supabase');
 
-  var SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
-  var SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+module.exports = async function(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
   var AGENT_URL = process.env.AGENT_SERVICE_URL;
   var AGENT_KEY = process.env.AGENT_API_KEY;
 
-  if (!AGENT_URL || !AGENT_KEY) {
-    return res.status(500).json({ error: 'Agent service not configured' });
-  }
+  if (!AGENT_URL || !AGENT_KEY) return res.status(500).json({ error: 'Agent service not configured' });
+  if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
 
   var body = req.body;
-  if (!body || !body.content_page_id) {
-    return res.status(400).json({ error: 'content_page_id required' });
-  }
-
-  var sbHeaders = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+  if (!body || !body.content_page_id) return res.status(400).json({ error: 'content_page_id required' });
 
   try {
     // 1. Fetch content page
-    var cpResp = await fetch(
-      SUPABASE_URL + '/rest/v1/content_pages?id=eq.' + body.content_page_id + '&limit=1',
-      { headers: sbHeaders }
-    );
-    var pages = await cpResp.json();
-    if (!pages || !pages[0]) {
-      return res.status(404).json({ error: 'Content page not found' });
-    }
-    var cp = pages[0];
+    var cp = await sb.one('content_pages?id=eq.' + body.content_page_id + '&limit=1');
+    if (!cp) return res.status(404).json({ error: 'Content page not found' });
 
     // 2. Fetch contact
-    var contactResp = await fetch(
-      SUPABASE_URL + '/rest/v1/contacts?id=eq.' + cp.contact_id + '&select=*&limit=1',
-      { headers: sbHeaders }
-    );
-    var contacts = await contactResp.json();
-    if (!contacts || !contacts[0]) {
-      return res.status(404).json({ error: 'Contact not found' });
-    }
-    var contact = contacts[0];
+    var contact = await sb.one('contacts?id=eq.' + cp.contact_id + '&select=*&limit=1');
+    if (!contact) return res.status(404).json({ error: 'Contact not found' });
 
     // 3. Assemble audit parameters
     var websiteUrl = contact.website_url || '';
@@ -68,17 +47,12 @@ module.exports = async function(req, res) {
       geoTarget = (contact.city || '') + (contact.city && contact.state_province ? ', ' : '') + (contact.state_province || '');
     }
 
-    if (!websiteUrl) {
-      return res.status(400).json({ error: 'Website URL required. Add it to the contact record.' });
-    }
-    if (!targetKeyword) {
-      return res.status(400).json({ error: 'Target keyword required for content audit.' });
-    }
+    if (!websiteUrl) return res.status(400).json({ error: 'Website URL required. Add it to the contact record.' });
+    if (!targetKeyword) return res.status(400).json({ error: 'Target keyword required for content audit.' });
 
-    // Build the search query: keyword + location for local campaigns
+    // Build search query: keyword + location for local campaigns
     var searchQuery = targetKeyword;
     if (contact.campaign_type !== 'national' && geoTarget) {
-      // Only append location if not already in the keyword
       var lcKeyword = targetKeyword.toLowerCase();
       var lcCity = (contact.city || '').toLowerCase();
       if (lcCity && lcKeyword.indexOf(lcCity) === -1) {
@@ -89,21 +63,13 @@ module.exports = async function(req, res) {
     // 4. Trigger agent
     var agentResp = await fetch(AGENT_URL + '/tasks/surge-content-audit', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + AGENT_KEY
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AGENT_KEY },
       body: JSON.stringify({
-        content_page_id: body.content_page_id,
-        practice_name: practiceName,
-        website_url: websiteUrl,
-        target_keyword: targetKeyword,
-        search_query: searchQuery,
-        page_type: cp.page_type,
-        city: contact.city || '',
-        state: contact.state_province || '',
-        geo_target: geoTarget,
-        client_slug: contact.slug,
+        content_page_id: body.content_page_id, practice_name: practiceName,
+        website_url: websiteUrl, target_keyword: targetKeyword,
+        search_query: searchQuery, page_type: cp.page_type,
+        city: contact.city || '', state: contact.state_province || '',
+        geo_target: geoTarget, client_slug: contact.slug,
         callback_url: 'https://clients.moonraker.ai/api/ingest-surge-content'
       })
     });
@@ -111,32 +77,19 @@ module.exports = async function(req, res) {
     if (!agentResp.ok) {
       var errText = '';
       try { errText = await agentResp.text(); } catch(e) {}
-      return res.status(502).json({
-        error: 'Agent service returned ' + agentResp.status,
-        detail: errText.substring(0, 300)
-      });
+      return res.status(502).json({ error: 'Agent service returned ' + agentResp.status, detail: errText.substring(0, 300) });
     }
 
     var agentResult = await agentResp.json();
 
     // 5. Update content_pages with agent task ID
-    await fetch(
-      SUPABASE_URL + '/rest/v1/content_pages?id=eq.' + body.content_page_id,
-      {
-        method: 'PATCH',
-        headers: Object.assign({}, sbHeaders, { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
-        body: JSON.stringify({
-          agent_task_id: agentResult.task_id,
-          updated_at: new Date().toISOString()
-        })
-      }
-    );
+    await sb.mutate('content_pages?id=eq.' + body.content_page_id, 'PATCH', {
+      agent_task_id: agentResult.task_id
+    }, 'return=minimal');
 
     return res.status(200).json({
-      success: true,
-      task_id: agentResult.task_id,
-      search_query: searchQuery,
-      message: 'Content audit triggered for "' + targetKeyword + '".'
+      success: true, task_id: agentResult.task_id,
+      search_query: searchQuery, message: 'Content audit triggered for "' + targetKeyword + '".'
     });
 
   } catch (err) {
