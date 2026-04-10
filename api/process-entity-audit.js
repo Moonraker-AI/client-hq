@@ -325,7 +325,13 @@ ${surgeData}`;
 
     // ============================================================
     // STEP 4: Write checklist_items (structured, trackable tasks)
+    // Only for active/onboarding clients. Leads get scores but not
+    // the action item checklist (that's our campaign deliverable).
+    // Checklist items are created retroactively if a lead converts
+    // via setup-audit-schedule.js.
     // ============================================================
+    var checklistRows = [];
+    if (isActiveCampaign) {
     send({ step: 'checklist', message: 'Creating ' + allTasks.length + ' structured task records...' });
 
     // Delete any existing checklist_items for this audit (re-processing support)
@@ -394,6 +400,9 @@ ${surgeData}`;
       } else {
         send({ step: 'checklist_done', message: checklistRows.length + ' tasks created in checklist_items.' });
       }
+    }
+    } else {
+      send({ step: 'checklist_skipped', message: 'Checklist items skipped (lead audit). Will be created if client signs up.' });
     }
 
     // ============================================================
