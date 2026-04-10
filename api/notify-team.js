@@ -8,48 +8,28 @@
 // POST { event: string, slug: string }
 
 var email = require('./_lib/email-template');
+var sb = require('./_lib/supabase');
 
 module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
 
-  var sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  var sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
   var resendKey = process.env.RESEND_API_KEY;
-
-  if (!sbKey || !resendKey) {
-    return res.status(500).json({ error: 'Missing required env vars' });
-  }
+  if (!resendKey) return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
 
   var body = req.body || {};
   var event = body.event;
   var slug = body.slug;
 
-  if (!event || !slug) {
-    return res.status(400).json({ error: 'Missing event or slug' });
-  }
+  if (!event || !slug) return res.status(400).json({ error: 'Missing event or slug' });
 
   var validEvents = ['payment_received', 'intro_call_complete', 'onboarding_complete'];
-  if (validEvents.indexOf(event) === -1) {
-    return res.status(400).json({ error: 'Invalid event type' });
-  }
-
-  function sbHeaders() {
-    return { 'apikey': sbKey, 'Authorization': 'Bearer ' + sbKey, 'Content-Type': 'application/json' };
-  }
+  if (validEvents.indexOf(event) === -1) return res.status(400).json({ error: 'Invalid event type' });
 
   try {
-    // Look up contact
-    var contactResp = await fetch(
-      sbUrl + '/rest/v1/contacts?slug=eq.' + slug + '&select=id,first_name,last_name,practice_name,email,status,plan_type,city,state_province&limit=1',
-      { headers: sbHeaders() }
-    );
-    var contacts = await contactResp.json();
-    if (!contacts || contacts.length === 0) {
-      return res.status(404).json({ error: 'Contact not found' });
-    }
-    var contact = contacts[0];
+    var contact = await sb.one('contacts?slug=eq.' + slug + '&select=id,first_name,last_name,practice_name,email,status,plan_type,city,state_province&limit=1');
+    if (!contact) return res.status(404).json({ error: 'Contact not found' });
+
     var clientName = (contact.first_name || '') + ' ' + (contact.last_name || '');
     var deepDiveUrl = 'https://clients.moonraker.ai/admin/clients?slug=' + slug;
 
@@ -57,20 +37,13 @@ module.exports = async function handler(req, res) {
     var content = '';
     var headerLabel = 'Team Notification';
 
-    // ── Build email content based on event type ──
-
     if (event === 'payment_received') {
       subject = 'New Client Payment: ' + clientName.trim();
       headerLabel = 'New Payment';
       content = buildPaymentContent(contact, clientName, deepDiveUrl);
 
     } else if (event === 'intro_call_complete') {
-      // Fetch intro call steps for checklist summary
-      var stepsResp = await fetch(
-        sbUrl + '/rest/v1/intro_call_steps?contact_id=eq.' + contact.id + '&step_key=neq.intro_call_complete&order=sort_order.asc&select=step_key,label,category,status',
-        { headers: sbHeaders() }
-      );
-      var steps = await stepsResp.json();
+      var steps = await sb.query('intro_call_steps?contact_id=eq.' + contact.id + '&step_key=neq.intro_call_complete&order=sort_order.asc&select=step_key,label,category,status');
       subject = 'Intro Call Complete: ' + clientName.trim();
       headerLabel = 'Intro Call Complete';
       content = buildIntroCallContent(contact, clientName, deepDiveUrl, steps || []);
@@ -82,27 +55,19 @@ module.exports = async function handler(req, res) {
     }
 
     var htmlBody = email.wrap({
-      headerLabel: headerLabel,
-      content: content,
+      headerLabel: headerLabel, content: content,
       footerNote: 'This is an internal notification for the Moonraker team.'
     });
 
-    // ── Send via Resend ──
     var recipients = ['support@moonraker.ai', 'scott@moonraker.ai', 'chris@moonraker.ai'];
 
     var emailResp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: email.FROM.notifications,
-        to: recipients,
-        subject: subject,
-        html: htmlBody
-      })
+      body: JSON.stringify({ from: email.FROM.notifications, to: recipients, subject: subject, html: htmlBody })
     });
 
     var emailResult = await emailResp.json();
-
     if (!emailResp.ok) {
       console.error('Resend error:', emailResult);
       return res.status(500).json({ error: 'Email send failed', detail: emailResult });
@@ -117,8 +82,6 @@ module.exports = async function handler(req, res) {
 };
 
 // ── Content builders ──
-// Each returns the inner HTML for email.wrap(). Uses shared helpers
-// from email-template.js (greeting, p, cta, sectionHeading, etc.)
 
 function clientHeader(contact, clientName) {
   var practice = contact.practice_name || '';
@@ -147,25 +110,15 @@ function detailTable(rows) {
 function buildPaymentContent(contact, clientName, deepDiveUrl) {
   var plan = contact.plan_type || 'CORE Marketing System';
   var location = [contact.city, contact.state_province].filter(Boolean).join(', ');
-
   return clientHeader(contact, clientName) +
     email.p('Payment received. Status moved to <strong style="color:#00D47E">Onboarding</strong>. Onboarding steps, intro call checklist, and deliverables have been automatically seeded.') +
-    detailTable([
-      ['Plan', plan],
-      ['Email', contact.email || ''],
-      ['Location', location]
-    ]) +
+    detailTable([['Plan', plan], ['Email', contact.email || ''], ['Location', location]]) +
     email.cta(deepDiveUrl, 'View Client');
 }
 
 function buildIntroCallContent(contact, clientName, deepDiveUrl, steps) {
-  // Group steps by category
   var categories = {};
-  var catLabels = {
-    'platform_access': 'Platform Access',
-    'campaign_setup': 'Campaign Setup',
-    'expectations': 'Expectations'
-  };
+  var catLabels = { 'platform_access': 'Platform Access', 'campaign_setup': 'Campaign Setup', 'expectations': 'Expectations' };
   steps.forEach(function(s) {
     var cat = s.category || 'other';
     if (!categories[cat]) categories[cat] = [];
@@ -176,7 +129,6 @@ function buildIntroCallContent(contact, clientName, deepDiveUrl, steps) {
   var total = steps.length;
   var pending = total - completed;
 
-  // Build checklist summary
   var checklistHtml = '<div style="margin:16px 0;padding:16px 20px;background:#F7FDFB;border-radius:10px;border:1px solid #E2E8F0">' +
     '<p style="font-family:Inter,sans-serif;font-size:13px;color:#00D47E;margin:0 0 12px;font-weight:600">' +
       completed + ' of ' + total + ' tasks completed' +
@@ -203,8 +155,7 @@ function buildIntroCallContent(contact, clientName, deepDiveUrl, steps) {
 
   return clientHeader(contact, clientName) +
     email.p('The intro call has been completed. Below is the checklist summary.') +
-    checklistHtml +
-    warningHtml +
+    checklistHtml + warningHtml +
     email.cta(deepDiveUrl, 'View Client');
 }
 
