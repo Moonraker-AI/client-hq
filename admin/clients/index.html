@@ -4363,57 +4363,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     });
   };
 
-ontentAudit = function(cpId, taskId) {
-    var pollInterval = setInterval(function() {
-      fetch('/api/poll-agent?task_id=' + taskId)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          var statusEl = document.getElementById('audit-status-' + cpId);
-          if (statusEl) statusEl.textContent = data.message || data.status || '';
 
-          if (data.status === 'completed' || data.status === 'failed') {
-            clearInterval(pollInterval);
-            if (data.status === 'completed') {
-              toast('Surge audit complete! Refreshing...', 'success');
-              // Reload the content page data
-              fetch(SB + '/rest/v1/content_pages?id=eq.' + cpId + '&limit=1', {
-                headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
-              }).then(function(r) { return r.json(); }).then(function(arr) {
-                if (arr && arr[0]) {
-                  var idx = state.contentPages.findIndex(function(p) { return p.id === cpId; });
-                  if (idx !== -1) state.contentPages[idx] = arr[0];
-                  renderContent();
-                }
-              });
-            } else {
-              toast('Audit failed: ' + (data.message || ''), 'error');
-              if (statusEl) statusEl.textContent = 'Failed: ' + (data.message || '');
-            }
-          }
-        }).catch(function() {
-          // Silently retry
-        });
-    }, 15000); // Poll every 15s
-  };
-
-loyEndorsementPage = function() {
-    if (!state.contact) return;
-    toast('Deploying endorsement form...', 'info');
-    fetch('/api/deploy-endorsement-page', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug: state.contact.slug })
-    }).then(function(r) { return r.json(); }).then(function(res) {
-      if (res.success) {
-        toast('Endorsement form deployed: ' + res.url, 'success');
-        renderContentAssets();
-      } else {
-        toast('Deploy failed: ' + (res.error || 'Unknown'), 'error');
-      }
-    }).catch(function(err) {
-      toast('Deploy error: ' + err.message, 'error');
-    });
-  };
 
   window.analyzeDesignSpec = function() {
     var cssEl = document.getElementById('specCssInput');
