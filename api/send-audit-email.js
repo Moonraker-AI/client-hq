@@ -5,36 +5,23 @@
 // POST { audit_id }
 
 var email = require('./_lib/email-template');
+var sb = require('./_lib/supabase');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
 
-  var sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  var sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
   var resendKey = process.env.RESEND_API_KEY;
-
-  if (!sbKey) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
   if (!resendKey) return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
 
   var auditId = (req.body || {}).audit_id;
   if (!auditId) return res.status(400).json({ error: 'audit_id required' });
 
-  function sbHeaders(prefer) {
-    var h = { 'apikey': sbKey, 'Authorization': 'Bearer ' + sbKey, 'Content-Type': 'application/json' };
-    if (prefer) h['Prefer'] = prefer;
-    return h;
-  }
-
   try {
     // Load audit + contact
-    var auditResp = await fetch(
-      sbUrl + '/rest/v1/entity_audits?id=eq.' + auditId + '&select=*,contacts(id,slug,first_name,last_name,practice_name,email,city,state_province)&limit=1',
-      { headers: sbHeaders() }
-    );
-    var audits = await auditResp.json();
-    if (!audits || audits.length === 0) return res.status(404).json({ error: 'Audit not found' });
+    var audit = await sb.one('entity_audits?id=eq.' + auditId + '&select=*,contacts(id,slug,first_name,last_name,practice_name,email,city,state_province)&limit=1');
+    if (!audit) return res.status(404).json({ error: 'Audit not found' });
 
-    var audit = audits[0];
     var contact = audit.contacts;
     if (!contact) return res.status(404).json({ error: 'Contact not found for audit' });
     if (!contact.email) return res.status(400).json({ error: 'No email on file for this contact' });
@@ -48,7 +35,6 @@ module.exports = async function handler(req, res) {
     var scores = audit.scores || {};
     var overallScore = scores.overall || null;
 
-    // Build overall score display
     var overallHtml = '';
     if (overallScore !== null) {
       var oc = overallScore >= 80 ? '#00D47E' : overallScore >= 50 ? '#F59E0B' : '#EF4444';
@@ -58,7 +44,7 @@ module.exports = async function handler(req, res) {
         '</td></tr></table>';
     }
 
-    // Build CORE score cards matching shared template aesthetic
+    // Build CORE score cards
     var coreKeys = [
       { key: 'credibility', label: 'Credibility' },
       { key: 'optimization', label: 'Optimization' },
@@ -77,26 +63,19 @@ module.exports = async function handler(req, res) {
       }
     });
 
-    var scoreCardsHtml = '';
-    if (scoreItems.length > 0) {
-      scoreCardsHtml = email.statCards(scoreItems);
-    }
+    var scoreCardsHtml = scoreItems.length > 0 ? email.statCards(scoreItems) : '';
 
-    // Compose email content using shared helpers
+    // Compose email
     var practiceRef = practiceName ? ' for <strong style="color:#1E2A5E;">' + email.esc(practiceName) + '</strong>' : '';
-
     var content = email.greeting(firstName || 'there') +
       email.p('Your CORE Entity Audit' + practiceRef + ' is ready. This report evaluates your practice\'s digital presence across four key areas: Credibility, Optimization, Reputation, and Engagement.') +
-      overallHtml +
-      scoreCardsHtml +
+      overallHtml + scoreCardsHtml +
       email.p('Your scorecard includes a detailed breakdown of each area with specific findings and recommendations for improvement.') +
       email.cta(scorecardUrl, 'View Your Scorecard');
 
     var htmlBody = email.wrap({
-      headerLabel: 'CORE Entity Audit',
-      content: content,
-      footerNote: '',
-      year: new Date().getFullYear()
+      headerLabel: 'CORE Entity Audit', content: content,
+      footerNote: '', year: new Date().getFullYear()
     });
 
     // Send via Resend
@@ -104,9 +83,7 @@ module.exports = async function handler(req, res) {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: email.FROM.audits,
-        to: [contact.email],
-        cc: ['scott@moonraker.ai'],
+        from: email.FROM.audits, to: [contact.email], cc: ['scott@moonraker.ai'],
         subject: 'Your CORE Entity Audit is Ready' + (practiceName ? ' - ' + practiceName : ''),
         html: htmlBody
       })
@@ -119,16 +96,9 @@ module.exports = async function handler(req, res) {
     }
 
     // Update audit status
-    await fetch(sbUrl + '/rest/v1/entity_audits?id=eq.' + auditId, {
-      method: 'PATCH',
-      headers: sbHeaders('return=minimal'),
-      body: JSON.stringify({
-        status: 'delivered',
-        sent_at: new Date().toISOString(),
-        sent_to: contact.email,
-        updated_at: new Date().toISOString()
-      })
-    });
+    await sb.mutate('entity_audits?id=eq.' + auditId, 'PATCH', {
+      status: 'delivered', sent_at: new Date().toISOString(), sent_to: contact.email
+    }, 'return=minimal');
 
     return res.status(200).json({ ok: true, email_id: emailResult.id, sent_to: contact.email });
 
