@@ -1,5 +1,7 @@
 // /api/digest.js - Team Digest email sender via Resend
 var email = require('./_lib/email-template');
+var sb = require('./_lib/supabase');
+var sb = require('./_lib/supabase');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -7,11 +9,9 @@ module.exports = async function handler(req, res) {
   }
 
   var resendKey = process.env.RESEND_API_KEY;
-  var serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  var supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
 
   if (!resendKey) return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
-  if (!serviceKey) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
+  if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
 
   try {
     var body = req.body;
@@ -24,8 +24,8 @@ module.exports = async function handler(req, res) {
     }
 
     var headers = {
-      'apikey': serviceKey,
-      'Authorization': 'Bearer ' + serviceKey,
+      'apikey': sb.key(),
+      'Authorization': 'Bearer ' + sb.key(),
       'Content-Type': 'application/json'
     };
 
@@ -127,7 +127,7 @@ function formatDateRange(fromStr, toStr) {
 }
 
 async function sbGet(url, headers, path) {
-  var r = await fetch(url + '/rest/v1/' + path, { headers: headers });
+  var r = await fetch(url + '/rest/v1/' + path, { headers: sb.headers() });
   return await r.json();
 }
 
@@ -314,8 +314,5 @@ function buildDigestEmail(data) {
   });
 }
 
-function email.esc(s) {
-  if (!s) return '';
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+// email.esc() provided by ./_lib/email-template
 
