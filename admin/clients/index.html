@@ -4269,7 +4269,50 @@ strong { font-weight: 600; color: var(--color-heading); }
     });
   };
 
-  window.pollContentAudit = function(cpId, taskId) {
+  window.pollC
+
+  window.seedContentPages = function() {
+    if (!state.contact) return;
+    var btn = document.getElementById('btnSeedContent');
+    if (btn) { btn.disabled = true; btn.textContent = 'Seeding...'; }
+
+    fetch('/api/seed-content-pages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact_id: state.contact.id })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Seed Content Pages'; }
+      if (res.success) {
+        var s = res.summary;
+        toast(s.content_pages_created + ' pages created, ' + s.deliverables_created + ' deliverables added, ' + s.deliverables_linked + ' linked', 'success');
+        // Reload content pages and deliverables
+        var cid = state.contact.id;
+        Promise.all([
+          fetch(SB + '/rest/v1/content_pages?contact_id=eq.' + cid + '&order=created_at.desc', {
+            headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
+          }).then(function(r) { return r.json(); }),
+          fetch(SB + '/rest/v1/deliverables?contact_id=eq.' + cid + '&order=created_at.desc', {
+            headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
+          }).then(function(r) { return r.json(); })
+        ]).then(function(results) {
+          state.contentPages = results[0] || [];
+          state.deliverables = results[1] || [];
+          renderContent();
+          renderDeliverables();
+          var contentCount = state.contentPages.filter(function(cp) { return cp.status !== 'delivered' && cp.status !== 'approved'; }).length;
+          setTabCount('content', contentCount);
+          setTabCount('deliverables', state.deliverables.filter(function(d) { return d.status !== 'delivered' && d.status !== 'active'; }).length);
+        });
+      } else {
+        toast('Seeding failed: ' + (res.error || 'Unknown'), 'error');
+      }
+    }).catch(function(err) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Seed Content Pages'; }
+      toast('Seed error: ' + err.message, 'error');
+    });
+  };
+
+ontentAudit = function(cpId, taskId) {
     var pollInterval = setInterval(function() {
       fetch('/api/poll-agent?task_id=' + taskId)
         .then(function(r) { return r.json(); })
@@ -4484,8 +4527,19 @@ loyEndorsementPage = function() {
     if (!listEl) return;
 
     if (pages.length === 0) {
-      listEl.innerHTML = '';
-      if (emptyEl) emptyEl.style.display = 'block';
+      var kwCount = state.trackedKeywords ? state.trackedKeywords.length : 0;
+      var bioCount = state.bioMaterials ? state.bioMaterials.length : 0;
+      if (kwCount > 0 || bioCount > 0) {
+        listEl.innerHTML = '<div style="text-align:center;padding:1.5rem;">' +
+          '<p style="font-size:.88rem;color:var(--color-heading);margin-bottom:.35rem;">Ready to set up content pages</p>' +
+          '<p style="font-size:.82rem;color:var(--color-muted);margin-bottom:1rem;">' + kwCount + ' tracked keyword' + (kwCount !== 1 ? 's' : '') + ' and ' + bioCount + ' clinician bio' + (bioCount !== 1 ? 's' : '') + ' found. Seed the content pipeline to create pages for all of them.</p>' +
+          '<button class="btn btn-primary" id="btnSeedContent" onclick="seedContentPages()" style="font-size:.88rem;padding:.55rem 1.25rem;">Seed Content Pages</button>' +
+          '</div>';
+        if (emptyEl) emptyEl.style.display = 'none';
+      } else {
+        listEl.innerHTML = '';
+        if (emptyEl) emptyEl.style.display = 'block';
+      }
       renderContentAssets();
       return;
     }
