@@ -13,7 +13,6 @@
 
 var email = require('./_lib/email-template');
 var sb = require('./_lib/supabase');
-var sb = require('./_lib/supabase');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
