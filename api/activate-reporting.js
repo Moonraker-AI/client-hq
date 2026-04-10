@@ -12,14 +12,14 @@
 //
 // ENV VARS: SUPABASE_SERVICE_ROLE_KEY, LOCALFALCON_API_KEY
 
+var sb = require('./_lib/supabase');
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  var sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   var lfKey = process.env.LOCALFALCON_API_KEY;
-  var sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
 
-  if (!sbKey) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
+  if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
   if (!lfKey) return res.status(500).json({ error: 'LOCALFALCON_API_KEY not configured' });
 
   var clientSlug = (req.body && req.body.client_slug) || (req.query && req.query.client_slug);
@@ -34,7 +34,7 @@ module.exports = async function handler(req, res) {
 
   try {
     // ─── 1. Load report config ────────────────────────────────────
-    var configResp = await fetch(sbUrl + '/rest/v1/report_configs?client_slug=eq.' + clientSlug + '&limit=1', { headers: headers });
+    var configResp = await fetch(sb.url() + '/rest/v1/report_configs?client_slug=eq.' + clientSlug + '&limit=1', { headers: headers });
     var configs = await configResp.json();
     if (!configs || configs.length === 0) {
       return res.status(404).json({ error: 'No report_config found for ' + clientSlug });
@@ -55,13 +55,13 @@ module.exports = async function handler(req, res) {
     }
 
     // ─── 2. Load contact (for practice name) ─────────────────────
-    var contactResp = await fetch(sbUrl + '/rest/v1/contacts?slug=eq.' + clientSlug + '&select=id,practice_name,first_name,last_name', { headers: headers });
+    var contactResp = await fetch(sb.url() + '/rest/v1/contacts?slug=eq.' + clientSlug + '&select=id,practice_name,first_name,last_name', { headers: headers });
     var contacts = await contactResp.json();
     var contact = (contacts && contacts.length > 0) ? contacts[0] : null;
     var practiceName = contact ? (contact.practice_name || (contact.first_name + ' ' + contact.last_name).trim()) : clientSlug;
 
     // ─── 3. Load tracked keywords ────────────────────────────────
-    var kwResp = await fetch(sbUrl + '/rest/v1/tracked_keywords?client_slug=eq.' + clientSlug + '&active=eq.true&order=priority.asc', { headers: headers });
+    var kwResp = await fetch(sb.url() + '/rest/v1/tracked_keywords?client_slug=eq.' + clientSlug + '&active=eq.true&order=priority.asc', { headers: headers });
     var keywords = await kwResp.json();
     if (!Array.isArray(keywords) || keywords.length === 0) {
       return res.status(400).json({ error: 'No active tracked_keywords for ' + clientSlug + '. Add keywords before activating reporting.' });
@@ -144,7 +144,7 @@ module.exports = async function handler(req, res) {
     }
 
     // ─── 6. Store campaign keys + activate config ────────────────
-    var updateResp = await fetch(sbUrl + '/rest/v1/report_configs?id=eq.' + config.id, {
+    var updateResp = await fetch(sb.url() + '/rest/v1/report_configs?id=eq.' + config.id, {
       method: 'PATCH',
       headers: headers,
       body: JSON.stringify({
@@ -165,7 +165,7 @@ module.exports = async function handler(req, res) {
     if (contactId) {
       for (var di = 0; di < deliverableTypes.length; di++) {
         try {
-          await fetch(sbUrl + '/rest/v1/deliverables?contact_id=eq.' + contactId + '&deliverable_type=eq.' + deliverableTypes[di] + '&status=neq.delivered', {
+          await fetch(sb.url() + '/rest/v1/deliverables?contact_id=eq.' + contactId + '&deliverable_type=eq.' + deliverableTypes[di] + '&status=neq.delivered', {
             method: 'PATCH',
             headers: headers,
             body: JSON.stringify({
@@ -181,7 +181,7 @@ module.exports = async function handler(req, res) {
 
     // ─── 8. Log activity ─────────────────────────────────────────
     try {
-      await fetch(sbUrl + '/rest/v1/activity_log', {
+      await fetch(sb.url() + '/rest/v1/activity_log', {
         method: 'POST',
         headers: headers,
         body: JSON.stringify({
