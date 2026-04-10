@@ -6662,6 +6662,10 @@ strong { font-weight: 600; color: var(--color-heading); }
   // Mobile sidebar
   var mobileToggle = document.getElementById('mobileToggle');
   if (mobileToggle) mobileToggle.addEventListener('click', function() { sidebar.classList.toggle('open'); });
+  var sidebarOverlay = document.getElementById('sidebarOverlay');
+  if (sidebarOverlay) sidebarOverlay.addEventListener('click', function() { sidebar.classList.remove('open'); });
+  var sidebarClose = document.getElementById('sidebarClose');
+  if (sidebarClose) sidebarClose.addEventListener('click', function() { sidebar.classList.remove('open'); });
   // Theme
   var themeBtn = document.getElementById('themeBtn');
   var _curTheme = document.documentElement.getAttribute('data-theme');
