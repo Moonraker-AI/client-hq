@@ -1313,18 +1313,18 @@ strong { font-weight: 600; color: var(--color-heading); }
       if (omitEl) omitEl.value = contact.platforms_to_omit;
     }
 
-    // Step 7: Social Profiles - fill from contact record
+    // Step 7: Social Profiles - fill from social_platforms table (primary source)
     var socialMap = {
-      sp_youtube: contact.youtube_url,
-      sp_linkedin: contact.linkedin_url,
-      sp_facebook: contact.facebook_url,
-      sp_instagram: contact.instagram_url,
-      sp_quora: contact.quora_url,
-      sp_pinterest: contact.pinterest_url,
-      sp_tiktok: contact.tiktok_url,
-      sp_x: contact.x_url,
-      sp_psychtoday: contact.psychology_today_url,
-      sp_gbp: contact.gbp_url
+      sp_youtube: spLookup['youtube'] || contact.youtube_url,
+      sp_linkedin: spLookup['linkedin'] || contact.linkedin_url,
+      sp_facebook: spLookup['facebook'] || contact.facebook_url,
+      sp_instagram: spLookup['instagram'] || contact.instagram_url,
+      sp_quora: spLookup['quora'] || contact.quora_url,
+      sp_pinterest: spLookup['pinterest'] || contact.pinterest_url,
+      sp_tiktok: spLookup['tiktok'] || contact.tiktok_url,
+      sp_x: spLookup['x'] || contact.x_url,
+      sp_psychtoday: dlLookup['Psychology Today'] || contact.psychology_today_url,
+      sp_gbp: spLookup['gbp'] || contact.gbp_url
     };
     Object.keys(socialMap).forEach(function(id) {
       var el = document.getElementById(id);
@@ -1484,16 +1484,8 @@ strong { font-weight: 600; color: var(--color-heading); }
   };
 
   window.saveSocialProfiles = function() {
+    // Only save GBP URL + platforms_to_omit on contacts (social URLs live in social_platforms now)
     var socialData = {
-      youtube_url: document.getElementById('sp_youtube').value.trim() || null,
-      linkedin_url: document.getElementById('sp_linkedin').value.trim() || null,
-      facebook_url: document.getElementById('sp_facebook').value.trim() || null,
-      instagram_url: document.getElementById('sp_instagram').value.trim() || null,
-      quora_url: document.getElementById('sp_quora').value.trim() || null,
-      pinterest_url: document.getElementById('sp_pinterest').value.trim() || null,
-      tiktok_url: document.getElementById('sp_tiktok').value.trim() || null,
-      x_url: document.getElementById('sp_x').value.trim() || null,
-      psychology_today_url: document.getElementById('sp_psychtoday').value.trim() || null,
       gbp_url: document.getElementById('sp_gbp').value.trim() || null
     };
 
@@ -1853,7 +1845,9 @@ strong { font-weight: 600; color: var(--color-heading); }
           sbFetch('onboarding_steps', 'contact_id=eq.' + contact.id + '&select=step_key,status&order=sort_order'),
           sbFetch('signed_agreements', 'contact_id=eq.' + contact.id + '&agreement_type=eq.csa&select=signer_name,signed_at&limit=1'),
           sbFetch('practice_details', 'contact_id=eq.' + contact.id + '&select=*&limit=1'),
-          sbFetch('bio_materials', 'contact_id=eq.' + contact.id + '&select=*&order=is_primary.desc,sort_order')
+          sbFetch('bio_materials', 'contact_id=eq.' + contact.id + '&select=*&order=is_primary.desc,sort_order'),
+          sbFetch('social_platforms', 'contact_id=eq.' + contact.id + '&select=platform,profile_url,status'),
+          sbFetch('directory_listings', 'contact_id=eq.' + contact.id + '&select=directory,profile_url,status')
         ]);
       })
       .then(function(allData) {
@@ -1865,6 +1859,15 @@ strong { font-weight: 600; color: var(--color-heading); }
         var allBios = allData[3] || [];
         bioData = allBios.find(function(b) { return b.is_primary; }) || (allBios.length > 0 ? allBios[0] : null);
         additionalBios = allBios.filter(function(b) { return b.id !== (bioData && bioData.id); });
+
+        // Social platforms + directory listings (for step 7 prefill)
+        var socialPlatformsData = allData[4] || [];
+        var directoryListingsData = allData[5] || [];
+        // Build lookup maps
+        var spLookup = {};
+        socialPlatformsData.forEach(function(sp) { spLookup[sp.platform] = sp.profile_url; });
+        var dlLookup = {};
+        directoryListingsData.forEach(function(dl) { dlLookup[dl.directory] = dl.profile_url; });
 
         steps.forEach(function(s) { stepData[s.step_key] = s.status; });
 
