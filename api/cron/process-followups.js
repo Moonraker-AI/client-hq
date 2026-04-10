@@ -4,6 +4,7 @@
 // Processes up to 10 followups per run to stay within function timeout.
 
 var email = require('../_lib/email-template');
+var sb = require('../_lib/supabase');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST' && req.method !== 'GET') {
@@ -22,7 +23,6 @@ module.exports = async function handler(req, res) {
 
   var sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   var resendKey = process.env.RESEND_API_KEY;
-  var sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
 
   if (!sbKey) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
   if (!resendKey) return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
@@ -39,7 +39,7 @@ module.exports = async function handler(req, res) {
   try {
     // ── PART 1: Process proposal follow-ups ──
     var qResp = await fetch(
-      sbUrl + '/rest/v1/proposal_followups?status=eq.pending&scheduled_for=lte.' + now
+      sb.url() + '/rest/v1/proposal_followups?status=eq.pending&scheduled_for=lte.' + now
         + '&order=scheduled_for.asc&limit=10'
         + '&select=*,proposals(id,sent_at,status,contacts(id,email,first_name,last_name,practice_name,status,lost))',
       { headers: sbHeaders() }
@@ -63,7 +63,7 @@ module.exports = async function handler(req, res) {
       if (cancelStatuses.indexOf(contact.status) !== -1 || contact.lost) {
         var reason = contact.lost ? 'lost' : 'signed_up';
         await fetch(
-          sbUrl + '/rest/v1/proposal_followups?proposal_id=eq.' + proposal.id + '&status=eq.pending',
+          sb.url() + '/rest/v1/proposal_followups?proposal_id=eq.' + proposal.id + '&status=eq.pending',
           {
             method: 'PATCH', headers: sbHeaders('return=representation'),
             body: JSON.stringify({ status: 'cancelled', cancelled_at: now, cancel_reason: reason, updated_at: now })
@@ -85,7 +85,7 @@ module.exports = async function handler(req, res) {
 
     // ── PART 2: Process audit follow-ups ──
     var aqResp = await fetch(
-      sbUrl + '/rest/v1/audit_followups?status=eq.pending&scheduled_for=lte.' + now
+      sb.url() + '/rest/v1/audit_followups?status=eq.pending&scheduled_for=lte.' + now
         + '&order=scheduled_for.asc&limit=10'
         + '&select=*,contacts(id,email,first_name,last_name,practice_name,status,lost)',
       { headers: sbHeaders() }
@@ -109,7 +109,7 @@ module.exports = async function handler(req, res) {
       if (auditCancelStatuses.indexOf(ac.status) !== -1 || ac.lost) {
         var aReason = ac.lost ? 'lost' : 'converted_to_prospect';
         await fetch(
-          sbUrl + '/rest/v1/audit_followups?audit_id=eq.' + afu.audit_id + '&status=eq.pending',
+          sb.url() + '/rest/v1/audit_followups?audit_id=eq.' + afu.audit_id + '&status=eq.pending',
           {
             method: 'PATCH', headers: sbHeaders('return=representation'),
             body: JSON.stringify({ status: 'cancelled', cancelled_at: now, cancel_reason: aReason, updated_at: now })
@@ -157,7 +157,7 @@ async function sendFollowupEmail(resendKey, contact, followup, fromAddress) {
 }
 
 async function patchRecord(sbUrl, sbHeaders, table, id, data) {
-  await fetch(sbUrl + '/rest/v1/' + table + '?id=eq.' + id, {
+  await fetch(sb.url() + '/rest/v1/' + table + '?id=eq.' + id, {
     method: 'PATCH',
     headers: sbHeaders('return=representation'),
     body: JSON.stringify(data)
