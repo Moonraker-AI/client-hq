@@ -729,7 +729,7 @@ section { padding: 4.5rem 0; }
           sbFetch('practice_details', 'contact_id=eq.' + contactId + '&select=*&limit=1'),
           sbFetch('onboarding_steps', 'contact_id=eq.' + contactId + '&select=*&order=sort_order'),
           sbFetch('deliverables', 'contact_id=eq.' + contactId + '&select=*&order=delivered_at.desc'),
-          sbFetch('audit_scores', 'client_slug=eq.' + CLIENT_SLUG + '&select=*&order=audit_date.desc&limit=1'),
+          sbFetch('entity_audits', 'client_slug=eq.' + CLIENT_SLUG + '&select=*&order=audit_date.desc&limit=1'),
           sbFetch('checklist_items', 'client_slug=eq.' + CLIENT_SLUG + '&select=status')
         ]);
       })
