@@ -308,7 +308,15 @@ section { padding: 4.5rem 0; }
 .suite-nav a { padding: .4rem .85rem; border: 1px solid var(--color-border); border-radius: 6px; font-weight: 600; font-size: .75rem; color: var(--color-muted); transition: all .2s; background: var(--color-surface); box-shadow: 0 2px 8px rgba(0,0,0,.06); text-align: center; text-decoration: none; }
 .suite-nav a:hover { border-color: var(--color-primary); color: var(--color-primary); }
 .suite-nav a.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
-@media (max-width: 860px) { .suite-nav { position: static; flex-direction: row; margin: 1.5rem auto; justify-content: center; } .suite-nav a { font-size: .8rem; padding: .5rem 1rem; } }
+.suite-toggle{display:none;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:var(--color-surface);border:1px solid var(--color-border);color:var(--color-heading);cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.08);font-family:inherit;padding:0;transition:all .2s}
+.suite-toggle:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.suite-toggle svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:860px){.suite-nav a{display:none;font-size:.72rem;padding:.35rem .7rem}
+.suite-nav.open a{display:block}
+.suite-toggle{display:flex;order:-1}
+.suite-nav.open .suite-toggle svg .hamburger{display:none}
+.suite-nav.open .suite-toggle svg .close{display:block}
+.suite-toggle svg .close{display:none}}
 
 @media print {
   .section-nav, .theme-toggle, .progress-bar, .month-selector, .suite-nav { display: none !important; }
@@ -335,7 +343,7 @@ section { padding: 4.5rem 0; }
   <a href="#next"><span class="nav-dot"></span>Next Steps</a>
 </nav>
 
-<div class="suite-nav" id="suiteNav"><a id="navDiagnosis" href="#">Diagnosis</a><a id="navActionPlan" href="#">Action Plan</a><a id="navProgress" href="#">Progress</a><a href="#" class="active">Reports</a></div>
+<div class="suite-nav" id="suiteNav"><a id="navDiagnosis" href="#">Diagnosis</a><a id="navActionPlan" href="#">Action Plan</a><a id="navProgress" href="#">Progress</a><a href="#" class="active">Reports</a><button class="suite-toggle" onclick="this.parentElement.classList.toggle('open')" aria-label="Page navigation"><svg viewBox="0 0 24 24"><line class="hamburger" x1="4" y1="6" x2="20" y2="6"/><line class="hamburger" x1="4" y1="12" x2="20" y2="12"/><line class="hamburger" x1="4" y1="18" x2="20" y2="18"/><line class="close" x1="6" y1="6" x2="18" y2="18"/><line class="close" x1="6" y1="18" x2="18" y2="6"/></svg></button></div>
 
 <header class="header">
   <div class="container header-inner">
