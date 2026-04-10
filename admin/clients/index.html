@@ -2797,7 +2797,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     var statusColor = { pending: 'var(--color-muted)', processing: 'var(--color-info)', agent_running: 'var(--color-info)', agent_error: 'var(--color-danger)', complete: 'var(--color-warning)', delivered: 'var(--color-success)' };
     var eaCollapsed = state._eaDetailsCollapsed !== false;
     h += '<div class="card" style="margin-bottom:1rem;">';
-    h += '<div class="card-header" style="cursor:pointer;" onclick="state._eaDetailsCollapsed = !state._eaDetailsCollapsed; renderEntityAudit();">';
+    h += '<div class="card-header" style="cursor:pointer;" onclick="toggleEaDetails()">';
     h += '<h3 style="display:flex;align-items:center;gap:.5rem;">Entity Audit Details <span style="font-size:.7rem;color:' + (statusColor[ea.status] || 'var(--color-muted)') + ';font-weight:500;font-family:Inter,sans-serif;">' + (statusLabel[ea.status] || ea.status) + '</span></h3>';
     h += '<span style="font-size:.75rem;color:var(--color-muted);transition:transform .2s;display:inline-block;' + (eaCollapsed ? '' : 'transform:rotate(90deg);') + '">&#9654;</span>';
     h += '</div>';
@@ -3116,6 +3116,11 @@ strong { font-weight: 600; color: var(--color-heading); }
     }).catch(function(e) {
       if (statusEl) statusEl.textContent = 'Error: ' + e.message;
     });
+  };
+
+  window.toggleEaDetails = function() {
+    state._eaDetailsCollapsed = !state._eaDetailsCollapsed;
+    renderEntityAudit();
   };
 
   window.updateEntityAuditField = function(field, value) {
