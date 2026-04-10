@@ -18,6 +18,7 @@
 //   SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, GITHUB_PAT, GOOGLE_SERVICE_ACCOUNT_JSON
 
 var sb = require('./_lib/supabase');
+var monitor = require('./_lib/monitor');
 var gh = require('./_lib/github');
 
 module.exports = async function handler(req, res) {
