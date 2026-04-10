@@ -49,7 +49,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; font-size: 16px; }
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.7; -webkit-font-smoothing: antialiased;  }
-::view-transition-old(root),::view-transition-new(root){animation-duration:.25s}
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
 h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.15; }
 h1 { font-size: 2.25rem; letter-spacing: -0.02em; }
 h2 { font-size: 1.75rem; margin-bottom: .75rem; letter-spacing: -0.01em; }
@@ -1313,18 +1313,18 @@ strong { font-weight: 600; color: var(--color-heading); }
       if (omitEl) omitEl.value = contact.platforms_to_omit;
     }
 
-    // Step 7: Social Profiles - fill from contact record
+    // Step 7: Social Profiles - fill from social_platforms table (primary source)
     var socialMap = {
-      sp_youtube: contact.youtube_url,
-      sp_linkedin: contact.linkedin_url,
-      sp_facebook: contact.facebook_url,
-      sp_instagram: contact.instagram_url,
-      sp_quora: contact.quora_url,
-      sp_pinterest: contact.pinterest_url,
-      sp_tiktok: contact.tiktok_url,
-      sp_x: contact.x_url,
-      sp_psychtoday: contact.psychology_today_url,
-      sp_gbp: contact.gbp_url
+      sp_youtube: spLookup['youtube'] || contact.youtube_url,
+      sp_linkedin: spLookup['linkedin'] || contact.linkedin_url,
+      sp_facebook: spLookup['facebook'] || contact.facebook_url,
+      sp_instagram: spLookup['instagram'] || contact.instagram_url,
+      sp_quora: spLookup['quora'] || contact.quora_url,
+      sp_pinterest: spLookup['pinterest'] || contact.pinterest_url,
+      sp_tiktok: spLookup['tiktok'] || contact.tiktok_url,
+      sp_x: spLookup['x'] || contact.x_url,
+      sp_psychtoday: dlLookup['Psychology Today'] || contact.psychology_today_url,
+      sp_gbp: spLookup['gbp'] || contact.gbp_url
     };
     Object.keys(socialMap).forEach(function(id) {
       var el = document.getElementById(id);
@@ -1484,16 +1484,8 @@ strong { font-weight: 600; color: var(--color-heading); }
   };
 
   window.saveSocialProfiles = function() {
+    // Only save GBP URL + platforms_to_omit on contacts (social URLs live in social_platforms now)
     var socialData = {
-      youtube_url: document.getElementById('sp_youtube').value.trim() || null,
-      linkedin_url: document.getElementById('sp_linkedin').value.trim() || null,
-      facebook_url: document.getElementById('sp_facebook').value.trim() || null,
-      instagram_url: document.getElementById('sp_instagram').value.trim() || null,
-      quora_url: document.getElementById('sp_quora').value.trim() || null,
-      pinterest_url: document.getElementById('sp_pinterest').value.trim() || null,
-      tiktok_url: document.getElementById('sp_tiktok').value.trim() || null,
-      x_url: document.getElementById('sp_x').value.trim() || null,
-      psychology_today_url: document.getElementById('sp_psychtoday').value.trim() || null,
       gbp_url: document.getElementById('sp_gbp').value.trim() || null
     };
 
@@ -1549,169 +1541,6 @@ strong { font-weight: 600; color: var(--color-heading); }
         return apiAction('create_record', 'practice_details', null, pdUpdate)
           .then(function(res) { practiceData = (res.data && res.data[0]) || res.data || pdUpdate; });
       }
-    });
-  };
-
-  // ============================================================
-  // FORM: Step 9 - Performance Guarantee
-  // ============================================================
-  var guaranteeData = null;
-
-  function loadGuaranteeData() {
-    if (!contact) return;
-
-    // Three states based on plan_type
-    if (!contact.plan_type) {
-      // Pre-checkout: show teaser, hide configurator
-      document.getElementById('pgTeaser').style.display = 'block';
-      document.getElementById('pgConfigurator').style.display = 'none';
-      document.getElementById('pgNotAnnual').style.display = 'none';
-      document.getElementById('pgLocked').style.display = 'none';
-      return;
-    }
-
-    if (contact.plan_type !== 'annual') {
-      // Quarterly/monthly: show lockout
-      document.getElementById('pgConfigurator').style.display = 'none';
-      document.getElementById('pgTeaser').style.display = 'none';
-      document.getElementById('pgNotAnnual').style.display = 'block';
-      document.getElementById('pgLocked').style.display = 'none';
-      return;
-    }
-
-    // Annual: show full configurator
-    document.getElementById('pgTeaser').style.display = 'none';
-    document.getElementById('pgNotAnnual').style.display = 'none';
-
-    // Pre-fill investment if we know plan_amount_cents
-    if (contact.plan_amount_cents) {
-      document.getElementById('pgInvestment').value = Math.round(contact.plan_amount_cents / 100);
-    }
-
-    // Load existing guarantee draft
-    sbFetch('performance_guarantees', 'contact_id=eq.' + contact.id + '&select=*&limit=1')
-      .then(function(rows) {
-        if (rows && rows.length > 0) {
-          guaranteeData = rows[0];
-          if (guaranteeData.avg_client_ltv_cents) document.getElementById('pgLtv').value = Math.round(guaranteeData.avg_client_ltv_cents / 100);
-          if (guaranteeData.conversion_rate) document.getElementById('pgConversion').value = Math.round(guaranteeData.conversion_rate * 100);
-          if (guaranteeData.attendance_rate) document.getElementById('pgAttendance').value = Math.round(guaranteeData.attendance_rate * 100);
-          if (guaranteeData.current_monthly_organic_calls != null) document.getElementById('pgCurrentCalls').value = guaranteeData.current_monthly_organic_calls;
-          if (guaranteeData.investment_cents) document.getElementById('pgInvestment').value = Math.round(guaranteeData.investment_cents / 100);
-
-          if (guaranteeData.status === 'locked') {
-            document.getElementById('pgConfigurator').style.display = 'none';
-            document.getElementById('pgLocked').style.display = 'block';
-            document.getElementById('pgLockedCalls').textContent = guaranteeData.guarantee_calls || 0;
-            document.getElementById('pgLockedBenchmark').textContent = guaranteeData.total_benchmark || 0;
-            document.getElementById('pgCompleteBtn').style.display = 'inline-flex';
-          }
-
-          recalcGuarantee();
-        }
-      })
-      .catch(function() {});
-  }
-
-  window.recalcGuarantee = function() {
-    var ltv = parseFloat(document.getElementById('pgLtv').value) || 0;
-    var conv = parseFloat(document.getElementById('pgConversion').value) / 100 || 0;
-    var att = parseFloat(document.getElementById('pgAttendance').value) / 100 || 0;
-    var currentCalls = parseInt(document.getElementById('pgCurrentCalls').value) || 0;
-    var investment = parseFloat(document.getElementById('pgInvestment').value) || 0;
-
-    var allFilled = ltv > 0 && conv > 0 && att > 0 && investment > 0;
-    document.getElementById('pgSaveBtn').disabled = !allFilled;
-
-    if (!allFilled) {
-      document.getElementById('pgCalculation').style.display = 'none';
-      return;
-    }
-
-    var valuePerCall = ltv * conv * att;
-    var doubleInvestment = investment * 2;
-    var guaranteeCalls = Math.ceil(doubleInvestment / valuePerCall);
-    var totalBenchmark = (currentCalls * 12) + guaranteeCalls;
-
-    document.getElementById('pgLtvDisplay').textContent = '$' + ltv.toLocaleString();
-    document.getElementById('pgConvDisplay').textContent = Math.round(conv * 100) + '%';
-    document.getElementById('pgAttDisplay').textContent = Math.round(att * 100) + '%';
-    document.getElementById('pgValuePerCall').textContent = '$' + valuePerCall.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    document.getElementById('pgValuePerCallRepeat').textContent = '$' + valuePerCall.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    document.getElementById('pgDoubleInvestment').textContent = '$' + doubleInvestment.toLocaleString();
-    document.getElementById('pgGuaranteeCalls').textContent = guaranteeCalls;
-    document.getElementById('pgCallsDisplay').textContent = guaranteeCalls;
-    document.getElementById('pgCurrentDisplay').textContent = currentCalls;
-    document.getElementById('pgBenchmarkDisplay').textContent = totalBenchmark;
-
-    document.getElementById('pgCalculation').style.display = 'block';
-  };
-
-  window.saveGuaranteeDraft = function() {
-    var ltv = parseFloat(document.getElementById('pgLtv').value) || 0;
-    var conv = parseFloat(document.getElementById('pgConversion').value) / 100 || 0;
-    var att = parseFloat(document.getElementById('pgAttendance').value) / 100 || 0;
-    var currentCalls = parseInt(document.getElementById('pgCurrentCalls').value) || 0;
-    var investment = parseFloat(document.getElementById('pgInvestment').value) || 0;
-
-    var valuePerCall = ltv * conv * att;
-    var doubleInvestment = investment * 2;
-    var guaranteeCalls = Math.ceil(doubleInvestment / valuePerCall);
-    var totalBenchmark = (currentCalls * 12) + guaranteeCalls;
-
-    var payload = {
-      contact_id: contact.id,
-      avg_client_ltv_cents: Math.round(ltv * 100),
-      conversion_rate: conv,
-      attendance_rate: att,
-      current_monthly_organic_calls: currentCalls,
-      investment_cents: Math.round(investment * 100),
-      value_per_call_cents: Math.round(valuePerCall * 100),
-      guarantee_calls: guaranteeCalls,
-      total_benchmark: totalBenchmark,
-      status: 'draft',
-      updated_at: new Date().toISOString()
-    };
-
-    var statusEl = document.getElementById('pgSaveStatus');
-    statusEl.textContent = 'Saving...';
-    statusEl.style.color = 'var(--color-muted)';
-
-    var method, url;
-    if (guaranteeData && guaranteeData.id) {
-      method = 'PATCH';
-      url = SB_URL + '/rest/v1/performance_guarantees?id=eq.' + guaranteeData.id;
-    } else {
-      method = 'POST';
-      url = SB_URL + '/rest/v1/performance_guarantees';
-    }
-
-    fetch(url, {
-      method: method,
-      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify(payload)
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      var row = Array.isArray(data) ? data[0] : data;
-      if (row && row.id) {
-        guaranteeData = row;
-        statusEl.textContent = 'Draft saved';
-        statusEl.style.color = 'var(--color-success)';
-        // Mark step in progress
-        sbPatch('onboarding_steps', 'contact_id=eq.' + contact.id + '&step_key=eq.performance_guarantee',
-          { status: 'in_progress', notes: 'Draft: ' + guaranteeCalls + ' calls / ' + totalBenchmark + ' benchmark' });
-        stepData['performance_guarantee'] = 'in_progress';
-        buildNav();
-        setTimeout(function() { statusEl.textContent = ''; }, 3000);
-      } else {
-        statusEl.textContent = 'Error saving';
-        statusEl.style.color = 'var(--color-danger)';
-      }
-    })
-    .catch(function() {
-      statusEl.textContent = 'Error saving';
-      statusEl.style.color = 'var(--color-danger)';
     });
   };
 
@@ -2016,7 +1845,9 @@ strong { font-weight: 600; color: var(--color-heading); }
           sbFetch('onboarding_steps', 'contact_id=eq.' + contact.id + '&select=step_key,status&order=sort_order'),
           sbFetch('signed_agreements', 'contact_id=eq.' + contact.id + '&agreement_type=eq.csa&select=signer_name,signed_at&limit=1'),
           sbFetch('practice_details', 'contact_id=eq.' + contact.id + '&select=*&limit=1'),
-          sbFetch('bio_materials', 'contact_id=eq.' + contact.id + '&select=*&order=is_primary.desc,sort_order')
+          sbFetch('bio_materials', 'contact_id=eq.' + contact.id + '&select=*&order=is_primary.desc,sort_order'),
+          sbFetch('social_platforms', 'contact_id=eq.' + contact.id + '&select=platform,profile_url,status'),
+          sbFetch('directory_listings', 'contact_id=eq.' + contact.id + '&select=directory,profile_url,status')
         ]);
       })
       .then(function(allData) {
@@ -2028,6 +1859,15 @@ strong { font-weight: 600; color: var(--color-heading); }
         var allBios = allData[3] || [];
         bioData = allBios.find(function(b) { return b.is_primary; }) || (allBios.length > 0 ? allBios[0] : null);
         additionalBios = allBios.filter(function(b) { return b.id !== (bioData && bioData.id); });
+
+        // Social platforms + directory listings (for step 7 prefill)
+        var socialPlatformsData = allData[4] || [];
+        var directoryListingsData = allData[5] || [];
+        // Build lookup maps
+        var spLookup = {};
+        socialPlatformsData.forEach(function(sp) { spLookup[sp.platform] = sp.profile_url; });
+        var dlLookup = {};
+        directoryListingsData.forEach(function(dl) { dlLookup[dl.directory] = dl.profile_url; });
 
         steps.forEach(function(s) { stepData[s.step_key] = s.status; });
 
@@ -2101,11 +1941,11 @@ strong { font-weight: 600; color: var(--color-heading); }
         if (h.getAttribute('data-theme') === 'light') {
           h.setAttribute('data-theme', 'dark');
           themeBtn.innerHTML = '&#9728;&#65039;';
-          try{localStorage.setItem('moonraker-theme','dark')}catch(e){}
+          try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
         } else {
           h.setAttribute('data-theme', 'light');
           themeBtn.innerHTML = '&#x1F319;';
-          try{localStorage.setItem('moonraker-theme','light')}catch(e){}
+          try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
         }
       }
       if (document.startViewTransition) { document.startViewTransition(apply); } else { apply(); }
@@ -2118,6 +1958,9 @@ strong { font-weight: 600; color: var(--color-heading); }
 <script src="/shared/csa-content.js"></script>
 </body>
 </html>
+
+
+
 
 
 
