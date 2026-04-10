@@ -15,6 +15,7 @@
 
 var email = require('./_lib/email-template');
 var sb = require('./_lib/supabase');
+var sb = require('./_lib/supabase');
 
 module.exports = async function(req, res) {
   if (req.method !== 'POST') {
