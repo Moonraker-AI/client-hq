@@ -308,7 +308,7 @@ module.exports = async function handler(req, res) {
   // ─── 4. Also check campaign audit scores ──────────────────────
   try {
     var coreResp = await fetch(
-      sb.url() + '/rest/v1/audit_scores?client_slug=eq.' + contact.slug + '&select=*&order=audit_date.desc&limit=1',
+      sb.url() + '/rest/v1/entity_audits?client_slug=eq.' + contact.slug + '&select=*&order=audit_date.desc&limit=1',
       { headers: sb.headers() }
     );
     var coreAudits = await coreResp.json();
