@@ -259,6 +259,8 @@ strong { font-weight: 600; color: var(--color-heading); }
 }
 
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/shared/admin-auth.js"></script>
 </head>
 <body>
 
@@ -280,7 +282,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     <a href="/admin/deliverables"><span class="nav-icon"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5.5 8l2 2 3.5-3.5"/></svg></span><span class="nav-label">Deliverables</span></a>
     <a href="/admin/reports"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M2 14V6l3.5-2v10"/><path d="M6.25 14V4.5l3.5-2v11.5"/><path d="M10.5 14V3l3.5-2v13"/></svg></span><span class="nav-label">Reports</span></a>
   </nav>
-  <div class="sidebar-footer">
+  <div class="sidebar-footer"><button class="btn btn-ghost btn-sm" onclick="adminAuth.signOut()" style="width:100%;justify-content:flex-start;gap:.5rem"><span class="nav-icon">&#x2192;</span> Sign out</button>
     <button class="collapse-btn" id="collapseBtn" aria-label="Collapse sidebar"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M10 3L5 8l5 5"/></svg></button>
     <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
   </div>
@@ -368,7 +370,7 @@ strong { font-weight: 600; color: var(--color-heading); }
   // CONFIG
   // ============================================================
   var SB = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
-  var SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDMyMzU1NywiZXhwIjoyMDg5ODk5NTU3fQ.EyEyVh6er79xjWGgMIgKaF2pErkDz0fOxQsrNSup2fk';
+  var SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
 
   var state = { contacts: [], onboarding: {}, tasks: {}, configs: {}, snapshots: {}, filter: 'all' };
 
