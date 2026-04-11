@@ -5,9 +5,14 @@
 
 var sb = require('./_lib/supabase');
 var gh = require('./_lib/github');
+var auth = require('./_lib/auth');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  // Require authenticated admin
+  var user = await auth.requireAdmin(req, res);
+  if (!user) return;
   if (!gh.isConfigured()) return res.status(500).json({ error: 'GITHUB_PAT not configured' });
   if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
 
