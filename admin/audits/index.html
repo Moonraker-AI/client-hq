@@ -709,9 +709,7 @@ a:hover { color: var(--color-primary-hover); }
       var data = await resp.json();
       if (data.ok) {
         var w = window.open('', '_blank');
-        w.document.write('<html><head><title>Email Preview</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/shared/admin-auth.js"></script>
-</head><body>');
+        w.document.write('<html><head><title>Email Preview</title></head><body>');
         w.document.write('<div style="padding:1rem;background:#f5f5f5;font-family:sans-serif;font-size:14px;margin-bottom:1rem;">');
         w.document.write('<strong>To:</strong> ' + data.to + '<br>');
         w.document.write('<strong>From:</strong> ' + data.from + '<br>');
