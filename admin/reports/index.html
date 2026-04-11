@@ -380,6 +380,8 @@ strong { font-weight: 600; color: var(--color-heading); }
 .btn-send-primary:hover { background: var(--color-primary-hover); color: #fff; border-color: var(--color-primary-hover); }
 
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/shared/admin-auth.js"></script>
 </head>
 <body>
 
@@ -400,7 +402,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     <a href="/admin/deliverables"><span class="nav-icon"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5.5 8l2 2 3.5-3.5"/></svg></span><span class="nav-label">Deliverables</span></a>
     <a href="/admin/reports" class="active"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M2 14V6l3.5-2v10"/><path d="M6.25 14V4.5l3.5-2v11.5"/><path d="M10.5 14V3l3.5-2v13"/></svg></span><span class="nav-label">Reports</span></a>
   </nav>
-  <div class="sidebar-footer">
+  <div class="sidebar-footer"><button class="btn btn-ghost btn-sm" onclick="adminAuth.signOut()" style="width:100%;justify-content:flex-start;gap:.5rem"><span class="nav-icon">&#x2192;</span> Sign out</button>
     <button class="collapse-btn" id="collapseBtn" aria-label="Collapse sidebar"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M10 3L5 8l5 5"/></svg></button>
     <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
   </div>
