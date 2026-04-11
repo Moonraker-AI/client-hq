@@ -174,6 +174,7 @@ async function getDelegatedToken(saJson, impersonateEmail, scope) {
       throw new Error('SA JSON missing private_key or client_email');
     }
     var crypto = require('crypto');
+var auth = require('./_lib/auth');
 
     var header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
     var now = Math.floor(Date.now() / 1000);
