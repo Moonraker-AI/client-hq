@@ -8,6 +8,16 @@
 var sb = require('../_lib/supabase');
 
 module.exports = async function handler(req, res) {
+  // Auth: verify cron secret
+  var cronSecret = process.env.CRON_SECRET;
+  if (cronSecret) {
+    var authH = req.headers['authorization'];
+    var qSecret = req.query && req.query.secret;
+    if (authH !== 'Bearer ' + cronSecret && qSecret !== cronSecret) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+  }
+
   if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
 
   var AGENT_URL = process.env.AGENT_SERVICE_URL;
