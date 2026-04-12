@@ -6,6 +6,7 @@
 // Returns discovered properties/locations and saves to contact + report_configs
 
 var sb = require('./_lib/supabase');
+var auth = require('./_lib/auth');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -284,7 +285,6 @@ async function getGoogleAccessToken(saJson) {
       throw new Error('Service account JSON missing private_key or client_email');
     }
     var crypto = require('crypto');
-var auth = require('./_lib/auth');
 
     var header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
     var now = Math.floor(Date.now() / 1000);
