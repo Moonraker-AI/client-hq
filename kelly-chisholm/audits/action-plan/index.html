@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="/assets/logo.png">
+<title>Action Plan - Moonraker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+:root,[data-theme="light"]{--color-primary:#00D47E;--color-primary-hover:#00b86c;--color-primary-subtle:#DDF8F2;--color-bg:#F7FDFB;--color-surface:#FFFFFF;--color-border:#E2E8F0;--color-heading:#1E2A5E;--color-body:#333F70;--color-muted:#6B7599;--color-navy:#141C3A;--color-success:#00D47E;--color-warning:#F59E0B;--color-danger:#EF4444;--color-info:#3B82F6}
+[data-theme="dark"]{--color-primary:#00D47E;--color-primary-hover:#00f598;--color-primary-subtle:#0D2E22;--color-bg:#080F0B;--color-surface:#0E1A14;--color-border:#1E3530;--color-heading:#E8F5EF;--color-body:#C8D8D0;--color-muted:#5A7A6E;--color-navy:#0A1630;--color-success:#00D47E;--color-warning:#F59E0B;--color-danger:#FF6B6B;--color-info:#60A5FA}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;font-weight:400;color:var(--color-body);background:var(--color-bg);line-height:1.7;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:'Outfit',sans-serif;font-weight:700;color:var(--color-heading);line-height:1.15}
+h1{font-size:2.75rem;font-weight:800;letter-spacing:-0.02em}
+h2{font-size:2rem;margin-bottom:.75rem}
+h3{font-size:1.35rem}
+p{margin-bottom:1rem}
+a{color:var(--color-primary);text-decoration:none}
+strong{font-weight:600;color:var(--color-heading)}
+.container{max-width:1060px;margin:0 auto;padding:0 3rem}
+@media(max-width:768px){.container{padding:0 1.5rem}h1{font-size:2rem}}
+section{padding:3.5rem 0}
+.divider{height:1px;background:var(--color-border);border:none;margin:0}
+.header{background:var(--color-navy);padding:2rem 0;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;top:-60%;right:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(0,212,126,.08) 0%,transparent 70%);pointer-events:none}
+.header-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.header img{height:36px}
+.header-meta{text-align:right}
+.header-meta p{margin:0;font-size:.8125rem;color:rgba(232,245,239,.45)}
+.header-meta .name{color:#E8F5EF;font-weight:600;font-size:.9375rem}
+.theme-toggle{position:fixed;top:1.25rem;right:1.25rem;z-index:200;background:var(--color-surface);border:1px solid var(--color-border);border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.15rem;transition:all .25s;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.theme-toggle:hover{border-color:var(--color-primary)}
+.suite-nav{position:fixed;top:5rem;right:1.25rem;z-index:200;display:flex;flex-direction:column;gap:.35rem}
+.suite-nav a{padding:.4rem .85rem;border:1px solid var(--color-border);border-radius:6px;font-weight:600;font-size:.75rem;color:var(--color-muted);transition:all .2s;background:var(--color-surface);box-shadow:0 2px 8px rgba(0,0,0,.06);text-align:center}
+.suite-nav a:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.suite-nav a.active{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
+.suite-toggle{display:none;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:var(--color-surface);border:1px solid var(--color-border);color:var(--color-heading);cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.08);font-family:inherit;padding:0;transition:all .2s}
+.suite-toggle:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.suite-toggle svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:860px){.suite-nav a{display:none;font-size:.72rem;padding:.35rem .7rem}
+.suite-nav.open a{display:block}
+.suite-nav{align-items:flex-end}
+.suite-toggle{display:flex;order:-1}
+.suite-nav.open .suite-toggle svg .hamburger{display:none}
+.suite-nav.open .suite-toggle svg .close{display:block}
+.suite-toggle svg .close{display:none}}
+.progress-line{position:fixed;top:0;left:0;height:3px;background:var(--color-primary);width:0%;z-index:999;transition:width .1s linear;box-shadow:0 0 8px rgba(0,212,126,.4)}
+.section-nav{position:fixed;right:2rem;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:2px}
+@media(max-width:1140px){.section-nav{display:none}}
+.section-nav a{display:flex;align-items:center;gap:10px;padding:6px 12px 6px 8px;border-radius:8px;font-size:.75rem;font-weight:500;color:var(--color-muted);text-decoration:none;transition:all .25s;white-space:nowrap}
+.section-nav a:hover{color:var(--color-heading);background:var(--color-surface)}
+.section-nav a.active{color:var(--color-primary);background:var(--color-primary-subtle)}
+.section-nav .nav-dot{width:6px;height:6px;border-radius:50%;background:var(--color-border);flex-shrink:0;transition:all .25s}
+.section-nav a.active .nav-dot{background:var(--color-primary);width:8px;height:8px;box-shadow:0 0 6px rgba(0,212,126,.5)}
+@media print{.section-nav,.theme-toggle,.progress-line,.suite-nav{display:none !important}}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.25s}
+.task-desc code{background:rgba(0,212,126,.08);border:1px solid rgba(0,212,126,.2);border-radius:6px;padding:.15rem .4rem;font-size:.8125rem;font-family:'SF Mono','Fira Code',monospace;color:var(--color-heading);overflow-wrap:break-word;word-break:break-all}
+.task-desc pre{background:var(--color-navy);color:#E8F5EF;border-radius:10px;padding:1rem 1.25rem;margin:.75rem 0;overflow-x:auto;font-size:.8125rem;line-height:1.6;max-width:100%;box-sizing:border-box}
+.task-desc pre code{background:none;border:none;padding:0;color:inherit;white-space:pre-wrap;word-break:break-word}
+.hero{padding:5.5rem 0 4rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-100px;right:-80px;width:500px;height:500px;background:radial-gradient(circle at 30% 40%,rgba(0,212,126,.06) 0%,transparent 60%);pointer-events:none}
+.hero-layout{display:grid;grid-template-columns:1fr 280px;gap:3rem;align-items:center}
+@media(max-width:768px){.hero-layout{grid-template-columns:1fr}.hero-visual{display:none}}
+.hero-content{position:relative;z-index:1}
+.hero h1{margin-bottom:1rem}
+.hero .subtitle{font-size:1.0625rem;color:var(--color-muted);max-width:520px;line-height:1.7}
+.badge{display:inline-block;background:var(--color-primary-subtle);color:var(--color-primary);font-weight:600;font-size:.75rem;padding:.4rem 1rem;border-radius:100px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:1rem}
+.hero-visual svg{width:100%;height:auto}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1rem;margin:1.5rem 0 2rem}
+.stat-box{background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px;padding:1.25rem;text-align:center}
+.stat-val{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.75rem;color:var(--color-heading);line-height:1}
+.stat-label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--color-muted);margin-top:.35rem}
+/* Phase groups */
+.phase-group{margin-bottom:2.5rem}
+.phase-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;padding-bottom:.65rem;border-bottom:2px solid var(--color-border)}
+.phase-header h3{margin:0}
+.phase-count{font-size:.75rem;font-weight:600;color:var(--color-muted);background:var(--color-bg);padding:.2rem .55rem;border-radius:20px}
+/* Task rows */
+.task-row{display:flex;align-items:flex-start;gap:.75rem;padding:1rem 1.25rem;border-radius:10px;margin-bottom:.5rem;background:var(--color-surface);border:1px solid var(--color-border);transition:border-color .2s}
+.task-row:hover{border-color:rgba(0,212,126,.25)}
+.task-priority{font-family:'Outfit',sans-serif;font-weight:700;font-size:.7rem;padding:.2rem .45rem;border-radius:4px;flex-shrink:0;margin-top:.2rem}
+.task-priority.P1{background:rgba(239,68,68,.1);color:var(--color-danger)}
+.task-priority.P2{background:rgba(245,158,11,.1);color:var(--color-warning)}
+.task-priority.P3{background:rgba(59,130,246,.08);color:var(--color-info)}
+.task-content{flex:1;min-width:0}
+.task-title{font-weight:600;font-size:.9375rem;color:var(--color-heading);margin-bottom:.15rem}
+.task-meta{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;font-size:.78rem}
+.task-owner{font-size:.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;padding:.15rem .45rem;border-radius:4px}
+.task-owner.moonraker{background:rgba(0,212,126,.1);color:#00b86c}
+.task-owner.client{background:rgba(59,130,246,.1);color:#3B82F6}
+.task-owner.collaboration{background:rgba(245,158,11,.1);color:#D97706}
+.task-scope{font-size:.6875rem;color:var(--color-muted);font-weight:500}
+.task-category{font-size:.6875rem;color:var(--color-muted);font-weight:500}
+.task-status{font-size:.6875rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;flex-shrink:0;margin-top:.2rem}
+.task-status.complete{background:rgba(0,212,126,.1);color:var(--color-success)}
+.task-status.in_progress{background:rgba(59,130,246,.08);color:var(--color-info)}
+.task-status.not_started{background:rgba(107,117,153,.08);color:var(--color-muted)}
+/* Stacked bar */
+.progress-bar-wrap{height:10px;background:var(--color-bg);border-radius:5px;overflow:hidden;margin:1rem 0}
+.progress-bar-fill{height:100%;border-radius:5px;transition:width .5s}
+.footer{text-align:center;padding:3rem 0;font-size:.8125rem;color:var(--color-muted)}
+.loading-state{text-align:center;padding:8rem 2rem}
+.spinner{width:32px;height:32px;border:3px solid var(--color-border);border-top-color:var(--color-primary);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="loadingState" class="loading-state"><div class="spinner"></div><p style="margin-top:1rem;color:var(--color-muted);">Loading action plan...</p></div>
+<div id="mainContent" style="display:none;">
+<div class="progress-line" id="progressLine"></div>
+<header class="header"><div class="container header-inner"><img src="/assets/logo.png" alt="Moonraker"><div class="header-meta"><p class="name" id="headerName"></p><p id="headerMeta"></p><p id="headerDate"></p></div></div></header>
+<div class="suite-nav"><a id="navDiagnosis" href="#">Diagnosis</a><a href="#" class="active">Action Plan</a><a id="navProgress" href="#">Progress</a><a id="navReports" href="#">Reports</a><button class="suite-toggle" onclick="this.parentElement.classList.toggle('open')" aria-label="Page navigation"><svg viewBox="0 0 24 24"><line class="hamburger" x1="4" y1="6" x2="20" y2="6"/><line class="hamburger" x1="4" y1="12" x2="20" y2="12"/><line class="hamburger" x1="4" y1="18" x2="20" y2="18"/><line class="close" x1="6" y1="6" x2="18" y2="18"/><line class="close" x1="6" y1="18" x2="18" y2="6"/></svg></button></div>
+<button class="theme-toggle" id="themeBtn">&#x1F319;</button>
+<nav class="section-nav" id="sectionNav"></nav>
+<section class="hero" id="overview"><div class="container">
+  <div class="hero-layout">
+    <div class="hero-content">
+      <span class="badge">Action Plan</span>
+      <h1 id="heroTitle">Your Action Plan</h1>
+      <p class="subtitle">Prioritized tasks from your CORE audit, organized by implementation phase.</p>
+    </div>
+    <div class="hero-visual">
+      <svg viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="140" cy="140" r="120" stroke="var(--color-primary)" stroke-width=".5" opacity=".2"/>
+        <circle cx="140" cy="140" r="90" stroke="var(--color-primary)" stroke-width=".5" opacity=".15"/>
+        <circle cx="140" cy="140" r="60" stroke="var(--color-primary)" stroke-width=".5" opacity=".1"/>
+        <circle cx="140" cy="60" r="8" fill="var(--color-primary)" opacity=".7"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="360 140 140" dur="20s" repeatCount="indefinite"/></circle>
+        <circle cx="230" cy="140" r="6" fill="var(--color-info)" opacity=".5"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="-360 140 140" dur="25s" repeatCount="indefinite"/></circle>
+        <circle cx="140" cy="200" r="5" fill="var(--color-warning)" opacity=".4"><animateTransform attributeName="transform" type="rotate" from="0 140 140" to="360 140 140" dur="30s" repeatCount="indefinite"/></circle>
+        <text x="140" y="130" text-anchor="middle" font-family="Outfit" font-weight="700" font-size="16" fill="var(--color-heading)">CORE</text>
+        <text x="140" y="148" text-anchor="middle" font-family="Inter" font-weight="400" font-size="10" fill="var(--color-muted)" letter-spacing=".06em">ACTION PLAN</text>
+      </svg>
+    </div>
+  </div>
+</div></section>
+<hr class="divider">
+<section id="tasks"><div class="container" id="phasesContainer"></div></section>
+<hr class="divider">
+<section id="next"><div class="container" style="text-align:center;">
+  <h2>Track Your Progress</h2>
+  <p style="color:var(--color-muted);max-width:500px;margin:0 auto 1.5rem;">Use the interactive progress tracker to update task statuses as work gets completed.</p>
+  <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;"><a id="ctaDiagnosis" href="#" style="padding:.75rem 1.75rem;border:1px solid var(--color-border);color:var(--color-heading);border-radius:8px;font-weight:600;font-family:'Outfit',sans-serif;font-size:.9375rem;">View Diagnosis</a><a id="ctaProgress" href="#" style="padding:.75rem 1.75rem;background:var(--color-primary);color:#fff;border-radius:8px;font-weight:600;font-family:'Outfit',sans-serif;font-size:.9375rem;">Track Progress</a></div>
+</div></section>
+<footer class="footer"><div class="container"><p id="footerText"></p></div></footer>
+</div>
+<script>
+(function(){
+  var SB='https://ofmmwcjhdrhvxxkhcuww.supabase.co';
+  var SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
+  var parts=window.location.pathname.replace(/\/+$/,'').split('/');
+  var SLUG=parts[1]||'';
+  function sb(p){return fetch(SB+'/rest/v1/'+p,{headers:{'apikey':SK,'Authorization':'Bearer '+SK}}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})}
+  function esc(s){if(!s)return '';var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+  function fmtDate(d){if(!d)return '';try{return new Date(d).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}catch(e){return d}}
+  if(!SLUG){document.getElementById('loadingState').innerHTML='<div style="text-align:center;padding:6rem 2rem;"><p style="color:var(--color-danger)">No client found. Check URL.</p></div>';return}
+  Promise.all([
+    sb('contacts?slug=eq.'+SLUG+'&select=id,slug,first_name,last_name,credentials,practice_name,city,state_province&limit=1'),
+    sb('entity_audits?client_slug=eq.'+SLUG+'&order=audit_date.desc&limit=1'),
+    sb('checklist_items?client_slug=eq.'+SLUG+'&web_visible=eq.true&order=sort_order')
+  ]).then(function(res){
+    var contacts=res[0]||[];
+    var audits=res[1]||[];
+    var tasks=res[2]||[];
+    if(contacts.length===0)throw new Error('Not found');
+    render(contacts[0],audits[0]||null,tasks);
+  }).catch(function(){
+    document.getElementById('loadingState').innerHTML='<header class="header"><div class="container header-inner"><img src="/assets/logo.png" alt="Moonraker"></div></header><div style="text-align:center;padding:6rem 2rem;"><p style="color:var(--color-danger)">Unable to load action plan. Contact support@moonraker.ai.</p></div>';
+  });
+  function render(contact,audit,tasks){
+    var name=contact.practice_name||((contact.first_name||'')+' '+(contact.last_name||'')).trim();
+    var creds=contact.credentials?', '+contact.credentials:'';
+    var loc=[contact.city,contact.state_province].filter(Boolean).join(', ');
+    document.getElementById('headerName').textContent='Prepared for '+(contact.first_name||'')+' '+(contact.last_name||'')+creds;
+    document.getElementById('headerMeta').textContent=name+(loc?' \u00B7 '+loc:'');
+    document.getElementById('headerDate').textContent=(audit?fmtDate(audit.audit_date):'')+' \u00B7 Confidential';
+    document.title='Action Plan - '+name+' - Moonraker';
+    var base='/'+SLUG;
+    document.getElementById('navDiagnosis').href=base+'/audits/diagnosis';
+    document.getElementById('navProgress').href=base+'/audits/progress';
+    document.getElementById('navReports').href=base+'/reports';
+    document.getElementById('ctaDiagnosis').href=base+'/audits/diagnosis';
+    document.getElementById('ctaProgress').href=base+'/audits/progress';
+    document.getElementById('heroTitle').textContent=name+': Action Plan';
+    var total=tasks.length;
+    // Group by phase
+    var phases={};var phaseOrder=[];
+    tasks.forEach(function(t){
+      var ph=t.phase||'Other';
+      if(!phases[ph]){phases[ph]=[];phaseOrder.push(ph)}
+      phases[ph].push(t);
+    });
+    var ph='';
+    phaseOrder.forEach(function(phase,pidx){
+      var pTasks=phases[phase];
+      var pComplete=pTasks.filter(function(t){return t.status==='complete'}).length;
+      ph+='<div class="phase-group" id="phase-'+pidx+'">';
+      ph+='<div class="phase-header"><h3>'+esc(phase)+'</h3><span class="phase-count">'+pComplete+'/'+pTasks.length+' complete</span></div>';
+      pTasks.forEach(function(t){
+        ph+='<div class="task-row">';
+        ph+='<span class="task-priority '+t.priority+'">'+t.priority+'</span>';
+        ph+='<div class="task-content">';
+        ph+='<div class="task-title">'+esc(t.title)+'</div>';
+        ph+='<div class="task-meta">';
+        if(t.owner)ph+='<span class="task-owner '+t.owner.toLowerCase()+'">'+esc(t.owner)+'</span>';
+        if(t.scope)ph+='<span class="task-scope">'+esc(t.scope)+'</span>';
+        if(t.category)ph+='<span class="task-category">'+esc(t.category)+'</span>';
+        ph+='</div></div>';
+        ph+='</div>';
+      });
+      ph+='</div>';
+    });
+    document.getElementById('phasesContainer').innerHTML=ph;
+    // Build section nav from phases
+    var sn='<a href="#overview"><span class="nav-dot"></span>Overview</a>';
+    phaseOrder.forEach(function(phase,i){
+      sn+='<a href="#phase-'+i+'"><span class="nav-dot"></span>'+esc(phase)+'</a>';
+    });
+    sn+='<a href="#next"><span class="nav-dot"></span>Next Steps</a>';
+    document.getElementById('sectionNav').innerHTML=sn;
+    document.getElementById('footerText').textContent='Prepared for '+(contact.first_name||'')+' '+(contact.last_name||'')+creds+' \u00B7 '+name+' \u00B7 Confidential';
+    document.getElementById('heroTitle').textContent=name+': Action Plan';
+    document.getElementById('loadingState').style.display='none';
+    document.getElementById('mainContent').style.display='block';
+    setTimeout(function(){
+      document.querySelectorAll('.hero-visual animateTransform').forEach(function(a){if(a.beginElement)a.beginElement()});
+      var svg=document.querySelector('.hero-visual svg');if(svg){svg.style.display='none';svg.offsetHeight;svg.style.display=''}
+    },50);
+    setTimeout(function(){onScroll()},100);
+  }
+  var tb=document.getElementById('themeBtn');
+  var ct=document.documentElement.getAttribute('data-theme');
+  if(tb){tb.innerHTML=ct==='dark'?'&#9728;&#65039;':'&#x1F319;';tb.addEventListener('click',function(){
+    var h=document.documentElement;
+    function apply(){
+      if(h.getAttribute('data-theme')==='light'){h.setAttribute('data-theme','dark');tb.innerHTML='&#9728;&#65039;';try{localStorage.setItem('moonraker-theme','dark')}catch(e){}}
+      else{h.setAttribute('data-theme','light');tb.innerHTML='&#x1F319;';try{localStorage.setItem('moonraker-theme','light')}catch(e){}}
+    }
+    if(document.startViewTransition){document.startViewTransition(apply)}else{apply()}
+  })}
+  var pLine=document.getElementById('progressLine');
+  function onScroll(){
+    var st=window.scrollY;var dh=document.documentElement.scrollHeight-window.innerHeight;
+    if(pLine)pLine.style.width=(dh>0?(st/dh)*100:0)+'%';
+    var secs=document.querySelectorAll('section[id],div[id^="phase-"]');var cur='';
+    secs.forEach(function(s){if(st>=s.offsetTop-200)cur=s.id});
+    if(!cur&&secs.length>0)cur=secs[0].id;
+    document.querySelectorAll('.section-nav a').forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+cur)});
+  }
+  window.addEventListener('scroll',onScroll);})();
+</script>
+</body>
+</html>
