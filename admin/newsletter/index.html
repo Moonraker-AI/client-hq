@@ -77,7 +77,23 @@ strong { font-weight: 600; color: var(--color-heading); }
 .sidebar-nav a.active .nav-icon svg { opacity: 1; }
 .sidebar-nav a:hover .nav-icon svg { opacity: 1; }
 .sidebar-footer { display: flex; align-items: center; justify-content: space-between; padding: .75rem 1rem; border-top: 1px solid var(--sidebar-border); }
+.collapse-btn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 50%; color: var(--color-muted); cursor: pointer; transition: all .2s; flex-shrink: 0; padding: 0; }
+.collapse-btn:hover { color: var(--color-heading); border-color: var(--color-primary); background: var(--color-primary-subtle); }
+.collapse-btn svg { transition: transform .25s; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.sidebar.collapsed { width: 56px; }
+.sidebar.collapsed .sidebar-header span { color: transparent; }
+.sidebar.collapsed .sidebar-nav .nav-label { color: transparent; }
+.sidebar.collapsed .nav-section { color: transparent; }
+.sidebar.collapsed .sidebar-footer { flex-wrap: wrap; justify-content: center; gap: .35rem; }
+.sidebar.collapsed:hover { width: 240px; box-shadow: 4px 0 20px rgba(0,0,0,.1); z-index: 250; }
+.sidebar.collapsed:hover .sidebar-header span { color: var(--color-heading); }
+.sidebar.collapsed:hover .sidebar-nav .nav-label { color: inherit; }
+.sidebar.collapsed:hover .nav-section { color: var(--color-muted); }
+.sidebar.collapsed:hover .sidebar-footer { justify-content: space-between; }
+.sidebar.collapsed ~ .main { margin-left: 56px; }
+.sidebar.collapsed .collapse-btn svg { transform: rotate(180deg); }
 .hamburger { display: none; background: none; border: none; color: var(--color-muted); cursor: pointer; padding: .25rem; margin-right: .5rem; }
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 199; }
 .main { flex: 1; margin-left: 240px; min-height: 100vh; }
 @media (max-width: 900px) { .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .sidebar-close { display: block; } .hamburger { display: block; } .main { margin-left: 0; } }
 
@@ -88,7 +104,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 .theme-toggle:hover { border-color: var(--color-primary); }
 
 /* Content */
-.content { padding: 1.5rem 2rem; max-width: 1200px; }
+.content { padding: 1.25rem 2rem; max-width: 1200px; }
 
 /* Buttons */
 .btn { display: inline-flex; align-items: center; gap: .5rem; padding: .5rem 1rem; border-radius: 8px; font-size: .85rem; font-weight: 500; border: none; cursor: pointer; transition: all .2s; font-family: inherit; }
@@ -153,10 +169,10 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
 .story-fields.collapsed { display: none; }
 
 /* Subscriber rows */
-.sub-row { display: grid; grid-template-columns: 1fr 70px 70px 90px; gap: .75rem; align-items: center; padding: .75rem 1rem; border-bottom: 1px solid var(--color-border); font-size: .84rem; }
+.sub-row { display: grid; grid-template-columns: 1fr 140px 70px 70px 90px; gap: .75rem; align-items: center; padding: .65rem 1rem; border-bottom: 1px solid var(--color-border); font-size: .82rem; }
+.sub-row .sub-name { color: var(--color-muted); font-size: .78rem; text-align: left; }
 .sub-row:last-child { border-bottom: none; }
 .sub-email { font-weight: 500; color: var(--color-heading); text-align: left; }
-.sub-name { color: var(--color-muted); font-size: .78rem; }
 
 /* Preview iframe */
 .preview-frame { width: 100%; min-height: 600px; border: 1px solid var(--color-border); border-radius: 8px; background: #fff; }
@@ -178,9 +194,18 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
 .modal-actions { display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1.5rem; }
 
 @media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-close { display: block; }
+  .sidebar-overlay { display: block; }
+  .hamburger { display: block; }
+  .main { margin-left: 0 !important; }
+  .collapse-btn { display: none; }
   .stat-row { grid-template-columns: repeat(2, 1fr); }
   .edition-row { grid-template-columns: 50px 1fr auto; }
   .edition-stats { display: none; }
+  .sub-row { grid-template-columns: 1fr 55px 55px; }
+  .sub-row .sub-name, .sub-row > div:last-child { display: none; }
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -212,10 +237,12 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
   <div class="sidebar-footer">
     <button onclick="adminAuth.signOut()" style="display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .5rem;border-radius:8px;font-size:.8rem;font-weight:500;font-family:inherit;border:none;background:none;color:var(--color-muted);cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Sign out</button>
     <div style="display:flex;align-items:center;gap:.35rem;margin-left:auto;">
-      <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme">&#x1F319;</button>
+      <button class="collapse-btn" id="collapseBtn" aria-label="Collapse sidebar"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M10 3L5 8l5 5"/></svg></button>
+      <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
     </div>
   </div>
 </aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <div class="main">
     <!-- Header -->
@@ -323,8 +350,9 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
           </div>
         </div>
         <div class="card" style="padding:0;overflow:hidden;">
-          <div style="padding:.75rem 1rem;border-bottom:1px solid var(--color-border);display:grid;grid-template-columns:1fr 70px 70px 90px;gap:.75rem;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">
-            <div>Subscriber</div>
+          <div style="padding:.65rem 1rem;border-bottom:1px solid var(--color-border);display:grid;grid-template-columns:1fr 140px 70px 70px 90px;gap:.75rem;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">
+            <div>Email</div>
+            <div>Name</div>
             <div>Tier</div>
             <div>Status</div>
             <div>Source</div>
@@ -584,8 +612,8 @@ function renderSubscriberList(list) {
       var sourceLabel = s.source ? s.source.replace(/-/g, ' ') : '';
 
       return '<div class="sub-row">' +
-        '<div><div class="sub-email">' + escHtml(s.email) + '</div>' +
-          '<div class="sub-name">' + escHtml((s.first_name || '') + ' ' + (s.last_name || '')).trim() + '</div></div>' +
+        '<div class="sub-email">' + escHtml(s.email) + '</div>' +
+        '<div class="sub-name">' + escHtml(((s.first_name || '') + ' ' + (s.last_name || '')).trim()) + '</div>' +
         tierTag + statusTag +
         '<div style="font-size:.78rem;color:var(--color-muted);">' + escHtml(sourceLabel) + '</div>' +
         '</div>';
@@ -886,6 +914,38 @@ async function executeSend() {
 window.executeSend = executeSend;
 
 // ---- Import ----
+// Export subscribers as CSV
+async function exportSubscribers() {
+  toast('Exporting subscribers...');
+  try {
+    var all = [];
+    var offset = 0;
+    while (true) {
+      var batch = await sb('newsletter_subscribers', 'select=email,first_name,last_name,status,engagement_tier,source,subscribed_at&order=email&limit=1000&offset=' + offset);
+      all = all.concat(batch);
+      if (batch.length < 1000) break;
+      offset += 1000;
+    }
+    var csv = 'Email,First Name,Last Name,Status,Tier,Source,Subscribed\n';
+    all.forEach(function(s) {
+      csv += '"' + (s.email || '') + '","' + (s.first_name || '') + '","' + (s.last_name || '') + '","' + (s.status || '') + '","' + (s.engagement_tier || '') + '","' + (s.source || '') + '","' + (s.subscribed_at || '') + '"\n';
+    });
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'moonraker-newsletter-subscribers-' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Exported ' + all.length + ' subscribers');
+  } catch (e) {
+    toast('Export failed: ' + e.message, 'error');
+  }
+}
+window.exportSubscribers = exportSubscribers;
+
 window.openImportModal = function() { document.getElementById('importModal').classList.add('open'); };
 window.closeImportModal = function() { document.getElementById('importModal').classList.remove('open'); };
 
@@ -1008,16 +1068,7 @@ function switchTab(name) {
 }
 window.switchTab = switchTab;
 
-// ---- Theme toggle ----
-function toggleTheme() {
-  var html = document.documentElement;
-  var current = html.getAttribute('data-theme');
-  var next = current === 'dark' ? 'light' : 'dark';
-  html.setAttribute('data-theme', next);
-  localStorage.setItem('moonraker-theme', next);
-  document.querySelector('.theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
-}
-window.toggleTheme = toggleTheme;
+
 
 // ---- Toast ----
 function toast(msg, type) {
@@ -1036,12 +1087,7 @@ function escHtml(s) {
   return d.innerHTML;
 }
 
-// ---- Theme icon on load ----
-(function() {
-  var theme = document.documentElement.getAttribute('data-theme');
-  var toggle = document.querySelector('.theme-toggle');
-  if (toggle) toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
-})();
+
 
 // ---- Search filter ----
 var allLoadedSubs = [];
@@ -1059,14 +1105,40 @@ function filterSubscribers() {
 }
 window.filterSubscribers = filterSubscribers;
 
-// ---- Hamburger / sidebar ----
-document.addEventListener('DOMContentLoaded', function() {
-  var hamburger = document.getElementById('hamburger');
+// ---- Sidebar: collapse, mobile, theme ----
+(function() {
   var sidebar = document.getElementById('sidebar');
+  var collapseBtn = document.getElementById('collapseBtn');
+  try { if (localStorage.getItem('moonraker-sidebar') === 'collapsed') sidebar.classList.add('collapsed'); } catch(e) {}
+  if (collapseBtn) collapseBtn.addEventListener('click', function() {
+    sidebar.classList.toggle('collapsed');
+    try { localStorage.setItem('moonraker-sidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'open'); } catch(e) {}
+  });
+  var hamburger = document.getElementById('hamburger');
+  if (hamburger) hamburger.addEventListener('click', function() { sidebar.classList.toggle('open'); });
+  var sidebarOverlay = document.getElementById('sidebarOverlay');
+  if (sidebarOverlay) sidebarOverlay.addEventListener('click', function() { sidebar.classList.remove('open'); });
   var sidebarClose = document.getElementById('sidebarClose');
-  if (hamburger) hamburger.onclick = function() { sidebar.classList.add('open'); };
-  if (sidebarClose) sidebarClose.onclick = function() { sidebar.classList.remove('open'); };
-});
+  if (sidebarClose) sidebarClose.addEventListener('click', function() { sidebar.classList.remove('open'); });
+  var themeBtn = document.getElementById('themeBtn');
+  var _curTheme = document.documentElement.getAttribute('data-theme');
+  if (themeBtn) {
+    themeBtn.innerHTML = _curTheme === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
+    themeBtn.addEventListener('click', function() {
+      var h = document.documentElement;
+      function apply() {
+        if (h.getAttribute('data-theme') === 'light') {
+          h.setAttribute('data-theme', 'dark'); themeBtn.innerHTML = '&#9728;&#65039;';
+          try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
+        } else {
+          h.setAttribute('data-theme', 'light'); themeBtn.innerHTML = '&#x1F319;';
+          try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
+        }
+      }
+      if (document.startViewTransition) { document.startViewTransition(apply); } else { apply(); }
+    });
+  }
+})();
 
 // ---- Boot ----
 init();
