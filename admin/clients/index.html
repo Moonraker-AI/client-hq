@@ -5761,34 +5761,105 @@ strong { font-weight: 600; color: var(--color-heading); }
       h += '<span style="display:inline-flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--color-info);"><span class="dot-pulse"></span> Generating...</span>';
     } else if (st === 'ready') {
       h += '<button class="btn-sm" onclick="window._sendProposal(\'' + proposal.id + '\',this)" style="padding:.45rem 1rem;font-size:.82rem;font-weight:600;border:none;background:var(--color-primary);color:#fff;border-radius:6px;cursor:pointer;">&#9993; Send Proposal</button>';
-      h += '<button class="btn-sm" onclick="window._previewEmail(\'' + proposal.id + '\')" style="padding:.45rem 1rem;font-size:.82rem;font-weight:600;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-heading);border-radius:6px;cursor:pointer;">Preview Email</button>';
+      h += '<button class="btn-sm" id="propPreviewToggle" onclick="window._toggleProposalEmailPreview(\'' + proposal.id + '\')" style="padding:.45rem 1rem;font-size:.82rem;font-weight:600;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-heading);border-radius:6px;cursor:pointer;">Preview Email &#9660;</button>';
     } else if (st === 'sent' || st === 'viewed') {
-      // Follow-up section
-      var draftCount = followups.filter(function(f) { return f.status === 'draft'; }).length;
-      var pendingCount = followups.filter(function(f) { return f.status === 'pending'; }).length;
-      var sentCount = followups.filter(function(f) { return f.status === 'sent'; }).length;
-      var cancelledCount = followups.filter(function(f) { return f.status === 'cancelled'; }).length;
-
+      // Minimal status in action bar; full follow-up card rendered below
+      var fuSentCount = followups.filter(function(f) { return f.status === 'sent'; }).length;
+      var fuPendingCount = followups.filter(function(f) { return f.status === 'pending'; }).length;
+      var fuCancelledCount = followups.filter(function(f) { return f.status === 'cancelled'; }).length;
       if (followups.length === 0) {
-        h += '<button class="btn-sm" onclick="window._generateFollowups(\'' + proposal.id + '\',this)" style="padding:.45rem 1rem;font-size:.82rem;font-weight:600;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-heading);border-radius:6px;cursor:pointer;">&#128337; Schedule Follow-ups</button>';
-      } else if (draftCount > 0) {
-        h += '<button class="btn-sm" onclick="window._previewFollowups(\'' + proposal.id + '\')" style="padding:.45rem 1rem;font-size:.82rem;font-weight:600;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-heading);border-radius:6px;cursor:pointer;">Preview Sequence</button>';
-        h += '<button class="btn-sm" onclick="window._approveFollowups(\'' + proposal.id + '\',this)" style="padding:.45rem 1rem;font-size:.82rem;font-weight:600;border:none;background:var(--color-primary);color:#fff;border-radius:6px;cursor:pointer;">Approve &amp; Schedule</button>';
-      } else if (pendingCount > 0) {
-        var nextFu = followups.filter(function(f) { return f.status === 'pending'; }).sort(function(a,b) { return new Date(a.scheduled_for) - new Date(b.scheduled_for); })[0];
-        h += '<span class="epill" style="color:var(--color-info);border-color:rgba(59,130,246,.2);">&#128231; ' + sentCount + '/' + followups.length + ' sent</span>';
-        if (nextFu) h += '<span style="font-size:.75rem;color:var(--color-muted);">Next: ' + new Date(nextFu.scheduled_for).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>';
-        h += '<button class="btn-sm" onclick="window._previewFollowups(\'' + proposal.id + '\')" style="padding:.3rem .65rem;font-size:.75rem;font-weight:500;border:1px solid var(--color-border);background:transparent;color:var(--color-muted);border-radius:6px;cursor:pointer;" title="View sequence">&#128065;</button>';
-        h += '<button class="btn-sm" onclick="window._cancelFollowups(\'' + proposal.id + '\')" style="padding:.3rem .65rem;font-size:.75rem;font-weight:500;border:1px solid rgba(239,68,68,.2);background:transparent;color:var(--color-danger);border-radius:6px;cursor:pointer;" title="Cancel remaining">&#10005;</button>';
-      } else if (sentCount === followups.length && sentCount > 0) {
-        h += '<span class="epill" style="color:var(--color-success);border-color:rgba(0,212,126,.2);">&#9989; Sequence complete (' + sentCount + '/' + followups.length + ')</span>';
-      } else if (cancelledCount > 0) {
-        var reason = followups.find(function(f) { return f.cancel_reason; }) || {};
-        var label = reason.cancel_reason === 'signed_up' ? 'Signed up' : reason.cancel_reason === 'lost' ? 'Lost' : 'Cancelled';
-        h += '<span class="epill" style="color:var(--color-muted);border-color:rgba(107,117,153,.2);">' + label + ' (' + sentCount + '/' + followups.length + ' sent)</span>';
+        h += '<span class="epill" style="color:var(--color-muted);border-color:var(--color-border);">&#9993; Proposal ' + (st === 'viewed' ? 'viewed' : 'sent') + '</span>';
+      } else if (fuSentCount === followups.length) {
+        h += '<span class="epill" style="color:var(--color-success);border-color:rgba(0,212,126,.2);">&#9989; Sequence complete (' + fuSentCount + '/' + followups.length + ')</span>';
+      } else if (fuPendingCount > 0) {
+        h += '<span class="epill" style="color:var(--color-info);border-color:rgba(59,130,246,.2);">&#128231; ' + fuSentCount + '/' + followups.length + ' sent</span>';
+      } else if (fuCancelledCount > 0) {
+        var fuReason = followups.find(function(f) { return f.cancel_reason; }) || {};
+        var fuLabel = fuReason.cancel_reason === 'signed_up' ? 'Signed up' : fuReason.cancel_reason === 'lost' ? 'Lost' : 'Cancelled';
+        h += '<span class="epill" style="color:var(--color-muted);border-color:rgba(107,117,153,.2);">' + fuLabel + '</span>';
       }
     }
     h += '</div></div>';
+
+    // ── Proposal Email Preview (expandable, for ready-to-send proposals) ──
+    if (st === 'ready' && proposal) {
+      h += '<div id="propEmailPreview" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">';
+      h += '<div class="card" style="margin-top:1rem;overflow:hidden;">';
+      h += '<div id="propEmailMeta" style="padding:.75rem 1rem;font-size:.75rem;color:var(--color-muted);display:flex;flex-wrap:wrap;gap:.35rem .75rem;border-bottom:1px solid var(--color-border);background:var(--color-bg);">';
+      h += '<span style="color:var(--color-muted);">Loading preview...</span>';
+      h += '</div>';
+      h += '<div id="propEmailBody" style="min-height:200px;background:#fff;border-radius:0 0 12px 12px;"></div>';
+      h += '</div></div>';
+    }
+
+    // ── Proposal Follow-up Sequence Card (after proposal card, for sent/viewed proposals) ──
+    if ((st === 'sent' || st === 'viewed') && proposal) {
+      var pfus = followups || [];
+      var pfuDraftCount = pfus.filter(function(f) { return f.status === 'draft'; }).length;
+      var pfuPendingCount = pfus.filter(function(f) { return f.status === 'pending'; }).length;
+      var pfuSentCount = pfus.filter(function(f) { return f.status === 'sent'; }).length;
+      var pfuCancelledCount = pfus.filter(function(f) { return f.status === 'cancelled'; }).length;
+
+      h += '<div class="card" style="margin-top:1rem;"><div class="card-header" style="display:flex;align-items:center;justify-content:space-between;"><h3>Follow-up Sequence</h3>';
+      if (pfus.length > 0) {
+        h += '<button onclick="window._previewFollowups(\'' + proposal.id + '\')" style="padding:.3rem .65rem;font-size:.72rem;font-weight:500;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-heading);border-radius:6px;cursor:pointer;">Preview All &#8599;</button>';
+      }
+      h += '</div>';
+      h += '<div style="padding:1rem 1.25rem;">';
+
+      if (pfus.length === 0) {
+        h += '<p style="font-size:.84rem;color:var(--color-muted);margin:0 0 .75rem;">Generate a follow-up email sequence personalized from the proposal. Emails are sent over 3 weeks and auto-cancel if the prospect signs up.</p>';
+        h += '<button id="pfuGenBtn" onclick="window._generateFollowups(\'' + proposal.id + '\',this)" style="padding:.45rem 1rem;font-size:.82rem;font-weight:600;border:none;background:var(--color-primary);color:#fff;border-radius:6px;cursor:pointer;">&#128337; Generate Follow-ups</button>';
+      } else {
+        // Render each followup as an expandable row
+        pfus.forEach(function(f) {
+          var pfuStClass = f.status === 'sent' ? 'st-sent' : f.status === 'pending' ? 'st-pending' : f.status === 'cancelled' ? 'st-cancelled' : f.status === 'failed' ? 'st-failed' : 'st-draft';
+          var pfuStLabel = f.status === 'sent' ? 'Sent' : f.status === 'pending' ? 'Scheduled' : f.status === 'cancelled' ? 'Cancelled' : f.status === 'failed' ? 'Failed' : 'Draft';
+          var pfuDateStr = '';
+          if (f.status === 'sent' && f.sent_at) pfuDateStr = new Date(f.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          else if (f.scheduled_for) pfuDateStr = new Date(f.scheduled_for).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          else pfuDateStr = 'Day ' + f.day_offset;
+
+          h += '<div style="background:var(--color-bg);border-radius:8px;margin-bottom:.5rem;border:1px solid var(--color-border);overflow:hidden;">';
+          h += '<div onclick="window._togglePfuPreview(\'' + f.id + '\')" style="display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;cursor:pointer;transition:background .15s;" onmouseover="this.style.background=\'var(--sidebar-hover)\'" onmouseout="this.style.background=\'transparent\'">';
+          h += '<span style="font-size:.78rem;font-weight:600;color:var(--color-heading);white-space:nowrap;">Email ' + f.sequence_number + '</span>';
+          h += '<span style="font-size:.68rem;padding:.1rem .4rem;border-radius:4px;font-weight:500;" class="prop-status-tag ' + pfuStClass + '">' + pfuStLabel + '</span>';
+          h += '<span style="font-size:.8rem;color:var(--color-body);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(f.subject) + '</span>';
+          h += '<span style="font-size:.72rem;color:var(--color-muted);white-space:nowrap;">' + pfuDateStr + '</span>';
+          h += '<span id="pfuChevron_' + f.id + '" style="font-size:.7rem;color:var(--color-muted);transition:transform .2s;">&#9660;</span>';
+          h += '</div>';
+          h += '<div id="pfuPreview_' + f.id + '" style="max-height:0;overflow:hidden;transition:max-height .3s ease;border-top:0px solid var(--color-border);">';
+          h += '<div style="padding:.75rem 1rem;background:var(--color-surface);font-size:.75rem;color:var(--color-muted);display:flex;flex-wrap:wrap;gap:.35rem .75rem;">';
+          h += '<span><strong style="color:var(--color-heading);">From:</strong> Moonraker Proposals &lt;proposals@clients.moonraker.ai&gt;</span>';
+          h += '<span><strong style="color:var(--color-heading);">Reply-to:</strong> scott@moonraker.ai</span>';
+          h += '<span><strong style="color:var(--color-heading);">Subject:</strong> ' + esc(f.subject) + '</span>';
+          h += '</div>';
+          var pfuEscaped = (f.body_html || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+          h += '<iframe srcdoc="' + pfuEscaped + '" style="width:100%;min-height:400px;border:none;display:block;" onload="this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'"></iframe>';
+          h += '</div>';
+          h += '</div>';
+        });
+
+        // Action buttons
+        h += '<div style="display:flex;gap:.5rem;align-items:center;margin-top:.75rem;flex-wrap:wrap;">';
+        if (pfuDraftCount > 0) {
+          h += '<button onclick="window._approveFollowups(\'' + proposal.id + '\',this)" style="padding:.45rem 1rem;font-size:.82rem;font-weight:600;border:none;background:var(--color-primary);color:#fff;border-radius:6px;cursor:pointer;">Approve &amp; Schedule</button>';
+          h += '<button onclick="window._deleteFollowups(\'' + proposal.id + '\')" style="padding:.45rem 1rem;font-size:.82rem;font-weight:600;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-heading);border-radius:6px;cursor:pointer;">Discard</button>';
+        } else if (pfuPendingCount > 0) {
+          h += '<span class="epill" style="color:var(--color-info);border-color:rgba(59,130,246,.2);">&#128231; ' + pfuSentCount + '/' + pfus.length + ' sent</span>';
+          h += '<button onclick="window._cancelFollowups(\'' + proposal.id + '\')" style="padding:.3rem .65rem;font-size:.75rem;font-weight:500;border:1px solid rgba(239,68,68,.2);background:transparent;color:var(--color-danger);border-radius:6px;cursor:pointer;" title="Cancel remaining">&#10005; Cancel</button>';
+        } else if (pfuSentCount === pfus.length && pfuSentCount > 0) {
+          h += '<span class="epill" style="color:var(--color-success);border-color:rgba(0,212,126,.2);">&#9989; Sequence complete (' + pfuSentCount + '/' + pfus.length + ')</span>';
+        } else if (pfuCancelledCount > 0) {
+          var pfuReason = pfus.find(function(f) { return f.cancel_reason; }) || {};
+          var pfuLabel = pfuReason.cancel_reason === 'signed_up' ? 'Signed up' : pfuReason.cancel_reason === 'lost' ? 'Lost' : 'Cancelled';
+          h += '<span class="epill" style="color:var(--color-muted);border-color:rgba(107,117,153,.2);">' + pfuLabel + ' (' + pfuSentCount + '/' + pfus.length + ' sent)</span>';
+          h += '<button onclick="window._generateFollowups(\'' + proposal.id + '\',this)" style="margin-left:.5rem;padding:.3rem .65rem;font-size:.75rem;font-weight:500;border:1px solid var(--color-border);background:transparent;color:var(--color-heading);border-radius:6px;cursor:pointer;">Regenerate</button>';
+        }
+        h += '</div>';
+      }
+      h += '</div></div>';
+    }
 
     container.innerHTML = h;
 
@@ -5990,8 +6061,67 @@ strong { font-weight: 600; color: var(--color-heading); }
     } catch(e) { toast('Send error: ' + e.message, 'error'); btn.disabled = false; btn.innerHTML = '&#9993; Send Proposal'; }
   };
 
-  // ── Preview email ──
+  // ── Preview email (inline expandable) ──
+  window._toggleProposalEmailPreview = async function(proposalId) {
+    var panel = document.getElementById('propEmailPreview');
+    if (!panel) return;
+    var isOpen = panel.getAttribute('data-open') === '1';
+    var toggleBtn = document.getElementById('propPreviewToggle');
+
+    if (isOpen) {
+      panel.style.maxHeight = panel.scrollHeight + 'px';
+      requestAnimationFrame(function() { panel.style.maxHeight = '0'; });
+      panel.setAttribute('data-open', '0');
+      if (toggleBtn) toggleBtn.innerHTML = 'Preview Email &#9660;';
+      return;
+    }
+
+    // Expand
+    panel.setAttribute('data-open', '1');
+    if (toggleBtn) toggleBtn.innerHTML = 'Hide Preview &#9650;';
+
+    // Fetch preview if not already loaded
+    if (!panel.getAttribute('data-loaded')) {
+      try {
+        var resp = await fetch('/api/send-proposal-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proposal_id: proposalId, preview_only: true }) });
+        var data = await resp.json();
+        if (data.ok) {
+          document.getElementById('propEmailMeta').innerHTML =
+            '<span><strong style="color:var(--color-heading);">From:</strong> ' + esc(data.from) + '</span>' +
+            '<span><strong style="color:var(--color-heading);">To:</strong> ' + esc(data.to) + '</span>' +
+            '<span><strong style="color:var(--color-heading);">CC:</strong> ' + esc(data.cc) + '</span>' +
+            '<span><strong style="color:var(--color-heading);">Reply-to:</strong> ' + esc(data.reply_to) + '</span>' +
+            '<span><strong style="color:var(--color-heading);">Subject:</strong> ' + esc(data.subject) + '</span>';
+          var iframe = document.createElement('iframe');
+          iframe.style.cssText = 'width:100%;min-height:500px;border:none;display:block;';
+          iframe.onload = function() { iframe.style.height = iframe.contentDocument.body.scrollHeight + 20 + 'px'; };
+          document.getElementById('propEmailBody').innerHTML = '';
+          document.getElementById('propEmailBody').appendChild(iframe);
+          iframe.contentDocument.open();
+          iframe.contentDocument.write(data.body_html);
+          iframe.contentDocument.close();
+          panel.setAttribute('data-loaded', '1');
+        } else {
+          document.getElementById('propEmailMeta').innerHTML = '<span style="color:var(--color-danger);">Error: ' + esc(data.error || 'Unknown') + '</span>';
+        }
+      } catch(e) {
+        document.getElementById('propEmailMeta').innerHTML = '<span style="color:var(--color-danger);">Error: ' + esc(e.message) + '</span>';
+      }
+    }
+
+    // Animate open after content is ready
+    requestAnimationFrame(function() {
+      panel.style.maxHeight = panel.scrollHeight + 'px';
+      var onEnd = function() {
+        if (panel.getAttribute('data-open') === '1') panel.style.maxHeight = 'none';
+        panel.removeEventListener('transitionend', onEnd);
+      };
+      panel.addEventListener('transitionend', onEnd);
+    });
+  };
+
   window._previewEmail = async function(proposalId) {
+    // Legacy: opens in new tab (fallback)
     try {
       var resp = await fetch('/api/send-proposal-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proposal_id: proposalId, preview_only: true }) });
       var data = await resp.json();
@@ -6020,6 +6150,47 @@ strong { font-weight: 600; color: var(--color-heading); }
   };
 
   // ── Follow-up functions ──
+  window._togglePfuPreview = function(id) {
+    var panel = document.getElementById('pfuPreview_' + id);
+    var chevron = document.getElementById('pfuChevron_' + id);
+    if (!panel) return;
+    var isOpen = panel.getAttribute('data-open') === '1';
+    if (isOpen) {
+      panel.style.maxHeight = panel.scrollHeight + 'px';
+      requestAnimationFrame(function() {
+        panel.style.maxHeight = '0';
+        panel.style.borderTopWidth = '0';
+      });
+      panel.setAttribute('data-open', '0');
+    } else {
+      panel.style.borderTopWidth = '1px';
+      panel.style.maxHeight = panel.scrollHeight + 'px';
+      panel.setAttribute('data-open', '1');
+      var onEnd = function() {
+        if (panel.getAttribute('data-open') === '1') panel.style.maxHeight = 'none';
+        panel.removeEventListener('transitionend', onEnd);
+      };
+      panel.addEventListener('transitionend', onEnd);
+    }
+    if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+  };
+
+  window._deleteFollowups = async function(proposalId) {
+    if (!confirm('Discard the draft follow-up sequence?')) return;
+    try {
+      var fus = state.proposalFollowups[proposalId] || [];
+      for (var i = 0; i < fus.length; i++) {
+        await fetch('/api/action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete_record', table: 'proposal_followups', filters: { id: fus[i].id } })
+        });
+      }
+      state.proposalFollowups[proposalId] = [];
+      toast('Follow-ups discarded');
+      renderProposal();
+    } catch(e) { toast('Delete error: ' + e.message, 'error'); }
+  };
+
   window._generateFollowups = async function(proposalId, btn) {
     btn.disabled = true; btn.innerHTML = '&#128337; Generating...';
     try {
