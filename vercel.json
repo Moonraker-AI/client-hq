@@ -191,7 +191,7 @@
     },
     {
       "path": "/api/cron/process-audit-queue",
-      "schedule": "*/15 * * * *"
+      "schedule": "*/30 * * * *"
     }
   ]
 }
