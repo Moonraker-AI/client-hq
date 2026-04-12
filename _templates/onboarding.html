@@ -1172,24 +1172,40 @@ strong { font-weight: 600; color: var(--color-heading); }
     var ctx = canvas.getContext('2d');
     var drawing = false;
     var lastX = 0, lastY = 0;
+    var initialized = false;
 
-    function resize() {
-      var rect = container.getBoundingClientRect();
+    function setupCanvas() {
+      var w = container.offsetWidth;
+      if (!w) return; // still hidden
       var dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr;
+      canvas.width = w * dpr;
       canvas.height = 120 * dpr;
       canvas.style.height = '120px';
-      ctx.scale(dpr, dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.strokeStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#e0e0e0' : '#1a1a2e';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      sigHasDrawn = false;
-      container.classList.remove('has-signature');
-      validateSignFields();
+      initialized = true;
     }
-    resize();
-    window.addEventListener('resize', resize);
+
+    // Use ResizeObserver to init when the panel becomes visible
+    if (window.ResizeObserver) {
+      var ro = new ResizeObserver(function(entries) {
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i].contentRect.width > 0) {
+            if (!initialized) {
+              setupCanvas();
+            }
+          }
+        }
+      });
+      ro.observe(container);
+    }
+
+    // Also try on window resize and init immediately if visible
+    window.addEventListener('resize', function() { initialized = false; setupCanvas(); sigHasDrawn = false; container.classList.remove('has-signature'); validateSignFields(); });
+    setupCanvas();
 
     function getPos(e) {
       var rect = canvas.getBoundingClientRect();
@@ -1198,11 +1214,10 @@ strong { font-weight: 600; color: var(--color-heading); }
     }
 
     function startDraw(e) {
+      if (!initialized) setupCanvas();
       drawing = true;
       var p = getPos(e);
       lastX = p.x; lastY = p.y;
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
     }
     function moveDraw(e) {
       if (!drawing) return;
