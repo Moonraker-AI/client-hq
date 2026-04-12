@@ -1181,8 +1181,6 @@ strong { font-weight: 600; color: var(--color-heading); }
       canvas.height = 120 * dpr;
       canvas.style.height = '120px';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-heading').trim() || '#222';
-      ctx.lineWidth = 2.5;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       initialized = true;
@@ -1222,6 +1220,9 @@ strong { font-weight: 600; color: var(--color-heading); }
       if (!drawing) return;
       e.preventDefault();
       var p = getPos(e);
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      ctx.strokeStyle = isDark ? '#E8F5EF' : '#111';
+      ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(lastX, lastY);
       ctx.lineTo(p.x, p.y);
