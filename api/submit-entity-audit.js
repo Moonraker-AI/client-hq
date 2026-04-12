@@ -43,6 +43,13 @@ module.exports = async function handler(req, res) {
   var geoTarget = city && state ? city + ', ' + state : city || state || '';
 
   try {
+    // Rate limit: max 20 submissions per hour (prevents automated spam)
+    var oneHourAgo = new Date(Date.now() - 3600000).toISOString();
+    var recentAudits = await sb.query('entity_audits?created_at=gte.' + encodeURIComponent(oneHourAgo) + '&source=eq.landing_page&select=id&limit=21');
+    if (recentAudits && recentAudits.length >= 20) {
+      return res.status(429).json({ error: 'Too many submissions. Please try again later.' });
+    }
+
     // Check for existing contact with this slug
     var existing = await sb.query('contacts?slug=eq.' + slug + '&select=id&limit=1');
     if (existing && existing.length > 0) {
