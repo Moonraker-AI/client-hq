@@ -142,6 +142,18 @@ strong { font-weight: 600; color: var(--color-heading); }
 .sig-field input[readonly] { background: var(--color-surface-alt); color: var(--color-muted); }
 .sig-consent { display: flex; align-items: flex-start; gap: .75rem; margin: 1.25rem 0; font-size: .875rem; }
 .sig-consent input[type="checkbox"] { margin-top: .3rem; width: 18px; height: 18px; accent-color: var(--color-primary); flex-shrink: 0; }
+.sig-canvas-wrap { margin: 1.25rem 0; }
+.sig-canvas-wrap label { display: block; font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); margin-bottom: .35rem; }
+.sig-canvas-container { position: relative; border: 1px solid var(--color-border); border-radius: 8px; overflow: hidden; background: #fff; }
+[data-theme="dark"] .sig-canvas-container { background: #1a1a2e; }
+.sig-canvas-container canvas { display: block; width: 100%; cursor: crosshair; touch-action: none; }
+.sig-canvas-placeholder { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; font-size: .875rem; color: #aaa; transition: opacity .2s; }
+.sig-canvas-container.has-signature .sig-canvas-placeholder { opacity: 0; }
+.sig-canvas-actions { display: flex; justify-content: flex-end; margin-top: .5rem; }
+.sig-canvas-actions button { font-family: 'Inter', sans-serif; font-size: .75rem; font-weight: 600; padding: .35rem .75rem; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); color: var(--color-muted); cursor: pointer; transition: all .2s; }
+.sig-canvas-actions button:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.sig-preview { margin-top: .5rem; }
+.sig-preview img { max-height: 60px; border: 1px solid var(--color-border); border-radius: 6px; padding: 4px; background: #fff; }
 
 /* Embed container */
 .embed-container { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; margin: 1.5rem 0; }
@@ -347,6 +359,16 @@ strong { font-weight: 600; color: var(--color-heading); }
           <div class="sig-consent">
             <input type="checkbox" id="sigConsent">
             <label for="sigConsent">I have read and agree to the terms of this Client Service Agreement. I understand that this constitutes a legally binding agreement between my practice and Moonraker.AI, LLC.</label>
+          </div>
+          <div class="sig-canvas-wrap">
+            <label>Your Signature</label>
+            <div class="sig-canvas-container" id="sigCanvasContainer">
+              <canvas id="sigCanvas" height="120"></canvas>
+              <span class="sig-canvas-placeholder">Draw your signature here</span>
+            </div>
+            <div class="sig-canvas-actions">
+              <button type="button" onclick="event.stopPropagation(); clearSignatureCanvas()">Clear</button>
+            </div>
           </div>
           <button class="btn btn-primary" id="signBtn" disabled onclick="signAgreement()">Sign Agreement</button>
         </div>
@@ -1141,6 +1163,98 @@ strong { font-weight: 600; color: var(--color-heading); }
   // ============================================================
 
   // ============================================================
+  // SIGNATURE CANVAS
+  // ============================================================
+  function initSignatureCanvas() {
+    var canvas = document.getElementById('sigCanvas');
+    var container = document.getElementById('sigCanvasContainer');
+    if (!canvas || !container) return;
+    var ctx = canvas.getContext('2d');
+    var drawing = false;
+    var lastX = 0, lastY = 0;
+
+    function resize() {
+      var rect = container.getBoundingClientRect();
+      var dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = 120 * dpr;
+      canvas.style.height = '120px';
+      ctx.scale(dpr, dpr);
+      ctx.strokeStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#e0e0e0' : '#1a1a2e';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      sigHasDrawn = false;
+      container.classList.remove('has-signature');
+      validateSignFields();
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function getPos(e) {
+      var rect = canvas.getBoundingClientRect();
+      var t = e.touches ? e.touches[0] : e;
+      return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    }
+
+    function startDraw(e) {
+      drawing = true;
+      var p = getPos(e);
+      lastX = p.x; lastY = p.y;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+    }
+    function moveDraw(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      var p = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      lastX = p.x; lastY = p.y;
+      if (!sigHasDrawn) {
+        sigHasDrawn = true;
+        container.classList.add('has-signature');
+        validateSignFields();
+      }
+    }
+    function endDraw() { drawing = false; }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', moveDraw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', moveDraw, { passive: false });
+    canvas.addEventListener('touchend', endDraw);
+  }
+
+  window.clearSignatureCanvas = function() {
+    var canvas = document.getElementById('sigCanvas');
+    var container = document.getElementById('sigCanvasContainer');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    sigHasDrawn = false;
+    container.classList.remove('has-signature');
+    validateSignFields();
+  };
+
+  function getSignatureDataURL() {
+    if (!sigHasDrawn) return null;
+    var canvas = document.getElementById('sigCanvas');
+    if (!canvas) return null;
+    var exp = document.createElement('canvas');
+    var rect = document.getElementById('sigCanvasContainer').getBoundingClientRect();
+    exp.width = Math.round(rect.width);
+    exp.height = 120;
+    var ectx = exp.getContext('2d');
+    ectx.drawImage(canvas, 0, 0, exp.width, exp.height);
+    return exp.toDataURL('image/png');
+  }
+
+  // ============================================================
   // SIGN AGREEMENT
   // ============================================================
   window.signAgreement = function() {
@@ -1156,16 +1270,29 @@ strong { font-weight: 600; color: var(--color-heading); }
     var planType = contact.plan_type || 'standard';
     var planAmount = contact.plan_amount_cents || 0;
 
+    var sigImage = getSignatureDataURL();
+
+    var sigBlock = '<div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid #ddd;">' +
+      '<p style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem;">Signature</p>' +
+      (sigImage ? '<img src="' + sigImage + '" style="max-height:60px;display:block;margin-bottom:.75rem;" alt="Client signature">' : '') +
+      '<p style="margin:0;font-size:.875rem;"><strong>' + signerName + '</strong></p>' +
+      (signerTitle ? '<p style="margin:0;font-size:.8125rem;color:#666;">' + signerTitle + '</p>' : '') +
+      '<p style="margin:0;font-size:.8125rem;color:#666;">' + signerEmail + '</p>' +
+      '<p style="margin:0;font-size:.8125rem;color:#666;">Signed: ' + new Date(signedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + '</p>' +
+      '</div>';
+
     var record = {
       contact_id: contact.id,
       agreement_type: 'csa',
-      agreement_version: '2026-03',
-      document_html: docHTML,
+      agreement_version: '2026-04',
+      document_html: docHTML + sigBlock,
       signer_name: signerName,
       signer_email: signerEmail,
       signer_title: signerTitle,
       signed_at: signedAt,
       ip_address: null,
+      user_agent: navigator.userAgent || null,
+      signature_image: sigImage,
       plan_details: { plan_type: planType, amount_cents: planAmount, campaign_start: contact.campaign_start, campaign_end: contact.campaign_end }
     };
 
@@ -1185,7 +1312,8 @@ strong { font-weight: 600; color: var(--color-heading); }
       // Show signed state (keep agreement visible for reference)
       document.getElementById('csaAlreadySigned').style.display = 'block';
       document.getElementById('signatureBlock').style.display = 'none';
-      document.getElementById('signedDetails').textContent = 'Signed by ' + signerName + ' on ' + new Date(signedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      var signedMsg = 'Signed by ' + signerName + ' on ' + new Date(signedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      document.getElementById('signedDetails').innerHTML = signedMsg + (sigImage ? '<div class="sig-preview"><img src="' + sigImage + '" alt="Signature"></div>' : '');
     }).catch(function(err) {
       console.error('Failed to save agreement:', err);
       btn.disabled = false;
@@ -1215,6 +1343,7 @@ strong { font-weight: 600; color: var(--color-heading); }
   var additionalBios = [];
   var spLookup = {};
   var dlLookup = {};
+  var sigHasDrawn = false;
 
   function prefillForms() {
     if (!contact) return;
@@ -1845,7 +1974,7 @@ strong { font-weight: 600; color: var(--color-heading); }
         // Load all related data in parallel
         return Promise.all([
           sbFetch('onboarding_steps', 'contact_id=eq.' + contact.id + '&select=step_key,status&order=sort_order'),
-          sbFetch('signed_agreements', 'contact_id=eq.' + contact.id + '&agreement_type=eq.csa&select=signer_name,signed_at&limit=1'),
+          sbFetch('signed_agreements', 'contact_id=eq.' + contact.id + '&agreement_type=eq.csa&select=signer_name,signed_at,signature_image&limit=1'),
           sbFetch('practice_details', 'contact_id=eq.' + contact.id + '&select=*&limit=1'),
           sbFetch('bio_materials', 'contact_id=eq.' + contact.id + '&select=*&order=is_primary.desc,sort_order'),
           sbFetch('social_platforms', 'contact_id=eq.' + contact.id + '&select=platform,profile_url,status'),
@@ -1878,7 +2007,8 @@ strong { font-weight: 600; color: var(--color-heading); }
           document.getElementById('signatureBlock').style.display = 'none';
           document.getElementById('csaAlreadySigned').style.display = 'block';
           var a = agreements[0];
-          document.getElementById('signedDetails').textContent = 'Signed by ' + a.signer_name + ' on ' + new Date(a.signed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          var signedText = 'Signed by ' + a.signer_name + ' on ' + new Date(a.signed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          document.getElementById('signedDetails').innerHTML = signedText + (a.signature_image ? '<div class="sig-preview"><img src="' + a.signature_image + '" alt="Signature"></div>' : '');
         }
 
         // Check embed step states - show completion banners and hide embeds
@@ -1894,6 +2024,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
         // Render CSA
         renderCSA(contact);
+        initSignatureCanvas();
 
         // Pre-fill all form fields
         prefillForms();
