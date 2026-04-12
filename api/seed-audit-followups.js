@@ -17,7 +17,7 @@ module.exports = async function handler(req, res) {
   try {
     // Find delivered lead audits without followups
     var audits = await sb.query(
-      'entity_audits?status=eq.delivered&select=*,contacts!contact_id(id,slug,first_name,last_name,practice_name,email,status)&order=created_at.desc'
+      'entity_audits?status=eq.delivered&select=id,contact_id,scores,tasks,audit_tier,contacts!contact_id(id,slug,first_name,last_name,practice_name,email,status)&order=created_at.desc'
     );
 
     var results = [];
