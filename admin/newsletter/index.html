@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="/assets/logo.png">
+<title>Newsletter - Moonraker Admin</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root, [data-theme="light"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00b86c;
+  --color-primary-light: #B4EEE0;
+  --color-primary-subtle: #DDF8F2;
+  --color-bg: #F7FDFB;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-heading: #1E2A5E;
+  --color-body: #333F70;
+  --color-muted: #6B7599;
+  --color-navy: #141C3A;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+  --sidebar-bg: #FAFDFB;
+  --sidebar-border: #E8F0EC;
+  --sidebar-hover: #EEF8F3;
+}
+[data-theme="dark"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00f598;
+  --color-primary-light: #1A4A38;
+  --color-primary-subtle: #0D2E22;
+  --color-bg: #080F0B;
+  --color-surface: #0E1A14;
+  --color-border: #1E3530;
+  --color-heading: #E8F5EF;
+  --color-body: #C8D8D0;
+  --color-muted: #5A7A6E;
+  --color-navy: #0A1630;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #FF6B6B;
+  --color-info: #60A5FA;
+  --sidebar-bg: #0A120E;
+  --sidebar-border: #162820;
+  --sidebar-hover: #12201A;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 17px; overflow-x: hidden; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.2; }
+a { color: var(--color-primary); text-decoration: none; }
+a:hover { color: var(--color-primary-hover); }
+strong { font-weight: 600; color: var(--color-heading); }
+
+/* Layout */
+.layout { display: flex; min-height: 100vh; }
+.sidebar { width: 220px; background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); padding: 1.25rem 0; position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; z-index: 50; transition: transform .3s; }
+.sidebar-logo { display: flex; align-items: center; gap: .75rem; padding: .5rem 1.25rem 1.5rem; }
+.sidebar-logo img { height: 26px; opacity: .8; }
+.sidebar-nav { display: flex; flex-direction: column; }
+.nav-section { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); padding: 1rem 1.25rem .4rem; }
+.sidebar-nav a { display: flex; align-items: center; gap: .65rem; padding: .45rem 1.25rem; font-size: .84rem; color: var(--color-body); transition: all .15s; border-left: 2px solid transparent; }
+.sidebar-nav a:hover { background: var(--sidebar-hover); color: var(--color-heading); }
+.sidebar-nav a.active { background: var(--color-primary-subtle); color: var(--color-primary); border-left-color: var(--color-primary); font-weight: 500; }
+.nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.nav-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.main { flex: 1; margin-left: 220px; min-height: 100vh; }
+
+/* Header */
+.header { background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 1rem 2rem; position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; }
+.header h1 { font-size: 1.15rem; font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: .75rem; }
+.theme-toggle { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all .2s; }
+.theme-toggle:hover { border-color: var(--color-primary); }
+
+/* Content */
+.content { padding: 1.5rem 2rem; max-width: 1200px; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: .5rem; padding: .5rem 1rem; border-radius: 8px; font-size: .85rem; font-weight: 500; border: none; cursor: pointer; transition: all .2s; font-family: inherit; }
+.btn-primary { background: var(--color-primary); color: #fff; }
+.btn-primary:hover { background: var(--color-primary-hover); }
+.btn-secondary { background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-body); }
+.btn-secondary:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.btn-danger { background: rgba(239,68,68,.1); color: var(--color-danger); border: 1px solid transparent; }
+.btn-danger:hover { border-color: var(--color-danger); }
+.btn-sm { padding: .35rem .75rem; font-size: .8rem; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--color-border); margin-bottom: 1.5rem; }
+.tab { padding: .6rem 1.25rem; font-size: .85rem; font-weight: 500; color: var(--color-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .2s; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; }
+.tab:hover { color: var(--color-heading); }
+.tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Cards */
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+
+/* Tags */
+.tag { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .6rem; border-radius: 6px; font-size: .75rem; font-weight: 500; }
+.tag-success { background: rgba(0,212,126,.1); color: var(--color-success); }
+.tag-warning { background: rgba(245,158,11,.1); color: var(--color-warning); }
+.tag-danger { background: rgba(239,68,68,.1); color: var(--color-danger); }
+.tag-info { background: rgba(59,130,246,.1); color: var(--color-info); }
+.tag-muted { background: rgba(107,117,153,.1); color: var(--color-muted); }
+
+/* Stat cards */
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem 1.25rem; text-align: center; }
+.stat-card .value { font-family: 'Outfit', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--color-heading); }
+.stat-card .label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); margin-top: .25rem; }
+
+/* Form inputs */
+.form-group { margin-bottom: 1rem; }
+.form-label { display: block; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); margin-bottom: .35rem; }
+.form-input { width: 100%; padding: .45rem .65rem; font-size: .84rem; font-family: inherit; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-heading); transition: border-color .2s; }
+.form-input:focus { outline: none; border-color: var(--color-primary); }
+textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
+.form-hint { font-size: .75rem; color: var(--color-muted); margin-top: .25rem; }
+
+/* Edition rows */
+.edition-row { display: grid; grid-template-columns: 60px 1fr auto auto auto; gap: 1rem; align-items: center; padding: 1rem 1.25rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; cursor: pointer; transition: all .2s; margin-bottom: .5rem; }
+.edition-row:hover { border-color: var(--color-primary); box-shadow: 0 2px 12px rgba(0,212,126,.08); }
+.edition-num { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--color-primary); text-align: center; }
+.edition-meta { display: flex; flex-direction: column; gap: .15rem; }
+.edition-subject { font-weight: 600; color: var(--color-heading); font-size: .9rem; }
+.edition-date { font-size: .78rem; color: var(--color-muted); }
+.edition-stats { display: flex; gap: .75rem; font-size: .78rem; color: var(--color-muted); }
+
+/* Story editor card */
+.story-editor { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+.story-editor .story-num { font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--color-primary); margin-bottom: .75rem; display: flex; align-items: center; gap: .5rem; }
+.story-editor .collapse-toggle { font-size: .78rem; color: var(--color-muted); cursor: pointer; margin-left: auto; }
+.story-editor .collapse-toggle:hover { color: var(--color-primary); }
+.story-fields { display: grid; gap: .75rem; }
+.story-fields.collapsed { display: none; }
+
+/* Subscriber rows */
+.sub-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 1rem; align-items: center; padding: .75rem 1rem; border-bottom: 1px solid var(--color-border); font-size: .84rem; }
+.sub-row:last-child { border-bottom: none; }
+.sub-email { font-weight: 500; color: var(--color-heading); }
+.sub-name { color: var(--color-muted); font-size: .78rem; }
+
+/* Preview iframe */
+.preview-frame { width: 100%; min-height: 600px; border: 1px solid var(--color-border); border-radius: 8px; background: #fff; }
+
+/* Toast */
+.toast { position: fixed; top: 1.25rem; left: 50%; transform: translateX(-50%); padding: .65rem 1.25rem; border-radius: 10px; font-size: .82rem; font-weight: 500; z-index: 1000; box-shadow: 0 4px 16px rgba(0,0,0,.15); opacity: 0; pointer-events: none; transition: opacity .3s; }
+.toast.show { opacity: 1; pointer-events: auto; }
+.toast.success { background: var(--color-primary-subtle); color: var(--color-primary); border: 1px solid var(--color-primary); }
+.toast.error { background: rgba(239,68,68,.1); color: var(--color-danger); border: 1px solid var(--color-danger); }
+
+/* Loading */
+.loading { text-align: center; padding: 3rem; color: var(--color-muted); font-size: .85rem; }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal { background: var(--color-surface); border-radius: 14px; padding: 2rem; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+.modal h3 { margin-bottom: 1rem; }
+.modal-actions { display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1.5rem; }
+
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .main { margin-left: 0; }
+  .stat-row { grid-template-columns: repeat(2, 1fr); }
+  .edition-row { grid-template-columns: 50px 1fr auto; }
+  .edition-stats { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo"><a href="/admin"><img src="/assets/logo.png" alt="Moonraker"></a></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Overview</div>
+      <a href="/admin"><span class="nav-icon"><svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg></span><span class="nav-label">Dashboard</span></a>
+      <a href="/admin/clients"><span class="nav-icon"><svg viewBox="0 0 16 16"><circle cx="8" cy="4.5" r="2.5"/><path d="M2.5 15c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5"/></svg></span><span class="nav-label">Clients</span></a>
+      <div class="nav-section">Workflows</div>
+      <a href="/admin/proposals"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M3 2h7l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M10 2v3h3"/><path d="M5 9h6M5 12h4"/></svg></span><span class="nav-label">Proposals</span></a>
+      <a href="/admin/onboarding"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M8 1v10M4.5 7.5L8 11l3.5-3.5"/><path d="M2.5 13.5h11"/></svg></span><span class="nav-label">Onboarding</span></a>
+      <a href="/admin/audits"><span class="nav-icon"><svg viewBox="0 0 16 16"><circle cx="6.5" cy="6.5" r="4"/><path d="M14.5 14.5l-4-4"/></svg></span><span class="nav-label">Audits</span></a>
+      <a href="/admin/deliverables"><span class="nav-icon"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5.5 8l2 2 3.5-3.5"/></svg></span><span class="nav-label">Deliverables</span></a>
+      <a href="/admin/reports"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M2 14V6l3.5-2v10"/><path d="M6.25 14V4.5l3.5-2v11.5"/><path d="M10.5 14V3l3.5-2v13"/></svg></span><span class="nav-label">Reports</span></a>
+      <div class="nav-section">Marketing</div>
+      <a href="/admin/newsletter" class="active"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M1 4l7 5 7-5"/></svg></span><span class="nav-label">Newsletter</span></a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <!-- Header -->
+    <div class="header">
+      <h1>Newsletter</h1>
+      <div class="header-right">
+        <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Stat cards -->
+      <div class="stat-row" id="statsRow">
+        <div class="stat-card"><div class="value" id="statSubscribers">--</div><div class="label">Subscribers</div></div>
+        <div class="stat-card"><div class="value" id="statEditions">--</div><div class="label">Editions Sent</div></div>
+        <div class="stat-card"><div class="value" id="statAvgOpen">--</div><div class="label">Avg Open Rate</div></div>
+        <div class="stat-card"><div class="value" id="statNextSend">--</div><div class="label">Next Send</div></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('editions')">Editions</button>
+        <button class="tab" onclick="switchTab('compose')">Compose</button>
+        <button class="tab" onclick="switchTab('subscribers')">Subscribers</button>
+      </div>
+
+      <!-- TAB: Editions -->
+      <div class="tab-content active" id="tab-editions">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <div style="font-size:.85rem;color:var(--color-muted);" id="editionsCount">Loading...</div>
+          <button class="btn btn-primary" onclick="newEdition()">+ New Edition</button>
+        </div>
+        <div id="editionsList" class="loading">Loading editions...</div>
+      </div>
+
+      <!-- TAB: Compose -->
+      <div class="tab-content" id="tab-compose">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h2 style="font-size:1.1rem;" id="composeTitle">New Edition</h2>
+          <div style="display:flex;gap:.5rem;">
+            <button class="btn btn-secondary" onclick="previewNewsletter()">Preview</button>
+            <button class="btn btn-secondary" onclick="saveDraft()">Save Draft</button>
+            <button class="btn btn-primary" onclick="confirmSend()" id="sendBtn" disabled>Send</button>
+          </div>
+        </div>
+
+        <!-- Edition meta -->
+        <div class="card">
+          <div style="display:grid;grid-template-columns:100px 1fr 1fr;gap:1rem;">
+            <div class="form-group">
+              <label class="form-label">Edition #</label>
+              <input type="number" class="form-input" id="editionNumber" placeholder="30" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Subject Line</label>
+              <input type="text" class="form-input" id="editionSubject" placeholder="e.g. Google just changed everything for therapists..." />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Preview Text</label>
+              <input type="text" class="form-input" id="editionPreview" placeholder="Short preview shown in inbox" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Stories 1-5 -->
+        <h3 style="font-size:.95rem;margin:1.25rem 0 .75rem;">Stories</h3>
+        <div id="storiesContainer"></div>
+
+        <!-- Quick Wins -->
+        <div class="card" style="margin-top:1.25rem;">
+          <div class="card-header">
+            <h3 style="font-size:.95rem;">Quick Wins</h3>
+            <button class="btn btn-sm btn-secondary" onclick="addQuickWin()">+ Add</button>
+          </div>
+          <div id="quickWinsContainer"></div>
+        </div>
+
+        <!-- Final Thoughts -->
+        <div class="card" style="margin-top:1rem;">
+          <h3 style="font-size:.95rem;margin-bottom:.75rem;">Final Thoughts</h3>
+          <div class="form-group" style="margin-bottom:0;">
+            <textarea class="form-input" id="finalThoughts" rows="6" placeholder="Write 2-3 paragraphs connecting the week's themes..."></textarea>
+            <div class="form-hint">Include the standard closing line. Wrap paragraphs in &lt;p&gt; tags.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Subscribers -->
+      <div class="tab-content" id="tab-subscribers">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <div style="display:flex;gap:.5rem;align-items:center;">
+            <select class="form-input" style="width:auto;font-size:.82rem;" id="subFilter" onchange="loadSubscribers()">
+              <option value="all">All Subscribers</option>
+              <option value="active">Active</option>
+              <option value="hot">Hot Tier</option>
+              <option value="warm">Warm Tier</option>
+              <option value="cold">Cold Tier</option>
+              <option value="unsubscribed">Unsubscribed</option>
+              <option value="bounced">Bounced</option>
+            </select>
+            <span style="font-size:.82rem;color:var(--color-muted);" id="subCount"></span>
+          </div>
+          <div style="display:flex;gap:.5rem;">
+            <button class="btn btn-secondary btn-sm" onclick="exportSubscribers()">Export CSV</button>
+            <button class="btn btn-primary btn-sm" onclick="openImportModal()">Import</button>
+          </div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div style="padding:.75rem 1rem;border-bottom:1px solid var(--color-border);display:grid;grid-template-columns:1fr auto auto auto;gap:1rem;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);">
+            <div>Subscriber</div>
+            <div>Tier</div>
+            <div>Status</div>
+            <div>Source</div>
+          </div>
+          <div id="subscribersList" class="loading" style="padding:2rem;">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Preview modal -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal" style="max-width:700px;width:95%;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="font-size:1rem;">Email Preview</h3>
+      <button class="btn btn-sm btn-secondary" onclick="closePreview()">Close</button>
+    </div>
+    <iframe class="preview-frame" id="previewFrame"></iframe>
+  </div>
+</div>
+
+<!-- Import modal -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <h3 style="font-size:1rem;">Import Subscribers</h3>
+    <div class="form-group">
+      <label class="form-label">CSV File</label>
+      <input type="file" accept=".csv" id="importFile" class="form-input" />
+      <div class="form-hint">CSV must have an "Email" column. Optional: First Name, Last Name, Tags.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Default Source</label>
+      <select class="form-input" id="importSource">
+        <option value="ghl-import">GHL Import</option>
+        <option value="manual">Manual</option>
+        <option value="webinar">Webinar</option>
+        <option value="website">Website</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Default Status</label>
+      <select class="form-input" id="importStatus">
+        <option value="active">Active</option>
+        <option value="pending">Pending (requires confirmation)</option>
+      </select>
+    </div>
+    <div id="importPreview" style="display:none;margin-top:1rem;padding:1rem;background:var(--color-bg);border-radius:8px;font-size:.82rem;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeImportModal()">Cancel</button>
+      <button class="btn btn-primary" id="importBtn" onclick="runImport()" disabled>Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- Send confirm modal -->
+<div class="modal-overlay" id="sendModal">
+  <div class="modal">
+    <h3 style="font-size:1rem;">Confirm Send</h3>
+    <p style="font-size:.85rem;color:var(--color-body);margin-bottom:.5rem;">You are about to send <strong id="sendEditionLabel">Newsletter #--</strong> to:</p>
+    <div style="padding:1rem;background:var(--color-bg);border-radius:8px;margin-bottom:1rem;">
+      <div style="font-family:'Outfit',sans-serif;font-size:1.5rem;font-weight:700;color:var(--color-heading);text-align:center;" id="sendRecipientCount">--</div>
+      <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);text-align:center;">Active Subscribers</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Send to Tier</label>
+      <select class="form-input" id="sendTier">
+        <option value="all">All Active Subscribers</option>
+        <option value="hot">Hot Tier Only</option>
+        <option value="warm">Hot + Warm Tiers</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeSendModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="executeSend()">Send Now</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---- Config ----
+var SB_URL = '';
+var SB_KEY = '';
+var API_BASE = '/api';
+
+// ---- State ----
+var editions = [];
+var subscribers = [];
+var currentEditionId = null;
+var subscriberCounts = { total: 0, active: 0, hot: 0, warm: 0, cold: 0 };
+
+// ---- Supabase helpers ----
+async function sb(table, params) {
+  var url = SB_URL + '/rest/v1/' + table + '?' + (params || '');
+  var res = await fetch(url, { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } });
+  if (!res.ok) throw new Error('Supabase error: ' + res.status);
+  return res.json();
+}
+
+async function apiAction(action, table, data, filters) {
+  var res = await fetch(API_BASE + '/action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: action, table: table, data: data, filters: filters })
+  });
+  if (!res.ok) { var err = await res.json().catch(function() { return {}; }); throw new Error(err.error || 'API error'); }
+  return res.json();
+}
+
+// ---- Init ----
+async function init() {
+  try {
+    // Fetch Supabase config from health endpoint
+    var healthRes = await fetch('/api/health');
+    var health = await healthRes.json();
+    SB_URL = health.supabaseUrl || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
+    SB_KEY = health.supabaseAnonKey || '';
+
+    await Promise.all([loadEditions(), loadSubscriberStats()]);
+  } catch (e) {
+    console.error('Init failed:', e);
+  }
+  initComposeForm();
+}
+
+// ---- Editions tab ----
+async function loadEditions() {
+  try {
+    editions = await sb('newsletters', 'select=*&order=edition_number.desc&limit=50');
+    var sent = editions.filter(function(e) { return e.status === 'sent'; });
+    document.getElementById('statEditions').textContent = sent.length;
+
+    if (sent.length > 0) {
+      var totalOpened = sent.reduce(function(s, e) { return s + (e.stats_opened || 0); }, 0);
+      var totalSent = sent.reduce(function(s, e) { return s + (e.stats_total_sent || 0); }, 0);
+      document.getElementById('statAvgOpen').textContent = totalSent > 0 ? Math.round(totalOpened / totalSent * 100) + '%' : '--';
+    }
+
+    // Find next scheduled
+    var scheduled = editions.find(function(e) { return e.status === 'scheduled'; });
+    document.getElementById('statNextSend').textContent = scheduled ? new Date(scheduled.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'None';
+
+    renderEditions();
+  } catch (e) {
+    document.getElementById('editionsList').innerHTML = '<div class="loading">Failed to load editions</div>';
+    console.error(e);
+  }
+}
+
+function renderEditions() {
+  var container = document.getElementById('editionsList');
+  if (!editions.length) {
+    container.innerHTML = '<div class="loading">No editions yet. Click "New Edition" to create your first newsletter.</div>';
+    document.getElementById('editionsCount').textContent = '0 editions';
+    return;
+  }
+  document.getElementById('editionsCount').textContent = editions.length + ' edition' + (editions.length !== 1 ? 's' : '');
+
+  container.innerHTML = editions.map(function(ed) {
+    var statusTag = ed.status === 'sent' ? '<span class="tag tag-success">Sent</span>'
+      : ed.status === 'scheduled' ? '<span class="tag tag-info">Scheduled</span>'
+      : ed.status === 'sending' ? '<span class="tag tag-warning">Sending</span>'
+      : '<span class="tag tag-muted">Draft</span>';
+
+    var dateStr = ed.sent_at ? new Date(ed.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : ed.created_at ? new Date(ed.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : '';
+
+    var statsHtml = ed.status === 'sent'
+      ? '<div class="edition-stats">' +
+        '<span>Sent: ' + (ed.stats_total_sent || 0) + '</span>' +
+        '<span>Opened: ' + (ed.stats_opened || 0) + '</span>' +
+        '<span>Clicked: ' + (ed.stats_clicked || 0) + '</span>' +
+        '</div>'
+      : '';
+
+    return '<div class="edition-row" onclick="editEdition(\'' + ed.id + '\')">' +
+      '<div class="edition-num">#' + ed.edition_number + '</div>' +
+      '<div class="edition-meta">' +
+        '<div class="edition-subject">' + escHtml(ed.subject || 'Untitled') + '</div>' +
+        '<div class="edition-date">' + dateStr + '</div>' +
+      '</div>' +
+      statusTag +
+      statsHtml +
+      '</div>';
+  }).join('');
+}
+
+// ---- Subscriber stats ----
+async function loadSubscriberStats() {
+  try {
+    var all = await sb('newsletter_subscribers', 'select=id,status,engagement_tier&limit=5000');
+    var active = all.filter(function(s) { return s.status === 'active'; });
+    subscriberCounts = {
+      total: all.length,
+      active: active.length,
+      hot: active.filter(function(s) { return s.engagement_tier === 'hot'; }).length,
+      warm: active.filter(function(s) { return s.engagement_tier === 'warm'; }).length,
+      cold: active.filter(function(s) { return s.engagement_tier === 'cold'; }).length
+    };
+    document.getElementById('statSubscribers').textContent = subscriberCounts.active.toLocaleString();
+  } catch (e) {
+    console.error('Failed to load subscriber stats:', e);
+  }
+}
+
+// ---- Subscribers tab ----
+async function loadSubscribers() {
+  var filter = document.getElementById('subFilter').value;
+  var container = document.getElementById('subscribersList');
+  container.innerHTML = '<div style="padding:1rem;color:var(--color-muted);font-size:.85rem;">Loading...</div>';
+
+  try {
+    var params = 'select=*&order=created_at.desc&limit=100';
+    if (filter === 'active') params += '&status=eq.active';
+    else if (filter === 'hot') params += '&status=eq.active&engagement_tier=eq.hot';
+    else if (filter === 'warm') params += '&status=eq.active&engagement_tier=eq.warm';
+    else if (filter === 'cold') params += '&status=eq.active&engagement_tier=eq.cold';
+    else if (filter === 'unsubscribed') params += '&status=eq.unsubscribed';
+    else if (filter === 'bounced') params += '&status=eq.bounced';
+
+    subscribers = await sb('newsletter_subscribers', params);
+    document.getElementById('subCount').textContent = subscribers.length + ' shown';
+
+    if (!subscribers.length) {
+      container.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--color-muted);font-size:.85rem;">No subscribers found</div>';
+      return;
+    }
+
+    container.innerHTML = subscribers.map(function(s) {
+      var tierTag = s.engagement_tier === 'hot' ? '<span class="tag tag-success">Hot</span>'
+        : s.engagement_tier === 'warm' ? '<span class="tag tag-warning">Warm</span>'
+        : '<span class="tag tag-muted">Cold</span>';
+      var statusTag = s.status === 'active' ? '<span class="tag tag-success">Active</span>'
+        : s.status === 'unsubscribed' ? '<span class="tag tag-muted">Unsub</span>'
+        : s.status === 'bounced' ? '<span class="tag tag-danger">Bounced</span>'
+        : '<span class="tag tag-info">' + escHtml(s.status) + '</span>';
+      var sourceLabel = s.source ? s.source.replace(/-/g, ' ') : '';
+
+      return '<div class="sub-row">' +
+        '<div><div class="sub-email">' + escHtml(s.email) + '</div>' +
+          '<div class="sub-name">' + escHtml((s.first_name || '') + ' ' + (s.last_name || '')).trim() + '</div></div>' +
+        tierTag + statusTag +
+        '<div style="font-size:.78rem;color:var(--color-muted);">' + escHtml(sourceLabel) + '</div>' +
+        '</div>';
+    }).join('');
+  } catch (e) {
+    container.innerHTML = '<div style="padding:2rem;color:var(--color-danger);font-size:.85rem;">Failed to load subscribers</div>';
+    console.error(e);
+  }
+}
+
+// ---- Compose tab ----
+function initComposeForm() {
+  var container = document.getElementById('storiesContainer');
+  container.innerHTML = '';
+  for (var i = 0; i < 5; i++) {
+    container.innerHTML += storyEditorHtml(i);
+  }
+  // Init quick wins with 4 empty items
+  var qwContainer = document.getElementById('quickWinsContainer');
+  qwContainer.innerHTML = '';
+  for (var j = 0; j < 4; j++) {
+    addQuickWinField(qwContainer);
+  }
+}
+
+function storyEditorHtml(index) {
+  var num = index + 1;
+  return '<div class="story-editor" id="story-' + index + '">' +
+    '<div class="story-num">' +
+      '<span>Story ' + num + '</span>' +
+      '<span class="collapse-toggle" onclick="event.stopPropagation();toggleStory(' + index + ')">Collapse</span>' +
+    '</div>' +
+    '<div class="story-fields" id="storyFields-' + index + '">' +
+      '<div class="form-group"><label class="form-label">Headline</label>' +
+        '<input type="text" class="form-input" id="s' + index + '-headline" placeholder="Clear, specific headline" /></div>' +
+      '<div class="form-group"><label class="form-label">Body</label>' +
+        '<textarea class="form-input" id="s' + index + '-body" rows="5" placeholder="2-3 paragraphs with specific dates, numbers, penalties. Use &lt;p&gt; tags."></textarea></div>' +
+      '<div class="form-group"><label class="form-label">Action Items</label>' +
+        '<textarea class="form-input" id="s' + index + '-actions" rows="3" placeholder="3-5 specific steps. One per line."></textarea>' +
+        '<div class="form-hint">One action item per line. Will be rendered as bullet points.</div></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">' +
+        '<div class="form-group"><label class="form-label">Image URL</label>' +
+          '<input type="text" class="form-input" id="s' + index + '-image" placeholder="https://..." /></div>' +
+        '<div class="form-group"><label class="form-label">Image Alt Text</label>' +
+          '<input type="text" class="form-input" id="s' + index + '-imagealt" placeholder="Describe the image" /></div>' +
+      '</div>' +
+    '</div></div>';
+}
+
+function toggleStory(index) {
+  var fields = document.getElementById('storyFields-' + index);
+  var toggle = fields.previousElementSibling.querySelector('.collapse-toggle');
+  fields.classList.toggle('collapsed');
+  toggle.textContent = fields.classList.contains('collapsed') ? 'Expand' : 'Collapse';
+}
+
+function addQuickWinField(container) {
+  if (!container) container = document.getElementById('quickWinsContainer');
+  var idx = container.children.length;
+  var div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem;';
+  div.innerHTML = '<input type="text" class="form-input qw-input" placeholder="Quick win item..." style="flex:1;" />' +
+    '<button class="btn btn-sm btn-danger" onclick="this.parentElement.remove()" style="flex-shrink:0;">x</button>';
+  container.appendChild(div);
+}
+window.addQuickWin = function() { addQuickWinField(); };
+
+// ---- Gather compose data ----
+function gatherContent() {
+  var stories = [];
+  for (var i = 0; i < 5; i++) {
+    var headline = document.getElementById('s' + i + '-headline').value.trim();
+    var body = document.getElementById('s' + i + '-body').value.trim();
+    var actionsRaw = document.getElementById('s' + i + '-actions').value.trim();
+    var actions = actionsRaw ? actionsRaw.split('\n').filter(function(l) { return l.trim(); }) : [];
+    stories.push({
+      headline: headline,
+      body: body,
+      action_items: actions,
+      image_url: document.getElementById('s' + i + '-image').value.trim(),
+      image_alt: document.getElementById('s' + i + '-imagealt').value.trim()
+    });
+  }
+  var quickWins = [];
+  document.querySelectorAll('.qw-input').forEach(function(inp) {
+    if (inp.value.trim()) quickWins.push(inp.value.trim());
+  });
+
+  return {
+    edition_number: parseInt(document.getElementById('editionNumber').value) || null,
+    subject: document.getElementById('editionSubject').value.trim(),
+    preview_text: document.getElementById('editionPreview').value.trim(),
+    content: {
+      stories: stories,
+      quick_wins: quickWins,
+      final_thoughts: document.getElementById('finalThoughts').value.trim()
+    }
+  };
+}
+
+// ---- Populate compose from edition data ----
+function populateCompose(ed) {
+  currentEditionId = ed.id;
+  document.getElementById('composeTitle').textContent = 'Edition #' + ed.edition_number;
+  document.getElementById('editionNumber').value = ed.edition_number || '';
+  document.getElementById('editionSubject').value = ed.subject || '';
+  document.getElementById('editionPreview').value = ed.preview_text || '';
+  document.getElementById('sendBtn').disabled = (ed.status === 'sent');
+
+  var content = ed.content || {};
+  var stories = content.stories || [];
+  for (var i = 0; i < 5; i++) {
+    var s = stories[i] || {};
+    document.getElementById('s' + i + '-headline').value = s.headline || '';
+    document.getElementById('s' + i + '-body').value = s.body || '';
+    var actions = s.action_items || [];
+    document.getElementById('s' + i + '-actions').value = Array.isArray(actions) ? actions.join('\n') : actions;
+    document.getElementById('s' + i + '-image').value = s.image_url || '';
+    document.getElementById('s' + i + '-imagealt').value = s.image_alt || '';
+  }
+
+  var qwContainer = document.getElementById('quickWinsContainer');
+  qwContainer.innerHTML = '';
+  var qw = content.quick_wins || [];
+  if (!qw.length) qw = ['', '', '', ''];
+  qw.forEach(function(item) {
+    addQuickWinField(qwContainer);
+    qwContainer.lastChild.querySelector('.qw-input').value = item;
+  });
+
+  document.getElementById('finalThoughts').value = content.final_thoughts || '';
+}
+
+// ---- Save draft ----
+async function saveDraft() {
+  var data = gatherContent();
+  if (!data.edition_number) { toast('Edition number required', 'error'); return; }
+
+  try {
+    if (currentEditionId) {
+      await apiAction('update_record', 'newsletters', {
+        subject: data.subject,
+        preview_text: data.preview_text,
+        content: data.content
+      }, { id: currentEditionId });
+    } else {
+      var result = await apiAction('create_record', 'newsletters', {
+        edition_number: data.edition_number,
+        subject: data.subject,
+        preview_text: data.preview_text,
+        content: data.content,
+        status: 'draft'
+      });
+      if (result && result.length) currentEditionId = result[0].id;
+    }
+    document.getElementById('sendBtn').disabled = false;
+    toast('Draft saved');
+    loadEditions();
+  } catch (e) {
+    toast('Failed to save: ' + e.message, 'error');
+  }
+}
+
+// ---- New edition ----
+function newEdition() {
+  currentEditionId = null;
+  initComposeForm();
+  document.getElementById('composeTitle').textContent = 'New Edition';
+  document.getElementById('editionNumber').value = '';
+  document.getElementById('editionSubject').value = '';
+  document.getElementById('editionPreview').value = '';
+  document.getElementById('finalThoughts').value = '';
+  document.getElementById('sendBtn').disabled = true;
+
+  // Auto-set next edition number
+  if (editions.length) {
+    var maxNum = Math.max.apply(null, editions.map(function(e) { return e.edition_number || 0; }));
+    document.getElementById('editionNumber').value = maxNum + 1;
+  }
+  switchTab('compose');
+}
+
+// ---- Edit existing edition ----
+function editEdition(id) {
+  var ed = editions.find(function(e) { return e.id === id; });
+  if (!ed) return;
+  initComposeForm();
+  populateCompose(ed);
+  switchTab('compose');
+}
+window.editEdition = editEdition;
+
+// ---- Preview ----
+function previewNewsletter() {
+  var data = gatherContent();
+  // Build a minimal newsletter object for the template
+  var previewHtml = buildPreviewHtml(data);
+  var frame = document.getElementById('previewFrame');
+  frame.srcdoc = previewHtml;
+  document.getElementById('previewModal').classList.add('open');
+}
+window.previewNewsletter = previewNewsletter;
+window.closePreview = function() { document.getElementById('previewModal').classList.remove('open'); };
+
+// Client-side preview builder (mirrors newsletter-template.js logic)
+function buildPreviewHtml(data) {
+  var C = { navy: '#141C3A', white: '#FFFFFF', bg: '#F7FDFB', primary: '#00D47E', heading: '#1E2A5E', body: '#333F70', muted: '#6B7599', border: '#E2E8F0', subtleBg: '#F0FAF5', lightGreen: '#DDF8F2' };
+  var Fh = "Outfit, 'Trebuchet MS', Arial, sans-serif";
+  var Fb = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif";
+
+  var storiesHtml = (data.content.stories || []).map(function(s, i) {
+    if (!s.headline) return '';
+    var img = s.image_url ? '<tr><td style="padding:0 0 16px;"><img src="' + escHtml(s.image_url) + '" alt="' + escHtml(s.image_alt || '') + '" width="536" style="display:block;width:100%;max-width:536px;height:auto;border-radius:8px;" /></td></tr>' : '';
+    var actionItems = s.action_items || [];
+    var actHtml = '';
+    if (actionItems.length) {
+      actHtml = '<tr><td style="padding:12px 16px;background:' + C.subtleBg + ';border-left:3px solid ' + C.primary + ';border-radius:0 8px 8px 0;">' +
+        '<p style="font-family:' + Fb + ';font-size:15px;font-weight:600;color:' + C.heading + ';margin:0 0 8px;">\u{1F449} Action:</p>' +
+        actionItems.map(function(a) { return '<p style="font-family:' + Fb + ';font-size:15px;color:' + C.body + ';line-height:1.7;margin:0 0 4px;padding-left:8px;">&bull; ' + a + '</p>'; }).join('') +
+        '</td></tr>';
+    }
+    return '<tr><td style="padding:0 0 32px;"><table cellpadding="0" cellspacing="0" border="0" width="100%">' +
+      img +
+      '<tr><td style="padding:0 0 12px;"><h2 style="font-family:' + Fh + ';font-size:20px;font-weight:700;color:' + C.heading + ';margin:0;line-height:1.3;">' + (i + 1) + '. ' + escHtml(s.headline) + '</h2></td></tr>' +
+      '<tr><td style="padding:0 0 16px;"><div style="font-family:' + Fb + ';font-size:15px;color:' + C.body + ';line-height:1.7;">' + (s.body || '') + '</div></td></tr>' +
+      actHtml +
+      '</table>' +
+      '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:24px;"><tr><td style="border-top:1px solid ' + C.border + ';font-size:0;height:1px;line-height:0;">&nbsp;</td></tr></table>' +
+      '</td></tr>';
+  }).join('');
+
+  var qwHtml = '';
+  if (data.content.quick_wins && data.content.quick_wins.length) {
+    qwHtml = '<tr><td style="padding:8px 0 32px;"><table cellpadding="0" cellspacing="0" border="0" width="100%">' +
+      '<tr><td style="padding:0 0 12px;"><h2 style="font-family:' + Fh + ';font-size:20px;font-weight:700;color:' + C.heading + ';margin:0;">\u2705 Quick Wins for This Week</h2></td></tr>' +
+      data.content.quick_wins.map(function(w) {
+        return '<tr><td style="padding:4px 0 4px 8px;font-family:' + Fb + ';font-size:15px;color:' + C.body + ';line-height:1.6;">&bull; ' + w + '</td></tr>';
+      }).join('') +
+      '</table></td></tr>';
+  }
+
+  var spotlightHtml = '<tr><td style="padding:8px 0 32px;"><table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:' + C.lightGreen + ';border-radius:8px;"><tr><td style="padding:20px 24px;">' +
+    '<h2 style="font-family:' + Fh + ';font-size:20px;font-weight:700;color:' + C.heading + ';margin:0 0 12px;">\u{1F680} Spotlight: Engage (Moonraker\'s New AI Project)</h2>' +
+    '<p style="font-family:' + Fb + ';font-size:15px;color:' + C.body + ';line-height:1.7;margin:0 0 12px;">We\'re building Engage, a HIPAA-compliant AI chatbot designed for therapists to handle FAQs and help you seamlessly book more consultations.</p>' +
+    '<p style="font-family:' + Fb + ';font-size:15px;color:' + C.body + ';line-height:1.7;margin:0 0 12px;">It\'s still in early development, but we\'ll be inviting select therapists to test-drive our alpha version in the coming weeks. (This first stage will not be HIPAA-compliant yet; it\'s about usability testing).</p>' +
+    '<p style="font-family:' + Fb + ';font-size:15px;color:' + C.heading + ';line-height:1.7;margin:0;font-weight:600;">\u{1F449} Interested in being one of the first testers? Just reply to this email with "ENGAGE"</p>' +
+    '</td></tr></table></td></tr>';
+
+  var ftHtml = data.content.final_thoughts ? '<tr><td style="padding:8px 0 24px;">' +
+    '<h2 style="font-family:' + Fh + ';font-size:20px;font-weight:700;color:' + C.heading + ';margin:0 0 12px;">\u{1F64F} Final Thoughts</h2>' +
+    '<div style="font-family:' + Fb + ';font-size:15px;color:' + C.body + ';line-height:1.7;">' + data.content.final_thoughts + '</div></td></tr>' : '';
+
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@700&family=Inter:wght@400;500;600&display=swap");</style></head>' +
+    '<body style="margin:0;padding:0;background:' + C.bg + ';">' +
+    '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:' + C.bg + ';"><tr><td align="center" style="padding:24px 16px;">' +
+    '<table cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;">' +
+    '<tr><td style="background:' + C.navy + ';padding:24px 32px;border-radius:14px 14px 0 0;text-align:center;"><img src="/assets/logo.png" alt="Moonraker" height="32" style="display:inline-block;" /></td></tr>' +
+    '<tr><td style="background:' + C.white + ';padding:32px;border-left:1px solid ' + C.border + ';border-right:1px solid ' + C.border + ';">' +
+    '<table cellpadding="0" cellspacing="0" border="0" width="100%">' +
+    '<tr><td style="padding:0 0 24px;"><p style="font-family:' + Fb + ';font-size:15px;color:' + C.body + ';line-height:1.7;margin:0;">We know running a therapy practice is more than sessions. It\'s managing visibility, trust, and compliance in a digital-first world. At Moonraker, we\'re here to make that easier, so every week you\'ll get a short, practical update on SEO + AI trends that affect therapists across the U.S. and Canada.</p></td></tr>' +
+    '<tr><td style="padding:0 0 24px;"><table cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="border-top:1px solid ' + C.border + ';font-size:0;height:1px;line-height:0;">&nbsp;</td></tr></table></td></tr>' +
+    storiesHtml + qwHtml + spotlightHtml + ftHtml +
+    '<tr><td style="padding:16px 0 0;"><p style="font-family:' + Fb + ';font-size:15px;color:' + C.body + ';line-height:1.7;margin:0;">See you next week,</p><p style="font-family:' + Fb + ';font-size:15px;font-style:italic;color:' + C.heading + ';margin:4px 0 0;font-weight:600;">The Moonraker Team</p></td></tr>' +
+    '</table></td></tr>' +
+    '<tr><td style="background:' + C.navy + ';padding:24px 32px;border-radius:0 0 14px 14px;text-align:center;">' +
+    '<p style="font-family:' + Fb + ';font-size:12px;color:rgba(232,245,239,.55);margin:0 0 8px;line-height:1.6;">&copy; 2026 Moonraker.AI<br>119 Oliver St, Easthampton, MA 01027</p>' +
+    '<p style="font-family:' + Fb + ';font-size:11px;color:rgba(232,245,239,.35);margin:0;line-height:1.6;">You\'re receiving this because you attended one of our webinars, signed up for our services, or inquired about working with Moonraker. <a href="#" style="color:rgba(232,245,239,.55);text-decoration:underline;">Unsubscribe</a></p>' +
+    '</td></tr></table></td></tr></table></body></html>';
+}
+
+// ---- Send ----
+async function confirmSend() {
+  if (!currentEditionId) { toast('Save as draft first', 'error'); return; }
+  // Refresh count
+  await loadSubscriberStats();
+  var data = gatherContent();
+  document.getElementById('sendEditionLabel').textContent = 'Newsletter #' + (data.edition_number || '--');
+  document.getElementById('sendRecipientCount').textContent = subscriberCounts.active.toLocaleString();
+  document.getElementById('sendModal').classList.add('open');
+}
+window.confirmSend = confirmSend;
+window.closeSendModal = function() { document.getElementById('sendModal').classList.remove('open'); };
+
+async function executeSend() {
+  document.getElementById('sendModal').classList.remove('open');
+  toast('Sending newsletter... This will take a moment.');
+  try {
+    var tier = document.getElementById('sendTier').value;
+    var res = await fetch(API_BASE + '/send-newsletter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newsletter_id: currentEditionId, tier: tier })
+    });
+    if (!res.ok) { var err = await res.json().catch(function() { return {}; }); throw new Error(err.error || 'Send failed'); }
+    var result = await res.json();
+    toast('Newsletter sent to ' + (result.sent || 0) + ' subscribers!');
+    loadEditions();
+  } catch (e) {
+    toast('Send failed: ' + e.message, 'error');
+  }
+}
+window.executeSend = executeSend;
+
+// ---- Import ----
+window.openImportModal = function() { document.getElementById('importModal').classList.add('open'); };
+window.closeImportModal = function() { document.getElementById('importModal').classList.remove('open'); };
+
+document.addEventListener('DOMContentLoaded', function() {
+  var fileInput = document.getElementById('importFile');
+  if (fileInput) fileInput.addEventListener('change', function() {
+    var file = this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var lines = e.target.result.split('\n');
+      var count = lines.length - 1; // minus header
+      document.getElementById('importPreview').style.display = 'block';
+      document.getElementById('importPreview').innerHTML = '<strong>' + count + ' rows</strong> found in CSV.<br>First row: <code style="font-size:.75rem;">' + escHtml(lines[0].substring(0, 100)) + '</code>';
+      document.getElementById('importBtn').disabled = false;
+    };
+    reader.readAsText(file);
+  });
+});
+
+async function runImport() {
+  var file = document.getElementById('importFile').files[0];
+  if (!file) return;
+  toast('Importing subscribers...');
+
+  var reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      var rows = parseCSV(e.target.result);
+      var source = document.getElementById('importSource').value;
+      var status = document.getElementById('importStatus').value;
+      var imported = 0;
+      var skipped = 0;
+
+      // Process in batches of 50
+      for (var i = 0; i < rows.length; i += 50) {
+        var batch = rows.slice(i, i + 50);
+        var records = batch.map(function(r) {
+          var email = (r['Email'] || r['email'] || '').trim().toLowerCase();
+          if (!email || !email.includes('@')) return null;
+          return {
+            email: email,
+            first_name: r['First Name'] || r['first_name'] || null,
+            last_name: r['Last Name'] || r['last_name'] || null,
+            status: status,
+            source: source,
+            engagement_tier: 'warm',
+            ghl_contact_id: r['Contact Id'] || r['contact_id'] || null,
+            metadata: r['Tags'] ? { ghl_tags: r['Tags'] } : {}
+          };
+        }).filter(Boolean);
+
+        if (records.length) {
+          try {
+            await apiAction('create_record', 'newsletter_subscribers', records);
+            imported += records.length;
+          } catch (err) {
+            // Likely duplicates, try one by one
+            for (var j = 0; j < records.length; j++) {
+              try {
+                await apiAction('create_record', 'newsletter_subscribers', records[j]);
+                imported++;
+              } catch (e2) { skipped++; }
+            }
+          }
+        }
+      }
+
+      toast('Imported ' + imported + ' subscribers' + (skipped ? ', ' + skipped + ' skipped (duplicates)' : ''));
+      closeImportModal();
+      loadSubscriberStats();
+      loadSubscribers();
+    } catch (err) {
+      toast('Import failed: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+window.runImport = runImport;
+
+function parseCSV(text) {
+  var lines = text.split('\n');
+  if (lines.length < 2) return [];
+  var headers = parseCSVLine(lines[0]);
+  var rows = [];
+  for (var i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    var vals = parseCSVLine(lines[i]);
+    var obj = {};
+    headers.forEach(function(h, idx) { obj[h.trim()] = (vals[idx] || '').trim(); });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function parseCSVLine(line) {
+  var result = [];
+  var current = '';
+  var inQuotes = false;
+  for (var i = 0; i < line.length; i++) {
+    var ch = line[i];
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === ',' && !inQuotes) { result.push(current); current = ''; }
+    else { current += ch; }
+  }
+  result.push(current);
+  return result;
+}
+
+// ---- Tab switching ----
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelector('.tab-content#tab-' + name).classList.add('active');
+  // Find matching tab button
+  document.querySelectorAll('.tab').forEach(function(t) {
+    if (t.textContent.toLowerCase().includes(name.substring(0, 4))) t.classList.add('active');
+  });
+  if (name === 'subscribers') loadSubscribers();
+}
+window.switchTab = switchTab;
+
+// ---- Theme toggle ----
+function toggleTheme() {
+  var html = document.documentElement;
+  var current = html.getAttribute('data-theme');
+  var next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('moonraker-theme', next);
+  document.querySelector('.theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
+}
+window.toggleTheme = toggleTheme;
+
+// ---- Toast ----
+function toast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = (type === 'error' ? '\u2717 ' : '\u2713 ') + msg;
+  el.className = 'toast show ' + (type || 'success');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(function() { el.classList.remove('show'); }, 3500);
+}
+
+// ---- Util ----
+function escHtml(s) {
+  if (!s) return '';
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ---- Theme icon on load ----
+(function() {
+  var theme = document.documentElement.getAttribute('data-theme');
+  var toggle = document.querySelector('.theme-toggle');
+  if (toggle) toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+})();
+
+// ---- Boot ----
+init();
+</script>
+</body>
+</html>
