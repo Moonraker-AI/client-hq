@@ -598,11 +598,15 @@ strong { font-weight: 600; color: var(--color-heading); }
 .ws-backup-code[data-copied]::after { content: 'Copied'; position: absolute; top: -1.4rem; left: 50%; transform: translateX(-50%); font-size: .65rem; font-family: Inter, sans-serif; color: var(--color-primary); white-space: nowrap; pointer-events: none; }
 
 /* Directory listings */
-.dir-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .5rem; padding: 1rem; }
-.dir-item { display: flex; justify-content: space-between; align-items: center; padding: .5rem .75rem; border: 1px solid var(--color-border); border-radius: 8px; font-size: .82rem; }
-.dir-name { font-weight: 500; }
-.dir-item.dir-live { border-color: rgba(0,212,126,.3); background: rgba(0,212,126,.04); }
-.dir-item.dir-live .dir-name { color: var(--color-heading); }
+.dir-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; padding: 1rem; }
+@media (max-width: 900px) { .dir-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .dir-grid { grid-template-columns: 1fr; } }
+.dir-card { border: 1px solid var(--color-border); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: .65rem; transition: background .15s, border-color .15s; }
+.dir-card.dir-st-live { background: rgba(0,212,126,.04); border-color: rgba(0,212,126,.25); }
+.dir-card.dir-st-claimed { background: rgba(59,130,246,.04); border-color: rgba(59,130,246,.25); }
+.dir-card.dir-st-needs_update { background: rgba(245,158,11,.04); border-color: rgba(245,158,11,.25); }
+.dir-card .dir-header { display: flex; justify-content: space-between; align-items: center; }
+.dir-card .dir-name { font-weight: 600; font-size: .84rem; color: var(--color-heading); }
 .rt-delete-url { font-size: 1.1rem; color: var(--color-muted); cursor: pointer; line-height: 1; padding: .1rem .25rem; border-radius: 3px; transition: all .15s; }
 .rt-delete-url:hover { color: var(--color-danger); background: rgba(239,68,68,.08); }
 .sort-arrow.desc { transform: rotate(180deg); }
@@ -1867,7 +1871,8 @@ strong { font-weight: 600; color: var(--color-heading); }
     if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
     return url;
   }
-  var ACCESS_PLATFORMS = ['youtube', 'linkedin', 'facebook', 'quora'];
+  var ACCESS_PLATFORMS = ['youtube', 'linkedin', 'facebook', 'quora', 'gbp'];
+  var PLATFORM_ORDER = ['youtube', 'linkedin', 'quora', 'gbp', 'facebook', 'instagram', 'pinterest', 'tiktok', 'x'];
   var DIR_LABELS = { psychology_today: 'Psychology Today', yelp: 'Yelp', goodtherapy: 'GoodTherapy', therapyden: 'TherapyDen', zencare: 'Zencare', theravive: 'Theravive', monarch: 'Monarch', openpath: 'Open Path', inclusive_therapists: 'Inclusive Therapists', network_therapy: 'NetworkTherapy', headway: 'Headway', alma: 'Alma', zocdoc: 'Zocdoc', grow_therapy: 'Grow Therapy', sondermind: 'SonderMind', emdria: 'EMDRIA', ifs_institute: 'IFS Institute', tfbg: 'AAMFT / TFBG', latinx_therapy: 'LatinX Therapy', amhc: 'AMHC', ementalhealth: 'eMentalHealth', first_session: 'First Session' };
 
   window.toggleProfileSection = function(section) {
@@ -2041,7 +2046,13 @@ strong { font-weight: 600; color: var(--color-heading); }
     h += '<div class="ws-field"><span class="ws-label">2FA Enabled</span><span class="ws-value">' + (ws.two_fa_enabled ? '<span style="color:var(--color-success);">Yes</span>' : '<span style="color:var(--color-danger);">No</span>') + '</span></div>';
     h += '<div class="ws-field"><span class="ws-label">App Password</span><span class="ws-value">' + maskVal('app_password', ws.app_password) + '</span></div>';
     if ((ws.authenticator_backup_codes && ws.authenticator_backup_codes.length > 0) || ws.qr_code_image) {
-      // Backup codes in left column
+      // QR code in left column
+      if (ws.qr_code_image) {
+        h += '<div class="ws-field"><span class="ws-label">2FA QR Code</span><div style="margin-top:.25rem;"><img src="' + ws.qr_code_image + '" class="ws-qr-thumb" onclick="showQrFullsize()" alt="2FA QR Code"></div></div>';
+      } else if (ws.authenticator_backup_codes && ws.authenticator_backup_codes.length > 0) {
+        h += '<div class="ws-field"></div>';
+      }
+      // Backup codes in right column
       if (ws.authenticator_backup_codes && ws.authenticator_backup_codes.length > 0) {
         h += '<div class="ws-field"><span class="ws-label">Backup Codes</span>';
         if (wsRevealedFields['backup_codes']) {
@@ -2054,12 +2065,6 @@ strong { font-weight: 600; color: var(--color-heading); }
           h += '<span class="ws-value ws-masked" onclick="revealWsField(\'backup_codes\')" title="Click to reveal" style="display:block;margin-top:.25rem;">\u2022\u2022\u2022\u2022 (' + ws.authenticator_backup_codes.length + ' codes)</span>';
         }
         h += '</div>';
-      } else {
-        h += '<div class="ws-field"></div>';
-      }
-      // QR code in right column
-      if (ws.qr_code_image) {
-        h += '<div class="ws-field"><span class="ws-label">2FA QR Code</span><div style="margin-top:.25rem;"><img src="' + ws.qr_code_image + '" class="ws-qr-thumb" onclick="showQrFullsize()" alt="2FA QR Code"></div></div>';
       }
     }
     h += '</div>';
@@ -2179,7 +2184,6 @@ strong { font-weight: 600; color: var(--color-heading); }
     h += '<div class="ws-field"><span class="ws-label">Backup Phone</span>' + inp('backup_phone', ws.backup_phone, 'Recovery phone') + '</div>';
     h += '<div class="ws-field"><span class="ws-label">2FA Enabled</span><select id="ws_two_fa" style="width:100%;padding:.4rem .6rem;border:1px solid var(--color-border);border-radius:6px;font-size:.84rem;background:var(--color-surface);color:var(--color-heading);font-family:inherit;"><option value="false"' + (!ws.two_fa_enabled ? ' selected' : '') + '>No</option><option value="true"' + (ws.two_fa_enabled ? ' selected' : '') + '>Yes</option></select></div>';
     h += '<div class="ws-field"><span class="ws-label">App Password</span>' + inp('app_password', ws.app_password, '16-char app password') + '</div>';
-    h += '<div class="ws-field"><span class="ws-label">Backup Codes</span><textarea id="ws_backup_codes" rows="5" placeholder="Paste backup codes in any format" style="width:100%;padding:.5rem .6rem;border:1px solid var(--color-border);border-radius:6px;font-size:.82rem;font-family:monospace;background:var(--color-surface);color:var(--color-heading);resize:vertical;line-height:1.6;margin-top:.25rem;">' + esc((ws.authenticator_backup_codes || []).join('\n')) + '</textarea></div>';
     h += '<div class="ws-field"><span class="ws-label">2FA QR Code</span>';
     h += '<div class="ws-qr-paste" id="wsQrPasteZone" tabindex="0" style="margin-top:.25rem;">';
     if (ws.qr_code_image) {
@@ -2189,6 +2193,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       h += '<div class="paste-hint">Paste (Ctrl+V) or drop a QR code screenshot</div>';
     }
     h += '</div></div>';
+    h += '<div class="ws-field"><span class="ws-label">Backup Codes</span><textarea id="ws_backup_codes" rows="5" placeholder="Paste backup codes in any format" style="width:100%;padding:.5rem .6rem;border:1px solid var(--color-border);border-radius:6px;font-size:.82rem;font-family:monospace;background:var(--color-surface);color:var(--color-heading);resize:vertical;line-height:1.6;margin-top:.25rem;">' + esc((ws.authenticator_backup_codes || []).join('\n')) + '</textarea></div>';
     h += '</div>';
     el.innerHTML = h;
     initQrPasteZone();
@@ -2258,8 +2263,13 @@ strong { font-weight: 600; color: var(--color-heading); }
       el.innerHTML = '<div class="empty-state" style="padding:1.5rem;"><p>No social platforms configured.</p></div>';
       return;
     }
+    var sorted = platforms.slice().sort(function(a, b) {
+      var ai = PLATFORM_ORDER.indexOf(a.platform); if (ai === -1) ai = 99;
+      var bi = PLATFORM_ORDER.indexOf(b.platform); if (bi === -1) bi = 99;
+      return ai - bi;
+    });
     var h = '<div class="rt-platform-grid">';
-    platforms.forEach(function(p) {
+    sorted.forEach(function(p) {
       var label = PLATFORM_LABELS[p.platform] || p.platform;
       var hasAccess = ACCESS_PLATFORMS.indexOf(p.platform) !== -1;
       h += '<div class="rt-platform-card rt-st-' + p.status + '">';
@@ -2360,10 +2370,12 @@ strong { font-weight: 600; color: var(--color-heading); }
       return;
     }
 
-    // Sort: live first, then by name
+    // Sort: live first, then claimed, then alphabetical
     var sorted = dirs.slice().sort(function(a, b) {
-      if (a.status === 'live' && b.status !== 'live') return -1;
-      if (b.status === 'live' && a.status !== 'live') return 1;
+      var order = { live: 0, claimed: 1, needs_update: 2, not_listed: 3 };
+      var ao = order[a.status] !== undefined ? order[a.status] : 3;
+      var bo = order[b.status] !== undefined ? order[b.status] : 3;
+      if (ao !== bo) return ao - bo;
       return (a.directory || '').localeCompare(b.directory || '');
     });
 
@@ -2372,25 +2384,23 @@ strong { font-weight: 600; color: var(--color-heading); }
     h += '<div class="dir-grid">';
     sorted.forEach(function(d) {
       var label = DIR_LABELS[d.directory] || d.directory.replace(/_/g, ' ');
-      var isLive = d.status === 'live';
-      h += '<div class="dir-item' + (isLive ? ' dir-live' : '') + '">';
-      h += '<span class="dir-name">' + esc(label) + '</span>';
-      if (isLive && d.profile_url) {
+      h += '<div class="dir-card dir-st-' + d.status + '">';
+      h += '<div class="dir-header"><span class="dir-name">' + esc(label) + '</span>';
+      h += '<select class="rt-status-select" onchange="updateDirStatus(\'' + d.id + '\', this.value)">';
+      ['not_listed','claimed','live','needs_update'].forEach(function(s) {
+        var sl = s.replace(/_/g, ' ');
+        h += '<option value="' + s + '"' + (d.status === s ? ' selected' : '') + '>' + sl.charAt(0).toUpperCase() + sl.slice(1) + '</option>';
+      });
+      h += '</select></div>';
+      h += '<div class="rt-url-row">';
+      if (d.profile_url) {
         var safeDirUrl = normalizeUrl(d.profile_url);
-        h += '<div style="display:flex;align-items:center;gap:.4rem;">';
-        h += '<a href="' + esc(safeDirUrl) + '" target="_blank" style="font-size:.75rem;color:var(--color-primary);text-decoration:none;">View &#8599;</a>';
-        h += '<span style="font-size:.7rem;cursor:pointer;color:var(--color-primary);" onclick="editDirUrl(\'' + d.id + '\')" title="Edit">&#9998;</span>';
-        h += '<span class="rt-delete-url" onclick="clearDirUrl(\'' + d.id + '\')" title="Remove">&times;</span>';
-        h += '</div>';
+        h += '<a href="' + esc(safeDirUrl) + '" target="_blank" class="rt-url" style="flex:1;">' + esc(d.profile_url.replace(/^https?:\/\//, '').slice(0, 40)) + '</a>';
+        h += '<span class="rt-delete-url" onclick="clearDirUrl(\'' + d.id + '\')" title="Remove URL">&times;</span>';
       } else {
-        h += '<select class="rt-status-select" onchange="updateDirStatus(\'' + d.id + '\', this.value)" style="font-size:.72rem;">';
-        ['not_listed','claimed','live','needs_update'].forEach(function(s) {
-          var sl = s.replace(/_/g, ' ');
-          h += '<option value="' + s + '"' + (d.status === s ? ' selected' : '') + '>' + sl.charAt(0).toUpperCase() + sl.slice(1) + '</option>';
-        });
-        h += '</select>';
+        h += '<input type="text" class="rt-url-input" placeholder="Enter listing URL..." onkeydown="if(event.key===\'Enter\')saveDirUrlInline(\'' + d.id + '\',this.value)" onblur="saveDirUrlInline(\'' + d.id + '\',this.value)">';
       }
-      h += '</div>';
+      h += '</div></div>';
     });
     h += '</div>';
     el.innerHTML = h;
@@ -2399,15 +2409,24 @@ strong { font-weight: 600; color: var(--color-heading); }
   window.updateDirStatus = function(id, newStatus) {
     var d = state.directoryListings.find(function(d) { return d.id === id; });
     if (!d) return;
-    if (newStatus === 'live' && !d.profile_url) {
-      var url = prompt('Enter the directory listing URL:');
-      if (!url || !url.trim()) return;
-      d.profile_url = normalizeUrl(url);
-    }
     d.status = newStatus;
     fetch('/api/action', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update_record', table: 'directory_listings', filters: { id: id }, data: { status: newStatus, profile_url: d.profile_url, updated_at: new Date().toISOString() } })
+      body: JSON.stringify({ action: 'update_record', table: 'directory_listings', filters: { id: id }, data: { status: newStatus, updated_at: new Date().toISOString() } })
+    });
+    renderDirectories();
+  };
+
+  window.saveDirUrlInline = function(id, rawUrl) {
+    var url = normalizeUrl(rawUrl);
+    if (!url) return;
+    var d = state.directoryListings.find(function(d) { return d.id === id; });
+    if (!d) return;
+    d.profile_url = url;
+    if (d.status === 'not_listed') d.status = 'live';
+    fetch('/api/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'directory_listings', filters: { id: id }, data: { profile_url: url, status: d.status, updated_at: new Date().toISOString() } })
     });
     renderDirectories();
   };
