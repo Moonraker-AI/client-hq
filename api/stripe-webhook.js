@@ -121,7 +121,7 @@ module.exports = async function handler(req, res) {
         try {
           fetch('https://clients.moonraker.ai/api/notify-team', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (process.env.CRON_SECRET || '') },
             body: JSON.stringify({ event: 'payment_received', slug: slug })
           }).catch(function(e) { console.log('Notification fire-and-forget error:', e.message); });
         } catch (notifyErr) {
@@ -133,7 +133,7 @@ module.exports = async function handler(req, res) {
         try {
           fetch('https://clients.moonraker.ai/api/setup-audit-schedule', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (process.env.CRON_SECRET || '') },
             body: JSON.stringify({ contact_id: contact.id })
           }).catch(function(e) { console.log('Audit schedule fire-and-forget error:', e.message); });
         } catch (schedErr) {
