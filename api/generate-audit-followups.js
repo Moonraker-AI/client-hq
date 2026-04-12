@@ -75,9 +75,18 @@ module.exports = async function handler(req, res) {
       overall = (sum / areas.length) * 10;
     }
 
-    // Extract tasks/findings if available (tasks may be array or object)
-    var tasks = audit.tasks || [];
-    if (!Array.isArray(tasks)) tasks = [];
+    // Handle tasks: may be flat array (with category) or object keyed by pillar
+    var rawTasks = audit.tasks || [];
+    var tasks = [];
+    if (Array.isArray(rawTasks)) {
+      tasks = rawTasks;
+    } else if (typeof rawTasks === 'object' && rawTasks !== null) {
+      ['credibility','optimization','reputation','engagement'].forEach(function(p) {
+        if (Array.isArray(rawTasks[p])) {
+          rawTasks[p].forEach(function(t) { t.category = p; tasks.push(t); });
+        }
+      });
+    }
     var weakestTasks = tasks.filter(function(t) { return t.category && t.category.toLowerCase().indexOf(weakest.key) > -1; }).slice(0, 3);
     var secondTasks = tasks.filter(function(t) { return t.category && t.category.toLowerCase().indexOf(secondWeakest.key) > -1; }).slice(0, 2);
 
