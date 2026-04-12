@@ -12,8 +12,13 @@
 //
 // ENV: LOCALFALCON_API_KEY
 
+var auth = require('./_lib/auth');
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  // Require authenticated admin
+  var user = await auth.requireAdmin(req, res);
+  if (!user) return;
+
 
   var lfKey = process.env.LOCALFALCON_API_KEY;
   if (!lfKey) return res.status(500).json({ error: 'LOCALFALCON_API_KEY not configured' });
