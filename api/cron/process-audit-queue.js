@@ -1,13 +1,21 @@
 // /api/cron/process-audit-queue.js
-// Runs every 15 minutes. Picks the oldest queued entity audit and triggers the agent.
+// Runs every 30 minutes. Picks the oldest queued entity audit and triggers the agent.
 // Processes one at a time to avoid overwhelming the agent service.
 // Also detects stale agent_running tasks and requeues them.
 //
-// Vercel cron: every 15 minutes
+// Smart requeue logic:
+//   1. Check agent /health — if active_tasks=0 but Supabase has agent_running rows,
+//      requeue ALL immediately (container restart wiped them).
+//   2. If agent is unreachable, requeue all running tasks so they retry later.
+//   3. If agent is busy, only requeue tasks older than STALE_THRESHOLD_HOURS
+//      after verifying their individual status via /task/:id.
+//
+// Vercel cron: every 30 minutes
 
 var sb = require('../_lib/supabase');
 
 // How long an audit can stay in agent_running before we consider it stale
+// (only used when the agent IS actively processing something)
 var STALE_THRESHOLD_HOURS = 2;
 
 module.exports = async function handler(req, res) {
@@ -31,56 +39,104 @@ module.exports = async function handler(req, res) {
 
   try {
     // ============================================================
-    // STEP 0: Detect and requeue stale agent_running tasks
+    // STEP 0: Detect and requeue orphaned/stale agent_running tasks
     // ============================================================
     var staleRequeued = 0;
     var staleChecked = 0;
+    var requeueReason = null;
 
-    var staleAudits = await sb.query(
+    // First, check agent health to detect container restarts
+    var agentHealthy = false;
+    var agentActiveTasks = -1;
+    try {
+      var healthResp = await fetch(AGENT_URL + '/health', {
+        headers: { 'Authorization': 'Bearer ' + AGENT_KEY },
+        signal: AbortSignal.timeout(10000)
+      });
+      if (healthResp.ok) {
+        var healthData = await healthResp.json();
+        agentHealthy = true;
+        agentActiveTasks = healthData.active_tasks || 0;
+      }
+    } catch (e) {
+      // Agent unreachable
+      agentHealthy = false;
+    }
+
+    // Get all agent_running audits from Supabase
+    var runningAudits = await sb.query(
       'entity_audits?status=eq.agent_running' +
       '&select=id,agent_task_id,client_slug,updated_at' +
       '&order=updated_at.asc'
     );
 
-    if (staleAudits && staleAudits.length > 0) {
-      var cutoff = new Date(Date.now() - STALE_THRESHOLD_HOURS * 60 * 60 * 1000);
-      staleChecked = staleAudits.length;
+    if (runningAudits && runningAudits.length > 0) {
+      staleChecked = runningAudits.length;
 
-      for (var i = 0; i < staleAudits.length; i++) {
-        var a = staleAudits[i];
-        var updatedAt = new Date(a.updated_at);
-        if (updatedAt < cutoff) {
-          // Check if agent actually has this task in error state
-          var agentStatus = null;
-          if (a.agent_task_id) {
-            try {
-              var taskResp = await fetch(AGENT_URL + '/tasks/' + a.agent_task_id, {
-                headers: { 'Authorization': 'Bearer ' + AGENT_KEY }
-              });
-              if (taskResp.ok) {
-                var taskData = await taskResp.json();
-                agentStatus = taskData.status;
+      if (agentHealthy && agentActiveTasks === 0) {
+        // FAST PATH: Agent is up with 0 active tasks, but Supabase shows running audits.
+        // Container restart wiped all in-flight work. Requeue everything immediately.
+        requeueReason = 'agent_idle_with_running_audits';
+        for (var i = 0; i < runningAudits.length; i++) {
+          await sb.mutate('entity_audits?id=eq.' + runningAudits[i].id, 'PATCH', {
+            status: 'queued',
+            agent_task_id: null
+          }, 'return=minimal');
+          staleRequeued++;
+        }
+      } else if (!agentHealthy) {
+        // Agent unreachable. Requeue all so they retry once it comes back.
+        requeueReason = 'agent_unreachable';
+        for (var i = 0; i < runningAudits.length; i++) {
+          await sb.mutate('entity_audits?id=eq.' + runningAudits[i].id, 'PATCH', {
+            status: 'queued',
+            agent_task_id: null
+          }, 'return=minimal');
+          staleRequeued++;
+        }
+      } else {
+        // SLOW PATH: Agent is busy (active_tasks > 0). Only requeue tasks that have
+        // exceeded the staleness threshold after confirming with the agent.
+        var cutoff = new Date(Date.now() - STALE_THRESHOLD_HOURS * 60 * 60 * 1000);
+
+        for (var i = 0; i < runningAudits.length; i++) {
+          var a = runningAudits[i];
+          var updatedAt = new Date(a.updated_at);
+          if (updatedAt < cutoff) {
+            // Check individual task status on the agent (singular /task/ path)
+            var agentStatus = null;
+            if (a.agent_task_id) {
+              try {
+                var taskResp = await fetch(AGENT_URL + '/task/' + a.agent_task_id, {
+                  headers: { 'Authorization': 'Bearer ' + AGENT_KEY },
+                  signal: AbortSignal.timeout(10000)
+                });
+                if (taskResp.ok) {
+                  var taskData = await taskResp.json();
+                  agentStatus = taskData.status;
+                }
+                // 404 = task not found on agent, leave agentStatus null
+              } catch (e) {
+                agentStatus = 'unreachable';
               }
-            } catch (e) {
-              // Agent unreachable, treat as stale
-              agentStatus = 'unreachable';
             }
-          }
 
-          // Requeue if agent says error, task not found (404), or agent unreachable
-          if (!agentStatus || agentStatus === 'error' || agentStatus === 'unreachable') {
-            await sb.mutate('entity_audits?id=eq.' + a.id, 'PATCH', {
-              status: 'queued',
-              agent_task_id: null
-            }, 'return=minimal');
-            staleRequeued++;
+            // Requeue if agent says error, task not found (404), or unreachable
+            if (!agentStatus || agentStatus === 'error' || agentStatus === 'unreachable') {
+              requeueReason = requeueReason || 'stale_threshold';
+              await sb.mutate('entity_audits?id=eq.' + a.id, 'PATCH', {
+                status: 'queued',
+                agent_task_id: null
+              }, 'return=minimal');
+              staleRequeued++;
+            }
           }
         }
       }
     }
 
     // ============================================================
-    // STEP 1: Find the oldest queued audit
+    // STEP 1: Find the oldest queued audit and dispatch
     // ============================================================
     var queued = await sb.query(
       'entity_audits?status=eq.queued' +
@@ -93,7 +149,34 @@ module.exports = async function handler(req, res) {
         message: 'No queued audits.',
         remaining: 0,
         stale_checked: staleChecked,
-        stale_requeued: staleRequeued
+        stale_requeued: staleRequeued,
+        requeue_reason: requeueReason,
+        agent_active_tasks: agentActiveTasks
+      });
+    }
+
+    // Don't dispatch if agent is unreachable
+    if (!agentHealthy) {
+      return res.status(200).json({
+        message: 'Agent unreachable, skipping dispatch.',
+        remaining: queued.length,
+        stale_checked: staleChecked,
+        stale_requeued: staleRequeued,
+        requeue_reason: requeueReason
+      });
+    }
+
+    // Don't dispatch if agent already has active tasks (enforce one-at-a-time).
+    // Re-check: agentActiveTasks reflects the count BEFORE our requeue, but if we
+    // requeued tasks in Step 0 and the agent truly has 0, this won't block.
+    if (agentActiveTasks > 0) {
+      var remainAll = await sb.query('entity_audits?status=eq.queued&select=id');
+      return res.status(200).json({
+        message: 'Agent busy (' + agentActiveTasks + ' active), waiting.',
+        remaining: remainAll ? remainAll.length : 0,
+        stale_checked: staleChecked,
+        stale_requeued: staleRequeued,
+        agent_active_tasks: agentActiveTasks
       });
     }
 
@@ -158,6 +241,8 @@ module.exports = async function handler(req, res) {
       remaining: remainCount,
       stale_checked: staleChecked,
       stale_requeued: staleRequeued,
+      requeue_reason: requeueReason,
+      agent_active_tasks: agentActiveTasks,
       message: 'Triggered audit for ' + audit.client_slug + '. ' + remainCount + ' remaining in queue.'
     });
 
