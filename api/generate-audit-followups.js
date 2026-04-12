@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   // Require authenticated admin
-  var user = await auth.requireAdmin(req, res);
+  var user = await auth.requireAdminOrInternal(req, res);
   if (!user) return;
 
 
