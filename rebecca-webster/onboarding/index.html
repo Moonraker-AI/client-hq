@@ -1213,6 +1213,8 @@ strong { font-weight: 600; color: var(--color-heading); }
   var practiceData = null;
   var bioData = null;
   var additionalBios = [];
+  var spLookup = {};
+  var dlLookup = {};
 
   function prefillForms() {
     if (!contact) return;
@@ -1864,9 +1866,9 @@ strong { font-weight: 600; color: var(--color-heading); }
         var socialPlatformsData = allData[4] || [];
         var directoryListingsData = allData[5] || [];
         // Build lookup maps
-        var spLookup = {};
+        spLookup = {};
         socialPlatformsData.forEach(function(sp) { spLookup[sp.platform] = sp.profile_url; });
-        var dlLookup = {};
+        dlLookup = {};
         directoryListingsData.forEach(function(dl) { dlLookup[dl.directory] = dl.profile_url; });
 
         steps.forEach(function(s) { stepData[s.step_key] = s.status; });
