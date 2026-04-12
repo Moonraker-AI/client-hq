@@ -20,6 +20,12 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Origin validation: block cross-origin abuse (protects Anthropic API credits)
+  var origin = req.headers.origin || '';
+  if (origin && origin !== 'https://clients.moonraker.ai') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
   var apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
