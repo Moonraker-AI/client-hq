@@ -2096,7 +2096,8 @@ strong { font-weight: 600; color: var(--color-heading); }
           try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
         }
       }
-      if (document.startViewTransition) { document.startViewTransition(apply); } else { apply(); }
+      function doToggle() { apply(); if (window.clearSignatureCanvas) clearSignatureCanvas(); }
+      if (document.startViewTransition) { document.startViewTransition(doToggle); } else { doToggle(); }
     });
   }
 
