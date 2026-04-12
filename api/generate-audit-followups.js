@@ -22,6 +22,7 @@ module.exports = async function handler(req, res) {
   if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
 
   var auditId = (req.body || {}).audit_id;
+  var autoApprove = (req.body || {}).auto_approve === true;
   if (!auditId) return res.status(400).json({ error: 'audit_id required' });
 
 
@@ -68,9 +69,15 @@ module.exports = async function handler(req, res) {
     var secondWeakest = areas[1];
     var strongest = areas[areas.length - 1];
     var overall = scores.overall || 0;
+    // Calculate overall from pillar scores if not present (pillars are 0-10, overall is 0-100)
+    if (!overall && areas.length > 0) {
+      var sum = areas.reduce(function(acc, a) { return acc + a.score; }, 0);
+      overall = (sum / areas.length) * 10;
+    }
 
-    // Extract tasks/findings if available
+    // Extract tasks/findings if available (tasks may be array or object)
     var tasks = audit.tasks || [];
+    if (!Array.isArray(tasks)) tasks = [];
     var weakestTasks = tasks.filter(function(t) { return t.category && t.category.toLowerCase().indexOf(weakest.key) > -1; }).slice(0, 3);
     var secondTasks = tasks.filter(function(t) { return t.category && t.category.toLowerCase().indexOf(secondWeakest.key) > -1; }).slice(0, 2);
 
@@ -81,17 +88,25 @@ module.exports = async function handler(req, res) {
       buildEmail3(firstName, practiceName, overall, strongest, weakest, bookingUrl)
     ];
 
-    // Insert as drafts
+    // Insert followups (as drafts, or auto-scheduled if auto_approve)
+    var now = new Date();
     var rows = emails.map(function(e, i) {
-      return {
+      var row = {
         audit_id: auditId,
         contact_id: contact.id,
         sequence_number: i + 1,
         day_offset: e.dayOffset,
-        status: 'draft',
+        status: autoApprove ? 'pending' : 'draft',
         subject: e.subject,
         body_html: e.html
       };
+      if (autoApprove) {
+        var sendDate = new Date(now);
+        sendDate.setDate(sendDate.getDate() + e.dayOffset);
+        sendDate.setUTCHours(14, 0, 0, 0);
+        row.scheduled_for = sendDate.toISOString();
+      }
+      return row;
     });
 
     var insertResp = await fetch(sb.url() + '/rest/v1/audit_followups', {
@@ -194,3 +209,4 @@ function buildEmail3(firstName, practiceName, overall, strongest, weakest, booki
 
   return { dayOffset: 14, subject: 'A quick roadmap for ' + (practiceName || 'your practice'), html: wrapEmail(content) };
 }
+
