@@ -590,6 +590,10 @@ strong { font-weight: 600; color: var(--color-heading); }
 .ws-qr-paste .paste-hint { font-size: .75rem; color: var(--color-muted); }
 .ws-qr-thumb { max-width: 120px; max-height: 120px; border-radius: 6px; cursor: pointer; border: 1px solid var(--color-border); }
 .ws-qr-thumb:hover { border-color: var(--color-primary); }
+.ws-backup-code:hover { background: var(--color-primary-subtle); color: var(--color-primary); }
+.ws-backup-code::after { content: ''; position: absolute; inset: 0; }
+.ws-code-copied { background: var(--color-primary) !important; color: #fff !important; }
+.ws-backup-code[data-copied]::after { content: 'Copied'; position: absolute; top: -1.4rem; left: 50%; transform: translateX(-50%); font-size: .65rem; font-family: Inter, sans-serif; color: var(--color-primary); white-space: nowrap; pointer-events: none; }
 
 /* Directory listings */
 .dir-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .5rem; padding: 1rem; }
@@ -2034,19 +2038,27 @@ strong { font-weight: 600; color: var(--color-heading); }
     h += '<div class="ws-field"><span class="ws-label">Backup Phone</span><span class="ws-value">' + maskVal('backup_phone', ws.backup_phone) + '</span></div>';
     h += '<div class="ws-field"><span class="ws-label">2FA Enabled</span><span class="ws-value">' + (ws.two_fa_enabled ? '<span style="color:var(--color-success);">Yes</span>' : '<span style="color:var(--color-danger);">No</span>') + '</span></div>';
     h += '<div class="ws-field"><span class="ws-label">App Password</span><span class="ws-value">' + maskVal('app_password', ws.app_password) + '</span></div>';
-    if (ws.authenticator_backup_codes && ws.authenticator_backup_codes.length > 0) {
-      var codesHtml = '';
-      if (wsRevealedFields['backup_codes']) {
-        codesHtml = '<div style="display:grid;grid-template-columns:repeat(2,auto);gap:.25rem .75rem;justify-content:start;font-family:monospace;font-size:.82rem;">';
-        ws.authenticator_backup_codes.forEach(function(c) { codesHtml += '<span>' + esc(c) + '</span>'; });
-        codesHtml += '</div>';
-      } else {
-        codesHtml = '\u2022\u2022\u2022\u2022 (' + ws.authenticator_backup_codes.length + ' codes)';
+    if ((ws.authenticator_backup_codes && ws.authenticator_backup_codes.length > 0) || ws.qr_code_image) {
+      h += '<div class="ws-field ws-full-width"><div style="display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap;">';
+      // Backup codes column
+      if (ws.authenticator_backup_codes && ws.authenticator_backup_codes.length > 0) {
+        h += '<div style="flex:1;min-width:180px;"><span class="ws-label">Backup Codes</span>';
+        if (wsRevealedFields['backup_codes']) {
+          h += '<div style="display:grid;grid-template-columns:repeat(2,auto);gap:.2rem .75rem;justify-content:start;font-family:monospace;font-size:.82rem;margin-top:.25rem;">';
+          ws.authenticator_backup_codes.forEach(function(c, i) {
+            h += '<span class="ws-backup-code" onclick="copyBackupCode(this,\'' + esc(c) + '\')" title="Click to copy" style="cursor:pointer;padding:.15rem .4rem;border-radius:4px;transition:background .15s,color .15s;position:relative;user-select:none;">' + esc(c) + '</span>';
+          });
+          h += '</div>';
+        } else {
+          h += '<span class="ws-value ws-masked" onclick="revealWsField(\'backup_codes\')" title="Click to reveal" style="display:block;margin-top:.25rem;">\u2022\u2022\u2022\u2022 (' + ws.authenticator_backup_codes.length + ' codes)</span>';
+        }
+        h += '</div>';
       }
-      h += '<div class="ws-field ws-full-width"><span class="ws-label">Backup Codes</span><span class="ws-value ws-masked" onclick="revealWsField(\'backup_codes\')" title="Click to reveal">' + codesHtml + '</span></div>';
-    }
-    if (ws.qr_code_image) {
-      h += '<div class="ws-field ws-full-width"><span class="ws-label">2FA QR Code</span><span class="ws-value"><img src="' + ws.qr_code_image + '" class="ws-qr-thumb" onclick="showQrFullsize()" alt="2FA QR Code"></span></div>';
+      // QR code column
+      if (ws.qr_code_image) {
+        h += '<div style="flex:0 0 auto;"><span class="ws-label">2FA QR Code</span><div style="margin-top:.25rem;"><img src="' + ws.qr_code_image + '" class="ws-qr-thumb" onclick="showQrFullsize()" alt="2FA QR Code"></div></div>';
+      }
+      h += '</div></div>';
     }
     h += '</div>';
     el.innerHTML = h;
@@ -2055,6 +2067,14 @@ strong { font-weight: 600; color: var(--color-heading); }
   window.revealWsField = function(key) {
     wsRevealedFields[key] = true;
     renderWorkspace();
+  };
+
+  window.copyBackupCode = function(el, code) {
+    navigator.clipboard.writeText(code).then(function() {
+      el.classList.add('ws-code-copied');
+      el.setAttribute('data-copied', 'true');
+      setTimeout(function() { el.classList.remove('ws-code-copied'); el.removeAttribute('data-copied'); }, 1200);
+    });
   };
 
   function initQrPasteZone() {
@@ -2946,11 +2966,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       if (ea.variance_score != null) {
         h += '<span style="font-size:.75rem;color:var(--color-muted);">Variance: ' + ea.variance_score + '/100</span>';
       }
-      if (isLeadOrProspect) {
-        h += '<span class="tag tag-' + (ea.audit_tier === 'premium' ? 'active' : 'prospect') + '" style="font-size:.7rem;">' + (ea.audit_tier === 'premium' ? 'Premium' : 'Free') + '</span>';
-      } else if (isActiveCampaign) {
-        h += '<span class="tag tag-active" style="font-size:.7rem;">Quarterly</span>';
-      }
+      h += '<span class="tag tag-' + (ea.audit_tier === 'premium' ? 'active' : 'prospect') + '" style="font-size:.7rem;">' + (ea.audit_tier === 'premium' ? 'Premium' : 'Free') + '</span>';
       h += '</div></div>';
       h += '<div class="score-grid">';
       pillars.forEach(function(p) {
@@ -3632,13 +3648,13 @@ strong { font-weight: 600; color: var(--color-heading); }
     chain.then(function() {
       return fetch('/api/generate-audit-followups', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audit_id: ea.id, auto_approve: true })
+        body: JSON.stringify({ audit_id: ea.id })
       }).then(function(r) { return r.json(); });
     }).then(function(res) {
       if (res.ok) {
         state.auditFollowups = res.followups || [];
         renderEntityAudit();
-        toast('Follow-up sequence generated and scheduled', 'success');
+        toast('Follow-up sequence generated', 'success');
       } else {
         toast('Failed: ' + (res.error || 'Unknown'), 'error');
         if (btn) { btn.disabled = false; btn.textContent = '\u{1f557} Generate Follow-ups'; }
@@ -7106,7 +7122,6 @@ strong { font-weight: 600; color: var(--color-heading); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
-
 
 
 
