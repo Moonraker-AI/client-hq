@@ -9,13 +9,9 @@ var sb = require('./_lib/supabase');
 var FOOTER_NOTE = 'Questions? Reply to this email or <a href="' + email.CALENDAR_URL + '" style="font-family:Inter,sans-serif;color:#00D47E;text-decoration:none;font-weight:500;">book a call with Scott</a>.';
 
 module.exports = async function handler(req, res) {
-  var cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) return res.status(500).json({ error: 'CRON_SECRET not configured' });
-  var authHeader = req.headers['authorization'] || '';
-  var querySecret = (req.query && req.query.secret) || '';
-  if (authHeader !== 'Bearer ' + cronSecret && querySecret !== cronSecret) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  var auth = require('./_lib/auth');
+  var user = await auth.requireAdminOrInternal(req, res);
+  if (!user) return;
   if (!sb.isConfigured()) return res.status(500).json({ error: 'Not configured' });
 
   try {
