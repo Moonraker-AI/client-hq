@@ -78,19 +78,19 @@ strong { font-weight: 600; color: var(--color-heading); }
 .sidebar-nav .nav-icon svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; opacity: .65; }
 .sidebar-nav a.active .nav-icon svg { opacity: 1; }
 .sidebar-nav a:hover .nav-icon svg { opacity: 1; }
-.sidebar-footer { display: flex; align-items: center; justify-content: space-between; padding: .75rem 1rem; border-top: 1px solid var(--sidebar-border); }
-.collapse-btn .nav-icon svg { transition: transform .25s; }
 
 
 .sidebar.collapsed { width: 56px; }
 .sidebar.collapsed .sidebar-header span { color: transparent; }
 .sidebar.collapsed .sidebar-nav .nav-label { color: transparent; }
 .sidebar.collapsed .nav-section { color: transparent; }
-.sidebar.collapsed .footer-item .nav-label { color: transparent; }
 .sidebar.collapsed .collapse-btn { display: none; }
 
-.sidebar.collapsed:hover .footer-item .nav-label { color: inherit; }
 .sidebar.collapsed:hover .collapse-btn { display: flex; }
+.sidebar.collapsed .sidebar-footer { flex-direction: column; align-items: center; gap: .5rem; padding: .5rem; }
+.sidebar.collapsed .footer-right { flex-direction: column; gap: .5rem; }
+.sidebar.collapsed:hover .sidebar-footer { flex-direction: row; align-items: center; justify-content: space-between; padding: .75rem 19px; }
+.sidebar.collapsed:hover .footer-right { flex-direction: row; gap: .35rem; }
 
 .sidebar.collapsed:hover { width: 240px; box-shadow: 4px 0 20px rgba(0,0,0,.1); z-index: 250; }
 .sidebar.collapsed:hover .sidebar-header span { color: var(--color-heading); }
@@ -99,11 +99,18 @@ strong { font-weight: 600; color: var(--color-heading); }
 
 .main { transition: margin-left .2s ease; }
 .sidebar.collapsed ~ .main { margin-left: 56px; }
-.sidebar.collapsed .collapse-btn .nav-icon svg { transform: rotate(180deg); }
-.footer-item { display: flex; align-items: center; gap: .65rem; padding: .55rem 19px; border-radius: 8px; font-size: .82rem; font-weight: 500; color: var(--color-muted); text-decoration: none; transition: all .15s; border: none; background: none; cursor: pointer; width: 100%; text-align: left; font-family: inherit; }
-.footer-item:hover { background: var(--sidebar-hover); color: var(--color-heading); }
-.footer-item .nav-icon svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; opacity: .65; }
-.footer-item:hover .nav-icon svg { opacity: 1; }
+.sidebar-footer { padding: .75rem 19px; border-top: 1px solid var(--sidebar-border); display: flex; align-items: center; justify-content: space-between; }
+.footer-icon { display: inline-flex; align-items: center; padding: .25rem; border: none; background: none; color: var(--color-muted); cursor: pointer; border-radius: 6px; transition: all .15s; }
+.footer-icon:hover { color: var(--color-heading); background: var(--sidebar-hover); }
+.footer-icon svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.footer-right { display: flex; align-items: center; gap: .35rem; }
+.collapse-btn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 50%; color: var(--color-muted); cursor: pointer; transition: all .2s; flex-shrink: 0; padding: 0; }
+.collapse-btn:hover { color: var(--color-heading); border-color: var(--color-primary); background: var(--color-primary-subtle); }
+.collapse-btn svg { stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s; }
+.theme-toggle { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .9rem; transition: all .2s; }
+.theme-toggle:hover { border-color: var(--color-primary); }
+.theme-icon { font-size: .85rem; line-height: 1; }
+
 .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 199; }
 .main { flex: 1; margin-left: 240px; min-height: 100vh;  transition: margin-left .2s ease; }
 @media (max-width: 900px) { .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .sidebar-close { display: block; } .mobile-toggle { display: block; } .main { margin-left: 0; } }
@@ -209,7 +216,19 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
   .sidebar-close { display: block; }
-  .sidebar-overlay { display: block; }
+  .sidebar-footer { padding: .75rem 19px; border-top: 1px solid var(--sidebar-border); display: flex; align-items: center; justify-content: space-between; }
+.footer-icon { display: inline-flex; align-items: center; padding: .25rem; border: none; background: none; color: var(--color-muted); cursor: pointer; border-radius: 6px; transition: all .15s; }
+.footer-icon:hover { color: var(--color-heading); background: var(--sidebar-hover); }
+.footer-icon svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.footer-right { display: flex; align-items: center; gap: .35rem; }
+.collapse-btn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 50%; color: var(--color-muted); cursor: pointer; transition: all .2s; flex-shrink: 0; padding: 0; }
+.collapse-btn:hover { color: var(--color-heading); border-color: var(--color-primary); background: var(--color-primary-subtle); }
+.collapse-btn svg { stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s; }
+.theme-toggle { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .9rem; transition: all .2s; }
+.theme-toggle:hover { border-color: var(--color-primary); }
+.theme-icon { font-size: .85rem; line-height: 1; }
+
+.sidebar-overlay { display: block; }
   .mobile-toggle { display: block; }
   .main { margin-left: 0 !important; }
   .collapse-btn { display: none; }
@@ -272,10 +291,10 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
     <a href="/admin/newsletter" class="active"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M1 4l7 5 7-5"/></svg></span><span class="nav-label">Newsletter</span></a>
   </nav>
   <div class="sidebar-footer">
-    <button onclick="adminAuth.signOut()" title="Sign out" style="display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .5rem;border-radius:8px;font-size:.8rem;font-weight:500;font-family:inherit;border:none;background:none;color:var(--color-muted);cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
-    <div style="display:flex;align-items:center;gap:.35rem;margin-left:auto;">
+    <button onclick="adminAuth.signOut()" class="footer-icon" title="Sign out"><svg viewBox="0 0 16 16"><path d="M6 1.5H3.5a1 1 0 00-1 1v11a1 1 0 001 1H6"/><path d="M10.5 11.5L14 8l-3.5-3.5"/><path d="M14 8H6"/></svg></button>
+    <div class="footer-right">
       <button class="collapse-btn" id="collapseBtn" aria-label="Collapse sidebar"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M10 3L5 8l5 5"/></svg></button>
-      <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
+      <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme"><span class="theme-icon">&#x1F319;</span></button>
     </div>
   </div>
 </aside>
@@ -1116,7 +1135,6 @@ function switchTab(name) {
 window.switchTab = switchTab;
 
 
-
 // ---- Toast ----
 function toast(msg, type) {
   var el = document.getElementById('toast');
@@ -1133,7 +1151,6 @@ function escHtml(s) {
   d.textContent = s;
   return d.innerHTML;
 }
-
 
 
 // ---- Search filter ----
@@ -1245,7 +1262,5 @@ init();
 </script>
 </body>
 </html>
-
-
 
 
