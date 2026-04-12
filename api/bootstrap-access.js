@@ -21,6 +21,10 @@ var sb = require('./_lib/supabase');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  // Require authenticated admin
+  var user = await auth.requireAdmin(req, res);
+  if (!user) return;
+
 
   var googleSA = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   var lfKey = process.env.LOCALFALCON_API_KEY;
