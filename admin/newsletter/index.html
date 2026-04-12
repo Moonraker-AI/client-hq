@@ -392,8 +392,8 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
 
 <script>
 // ---- Config ----
-var SB_URL = '';
-var SB_KEY = '';
+var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co/rest/v1';
+var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
 var API_BASE = '/api';
 
 // ---- State ----
@@ -404,7 +404,7 @@ var subscriberCounts = { total: 0, active: 0, hot: 0, warm: 0, cold: 0 };
 
 // ---- Supabase helpers ----
 async function sb(table, params) {
-  var url = SB_URL + '/rest/v1/' + table + '?' + (params || '');
+  var url = SB_URL + '/' + table + '?' + (params || '');
   var res = await fetch(url, { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } });
   if (!res.ok) throw new Error('Supabase error: ' + res.status);
   return res.json();
@@ -423,12 +423,6 @@ async function apiAction(action, table, data, filters) {
 // ---- Init ----
 async function init() {
   try {
-    // Fetch Supabase config from health endpoint
-    var healthRes = await fetch('/api/health');
-    var health = await healthRes.json();
-    SB_URL = health.supabaseUrl || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
-    SB_KEY = health.supabaseAnonKey || '';
-
     await Promise.all([loadEditions(), loadSubscriberStats()]);
   } catch (e) {
     console.error('Init failed:', e);
