@@ -68,17 +68,17 @@ strong { font-weight: 600; color: var(--color-heading); }
 
 /* ---- SIDEBAR ---- */
 .sidebar { width: 240px; background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); position: fixed; top: 0; left: 0; bottom: 0; z-index: 200; display: flex; flex-direction: column; transition: transform .25s ease; }
-.sidebar-header { padding: 1.25rem .75rem .75rem; display: flex; align-items: center; gap: .65rem; }
+.sidebar-header { padding: 1.25rem 19px .75rem 19px; display: flex; align-items: center; gap: .65rem; }
 .sidebar-header img { height: 34px; padding: 5px; background: var(--color-primary-subtle); border: 1px solid rgba(0,212,126,.15); border-radius: 8px; }
 .sidebar-header span { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.05rem; color: var(--color-heading); }
 .sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.sidebar-nav a, .sidebar-nav button { display: flex; align-items: center; gap: .65rem; padding: .55rem .75rem; border-radius: 8px; font-size: .82rem; font-weight: 500; color: var(--color-body); text-decoration: none; transition: all .15s; border: none; background: none; cursor: pointer; width: 100%; text-align: left; font-family: inherit; }
+.sidebar-nav a, .sidebar-nav button { display: flex; align-items: center; gap: .65rem; padding: .55rem 19px; border-radius: 8px; font-size: .82rem; font-weight: 500; color: var(--color-body); text-decoration: none; transition: all .15s; border: none; background: none; cursor: pointer; width: 100%; text-align: left; font-family: inherit; }
 .sidebar-nav a:hover, .sidebar-nav button:hover { background: var(--sidebar-hover); color: var(--color-heading); }
 .sidebar-nav a.active { background: var(--color-primary-subtle); color: var(--color-primary); font-weight: 600; }
 .sidebar-nav .nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: .95rem; flex-shrink: 0; opacity: .7; }
 .sidebar-nav a.active .nav-icon { opacity: 1; }
 .nav-section { font-size: .65rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-muted); padding: .75rem .75rem .25rem; opacity: .6; }
-.sidebar-footer { padding: .75rem 1rem; border-top: 1px solid var(--sidebar-border); }
+.sidebar-footer { padding: .5rem 0; border-top: 1px solid var(--sidebar-border); display: flex; flex-direction: column; gap: 2px; }
 
 /* ---- MAIN ---- */
 .main { flex: 1; margin-left: 240px; min-width: 0; transition: margin-left .2s ease; }
@@ -646,8 +646,8 @@ strong { font-weight: 600; color: var(--color-heading); }
 .stat-mini .stat-sub { font-size: .72rem; color: var(--color-muted); margin-top: .2rem; }
 
 /* ---- THEME TOGGLE ---- */
-.theme-toggle { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .9rem; transition: all .2s; }
-.theme-toggle:hover { border-color: var(--color-primary); }
+.theme-icon { font-size: .85rem; line-height: 1; }
+
 
 /* ---- NEW CLIENT MODAL ---- */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 900; display: flex; align-items: center; justify-content: center; animation: fadeIn .2s; }
@@ -731,32 +731,36 @@ strong { font-weight: 600; color: var(--color-heading); }
 .sidebar.collapsed .sidebar-header span { color: transparent; }
 .sidebar.collapsed .sidebar-nav .nav-label { color: transparent; }
 .sidebar.collapsed .nav-section { color: transparent; }
-.sidebar.collapsed .sidebar-footer { flex-direction: column; align-items: center; gap: .5rem; padding: .5rem .25rem; }
+.sidebar.collapsed .footer-item .nav-label { color: transparent; }
 .sidebar.collapsed .collapse-btn { display: none; }
-.sidebar.collapsed .sidebar-footer > div { display: none; }
-.sidebar.collapsed:hover .sidebar-footer { flex-direction: row; align-items: center; gap: .35rem; padding: .75rem 1rem; }
+
+.sidebar.collapsed:hover .footer-item .nav-label { color: inherit; }
 .sidebar.collapsed:hover .collapse-btn { display: flex; }
-.sidebar.collapsed:hover .sidebar-footer > div { display: flex; }
+
 
 /* Hover expand: restore width + text color */
 .sidebar.collapsed:hover { width: 240px; box-shadow: 4px 0 20px rgba(0,0,0,.1); z-index: 250; }
 .sidebar.collapsed:hover .sidebar-header span { color: var(--color-heading); }
 .sidebar.collapsed:hover .sidebar-nav .nav-label { color: inherit; }
 .sidebar.collapsed:hover .nav-section { color: var(--color-muted); }
-.sidebar.collapsed:hover .sidebar-footer { justify-content: space-between; }
+
 
 /* Main content shift */
 .sidebar.collapsed ~ .main { margin-left: 56px; }
 
 /* Collapse button */
-.collapse-btn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 50%; color: var(--color-muted); cursor: pointer; transition: all .2s; flex-shrink: 0; padding: 0; }
-.collapse-btn:hover { color: var(--color-heading); border-color: var(--color-primary); background: var(--color-primary-subtle); }
-.collapse-btn svg { transition: transform .25s; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.sidebar.collapsed .collapse-btn svg { transform: rotate(180deg); }
+.collapse-btn .nav-icon svg { transition: transform .25s; }
+
+
+.sidebar.collapsed .collapse-btn .nav-icon svg { transform: rotate(180deg); }
+.footer-item { display: flex; align-items: center; gap: .65rem; padding: .55rem 19px; border-radius: 8px; font-size: .82rem; font-weight: 500; color: var(--color-muted); text-decoration: none; transition: all .15s; border: none; background: none; cursor: pointer; width: 100%; text-align: left; font-family: inherit; }
+.footer-item:hover { background: var(--sidebar-hover); color: var(--color-heading); }
+.footer-item .nav-icon svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; opacity: .65; }
+.footer-item:hover .nav-icon svg { opacity: 1; }
 
 /* Footer */
-.sidebar-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; }
-.theme-toggle { flex-shrink: 0; }
+
+
 
 /* Mobile */
 @media (max-width: 860px) {
@@ -765,8 +769,9 @@ strong { font-weight: 600; color: var(--color-heading); }
   .sidebar.collapsed ~ .main { margin-left: 0; }
   .sidebar.collapsed .sidebar-header span { color: var(--color-heading); }
   .sidebar.collapsed .sidebar-nav .nav-label { color: inherit; }
+  .sidebar.collapsed .footer-item .nav-label { color: inherit; }
   .sidebar.collapsed .nav-section { color: var(--color-muted); }
-  .sidebar.collapsed .sidebar-footer { justify-content: space-between; }
+  
   .collapse-btn { display: none; }
 }
 
@@ -839,11 +844,9 @@ strong { font-weight: 600; color: var(--color-heading); }
     <a href="/admin/newsletter"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M1 4l7 5 7-5"/></svg></span><span class="nav-label">Newsletter</span>
   </nav>
   <div class="sidebar-footer">
-      <button onclick="adminAuth.signOut()" title="Sign out" style="display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .5rem;border-radius:8px;font-size:.8rem;font-weight:500;font-family:inherit;border:none;background:none;color:var(--color-muted);cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
-      <div style="display:flex;align-items:center;gap:.35rem;margin-left:auto;">
-        <button class="collapse-btn" id="collapseBtn" aria-label="Collapse sidebar"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M10 3L5 8l5 5"/></svg></button>
-        <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
-      </div>
+      <button onclick="adminAuth.signOut()" class="footer-item" title="Sign out"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M6 1.5H3.5a1 1 0 00-1 1v11a1 1 0 001 1H6"/><path d="M10.5 11.5L14 8l-3.5-3.5"/><path d="M14 8H6"/></svg></span><span class="nav-label">Sign Out</span></button>
+      <button class="footer-item collapse-btn" id="collapseBtn" aria-label="Collapse sidebar"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M10 3L5 8l5 5"/></svg></span><span class="nav-label">Collapse</span></button>
+      <button class="footer-item" id="themeBtn" aria-label="Toggle theme"><span class="nav-icon"><span class="theme-icon">&#x1F319;</span></span><span class="nav-label">Theme</span></button>
     </div>
 </aside>
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -7067,15 +7070,15 @@ strong { font-weight: 600; color: var(--color-heading); }
   var themeBtn = document.getElementById('themeBtn');
   var _curTheme = document.documentElement.getAttribute('data-theme');
   if (themeBtn) {
-    themeBtn.innerHTML = _curTheme === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
+    var _ti = themeBtn.querySelector('.theme-icon'); if(_ti) _ti.innerHTML = _curTheme === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
     themeBtn.addEventListener('click', function() {
       var h = document.documentElement;
       function apply() {
         if (h.getAttribute('data-theme') === 'light') {
-          h.setAttribute('data-theme', 'dark'); themeBtn.innerHTML = '&#9728;&#65039;';
+          h.setAttribute('data-theme', 'dark'); var _ti2 = themeBtn.querySelector('.theme-icon'); if(_ti2) _ti2.innerHTML = '&#9728;&#65039;';
           try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
         } else {
-          h.setAttribute('data-theme', 'light'); themeBtn.innerHTML = '&#x1F319;';
+          h.setAttribute('data-theme', 'light'); var _ti3 = themeBtn.querySelector('.theme-icon'); if(_ti3) _ti3.innerHTML = '&#x1F319;';
           try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
         }
       }
