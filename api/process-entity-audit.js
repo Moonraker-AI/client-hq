@@ -566,9 +566,10 @@ ${surgeData}`;
     if (contact.status === 'lead' && audit.audit_tier === 'free') {
       send({ step: 'auto_send', message: 'Sending scorecard email automatically (free lead audit)...' });
       try {
+        var internalAuth = process.env.CRON_SECRET || process.env.AGENT_API_KEY || '';
         var sendResp = await fetch('https://clients.moonraker.ai/api/send-audit-email', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + internalAuth },
           body: JSON.stringify({ audit_id: auditId })
         });
         if (sendResp.ok) {
