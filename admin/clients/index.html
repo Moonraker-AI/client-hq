@@ -1858,7 +1858,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       case 'reports':
         queries = [
           sb('report_configs?select=*&client_slug=eq.' + s + '&limit=1'),
-          sb('report_snapshots?select=id,client_slug,report_month,report_status,campaign_month,gsc_clicks,gsc_impressions,gsc_ctr,gsc_position,gsc_detail,ga4_sessions,ga4_users,ga4_new_users,ga4_engagement_rate,ga4_avg_session_duration,ga4_detail,gbp_detail,lf_data,ai_visibility,notes,created_at,updated_at&client_slug=eq.' + s + '&order=report_month.desc&limit=20')
+          sb('report_snapshots?select=*&client_slug=eq.' + s + '&order=report_month.desc&limit=20')
         ];
         return Promise.all(queries).then(function(res) {
           state.reportConfig = (res[0] && res[0][0]) || null;
