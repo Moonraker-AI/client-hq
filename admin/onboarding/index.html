@@ -418,7 +418,7 @@ a:hover { color: var(--color-primary-hover); }
   function loadData() {
     Promise.all([
       fetch(SB + '/rest/v1/contacts?select=id,slug,status,practice_name,email,first_name,last_name,onboarding_completed,agreement_signed,campaign_start&order=practice_name', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }),
-      fetch(SB + '/rest/v1/onboarding_steps?select=contact_id,step_key,status,sort_order&order=contact_id,sort_order', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); })
+      fetch(SB + '/rest/v1/onboarding_steps?select=contact_id,step_key,status,sort_order&order=contact_id,sort_order&limit=5000', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); })
     ]).then(function(res) {
       state.contacts = res[0] || [];
       state.onboarding = {};
