@@ -190,6 +190,10 @@
     },
     "api/cron/process-batch-pages.js": {
       "maxDuration": 60
+    },
+    "api/process-batch-synthesis.js": {
+      "maxDuration": 120,
+      "memory": 1024
     }
   },
   "crons": [
