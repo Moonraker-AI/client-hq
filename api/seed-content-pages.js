@@ -35,6 +35,10 @@ module.exports = async function(req, res) {
   var contactId = req.body && req.body.contact_id;
   if (!contactId) return res.status(400).json({ error: 'contact_id required' });
 
+  // Optional: seed only specific page types
+  // 'all' (default), 'service' (keywords only), 'bio' (bio pages only)
+  var seedType = (req.body && req.body.seed_type) || 'all';
+
   var headers = sb.headers();
   var writeHeaders = sb.headers('return=representation');
 
@@ -121,7 +125,7 @@ module.exports = async function(req, res) {
     }
 
     // ── HOMEPAGE ──
-    if (!pageExists('homepage', null, null)) {
+    if ((seedType === 'all' || seedType === 'service') && !pageExists('homepage', null, null)) {
       var hp = await createPage({
         contact_id: contactId,
         client_slug: slug,
@@ -139,6 +143,7 @@ module.exports = async function(req, res) {
     }
 
     // ── SERVICE PAGES (one per tracked keyword) ──
+    if (seedType === 'all' || seedType === 'service')
     for (var i = 0; i < keywords.length; i++) {
       var kw = keywords[i];
       if (pageExists('service', kw.id, null)) continue;
@@ -188,7 +193,7 @@ module.exports = async function(req, res) {
     }
 
     // ── LOCATION PAGE ──
-    if (contact.city && contact.campaign_type !== 'national') {
+    if ((seedType === 'all' || seedType === 'service') && contact.city && contact.campaign_type !== 'national') {
       if (!pageExists('location', null, null)) {
         var locName = contact.city + (contact.state_province ? ', ' + contact.state_province : '');
         var lp = await createPage({
@@ -218,7 +223,7 @@ module.exports = async function(req, res) {
     }
 
     // ── FAQ PAGE ──
-    if (!pageExists('faq', null, null)) {
+    if ((seedType === 'all' || seedType === 'service') && !pageExists('faq', null, null)) {
       var faq = await createPage({
         contact_id: contactId,
         client_slug: slug,
@@ -245,6 +250,7 @@ module.exports = async function(req, res) {
     }
 
     // ── BIO PAGES (one per bio_material) ──
+    if (seedType === 'all' || seedType === 'bio')
     for (var b = 0; b < bios.length; b++) {
       var bio = bios[b];
       if (pageExists('bio', null, bio.id)) continue;
