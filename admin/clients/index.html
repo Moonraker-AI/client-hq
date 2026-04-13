@@ -5293,21 +5293,25 @@ strong { font-weight: 600; color: var(--color-heading); }
     var slug = state.contact.slug;
     var btn = document.getElementById('btnTriggerBatch');
     if (btn) { btn.disabled = true; btn.textContent = 'Starting...'; }
+    toast('Triggering batch audit...', 'info');
 
-    apiAction('/api/trigger-batch-audit', { client_slug: slug }).then(function(res) {
+    fetch('/api/trigger-batch-audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_slug: slug })
+    }).then(function(r) { return r.json(); }).then(function(res) {
       if (res.success) {
-        showToast('Batch audit triggered for ' + res.pages_count + ' keywords', 'success');
-        // Refresh batches
+        toast('Batch audit triggered for ' + res.pages_count + ' keywords', 'success');
         sb('content_audit_batches?select=*&client_slug=eq.' + slug + '&order=created_at.desc&limit=5').then(function(batches) {
           state.contentBatches = batches || [];
           renderBatchAuditStatus();
         });
       } else {
-        showToast(res.error || 'Failed to trigger batch audit', 'error');
+        toast(res.error || 'Failed to trigger batch audit', 'error');
         if (btn) { btn.disabled = false; btn.textContent = 'Run Batch Audit'; }
       }
     }).catch(function(err) {
-      showToast('Error: ' + (err.message || 'Unknown error'), 'error');
+      toast('Error: ' + (err.message || 'Unknown error'), 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'Run Batch Audit'; }
     });
   };
