@@ -13,7 +13,8 @@
     { "source": "/favicon.ico", "destination": "/assets/logo.png" }
   ],
   "functions": {
-    "api/**/*.js": { "maxDuration": 60 },
+    "api/*.js": { "maxDuration": 60 },
+    "api/cron/*.js": { "maxDuration": 60 },
     "api/activate-reporting.js": { "maxDuration": 120, "memory": 1024 },
     "api/bootstrap-access.js": { "maxDuration": 120, "memory": 1024 },
     "api/chat.js": { "maxDuration": 120, "memory": 1024 },
