@@ -40,33 +40,37 @@ module.exports = async function handler(req, res) {
     var practiceName = contact.practice_name || '';
     var scorecardUrl = 'https://clients.moonraker.ai/' + slug + '/entity-audit';
 
-    // Build scores summary
+    // Build scores summary (CRES = sum of 4 pillar scores, out of 40)
     var scores = audit.scores || {};
-    var overallScore = scores.overall || null;
+    var cresScore = (audit.score_credibility || scores.credibility || 0)
+      + (audit.score_optimization || scores.optimization || 0)
+      + (audit.score_reputation || scores.reputation || 0)
+      + (audit.score_engagement || scores.engagement || 0);
 
     var overallHtml = '';
-    if (overallScore !== null) {
-      var oc = overallScore >= 80 ? '#00D47E' : overallScore >= 50 ? '#F59E0B' : '#EF4444';
+    if (cresScore > 0) {
+      var oc = cresScore <= 16 ? '#EF4444' : cresScore <= 28 ? '#F59E0B' : '#00D47E';
       overallHtml = '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:20px 0 8px;"><tr><td align="center">' +
-        '<div style="font-family:Inter,sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6B7599;margin-bottom:6px;">Overall CORE Score</div>' +
-        '<div style="font-family:Outfit,sans-serif;font-size:40px;font-weight:700;color:' + oc + ';">' + Math.round(overallScore) + '<span style="font-size:18px;color:#6B7599;">/100</span></div>' +
+        '<div style="font-family:Inter,sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6B7599;margin-bottom:6px;">CRES Score</div>' +
+        '<div style="font-family:Outfit,sans-serif;font-size:40px;font-weight:700;color:' + oc + ';">' + cresScore + '<span style="font-size:18px;color:#6B7599;">/40</span></div>' +
         '</td></tr></table>';
     }
 
-    // Build CORE score cards
+    // Build CORE score cards (use promoted columns, 1-10 scale)
     var coreKeys = [
-      { key: 'credibility', label: 'Credibility' },
-      { key: 'optimization', label: 'Optimization' },
-      { key: 'reputation', label: 'Reputation' },
-      { key: 'engagement', label: 'Engagement' }
+      { key: 'credibility', label: 'Credibility', promoted: 'score_credibility' },
+      { key: 'optimization', label: 'Optimization', promoted: 'score_optimization' },
+      { key: 'reputation', label: 'Reputation', promoted: 'score_reputation' },
+      { key: 'engagement', label: 'Engagement', promoted: 'score_engagement' }
     ];
     var scoreItems = [];
     coreKeys.forEach(function(k) {
-      if (scores[k.key] !== undefined) {
-        var v = Math.round(scores[k.key]);
+      var v = audit[k.promoted] || scores[k.key];
+      if (v !== undefined && v !== null) {
+        v = Math.round(v);
         var color, bg, border;
-        if (v < 50) { color = '#EF4444'; bg = 'rgba(239,68,68,.06)'; border = 'rgba(239,68,68,.18)'; }
-        else if (v < 80) { color = '#F59E0B'; bg = 'rgba(245,158,11,.06)'; border = 'rgba(245,158,11,.18)'; }
+        if (v <= 3) { color = '#EF4444'; bg = 'rgba(239,68,68,.06)'; border = 'rgba(239,68,68,.18)'; }
+        else if (v <= 6) { color = '#F59E0B'; bg = 'rgba(245,158,11,.06)'; border = 'rgba(245,158,11,.18)'; }
         else { color = '#00b86c'; bg = 'rgba(0,212,126,.06)'; border = 'rgba(0,212,126,.18)'; }
         scoreItems.push({ value: String(v), label: k.label, color: color, bg: bg, border: border });
       }
@@ -177,43 +181,49 @@ function wrapFollowup(content) {
 }
 
 function buildFollowupSequence(audit, contact) {
-  var scores = audit.scores || {};
   var firstName = contact.first_name || '';
   var practiceName = contact.practice_name || '';
   var slug = contact.slug;
   var scorecardUrl = 'https://clients.moonraker.ai/' + slug + '/entity-audit';
   var bookingUrl = 'https://msg.moonraker.ai/widget/bookings/moonraker-free-strategy-call';
 
+  // Use promoted score columns (1-10 scale), fall back to JSONB scores
+  var scores = audit.scores || {};
   var areas = [
-    { key: 'credibility', label: 'Credibility', score: scores.credibility || 0 },
-    { key: 'optimization', label: 'Optimization', score: scores.optimization || 0 },
-    { key: 'reputation', label: 'Reputation', score: scores.reputation || 0 },
-    { key: 'engagement', label: 'Engagement', score: scores.engagement || 0 }
+    { key: 'credibility', label: 'Credibility', score: audit.score_credibility || scores.credibility || 0 },
+    { key: 'optimization', label: 'Optimization', score: audit.score_optimization || scores.optimization || 0 },
+    { key: 'reputation', label: 'Reputation', score: audit.score_reputation || scores.reputation || 0 },
+    { key: 'engagement', label: 'Engagement', score: audit.score_engagement || scores.engagement || 0 }
   ];
   areas.sort(function(a, b) { return a.score - b.score; });
   var weakest = areas[0];
   var secondWeakest = areas[1];
   var strongest = areas[areas.length - 1];
-  var overall = scores.overall || 0;
+  var cres = areas.reduce(function(s, a) { return s + a.score; }, 0); // CRES out of 40
 
-  var tasks = audit.tasks || [];
-  var weakestTasks = tasks.filter(function(t) { return t.category && t.category.toLowerCase().indexOf(weakest.key) > -1; }).slice(0, 3);
-  var secondTasks = tasks.filter(function(t) { return t.category && t.category.toLowerCase().indexOf(secondWeakest.key) > -1; }).slice(0, 2);
+  // Use quick_wins from scores JSONB for findings in email 2
+  var quickWins = (scores.quick_wins && Array.isArray(scores.quick_wins)) ? scores.quick_wins : [];
 
   return [
-    buildEmail1(firstName, practiceName, overall, weakest, scorecardUrl, bookingUrl),
-    buildEmail2(firstName, practiceName, weakest, secondWeakest, weakestTasks, secondTasks, scorecardUrl, bookingUrl),
-    buildEmail3(firstName, practiceName, overall, strongest, weakest, bookingUrl)
+    buildEmail1(firstName, practiceName, cres, weakest, scorecardUrl, bookingUrl),
+    buildEmail2(firstName, practiceName, weakest, secondWeakest, quickWins, scorecardUrl, bookingUrl),
+    buildEmail3(firstName, practiceName, cres, strongest, weakest, bookingUrl)
   ];
 }
 
-function buildEmail1(firstName, practiceName, overall, weakest, scorecardUrl, bookingUrl) {
-  var scoreColor = overall >= 80 ? '#00D47E' : overall >= 50 ? '#F59E0B' : '#EF4444';
-  var weakColor = weakest.score >= 80 ? '#00D47E' : weakest.score >= 50 ? '#F59E0B' : '#EF4444';
+function fuScoreColor(score) {
+  if (score <= 3) return '#EF4444';
+  if (score <= 6) return '#F59E0B';
+  return '#00D47E';
+}
+
+function buildEmail1(firstName, practiceName, cres, weakest, scorecardUrl, bookingUrl) {
+  var cresColor = cres <= 16 ? '#EF4444' : cres <= 28 ? '#F59E0B' : '#00D47E';
+  var weakColor = fuScoreColor(weakest.score);
 
   var content = email.greeting(firstName || 'there') +
     email.p('I wanted to follow up and make sure you had a chance to look over the entity audit we put together for ' + email.esc(practiceName || 'your practice') + '.') +
-    email.p('Your overall CORE Score came in at <strong style="color:' + scoreColor + ';">' + Math.round(overall) + '/100</strong>. The area with the most room for improvement is <strong>' + email.esc(weakest.label) + '</strong>, which scored <strong style="color:' + weakColor + ';">' + Math.round(weakest.score) + '/100</strong>.') +
+    email.p('Your CRES Score came in at <strong style="color:' + cresColor + ';">' + cres + '/40</strong>. The area with the most room for improvement is <strong>' + email.esc(weakest.label) + '</strong>, which scored <strong style="color:' + weakColor + ';">' + weakest.score + '/10</strong>.') +
     email.p('This is actually one of the most common patterns we see with therapy practices. The good news is that ' + email.esc(weakest.label).toLowerCase() + ' improvements tend to show measurable results within the first 60 to 90 days.') +
     email.p('If you have any questions about the scorecard, I am happy to walk through it with you:') +
     email.cta(scorecardUrl, 'View Your Scorecard') +
@@ -224,24 +234,16 @@ function buildEmail1(firstName, practiceName, overall, weakest, scorecardUrl, bo
   return { dayOffset: 2, subject: 'Did you get a chance to review your CORE Score?', html: wrapFollowup(content) };
 }
 
-function buildEmail2(firstName, practiceName, weakest, secondWeakest, weakTasks, secondTasks, scorecardUrl, bookingUrl) {
+function buildEmail2(firstName, practiceName, weakest, secondWeakest, quickWins, scorecardUrl, bookingUrl) {
   var findingsHtml = '';
-  if (weakTasks.length > 0 || secondTasks.length > 0) {
+  if (quickWins.length > 0) {
     findingsHtml = email.p('Here are a couple of specific things we found:');
-    findingsHtml += email.sectionHeading(email.esc(weakest.label) + ' (' + Math.round(weakest.score) + '/100)');
-    if (weakTasks.length > 0) {
-      weakTasks.forEach(function(t) {
-        findingsHtml += email.p('&bull; ' + email.esc(t.title || t.description || ''));
-      });
-    } else {
-      findingsHtml += email.p('&bull; This area needs attention based on our analysis');
-    }
-    if (secondTasks.length > 0) {
-      findingsHtml += email.sectionHeading(email.esc(secondWeakest.label) + ' (' + Math.round(secondWeakest.score) + '/100)');
-      secondTasks.forEach(function(t) {
-        findingsHtml += email.p('&bull; ' + email.esc(t.title || t.description || ''));
-      });
-    }
+    findingsHtml += email.sectionHeading(email.esc(weakest.label) + ' (' + weakest.score + '/10)');
+    quickWins.slice(0, 3).forEach(function(qw) {
+      findingsHtml += email.p('&bull; ' + email.esc(typeof qw === 'string' ? qw : (qw.title || qw.description || '')));
+    });
+  } else {
+    findingsHtml = email.p('The two areas with the most opportunity are <strong>' + email.esc(weakest.label) + '</strong> (' + weakest.score + '/10) and <strong>' + email.esc(secondWeakest.label) + '</strong> (' + secondWeakest.score + '/10). These are the signals that AI platforms weigh most heavily when deciding which practices to recommend.');
   }
 
   var content = email.greeting(firstName || 'there') +
@@ -256,14 +258,14 @@ function buildEmail2(firstName, practiceName, weakest, secondWeakest, weakTasks,
   return { dayOffset: 7, subject: 'What your CORE audit means for ' + (practiceName || 'your practice'), html: wrapFollowup(content) };
 }
 
-function buildEmail3(firstName, practiceName, overall, strongest, weakest, bookingUrl) {
+function buildEmail3(firstName, practiceName, cres, strongest, weakest, bookingUrl) {
   var content = email.greeting(firstName || 'there') +
     email.p('I know things get busy, so I will keep this short.') +
     email.p('Based on your audit, here is what the first 90 days would look like if we worked together:') +
     email.sectionHeading('Month 1: Foundation') +
     email.p('We would address the ' + email.esc(weakest.label).toLowerCase() + ' gaps that are currently holding back your visibility. This includes the technical setup that tells Google and AI platforms you are a legitimate, qualified practice.') +
     email.sectionHeading('Month 2: Authority') +
-    email.p('We would start creating and distributing content that establishes you as an expert in your specialties. Your ' + email.esc(strongest.label).toLowerCase() + ' score of ' + Math.round(strongest.score) + ' shows you already have a strong base to build on.') +
+    email.p('We would start creating and distributing content that establishes you as an expert in your specialties. Your ' + email.esc(strongest.label).toLowerCase() + ' score of ' + strongest.score + '/10 shows you already have a strong base to build on.') +
     email.sectionHeading('Month 3: Optimize') +
     email.p('By this point, most practices start seeing movement in their local search rankings, AI visibility, and new patient inquiries.') +
     email.p('We back this with a performance guarantee for annual clients: if we do not hit our shared goal in 12 months, we continue working for free until you get there.') +
