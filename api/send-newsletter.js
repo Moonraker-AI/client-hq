@@ -63,7 +63,7 @@ module.exports = async function handler(req, res) {
     }
 
     // Mark as sending
-    await sb.mutate('newsletters', 'id=eq.' + newsletterId, 'PATCH', {
+    await sb.mutate('newsletters?id=eq.' + newsletterId, 'PATCH', {
       status: 'sending'
     });
 
@@ -83,7 +83,7 @@ module.exports = async function handler(req, res) {
     var subscribers = await sb.query('newsletter_subscribers', subFilter + '&select=id,email,first_name&' + orderBy + '&limit=' + fetchLimit);
 
     if (!subscribers.length) {
-      await sb.mutate('newsletters', 'id=eq.' + newsletterId, 'PATCH', { status: 'draft' });
+      await sb.mutate('newsletters?id=eq.' + newsletterId, 'PATCH', { status: 'draft' });
       return res.status(400).json({ error: 'No subscribers match the selected tier' });
     }
 
@@ -172,7 +172,7 @@ module.exports = async function handler(req, res) {
       // Batch insert send records
       if (sendRecords.length) {
         try {
-          await sb.mutate('newsletter_sends', '', 'POST', sendRecords);
+          await sb.mutate('newsletter_sends', 'POST', sendRecords);
         } catch (e) {
           console.error('Failed to log sends:', e.message);
         }
@@ -186,7 +186,7 @@ module.exports = async function handler(req, res) {
 
     // Update newsletter stats and status
     var finalStatus = totalSent > 0 ? 'sent' : 'failed';
-    await sb.mutate('newsletters', 'id=eq.' + newsletterId, 'PATCH', {
+    await sb.mutate('newsletters?id=eq.' + newsletterId, 'PATCH', {
       status: finalStatus,
       sent_at: new Date().toISOString(),
       stats_total_sent: (newsletter.stats_total_sent || 0) + totalSent,
@@ -205,7 +205,7 @@ module.exports = async function handler(req, res) {
           last_send_date: new Date().toISOString().split('T')[0],
           last_send_count: totalSent
         };
-        await sb.mutate('settings', 'key=eq.newsletter_warmup', 'PATCH', {
+        await sb.mutate('settings?key=eq.newsletter_warmup', 'PATCH', {
           value: newWarmup,
           updated_at: new Date().toISOString()
         });
@@ -229,7 +229,7 @@ module.exports = async function handler(req, res) {
     console.error('send-newsletter error:', e);
     try {
       if (body && body.newsletter_id) {
-        await sb.mutate('newsletters', 'id=eq.' + body.newsletter_id, 'PATCH', { status: 'failed' });
+        await sb.mutate('newsletters?id=eq.' + body.newsletter_id, 'PATCH', { status: 'failed' });
       }
     } catch (e2) {}
     return res.status(500).json({ error: e.message });
