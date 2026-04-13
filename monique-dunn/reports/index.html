@@ -232,16 +232,20 @@ section { padding: 4.5rem 0; }
 .ai-bar-fill.mid { background: var(--color-warning); }
 .ai-bar-fill.low { background: var(--color-danger); }
 .ai-bar-fill.zero { background: var(--color-border); }
-.ai-bar-val { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .9375rem; min-width: 52px; text-align: right; }
+.ai-bar-metrics { text-align: right; min-width: 52px; }
+.ai-bar-val { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .9375rem; line-height: 1.1; }
 .ai-bar-val.high { color: var(--color-success); }
 .ai-bar-val.mid { color: var(--color-warning); }
 .ai-bar-val.low { color: var(--color-danger); }
 .ai-bar-val.zero { color: var(--color-muted); }
-.ai-bar-detail { font-size: .75rem; color: var(--color-muted); min-width: 80px; text-align: right; }
+.ai-bar-solv-label { font-size: .625rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: .04em; margin-top: 1px; }
+.ai-bar-badge { font-size: .6875rem; font-weight: 600; padding: 3px 8px; border-radius: 10px; white-space: nowrap; }
+.ai-bar-badge.cited { background: var(--color-primary-subtle); color: var(--color-success); }
+.ai-bar-badge.not-cited { background: var(--color-border); color: var(--color-muted); }
 @media (max-width: 640px) {
   .ai-bar-row { flex-wrap: wrap; }
   .ai-bar-name { min-width: auto; }
-  .ai-bar-detail { min-width: auto; text-align: left; }
+  .ai-bar-badge { margin-left: auto; }
 }
 
 /* AI keyword breakdown */
@@ -777,7 +781,6 @@ section { padding: 4.5rem 0; }
         var solv = Math.round((g.solv || 0) * (g.solv > 1 ? 1 : 100));
         if (g.solv > 1) solv = Math.round(g.solv);
         var imgUrl = g.image_url || g.heatmap_url;
-        var publicLink = g.public_url;
         var gridSize = g.grid_size || 7;
 
         p += '<div class="geogrid-card">';
@@ -785,11 +788,7 @@ section { padding: 4.5rem 0; }
         p += '<div class="geogrid-keyword">' + platformLabel + ' · ' + gridSize + 'x' + gridSize + ' grid</div></div>';
         p += '<div class="geogrid-image-wrap">';
         if (imgUrl) {
-          if (publicLink) {
-            p += '<a href="' + publicLink + '" target="_blank" rel="noopener" style="display:block;width:100%;height:100%"><img src="' + imgUrl + '" alt="Geogrid for ' + esc(g.keyword || label) + '" loading="lazy"></a>';
-          } else {
-            p += '<img src="' + imgUrl + '" alt="Geogrid for ' + esc(g.keyword || label) + '" loading="lazy">';
-          }
+          p += '<img src="' + imgUrl + '" alt="Geogrid for ' + esc(g.keyword || label) + '" loading="lazy">';
         } else {
           p += '<div class="no-image">Grid image processing...</div>';
         }
@@ -865,14 +864,15 @@ section { padding: 4.5rem 0; }
       var solv = e.avg_solv || 0;
       var solvPct = solv > 1 ? solv : solv * 100;
       var cls = solvPct >= 40 ? 'high' : solvPct >= 20 ? 'mid' : solvPct > 0 ? 'low' : 'zero';
-      var queriesLabel = (e.queries_cited || 0) + '/' + (e.queries_checked || 0) + ' queries cited';
+      var queriesBadge = (e.queries_cited || 0) + '/' + (e.queries_checked || 0) + ' cited';
+      var badgeCls = e.cited ? 'cited' : 'not-cited';
 
       html += '<div class="ai-bar-row">';
       html += '<div class="ai-bar-status ' + (e.cited ? 'cited' : 'not-cited') + '"></div>';
       html += '<div class="ai-bar-name">' + e.name + '</div>';
       html += '<div class="ai-bar-track"><div class="ai-bar-fill ' + cls + '" style="width:0%" data-target="' + Math.min(solvPct, 100).toFixed(1) + '%"></div></div>';
-      html += '<div class="ai-bar-val ' + cls + '">' + solvPct.toFixed(1) + '%</div>';
-      html += '<div class="ai-bar-detail">' + queriesLabel + '</div>';
+      html += '<div class="ai-bar-metrics"><div class="ai-bar-val ' + cls + '">' + solvPct.toFixed(1) + '%</div><div class="ai-bar-solv-label">Visibility Share</div></div>';
+      html += '<div class="ai-bar-badge ' + badgeCls + '">' + queriesBadge + '</div>';
       html += '</div>';
     });
     html += '</div>';
@@ -1267,6 +1267,7 @@ section { padding: 4.5rem 0; }
 </script>
 </body>
 </html>
+
 
 
 
