@@ -180,6 +180,20 @@
     },
     "api/newsletter-webhook.js": {
       "maxDuration": 10
+    },
+    "api/trigger-batch-audit.js": {
+      "maxDuration": 60
+    },
+    "api/ingest-batch-audit.js": {
+      "maxDuration": 120,
+      "memory": 1024
+    },
+    "api/process-batch-synthesis.js": {
+      "maxDuration": 120,
+      "memory": 1024
+    },
+    "api/cron/process-batch-pages.js": {
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -202,6 +216,10 @@
     {
       "path": "/api/cron/process-audit-queue",
       "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/process-batch-pages",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
