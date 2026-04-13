@@ -421,8 +421,8 @@ strong { font-weight: 600; color: var(--color-heading); }
   function loadAll() {
     Promise.all([
       fetch(SB + '/rest/v1/contacts?select=id,slug,status,practice_name,email,first_name,last_name,campaign_start,website_url,phone,state_province,city,team_size&order=practice_name', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }),
-      fetch(SB + '/rest/v1/onboarding_steps?select=contact_id,step_key,status&order=contact_id,sort_order', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }),
-      fetch(SB + '/rest/v1/checklist_items?select=client_slug,status', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }),
+      fetch(SB + '/rest/v1/onboarding_steps?select=contact_id,step_key,status&order=contact_id,sort_order&limit=5000', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }),
+      fetch(SB + '/rest/v1/rpc/get_checklist_summary', { method: 'POST', headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK, 'Content-Type': 'application/json' }, body: '{}' }).then(function(r) { return r.json(); }),
       fetch(SB + '/rest/v1/report_configs?select=client_slug,active,last_compiled_at,last_compiled_status', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }),
       fetch(SB + '/rest/v1/report_snapshots?select=client_slug,report_month,report_status,created_at&order=created_at.desc&limit=100', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); })
     ]).then(function(res) {
@@ -435,12 +435,10 @@ strong { font-weight: 600; color: var(--color-heading); }
         state.onboarding[s.contact_id].push(s);
       });
 
-      // Index tasks by client_slug
+      // Index tasks by client_slug (RPC returns pre-aggregated counts)
       state.tasks = {};
       (res[2] || []).forEach(function(t) {
-        if (!state.tasks[t.client_slug]) state.tasks[t.client_slug] = { total: 0, complete: 0 };
-        state.tasks[t.client_slug].total++;
-        if (t.status === 'complete') state.tasks[t.client_slug].complete++;
+        state.tasks[t.client_slug] = { total: Number(t.total) || 0, complete: Number(t.complete) || 0 };
       });
 
       // Index configs
