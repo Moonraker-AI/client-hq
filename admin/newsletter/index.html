@@ -187,6 +187,26 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
 .story-fields { display: grid; gap: .75rem; }
 .story-fields.collapsed { display: none; }
 
+/* AI Research candidates */
+.candidate-card { padding:.75rem;border:1px solid var(--color-border);border-radius:10px;cursor:pointer;transition:all .15s;position:relative; }
+.candidate-card:hover { border-color:var(--color-primary-light);background:var(--color-primary-subtle); }
+.candidate-card.selected { border-color:var(--color-primary);background:var(--color-primary-subtle); }
+.candidate-card.selected::after { content:'\2713';position:absolute;top:.5rem;right:.6rem;color:var(--color-primary);font-weight:700;font-size:.9rem; }
+.candidate-headline { font-size:.85rem;font-weight:600;color:var(--color-heading);margin-bottom:.35rem;padding-right:1.5rem; }
+.candidate-summary { font-size:.78rem;color:var(--color-body);line-height:1.5;margin-bottom:.35rem; }
+.candidate-meta { font-size:.72rem;color:var(--color-muted);display:flex;gap:.75rem;flex-wrap:wrap; }
+.candidate-meta span { display:inline-flex;align-items:center;gap:.25rem; }
+.candidate-relevance { font-size:.75rem;color:var(--color-primary);font-weight:500;margin-top:.3rem; }
+.candidates-grid { display:grid;grid-template-columns:1fr 1fr;gap:.6rem; }
+@media(max-width:900px) { .candidates-grid { grid-template-columns:1fr; } }
+.research-progress { display:flex;align-items:center;gap:.75rem;padding:1.25rem;background:var(--color-primary-subtle);border-radius:10px; }
+.research-spinner { width:20px;height:20px;border:2.5px solid var(--color-primary-light);border-top-color:var(--color-primary);border-radius:50%;animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.generate-progress { display:flex;align-items:center;gap:.75rem;padding:1rem;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:10px; }
+.generate-spinner { width:18px;height:18px;border:2.5px solid rgba(59,130,246,.2);border-top-color:var(--color-info);border-radius:50%;animation:spin 1s linear infinite; }
+.subject-chip { padding:.3rem .65rem;border:1px solid var(--color-border);border-radius:6px;font-size:.78rem;color:var(--color-body);cursor:pointer;transition:all .15s;background:var(--color-surface); }
+.subject-chip:hover { border-color:var(--color-primary);color:var(--color-primary); }
+
 /* Subscriber rows */
 .sub-row { display: grid; grid-template-columns: 2fr 1.5fr 80px 80px 100px; gap: .75rem; align-items: center; padding: .65rem 1rem; border-bottom: 1px solid var(--color-border); font-size: .82rem; }
 .sub-row .sub-name { color: var(--color-muted); font-size: .78rem; text-align: left; }
@@ -370,6 +390,32 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
               <input type="text" class="form-input" id="editionPreview" placeholder="Short preview shown in inbox" />
             </div>
           </div>
+          <!-- Subject line suggestions from AI -->
+          <div id="subjectSuggestions" style="display:none;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--color-border);">
+            <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);margin-bottom:.4rem;">AI Suggestions</div>
+            <div id="subjectSuggestionsList" style="display:flex;flex-wrap:wrap;gap:.4rem;"></div>
+          </div>
+        </div>
+
+        <!-- AI Research Panel -->
+        <div class="card" style="margin-top:1rem;border:1px solid var(--color-primary-light);" id="aiPanel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+            <div>
+              <h3 style="font-size:.95rem;margin:0;">AI Story Research</h3>
+              <p style="font-size:.78rem;color:var(--color-muted);margin-top:.2rem;">Search recent news for therapy-relevant stories using AI.</p>
+            </div>
+            <div style="display:flex;gap:.5rem;align-items:center;">
+              <span id="aiResearchStatus" style="font-size:.78rem;color:var(--color-muted);"></span>
+              <button class="btn btn-primary btn-sm" onclick="runAIResearch()" id="researchBtn">Research Stories</button>
+            </div>
+          </div>
+          <!-- Candidates grid -->
+          <div id="candidatesGrid" style="display:none;"></div>
+          <!-- Generate button (appears after 5 selected) -->
+          <div id="generateBar" style="display:none;padding:.75rem 0 0;border-top:1px solid var(--color-border);margin-top:.75rem;display:none;justify-content:space-between;align-items:center;">
+            <span id="selectedCount" style="font-size:.82rem;font-weight:600;color:var(--color-heading);"></span>
+            <button class="btn btn-primary" onclick="runAIGenerate()" id="generateBtn">Generate Full Draft</button>
+          </div>
         </div>
 
         <!-- Stories 1-5 -->
@@ -400,6 +446,11 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <div style="display:flex;gap:.5rem;align-items:center;">
             <input type="text" class="form-input" id="subSearch" placeholder="Search by email or name..." style="width:220px;font-size:.82rem;" oninput="filterSubscribers()" />
+            <select class="form-input" style="width:auto;font-size:.82rem;" id="subSort" onchange="loadSubscribers()">
+              <option value="alpha">A-Z (Name)</option>
+              <option value="recent">Most Recent</option>
+              <option value="email">A-Z (Email)</option>
+            </select>
             <select class="form-input" style="width:auto;font-size:.82rem;" id="subFilter" onchange="loadSubscribers()">
               <option value="all">All Subscribers</option>
               <option value="active">Active</option>
@@ -512,6 +563,7 @@ var editions = [];
 var subscribers = [];
 var currentEditionId = null;
 var subscriberCounts = { total: 0, active: 0, hot: 0, warm: 0, cold: 0 };
+var researchCandidates = [];
 
 // ---- Supabase helpers ----
 async function sb(table, params) {
@@ -636,7 +688,9 @@ async function loadSubscribers() {
   container.innerHTML = '<div style="padding:1rem;color:var(--color-muted);font-size:.85rem;">Loading...</div>';
 
   try {
-    var params = 'select=*&order=created_at.desc&limit=100';
+    var sortVal = document.getElementById('subSort').value;
+    var orderBy = sortVal === 'recent' ? 'created_at.desc' : sortVal === 'email' ? 'email.asc' : 'last_name.asc.nullslast,first_name.asc.nullslast,email.asc';
+    var params = 'select=*&order=' + orderBy + '&limit=500';
     if (filter === 'active') params += '&status=eq.active';
     else if (filter === 'hot') params += '&status=eq.active&engagement_tier=eq.hot';
     else if (filter === 'warm') params += '&status=eq.active&engagement_tier=eq.warm';
@@ -842,6 +896,7 @@ async function saveDraft() {
 // ---- New edition ----
 function newEdition() {
   currentEditionId = null;
+  researchCandidates = [];
   initComposeForm();
   document.getElementById('composeTitle').textContent = 'New Edition';
   document.getElementById('editionNumber').value = '';
@@ -849,6 +904,12 @@ function newEdition() {
   document.getElementById('editionPreview').value = '';
   document.getElementById('finalThoughts').value = '';
   document.getElementById('sendBtn').disabled = true;
+  // Reset AI panel
+  document.getElementById('candidatesGrid').style.display = 'none';
+  document.getElementById('candidatesGrid').innerHTML = '';
+  document.getElementById('generateBar').style.display = 'none';
+  document.getElementById('aiResearchStatus').textContent = '';
+  document.getElementById('subjectSuggestions').style.display = 'none';
 
   // Auto-set next edition number
   if (editions.length) {
@@ -862,8 +923,11 @@ function newEdition() {
 function editEdition(id) {
   var ed = editions.find(function(e) { return e.id === id; });
   if (!ed) return;
+  researchCandidates = [];
   initComposeForm();
   populateCompose(ed);
+  // Load AI research candidates if they exist
+  loadResearchCandidates(ed.id);
   switchTab('compose');
 }
 window.editEdition = editEdition;
@@ -1122,6 +1186,242 @@ function parseCSVLine(line) {
 }
 
 // ---- Tab switching ----
+// ---- AI Research Workflow ----
+async function runAIResearch() {
+  var edNum = parseInt(document.getElementById('editionNumber').value);
+  if (!edNum) { toast('Set edition number first', 'error'); return; }
+
+  // Create newsletter record if needed
+  if (!currentEditionId) {
+    try {
+      var result = await apiAction('create_record', 'newsletters', {
+        edition_number: edNum,
+        subject: document.getElementById('editionSubject').value.trim() || '',
+        preview_text: document.getElementById('editionPreview').value.trim() || '',
+        status: 'researching'
+      });
+      if (result && result.length) currentEditionId = result[0].id;
+      else { toast('Failed to create edition', 'error'); return; }
+    } catch (e) { toast('Failed to create edition: ' + e.message, 'error'); return; }
+  }
+
+  // Show loading
+  var btn = document.getElementById('researchBtn');
+  btn.disabled = true;
+  btn.textContent = 'Researching...';
+  document.getElementById('aiResearchStatus').textContent = '';
+  var grid = document.getElementById('candidatesGrid');
+  grid.style.display = 'block';
+  grid.innerHTML = '<div class="research-progress"><div class="research-spinner"></div><div><div style="font-size:.85rem;font-weight:600;color:var(--color-heading);">Searching the web for stories...</div><div style="font-size:.78rem;color:var(--color-muted);margin-top:.15rem;">AI is scanning SEO, compliance, AI, and healthcare sources. This takes 30-60 seconds.</div></div></div>';
+
+  try {
+    var resp = await fetch('/api/newsletter-research', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, window.adminAuth ? window.adminAuth.authHeaders() : {}),
+      body: JSON.stringify({ newsletter_id: currentEditionId })
+    });
+    var data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Research failed');
+
+    researchCandidates = data.stories || [];
+    document.getElementById('aiResearchStatus').textContent = researchCandidates.length + ' stories found';
+    renderCandidates();
+    updateGenerateBar();
+    toast('Found ' + researchCandidates.length + ' candidate stories');
+    loadEditions();
+  } catch (e) {
+    grid.innerHTML = '<div style="padding:1rem;color:var(--color-danger);font-size:.85rem;">Research failed: ' + escHtml(e.message) + '</div>';
+    toast('Research failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Research Stories';
+  }
+}
+window.runAIResearch = runAIResearch;
+
+function renderCandidates() {
+  var grid = document.getElementById('candidatesGrid');
+  if (!researchCandidates.length) {
+    grid.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--color-muted);font-size:.85rem;">No candidates yet. Click "Research Stories" to start.</div>';
+    return;
+  }
+  var h = '<div class="candidates-grid">';
+  researchCandidates.forEach(function(s, i) {
+    var sel = s.selected ? ' selected' : '';
+    h += '<div class="candidate-card' + sel + '" onclick="toggleCandidate(\'' + s.id + '\')">';
+    h += '<div class="candidate-headline">' + escHtml(s.headline) + '</div>';
+    h += '<div class="candidate-summary">' + escHtml(s.summary || '') + '</div>';
+    h += '<div class="candidate-meta">';
+    if (s.source_name) h += '<span>' + escHtml(s.source_name) + '</span>';
+    if (s.published_date) h += '<span>' + escHtml(s.published_date) + '</span>';
+    h += '</div>';
+    if (s.relevance_note) h += '<div class="candidate-relevance">' + escHtml(s.relevance_note) + '</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  grid.style.display = 'block';
+  grid.innerHTML = h;
+}
+
+async function toggleCandidate(storyId) {
+  var story = researchCandidates.find(function(s) { return s.id === storyId; });
+  if (!story) return;
+
+  var selectedCount = researchCandidates.filter(function(s) { return s.selected; }).length;
+  if (!story.selected && selectedCount >= 5) {
+    toast('Maximum 5 stories. Deselect one first.', 'error');
+    return;
+  }
+
+  story.selected = !story.selected;
+
+  // Update sort_order for selected stories
+  var selIdx = 0;
+  researchCandidates.forEach(function(s) {
+    if (s.selected) { s.sort_order = selIdx; selIdx++; }
+  });
+
+  // Persist to DB
+  try {
+    await apiAction('update_record', 'newsletter_stories', {
+      selected: story.selected,
+      sort_order: story.sort_order || 0
+    }, { id: storyId });
+  } catch (e) { /* non-fatal */ }
+
+  renderCandidates();
+  updateGenerateBar();
+}
+window.toggleCandidate = toggleCandidate;
+
+function updateGenerateBar() {
+  var selected = researchCandidates.filter(function(s) { return s.selected; });
+  var bar = document.getElementById('generateBar');
+  var countEl = document.getElementById('selectedCount');
+  if (selected.length > 0) {
+    bar.style.display = 'flex';
+    countEl.textContent = selected.length + ' of 5 stories selected';
+    countEl.style.color = selected.length === 5 ? 'var(--color-primary)' : 'var(--color-warning)';
+    document.getElementById('generateBtn').disabled = (selected.length !== 5);
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+async function runAIGenerate() {
+  if (!currentEditionId) { toast('Save edition first', 'error'); return; }
+  var selected = researchCandidates.filter(function(s) { return s.selected; });
+  if (selected.length !== 5) { toast('Select exactly 5 stories', 'error'); return; }
+
+  var btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+
+  // Show progress below generate bar
+  var bar = document.getElementById('generateBar');
+  var progressEl = document.createElement('div');
+  progressEl.className = 'generate-progress';
+  progressEl.id = 'generateProgress';
+  progressEl.style.marginTop = '.75rem';
+  progressEl.innerHTML = '<div class="generate-spinner"></div><div><div style="font-size:.85rem;font-weight:600;color:var(--color-heading);">Writing newsletter draft...</div><div style="font-size:.78rem;color:var(--color-muted);margin-top:.15rem;">AI is writing stories, action items, quick wins, and final thoughts. This takes 45-90 seconds.</div></div>';
+  bar.parentNode.insertBefore(progressEl, bar.nextSibling);
+
+  try {
+    var resp = await fetch('/api/newsletter-generate', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, window.adminAuth ? window.adminAuth.authHeaders() : {}),
+      body: JSON.stringify({ newsletter_id: currentEditionId })
+    });
+    var data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Generation failed');
+
+    var content = data.content || {};
+
+    // Populate the story editors with generated content
+    var stories = content.stories || [];
+    for (var i = 0; i < 5; i++) {
+      var s = stories[i] || {};
+      document.getElementById('s' + i + '-headline').value = s.headline || '';
+      document.getElementById('s' + i + '-body').value = s.body || '';
+      document.getElementById('s' + i + '-actions').value = s.actions || '';
+      document.getElementById('s' + i + '-image').value = '';
+      document.getElementById('s' + i + '-imagealt').value = s.image_suggestion || '';
+    }
+
+    // Populate quick wins
+    var qwContainer = document.getElementById('quickWinsContainer');
+    qwContainer.innerHTML = '';
+    var qw = content.quick_wins || [];
+    if (!qw.length) qw = ['', '', '', ''];
+    qw.forEach(function(item) {
+      addQuickWinField(qwContainer);
+      qwContainer.lastChild.querySelector('.qw-input').value = item;
+    });
+
+    // Populate final thoughts
+    document.getElementById('finalThoughts').value = content.final_thoughts || '';
+
+    // Show subject line suggestions
+    if (content.subject_lines && content.subject_lines.length) {
+      var sugEl = document.getElementById('subjectSuggestions');
+      var listEl = document.getElementById('subjectSuggestionsList');
+      sugEl.style.display = 'block';
+      listEl.innerHTML = '';
+      content.subject_lines.forEach(function(subj) {
+        var chip = document.createElement('span');
+        chip.className = 'subject-chip';
+        chip.textContent = subj;
+        chip.onclick = function() { document.getElementById('editionSubject').value = subj; };
+        listEl.appendChild(chip);
+      });
+      // Also show preview text suggestions
+      if (content.preview_texts && content.preview_texts.length) {
+        content.preview_texts.forEach(function(prev) {
+          var chip = document.createElement('span');
+          chip.className = 'subject-chip';
+          chip.style.borderStyle = 'dashed';
+          chip.textContent = prev;
+          chip.onclick = function() { document.getElementById('editionPreview').value = prev; };
+          listEl.appendChild(chip);
+        });
+      }
+    }
+
+    // Auto-set first subject if empty
+    if (!document.getElementById('editionSubject').value && content.subject_lines && content.subject_lines[0]) {
+      document.getElementById('editionSubject').value = content.subject_lines[0];
+    }
+    if (!document.getElementById('editionPreview').value && content.preview_texts && content.preview_texts[0]) {
+      document.getElementById('editionPreview').value = content.preview_texts[0];
+    }
+
+    document.getElementById('sendBtn').disabled = false;
+    toast('Draft generated! Review and edit below.');
+    loadEditions();
+  } catch (e) {
+    toast('Generation failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate Full Draft';
+    var prog = document.getElementById('generateProgress');
+    if (prog) prog.remove();
+  }
+}
+window.runAIGenerate = runAIGenerate;
+
+// Load existing research candidates when editing an edition
+async function loadResearchCandidates(newsletterId) {
+  try {
+    var stories = await sb('newsletter_stories', 'newsletter_id=eq.' + newsletterId + '&order=sort_order&limit=20');
+    if (stories && stories.length) {
+      researchCandidates = stories;
+      renderCandidates();
+      updateGenerateBar();
+      document.getElementById('aiResearchStatus').textContent = stories.length + ' stories found';
+    }
+  } catch (e) { /* non-fatal */ }
+}
+
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
   document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
@@ -1262,5 +1562,6 @@ init();
 </script>
 </body>
 </html>
+
 
 
