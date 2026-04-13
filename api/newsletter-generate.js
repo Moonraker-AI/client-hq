@@ -176,7 +176,7 @@ module.exports = async function handler(req, res) {
 
     // Update newsletter with content
     await sb.mutate('newsletters?id=eq.' + newsletterId, 'PATCH', {
-      content: JSON.stringify(structuredContent),
+      content: structuredContent,
       status: 'draft',
       subject: (content.subject_lines && content.subject_lines[0]) || newsletter.subject || '',
       preview_text: (content.preview_texts && content.preview_texts[0]) || newsletter.preview_text || '',
