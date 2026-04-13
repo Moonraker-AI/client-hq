@@ -2087,31 +2087,103 @@ strong { font-weight: 600; color: var(--color-heading); }
   };
 
   function renderProfile() {
-    var p = state.practice;
+    var p = state.practice || {};
     var container = document.getElementById('profilePractice');
+    var ea = function(s) { return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); };
+    var arrVal = function(v) { return Array.isArray(v) ? v.join(', ') : (v || ''); };
 
-    if (p) {
-      function pdLabel(t) { return '<div style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);margin-bottom:.15rem;">' + esc(t) + '</div>'; }
-      var shortFields = [['Num Therapists', p.num_therapists], ['Insurance/Private Pay', p.insurance_or_private_pay], ['Session Cost', p.session_cost], ['Session Frequency', p.session_frequency], ['Offers Consultation', p.offers_consultation === true ? 'Yes' : (p.offers_consultation === false ? 'No' : '')], ['Consultation Length', p.consultation_length], ['Content Approval', p.content_approval], ['Pronoun Usage', p.pronoun_usage], ['Current Caseload', p.current_caseload], ['Target Caseload', p.target_caseload], ['Current Marketing', p.current_marketing]];
-      var mediumFields = [['Specialties', Array.isArray(p.specialties) ? p.specialties.join(', ') : p.specialties], ['Modalities', Array.isArray(p.modalities) ? p.modalities.join(', ') : p.modalities], ['Populations', Array.isArray(p.populations) ? p.populations.join(', ') : p.populations], ['Licensed States', Array.isArray(p.licensed_states) ? p.licensed_states.join(', ') : p.licensed_states], ['Insurance Panels', p.insurance_panels], ['Target Keywords', Array.isArray(p.target_keywords) ? p.target_keywords.join(', ') : p.target_keywords], ['Booking URL', p.booking_url], ['Brand Voice Sources', p.brand_voice_sources], ['Campaign Objectives', p.campaign_objectives], ['Content to Omit', p.content_to_omit]];
-      var longFields = [['Ideal Client', p.ideal_client], ['Differentiators', p.differentiators], ['Intake Process', p.intake_process], ['After Care', p.after_care]];
-      var h = '<div style="padding:1rem;">';
-      h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.5rem .75rem;margin-bottom:1.25rem;">';
-      shortFields.forEach(function(f) { if (f[1] != null && f[1] !== '' && f[1] !== false) { h += '<div>' + pdLabel(f[0]) + '<div style="font-size:.84rem;color:var(--color-heading);">' + esc(String(f[1])) + '</div></div>'; } });
-      h += '</div>';
-      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem .75rem;margin-bottom:1.25rem;">';
-      mediumFields.forEach(function(f) { if (f[1] != null && f[1] !== '' && f[1] !== false) { var d = (typeof f[1] === 'string' && f[1].startsWith('http')) ? '<a href="' + esc(f[1]) + '" target="_blank" style="color:var(--color-primary);text-decoration:none;word-break:break-all;">' + esc(f[1]) + '</a>' : esc(String(f[1])); h += '<div>' + pdLabel(f[0]) + '<div style="font-size:.84rem;color:var(--color-heading);line-height:1.5;">' + d + '</div></div>'; } });
-      h += '</div>';
-      longFields.forEach(function(f) { if (f[1] != null && f[1] !== '') { h += '<div style="margin-bottom:1rem;">' + pdLabel(f[0]) + '<div style="font-size:.84rem;color:var(--color-heading);line-height:1.65;white-space:pre-wrap;">' + esc(String(f[1])) + '</div></div>'; } });
-      h += '</div>';
-      container.innerHTML = h;
-    } else {
-      container.innerHTML = '<div class="empty-state" style="padding:1.5rem;"><p>No practice details yet. Collected during onboarding.</p></div>';
-    }
+    var h = '<div style="padding:1rem;">';
+
+    // ---- Practice Basics ----
+    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem;">';
+    h += '<div class="bio-form-group"><label>Num Therapists</label><input type="number" id="pd_num_therapists" value="' + ea(p.num_therapists) + '" placeholder="e.g. 1"></div>';
+    h += '<div class="bio-form-group"><label>Insurance / Private Pay</label><input type="text" id="pd_insurance_or_private_pay" value="' + ea(p.insurance_or_private_pay) + '" placeholder="e.g. private_pay, insurance"></div>';
+    h += '<div class="bio-form-group"><label>Session Cost</label><input type="text" id="pd_session_cost" value="' + ea(p.session_cost) + '" placeholder="e.g. $150-200"></div>';
+    h += '</div>';
+
+    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem;">';
+    h += '<div class="bio-form-group"><label>Session Frequency</label><input type="text" id="pd_session_frequency" value="' + ea(p.session_frequency) + '" placeholder="e.g. weekly"></div>';
+    h += '<div class="bio-form-group"><label>Offers Consultation</label><select id="pd_offers_consultation" class="bio-form-group" style="width:100%;font-size:.84rem;padding:.45rem .6rem;border:1px solid var(--color-border);border-radius:6px;background:var(--color-surface);color:var(--color-heading);font-family:inherit;"><option value=""' + (!p.offers_consultation && p.offers_consultation !== false ? ' selected' : '') + '>--</option><option value="true"' + (p.offers_consultation === true ? ' selected' : '') + '>Yes</option><option value="false"' + (p.offers_consultation === false ? ' selected' : '') + '>No</option></select></div>';
+    h += '<div class="bio-form-group"><label>Consultation Length</label><input type="text" id="pd_consultation_length" value="' + ea(p.consultation_length) + '" placeholder="e.g. 15-20mins"></div>';
+    h += '</div>';
+
+    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem;">';
+    h += '<div class="bio-form-group"><label>Content Approval</label><input type="text" id="pd_content_approval" value="' + ea(p.content_approval) + '" placeholder="e.g. review_all"></div>';
+    h += '<div class="bio-form-group"><label>Pronoun Usage</label><input type="text" id="pd_pronoun_usage" value="' + ea(p.pronoun_usage) + '" placeholder="e.g. she/her, we/our"></div>';
+    h += '<div class="bio-form-group"><label>Practice Type</label><input type="text" id="pd_practice_type" value="' + ea(p.practice_type) + '" placeholder="e.g. solo, group"></div>';
+    h += '</div>';
+
+    // ---- Caseload & Marketing ----
+    h += '<div class="bio-form-row" style="margin-bottom:1rem;">';
+    h += '<div class="bio-form-group"><label>Current Caseload</label><input type="text" id="pd_current_caseload" value="' + ea(p.current_caseload) + '" placeholder="e.g. 20 clients per week"></div>';
+    h += '<div class="bio-form-group"><label>Target Caseload</label><input type="text" id="pd_target_caseload" value="' + ea(p.target_caseload) + '" placeholder="e.g. 30 clients per week"></div>';
+    h += '</div>';
+
+    h += '<div class="bio-form-row" style="margin-bottom:1rem;">';
+    h += '<div class="bio-form-group"><label>Current Marketing</label><input type="text" id="pd_current_marketing" value="' + ea(p.current_marketing) + '" placeholder="e.g. Psychology Today, GBP"></div>';
+    h += '<div class="bio-form-group"><label>Booking URL</label><input type="text" id="pd_booking_url" value="' + ea(p.booking_url) + '" placeholder="https://..."></div>';
+    h += '</div>';
+
+    // ---- Clinical Details (arrays, comma-separated) ----
+    h += '<div class="bio-form-row" style="margin-bottom:1rem;">';
+    h += '<div class="bio-form-group"><label>Specialties</label><input type="text" id="pd_specialties" value="' + ea(arrVal(p.specialties)) + '" placeholder="Comma-separated: Anxiety, Depression, Trauma"></div>';
+    h += '<div class="bio-form-group"><label>Modalities</label><input type="text" id="pd_modalities" value="' + ea(arrVal(p.modalities)) + '" placeholder="Comma-separated: CBT, EMDR, IFS"></div>';
+    h += '</div>';
+
+    h += '<div class="bio-form-row" style="margin-bottom:1rem;">';
+    h += '<div class="bio-form-group"><label>Populations</label><input type="text" id="pd_populations" value="' + ea(arrVal(p.populations)) + '" placeholder="Comma-separated: Adults, Couples"></div>';
+    h += '<div class="bio-form-group"><label>Licensed States</label><input type="text" id="pd_licensed_states" value="' + ea(arrVal(p.licensed_states)) + '" placeholder="Comma-separated: NY, NJ, FL"></div>';
+    h += '</div>';
+
+    h += '<div class="bio-form-row" style="margin-bottom:1rem;">';
+    h += '<div class="bio-form-group"><label>Insurance Panels</label><input type="text" id="pd_insurance_panels" value="' + ea(p.insurance_panels) + '" placeholder="e.g. Aetna, Blue Cross"></div>';
+    h += '<div class="bio-form-group"><label>Target Keywords</label><input type="text" id="pd_target_keywords" value="' + ea(arrVal(p.target_keywords)) + '" placeholder="Comma-separated keywords"></div>';
+    h += '</div>';
+
+    // ---- Brand & Campaign ----
+    h += '<div class="bio-form-row" style="margin-bottom:1rem;">';
+    h += '<div class="bio-form-group"><label>Brand Voice Sources</label><input type="text" id="pd_brand_voice_sources" value="' + ea(p.brand_voice_sources) + '" placeholder="URLs or descriptions"></div>';
+    h += '<div class="bio-form-group"><label>Campaign Objectives</label><input type="text" id="pd_campaign_objectives" value="' + ea(p.campaign_objectives) + '" placeholder="e.g. Grow group practice"></div>';
+    h += '</div>';
+
+    h += '<div class="bio-form-row" style="margin-bottom:1rem;">';
+    h += '<div class="bio-form-group"><label>Content to Omit</label><input type="text" id="pd_content_to_omit" value="' + ea(p.content_to_omit) + '" placeholder="e.g. TikTok"></div>';
+    h += '<div class="bio-form-group"><label>Competitor Slugs</label><input type="text" id="pd_competitor_slugs" value="' + ea(arrVal(p.competitor_slugs)) + '" placeholder="Comma-separated"></div>';
+    h += '</div>';
+
+    // ---- Systems ----
+    h += '<div class="bio-form-row" style="margin-bottom:1rem;">';
+    h += '<div class="bio-form-group"><label>EHR System</label><input type="text" id="pd_ehr_system" value="' + ea(p.ehr_system) + '" placeholder="e.g. SimplePractice"></div>';
+    h += '<div class="bio-form-group"><label>CRM System</label><input type="text" id="pd_crm_system" value="' + ea(p.crm_system) + '" placeholder="e.g. Owl Practice"></div>';
+    h += '</div>';
+
+    // ---- GBP ----
+    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem;">';
+    h += '<div class="bio-form-group"><label>GBP Listing Count</label><input type="number" id="pd_gbp_listing_count" value="' + ea(p.gbp_listing_count) + '" placeholder="e.g. 1"></div>';
+    h += '<div class="bio-form-group"><label>GBP Address Visible</label><select id="pd_gbp_address_visible" style="width:100%;font-size:.84rem;padding:.45rem .6rem;border:1px solid var(--color-border);border-radius:6px;background:var(--color-surface);color:var(--color-heading);font-family:inherit;"><option value=""' + (!p.gbp_address_visible && p.gbp_address_visible !== false ? ' selected' : '') + '>--</option><option value="true"' + (p.gbp_address_visible === true ? ' selected' : '') + '>Yes</option><option value="false"' + (p.gbp_address_visible === false ? ' selected' : '') + '>No</option></select></div>';
+    h += '<div class="bio-form-group"><label>GBP Verification Address</label><input type="text" id="pd_gbp_verification_address" value="' + ea(p.gbp_verification_address) + '" placeholder="Address for verification"></div>';
+    h += '</div>';
+    h += '<div class="bio-form-group" style="margin-bottom:1rem;"><label>GBP Business Hours</label><input type="text" id="pd_gbp_business_hours" value="' + ea(p.gbp_business_hours) + '" placeholder="e.g. Mon-Fri 9am-5pm"></div>';
+
+    // ---- Long-form text fields ----
+    h += '<div class="bio-form-group" style="margin-bottom:1rem;"><label>Ideal Client</label><textarea id="pd_ideal_client" style="min-height:80px;" placeholder="Describe the ideal client for this practice">' + ea(p.ideal_client) + '</textarea></div>';
+    h += '<div class="bio-form-group" style="margin-bottom:1rem;"><label>Differentiators</label><textarea id="pd_differentiators" style="min-height:80px;" placeholder="What sets this practice apart">' + ea(p.differentiators) + '</textarea></div>';
+    h += '<div class="bio-form-group" style="margin-bottom:1rem;"><label>Intake Process</label><textarea id="pd_intake_process" style="min-height:60px;" placeholder="How new clients are onboarded">' + ea(p.intake_process) + '</textarea></div>';
+    h += '<div class="bio-form-group" style="margin-bottom:1rem;"><label>After Care</label><textarea id="pd_after_care" style="min-height:60px;" placeholder="Post-session follow-up process">' + ea(p.after_care) + '</textarea></div>';
+
+    // ---- Save row ----
+    h += '<div class="bio-save-row">';
+    h += '<button class="bio-save-btn" onclick="savePracticeDetails()">Save Changes</button>';
+    h += '<span class="bio-save-status" id="pd_save_status"></span>';
+    h += '</div>';
+
+    h += '</div>';
+    container.innerHTML = h;
 
     // Bio Materials (editable)
     renderBioMaterials();
   }
+
 
   function bioFormHtml(b, idx) {
     var p = 'bio_' + idx + '_';
@@ -2210,6 +2282,89 @@ strong { font-weight: 600; color: var(--color-heading); }
       if (statusEl) { statusEl.textContent = 'Error saving'; statusEl.style.color = 'var(--color-danger)'; }
     });
   };
+
+  window.savePracticeDetails = function() {
+    var statusEl = document.getElementById('pd_save_status');
+    if (statusEl) { statusEl.textContent = 'Saving...'; statusEl.style.color = 'var(--color-muted)'; }
+
+    function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+    function arrVal(id) { var v = val(id); return v ? v.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : null; }
+    function boolVal(id) { var v = val(id); return v === 'true' ? true : (v === 'false' ? false : null); }
+    function intVal(id) { var v = val(id); return v ? parseInt(v, 10) : null; }
+
+    var data = {
+      num_therapists: intVal('pd_num_therapists'),
+      insurance_or_private_pay: val('pd_insurance_or_private_pay') || null,
+      session_cost: val('pd_session_cost') || null,
+      session_frequency: val('pd_session_frequency') || null,
+      offers_consultation: boolVal('pd_offers_consultation'),
+      consultation_length: val('pd_consultation_length') || null,
+      content_approval: val('pd_content_approval') || null,
+      pronoun_usage: val('pd_pronoun_usage') || null,
+      practice_type: val('pd_practice_type') || null,
+      current_caseload: val('pd_current_caseload') || null,
+      target_caseload: val('pd_target_caseload') || null,
+      current_marketing: val('pd_current_marketing') || null,
+      booking_url: val('pd_booking_url') || null,
+      specialties: arrVal('pd_specialties'),
+      modalities: arrVal('pd_modalities'),
+      populations: arrVal('pd_populations'),
+      licensed_states: arrVal('pd_licensed_states'),
+      insurance_panels: val('pd_insurance_panels') || null,
+      target_keywords: arrVal('pd_target_keywords'),
+      brand_voice_sources: val('pd_brand_voice_sources') || null,
+      campaign_objectives: val('pd_campaign_objectives') || null,
+      content_to_omit: val('pd_content_to_omit') || null,
+      competitor_slugs: arrVal('pd_competitor_slugs'),
+      ehr_system: val('pd_ehr_system') || null,
+      crm_system: val('pd_crm_system') || null,
+      gbp_listing_count: intVal('pd_gbp_listing_count'),
+      gbp_address_visible: boolVal('pd_gbp_address_visible'),
+      gbp_verification_address: val('pd_gbp_verification_address') || null,
+      gbp_business_hours: val('pd_gbp_business_hours') || null,
+      ideal_client: val('pd_ideal_client') || null,
+      differentiators: val('pd_differentiators') || null,
+      intake_process: val('pd_intake_process') || null,
+      after_care: val('pd_after_care') || null,
+      updated_at: new Date().toISOString()
+    };
+
+    var isNew = !state.practice || !state.practice.id;
+
+    if (isNew) {
+      data.contact_id = state.contact.id;
+      fetch('/api/action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create_record', table: 'practice_details', data: data })
+      }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.success && res.data) {
+          state.practice = res.data;
+          if (statusEl) { statusEl.textContent = 'Saved'; statusEl.style.color = 'var(--color-success)'; }
+          setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 2500);
+        } else {
+          if (statusEl) { statusEl.textContent = 'Error saving'; statusEl.style.color = 'var(--color-danger)'; }
+        }
+      }).catch(function() {
+        if (statusEl) { statusEl.textContent = 'Error saving'; statusEl.style.color = 'var(--color-danger)'; }
+      });
+    } else {
+      fetch('/api/action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_record', table: 'practice_details', filters: { contact_id: state.contact.id }, data: data })
+      }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.success) {
+          Object.assign(state.practice, data);
+          if (statusEl) { statusEl.textContent = 'Saved'; statusEl.style.color = 'var(--color-success)'; }
+          setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 2500);
+        } else {
+          if (statusEl) { statusEl.textContent = 'Error saving'; statusEl.style.color = 'var(--color-danger)'; }
+        }
+      }).catch(function() {
+        if (statusEl) { statusEl.textContent = 'Error saving'; statusEl.style.color = 'var(--color-danger)'; }
+      });
+    }
+  };
+
 
   window.deleteBio = function(bioId) {
     if (!confirm('Remove this clinician? This cannot be undone.')) return;
