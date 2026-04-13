@@ -5,212 +5,39 @@
     {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
       ]
     }
   ],
   "rewrites": [
-    {
-      "source": "/favicon.ico",
-      "destination": "/assets/logo.png"
-    }
+    { "source": "/favicon.ico", "destination": "/assets/logo.png" }
   ],
   "functions": {
-    "api/chat.js": {
-      "maxDuration": 120,
-      "memory": 1024
-    },
-    "api/action.js": {
-      "maxDuration": 30
-    },
-    "api/convert-to-prospect.js": {
-      "maxDuration": 60
-    },
-    "api/process-entity-audit.js": {
-      "maxDuration": 300,
-      "memory": 1024
-    },
-    "api/delete-client.js": {
-      "maxDuration": 60
-    },
-    "api/compile-report.js": {
-      "maxDuration": 300,
-      "memory": 1024
-    },
-    "api/send-report-email.js": {
-      "maxDuration": 30
-    },
-    "api/bootstrap-access.js": {
-      "maxDuration": 120,
-      "memory": 1024
-    },
-    "api/discover-services.js": {
-      "maxDuration": 60
-    },
-    "api/cron/enqueue-reports.js": {
-      "maxDuration": 30
-    },
-    "api/cron/process-queue.js": {
-      "maxDuration": 300,
-      "memory": 1024
-    },
-    "api/enrich-proposal.js": {
-      "maxDuration": 120,
-      "memory": 1024
-    },
-    "api/generate-proposal.js": {
-      "maxDuration": 300,
-      "memory": 1024
-    },
-    "api/send-proposal-email.js": {
-      "maxDuration": 30
-    },
-    "api/proposal-chat.js": {
-      "maxDuration": 120
-    },
-    "api/agreement-chat.js": {
-      "maxDuration": 120
-    },
-    "api/delete-proposal.js": {
-      "maxDuration": 60
-    },
-    "api/digest.js": {
-      "maxDuration": 120,
-      "memory": 1024
-    },
-    "api/generate-followups.js": {
-      "maxDuration": 30
-    },
-    "api/approve-followups.js": {
-      "maxDuration": 30
-    },
-    "api/send-followup-email.js": {
-      "maxDuration": 30
-    },
-    "api/cron/process-followups.js": {
-      "maxDuration": 60
-    },
-    "api/activate-reporting.js": {
-      "maxDuration": 120,
-      "memory": 1024
-    },
-    "api/report-chat.js": {
-      "maxDuration": 120,
-      "memory": 1024
-    },
-    "api/stripe-webhook.js": {
-      "maxDuration": 30
-    },
-    "api/delete-entity-audit.js": {
-      "maxDuration": 30
-    },
-    "api/notify-team.js": {
-      "maxDuration": 30
-    },
-    "api/send-audit-email.js": {
-      "maxDuration": 30
-    },
-    "api/generate-audit-followups.js": {
-      "maxDuration": 30
-    },
-    "api/approve-audit-followups.js": {
-      "maxDuration": 30
-    },
-    "api/trigger-agent.js": {
-      "maxDuration": 30
-    },
-    "api/submit-entity-audit.js": {
-      "maxDuration": 30
-    },
-    "api/setup-audit-schedule.js": {
-      "maxDuration": 30
-    },
-    "api/seed-batch-audits.js": {
-      "maxDuration": 120
-    },
-    "api/cron/trigger-quarterly-audits.js": {
-      "maxDuration": 60
-    },
-    "api/cron/process-audit-queue.js": {
-      "maxDuration": 30
-    },
-    "api/poll-agent.js": {
-      "maxDuration": 15
-    },
-    "api/analyze-design-spec.js": {
-      "maxDuration": 60
-    },
-    "api/generate-content-page.js": {
-      "maxDuration": 120,
-      "memory": 1024
-    },
-    "api/content-chat.js": {
-      "maxDuration": 120
-    },
-    "api/deploy-content-preview.js": {
-      "maxDuration": 60
-    },
-    "api/deploy-endorsement-page.js": {
-      "maxDuration": 30
-    },
-    "api/trigger-content-audit.js": {
-      "maxDuration": 30
-    },
-    "api/ingest-surge-content.js": {
-      "maxDuration": 60
-    },
-    "api/seed-content-pages.js": {
-      "maxDuration": 60
-    },
-    "api/lf-proxy.js": {
-      "maxDuration": 30
-    },
-    "api/health.js": {
-      "maxDuration": 15
-    },
-    "api/send-newsletter.js": {
-      "maxDuration": 120,
-      "memory": 1024
-    },
-    "api/newsletter-unsubscribe.js": {
-      "maxDuration": 10
-    },
-    "api/newsletter-webhook.js": {
-      "maxDuration": 10
-    },
-    "api/newsletter-research.js": {
-      "maxDuration": 300,
-      "memory": 1024
-    },
-    "api/newsletter-generate.js": {
-      "maxDuration": 300,
-      "memory": 1024
-    }
+    "api/**/*.js": { "maxDuration": 60 },
+    "api/activate-reporting.js": { "maxDuration": 120, "memory": 1024 },
+    "api/bootstrap-access.js": { "maxDuration": 120, "memory": 1024 },
+    "api/chat.js": { "maxDuration": 120, "memory": 1024 },
+    "api/compile-report.js": { "maxDuration": 300, "memory": 1024 },
+    "api/digest.js": { "maxDuration": 120, "memory": 1024 },
+    "api/enrich-proposal.js": { "maxDuration": 120, "memory": 1024 },
+    "api/generate-content-page.js": { "maxDuration": 120, "memory": 1024 },
+    "api/generate-proposal.js": { "maxDuration": 300, "memory": 1024 },
+    "api/newsletter-generate.js": { "maxDuration": 300, "memory": 1024 },
+    "api/newsletter-research.js": { "maxDuration": 300, "memory": 1024 },
+    "api/process-entity-audit.js": { "maxDuration": 300, "memory": 1024 },
+    "api/report-chat.js": { "maxDuration": 120, "memory": 1024 },
+    "api/send-newsletter.js": { "maxDuration": 120, "memory": 1024 },
+    "api/agreement-chat.js": { "maxDuration": 120 },
+    "api/content-chat.js": { "maxDuration": 120 },
+    "api/proposal-chat.js": { "maxDuration": 120 },
+    "api/seed-batch-audits.js": { "maxDuration": 120 },
+    "api/cron/process-queue.js": { "maxDuration": 300, "memory": 1024 }
   },
   "crons": [
-    {
-      "path": "/api/cron/enqueue-reports",
-      "schedule": "0 10 1 * *"
-    },
-    {
-      "path": "/api/cron/process-queue",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/process-followups",
-      "schedule": "0 14 * * *"
-    },
-    {
-      "path": "/api/cron/trigger-quarterly-audits",
-      "schedule": "0 11 * * *"
-    },
-    {
-      "path": "/api/cron/process-audit-queue",
-      "schedule": "*/30 * * * *"
-    }
+    { "path": "/api/cron/enqueue-reports", "schedule": "0 10 1 * *" },
+    { "path": "/api/cron/process-queue", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/process-followups", "schedule": "0 14 * * *" },
+    { "path": "/api/cron/trigger-quarterly-audits", "schedule": "0 11 * * *" },
+    { "path": "/api/cron/process-audit-queue", "schedule": "*/30 * * * *" }
   ]
 }
-
