@@ -456,20 +456,8 @@ a:hover { color: var(--color-primary-hover); }
   function loadData() {
     Promise.all([
       fetch(SB + '/rest/v1/contacts?select=id,slug,status,practice_name,email,first_name,last_name,website_url,lost&order=practice_name', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }),
-      fetch(SB + '/rest/v1/entity_audits?select=*&order=created_at.desc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }),
-      (function() {
-        var h = { 'apikey': SK, 'Authorization': 'Bearer ' + SK, 'Range-Unit': 'items' };
-        var base = SB + '/rest/v1/checklist_items?select=client_slug,status,owner,priority,audit_id&order=client_slug,sort_order';
-        var h1 = Object.assign({}, h, { 'Range': '0-999' });
-        var h2 = Object.assign({}, h, { 'Range': '1000-1999' });
-        return Promise.all([
-          fetch(base, { headers: h1 }).then(function(r) { return r.json(); }),
-          fetch(base, { headers: h2 }).then(function(r) { return r.json(); })
-        ]).then(function(pages) {
-          var all = (pages[0] || []).concat(Array.isArray(pages[1]) ? pages[1] : []);
-          return all;
-        });
-      }())
+      fetch(SB + '/rest/v1/entity_audits?select=id,contact_id,client_slug,status,audit_tier,audit_date,audit_period,score_credibility,score_optimization,score_reputation,score_engagement,scores,total_tasks,total_complete,created_at,updated_at&order=created_at.desc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }),
+      fetch(SB + '/rest/v1/checklist_items?select=client_slug,status,owner,priority,audit_id&order=client_slug,sort_order&limit=5000', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); })
     ]).then(function(res) {
       state.contacts = res[0] || [];
       state.contactMap = {};
