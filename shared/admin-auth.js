@@ -8,8 +8,7 @@
 // 4. Redirects to /admin/login if no session or not an admin
 //
 // Multi-tab safety:
-// - Uses Web Locks API (via Supabase `lock` option) so only one tab refreshes
-//   the token at a time. Other tabs pick up the new token from localStorage.
+// - Supabase JS v2 handles cross-tab session sync via BroadcastChannel.
 // - Synchronous gate only redirects if there is NO stored session at all.
 //   If an access token is expired but a refresh token exists, the async path
 //   handles the refresh (avoids premature redirect on tab switch).
@@ -109,11 +108,7 @@
 
   async function init() {
     try {
-      _client = window.supabase.createClient(SB_URL, SB_ANON, {
-        auth: {
-          lock: 'moonraker-admin-auth'
-        }
-      });
+      _client = window.supabase.createClient(SB_URL, SB_ANON);
 
       var result = await _client.auth.getSession();
       if (!result.data.session) { goLogin(); return; }
