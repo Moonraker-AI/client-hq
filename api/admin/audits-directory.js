@@ -17,8 +17,8 @@ module.exports = async function(req, res) {
       // Contacts
       sb.query('contacts?select=id,slug,status,practice_name,email,first_name,last_name,website_url,lost&order=practice_name'),
 
-      // Entity audits (all fields needed for rendering)
-      sb.query('entity_audits?select=id,contact_id,client_slug,status,audit_tier,audit_date,audit_period,score_credibility,score_optimization,score_reputation,score_engagement,scores,total_tasks,tasks_p1,tasks_p2,tasks_p3,tasks_moonraker,tasks_client,tasks_collaboration,brand_query,agent_task_id,created_at,updated_at&order=created_at.desc'),
+      // Entity audits (lightweight fields for summary view; omits scores JSONB ~1MB and tasks JSONB ~588KB)
+      sb.query('entity_audits?select=id,contact_id,client_slug,status,audit_tier,audit_date,audit_period,score_credibility,score_optimization,score_reputation,score_engagement,total_tasks,tasks_p1,tasks_p2,tasks_p3,tasks_moonraker,tasks_client,tasks_collaboration,brand_query,agent_task_id,created_at,updated_at&order=created_at.desc'),
 
       // Task summary per audit (RPC - replaces 1,806+ raw rows)
       sb.mutate('rpc/get_audit_task_summary', 'POST', {})
