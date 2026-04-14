@@ -8,6 +8,7 @@ var PARTNER_LOGOS_URL = ASSETS_BASE + '/newsletter/partner-logos.png';
 var GOOGLE_RATING_URL = ASSETS_BASE + '/newsletter/google-rating.png';
 var GOOGLE_PARTNER_URL = ASSETS_BASE + '/newsletter/google-partner.png';
 var GOOGLE_LOCAL_GUIDES_URL = ASSETS_BASE + '/newsletter/google-local-guides.png';
+var SCOTT_SIGNATURE_URL = ASSETS_BASE + '/newsletter/scott-signature.png';
 var UNSUBSCRIBE_BASE = 'https://clients.moonraker.ai/api/newsletter-unsubscribe';
 
 function esc(s) {
@@ -123,9 +124,10 @@ function finalThoughtsBlock(text) {
 function signatureBlock() {
   return '<tr><td style="padding:8px 0 0;">' +
     '<p style="font-family:' + F.body + ';font-size:15px;font-style:italic;color:' + C.body + ';line-height:1.7;margin:0 0 4px;">To your growth and success,</p>' +
-    '<p style="font-family:' + F.body + ';font-size:15px;color:' + C.heading + ';margin:0;line-height:1.5;">' +
+    '<p style="font-family:' + F.body + ';font-size:15px;color:' + C.heading + ';margin:0 0 8px;line-height:1.5;">' +
       '<strong>Scott Pope</strong> - Director of Growth &amp; Operations, ' +
       '<a href="https://moonraker.ai" style="color:' + C.primary + ';text-decoration:none;">Moonraker.AI</a></p>' +
+    '<img src="' + SCOTT_SIGNATURE_URL + '" alt="Scott Pope" width="160" style="display:block;width:160px;height:auto;" />' +
   '</td></tr>';
 }
 
@@ -178,17 +180,23 @@ function build(newsletter, subscriberId) {
     finalThoughtsBlock(finalThoughts) +
     signatureBlock() +
 
+    // Google badges row (inside white body, above footer)
+    '<tr><td style="padding:16px 0 0;"><table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>' +
+      '<td style="border-top:1px solid ' + C.border + ';font-size:0;height:1px;line-height:0;">&nbsp;</td>' +
+    '</tr></table></td></tr>' +
+    '<tr><td style="padding:20px 0 8px;text-align:center;">' +
+      '<table cellpadding="0" cellspacing="0" border="0" align="center"><tr>' +
+        '<td class="badge-cell" style="padding:0 16px;vertical-align:middle;"><img src="' + GOOGLE_RATING_URL + '" alt="Google Rating 4.9" height="40" style="display:inline-block;height:40px;width:auto;" /></td>' +
+        '<td class="badge-cell" style="padding:0 16px;vertical-align:middle;"><img src="' + GOOGLE_PARTNER_URL + '" alt="Google Partner" height="40" style="display:inline-block;height:40px;width:auto;" /></td>' +
+        '<td class="badge-cell" style="padding:0 16px;vertical-align:middle;"><img src="' + GOOGLE_LOCAL_GUIDES_URL + '" alt="Google Local Guides" height="40" style="display:inline-block;height:40px;width:auto;" /></td>' +
+      '</tr></table>' +
+    '</td></tr>' +
+
     '</table></td></tr>' +
 
-    // FOOTER: Dark navy bar with badges, copyright, unsubscribe
+    // FOOTER: Dark navy bar with copyright + unsubscribe (no badges)
     '<tr><td style="background:' + C.navy + ';padding:24px 32px;border-radius:0 0 14px 14px;text-align:center;">' +
       '<table cellpadding="0" cellspacing="0" border="0" width="100%">' +
-      '<tr><td style="padding:0 0 16px;text-align:center;">' +
-        '<table cellpadding="0" cellspacing="0" border="0" align="center"><tr>' +
-          '<td class="badge-cell" style="padding:0 12px;vertical-align:middle;"><img src="' + GOOGLE_RATING_URL + '" alt="Google Rating 4.9" height="48" style="display:inline-block;height:48px;width:auto;" /></td>' +
-          '<td class="badge-cell" style="padding:0 12px;vertical-align:middle;"><img src="' + GOOGLE_PARTNER_URL + '" alt="Google Partner" height="36" style="display:inline-block;height:36px;width:auto;" /></td>' +
-          '<td class="badge-cell" style="padding:0 12px;vertical-align:middle;"><img src="' + GOOGLE_LOCAL_GUIDES_URL + '" alt="Google Local Guides" height="28" style="display:inline-block;height:28px;width:auto;" /></td>' +
-        '</tr></table></td></tr>' +
       '<tr><td style="padding:0 0 8px;text-align:center;">' +
         '<p style="font-family:' + F.body + ';font-size:12px;color:rgba(232,245,239,.55);margin:0 0 4px;line-height:1.6;">&copy;' + year + ' <a href="https://moonraker.ai" style="color:rgba(232,245,239,.55);text-decoration:none;">Moonraker.AI</a></p>' +
         '<p style="font-family:' + F.body + ';font-size:12px;color:rgba(232,245,239,.35);margin:0;line-height:1.6;">119 Oliver St, Easthampton, MA 01027</p></td></tr>' +
