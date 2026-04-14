@@ -188,17 +188,29 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
 .story-fields.collapsed { display: none; }
 
 /* AI Research candidates */
-.candidate-card { padding:.75rem;border:1px solid var(--color-border);border-radius:10px;cursor:pointer;transition:all .15s;position:relative; }
-.candidate-card:hover { border-color:var(--color-primary-light);background:var(--color-primary-subtle); }
-.candidate-card.selected { border-color:var(--color-primary);background:var(--color-primary-subtle); }
-.candidate-card.selected::after { content:'\2713';position:absolute;top:.5rem;right:.6rem;color:var(--color-primary);font-weight:700;font-size:.9rem; }
-.candidate-headline { font-size:.85rem;font-weight:600;color:var(--color-heading);margin-bottom:.35rem;padding-right:1.5rem; }
-.candidate-summary { font-size:.78rem;color:var(--color-body);line-height:1.5;margin-bottom:.35rem; }
-.candidate-meta { font-size:.72rem;color:var(--color-muted);display:flex;gap:.75rem;flex-wrap:wrap; }
-.candidate-meta span { display:inline-flex;align-items:center;gap:.25rem; }
-.candidate-relevance { font-size:.75rem;color:var(--color-primary);font-weight:500;margin-top:.3rem; }
-.candidates-grid { display:grid;grid-template-columns:1fr 1fr;gap:.6rem; }
+.candidate-card { padding:.85rem 1rem;border:2px solid var(--color-border);border-radius:12px;cursor:pointer;transition:all .2s;position:relative;background:var(--color-surface); }
+.candidate-card:hover { border-color:var(--color-primary-light);box-shadow:0 2px 8px rgba(0,212,126,.08); }
+.candidate-card.selected { border-color:var(--color-primary);background:var(--color-primary-subtle);box-shadow:0 2px 12px rgba(0,212,126,.12); }
+.candidate-badge { position:absolute;top:-.5rem;right:-.4rem;width:1.5rem;height:1.5rem;border-radius:50%;background:var(--color-primary);color:#fff;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.5);transition:all .2s; }
+.candidate-card.selected .candidate-badge { opacity:1;transform:scale(1); }
+.candidate-top { display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.35rem; }
+.candidate-headline { font-size:.85rem;font-weight:600;color:var(--color-heading);line-height:1.35;flex:1; }
+.candidate-actions { display:flex;gap:.25rem;opacity:0;transition:opacity .15s; }
+.candidate-card:hover .candidate-actions { opacity:1; }
+.candidate-action-btn { background:none;border:none;color:var(--color-muted);cursor:pointer;padding:.15rem .25rem;border-radius:4px;font-size:.75rem;line-height:1;transition:all .15s; }
+.candidate-action-btn:hover { background:rgba(239,68,68,.1);color:var(--color-danger); }
+.candidate-action-btn.link-btn:hover { background:rgba(0,212,126,.1);color:var(--color-primary); }
+.candidate-summary { font-size:.78rem;color:var(--color-body);line-height:1.55;margin-bottom:.45rem; }
+.candidate-footer { display:flex;justify-content:space-between;align-items:center;gap:.5rem; }
+.candidate-meta { font-size:.72rem;color:var(--color-muted);display:flex;gap:.65rem;flex-wrap:wrap; }
+.candidate-meta span { display:inline-flex;align-items:center;gap:.2rem; }
+.candidate-relevance { font-size:.72rem;color:var(--color-primary);font-weight:500;font-style:italic; }
+.candidates-grid { display:grid;grid-template-columns:1fr 1fr;gap:.75rem; }
 @media(max-width:900px) { .candidates-grid { grid-template-columns:1fr; } }
+.selection-bar { display:flex;justify-content:space-between;align-items:center;padding:.65rem 1rem;background:var(--color-primary-subtle);border:1px solid var(--color-primary-light);border-radius:10px;margin-bottom:.75rem; }
+.selection-count { font-size:.82rem;font-weight:600;color:var(--color-heading); }
+.selection-count strong { color:var(--color-primary); }
+.selection-hint { font-size:.75rem;color:var(--color-muted); }
 .research-progress { display:flex;align-items:center;gap:.75rem;padding:1.25rem;background:var(--color-primary-subtle);border-radius:10px; }
 .research-spinner { width:20px;height:20px;border:2.5px solid var(--color-primary-light);border-top-color:var(--color-primary);border-radius:50%;animation:spin 1s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
@@ -400,20 +412,24 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
 
         <!-- AI Research Panel -->
         <div class="card" style="margin-top:1rem;border:1px solid var(--color-primary-light);" id="aiPanel">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem;">
             <div>
               <h3 style="font-size:.95rem;margin:0;">AI Story Research</h3>
-              <p style="font-size:.78rem;color:var(--color-muted);margin-top:.2rem;">Search recent news for therapy-relevant stories using AI.</p>
+              <p style="font-size:.78rem;color:var(--color-muted);margin-top:.2rem;">Searches 8 news categories via SerpAPI, then Claude curates the most relevant stories for therapists.</p>
             </div>
             <div style="display:flex;gap:.5rem;align-items:center;">
               <span id="aiResearchStatus" style="font-size:.78rem;color:var(--color-muted);"></span>
-              <button class="btn btn-primary btn-sm" onclick="runAIResearch()" id="researchBtn">Research Stories</button>
+              <button class="btn btn-primary btn-sm" onclick="runAIResearch()" id="researchBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:.3rem;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Research Stories
+              </button>
             </div>
           </div>
+          <!-- Selection bar (shown when candidates exist) -->
+          <div id="selectionBar" style="display:none;"></div>
           <!-- Candidates grid -->
           <div id="candidatesGrid" style="display:none;"></div>
           <!-- Generate button (appears after 5 selected) -->
-          <div id="generateBar" style="display:none;padding:.75rem 0 0;border-top:1px solid var(--color-border);margin-top:.75rem;display:none;justify-content:space-between;align-items:center;">
+          <div id="generateBar" style="display:none;padding:.75rem 0 0;border-top:1px solid var(--color-border);margin-top:.75rem;justify-content:space-between;align-items:center;">
             <span id="selectedCount" style="font-size:.82rem;font-weight:600;color:var(--color-heading);"></span>
             <button class="btn btn-primary" onclick="runAIGenerate()" id="generateBtn">Generate Full Draft</button>
           </div>
@@ -918,6 +934,7 @@ function newEdition() {
   // Reset AI panel
   document.getElementById('candidatesGrid').style.display = 'none';
   document.getElementById('candidatesGrid').innerHTML = '';
+  document.getElementById('selectionBar').style.display = 'none';
   document.getElementById('generateBar').style.display = 'none';
   document.getElementById('aiResearchStatus').textContent = '';
   document.getElementById('subjectSuggestions').style.display = 'none';
@@ -1288,7 +1305,7 @@ async function runAIResearch() {
   document.getElementById('aiResearchStatus').textContent = '';
   var grid = document.getElementById('candidatesGrid');
   grid.style.display = 'block';
-  grid.innerHTML = '<div class="research-progress"><div class="research-spinner"></div><div><div style="font-size:.85rem;font-weight:600;color:var(--color-heading);">Searching the web for stories...</div><div style="font-size:.78rem;color:var(--color-muted);margin-top:.15rem;">AI is scanning SEO, compliance, AI, and healthcare sources. This takes 30-60 seconds.</div></div></div>';
+  grid.innerHTML = '<div class="research-progress"><div class="research-spinner"></div><div><div style="font-size:.85rem;font-weight:600;color:var(--color-heading);">Searching 8 news categories via SerpAPI...</div><div style="font-size:.78rem;color:var(--color-muted);margin-top:.15rem;">Finding recent stories, then Claude curates the most relevant for therapists. Takes 30-60 seconds.</div></div></div>';
 
   try {
     var resp = await fetch('/api/newsletter-research', {
@@ -1300,43 +1317,70 @@ async function runAIResearch() {
     if (!resp.ok) throw new Error(data.error || 'Research failed');
 
     researchCandidates = data.stories || [];
-    document.getElementById('aiResearchStatus').textContent = researchCandidates.length + ' stories found';
+    document.getElementById('aiResearchStatus').textContent = (data.search_results_found || '?') + ' results searched, ' + researchCandidates.length + ' stories curated';
     renderCandidates();
-    updateGenerateBar();
-    toast('Found ' + researchCandidates.length + ' candidate stories');
+    toast('Found ' + researchCandidates.length + ' candidate stories from ' + (data.search_results_found || '?') + ' search results');
     loadEditions();
   } catch (e) {
     grid.innerHTML = '<div style="padding:1rem;color:var(--color-danger);font-size:.85rem;">Research failed: ' + escHtml(e.message) + '</div>';
     toast('Research failed: ' + e.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Research Stories';
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:.3rem;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Research Stories';
   }
 }
 window.runAIResearch = runAIResearch;
 
 function renderCandidates() {
   var grid = document.getElementById('candidatesGrid');
+  var selBar = document.getElementById('selectionBar');
   if (!researchCandidates.length) {
     grid.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--color-muted);font-size:.85rem;">No candidates yet. Click "Research Stories" to start.</div>';
+    selBar.style.display = 'none';
     return;
   }
+
+  // Count selected and track order
+  var selectedList = researchCandidates.filter(function(s) { return s.selected; })
+    .sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+  var selCount = selectedList.length;
+
+  // Selection bar
+  selBar.style.display = 'flex';
+  selBar.className = 'selection-bar';
+  selBar.innerHTML = '<div class="selection-count"><strong>' + selCount + '</strong> of 5 stories selected</div>' +
+    '<div class="selection-hint">' + (selCount < 5 ? 'Click cards to select' : 'Ready to generate') + '</div>';
+
+  // Build selection order map
+  var orderMap = {};
+  selectedList.forEach(function(s, idx) { orderMap[s.id] = idx + 1; });
+
   var h = '<div class="candidates-grid">';
-  researchCandidates.forEach(function(s, i) {
+  researchCandidates.forEach(function(s) {
     var sel = s.selected ? ' selected' : '';
+    var orderNum = orderMap[s.id] || 0;
     h += '<div class="candidate-card' + sel + '" onclick="toggleCandidate(\'' + s.id + '\')">';
+    h += '<div class="candidate-badge">' + orderNum + '</div>';
+    h += '<div class="candidate-top">';
     h += '<div class="candidate-headline">' + escHtml(s.headline) + '</div>';
+    h += '<div class="candidate-actions">';
+    if (s.source_url) h += '<button class="candidate-action-btn link-btn" onclick="event.stopPropagation();window.open(\'' + escHtml(s.source_url).replace(/'/g, "\\'") + '\',\'_blank\')" title="Open source">&#x2197;</button>';
+    h += '<button class="candidate-action-btn" onclick="event.stopPropagation();deleteCandidate(\'' + s.id + '\')" title="Remove">&times;</button>';
+    h += '</div></div>';
     h += '<div class="candidate-summary">' + escHtml(s.summary || '') + '</div>';
+    h += '<div class="candidate-footer">';
     h += '<div class="candidate-meta">';
     if (s.source_name) h += '<span>' + escHtml(s.source_name) + '</span>';
     if (s.published_date) h += '<span>' + escHtml(s.published_date) + '</span>';
     h += '</div>';
     if (s.relevance_note) h += '<div class="candidate-relevance">' + escHtml(s.relevance_note) + '</div>';
     h += '</div>';
+    h += '</div>';
   });
   h += '</div>';
   grid.style.display = 'block';
   grid.innerHTML = h;
+  updateGenerateBar();
 }
 
 async function toggleCandidate(storyId) {
@@ -1351,7 +1395,7 @@ async function toggleCandidate(storyId) {
 
   story.selected = !story.selected;
 
-  // Update sort_order for selected stories
+  // Recalculate sort_order for all selected stories
   var selIdx = 0;
   researchCandidates.forEach(function(s) {
     if (s.selected) { s.sort_order = selIdx; selIdx++; }
@@ -1366,18 +1410,24 @@ async function toggleCandidate(storyId) {
   } catch (e) { /* non-fatal */ }
 
   renderCandidates();
-  updateGenerateBar();
 }
 window.toggleCandidate = toggleCandidate;
+
+async function deleteCandidate(storyId) {
+  researchCandidates = researchCandidates.filter(function(s) { return s.id !== storyId; });
+  try {
+    await apiAction('delete_record', 'newsletter_stories', null, { id: storyId });
+  } catch (e) { /* non-fatal */ }
+  renderCandidates();
+  toast('Story removed');
+}
+window.deleteCandidate = deleteCandidate;
 
 function updateGenerateBar() {
   var selected = researchCandidates.filter(function(s) { return s.selected; });
   var bar = document.getElementById('generateBar');
-  var countEl = document.getElementById('selectedCount');
   if (selected.length > 0) {
     bar.style.display = 'flex';
-    countEl.textContent = selected.length + ' of 5 stories selected';
-    countEl.style.color = selected.length === 5 ? 'var(--color-primary)' : 'var(--color-warning)';
     document.getElementById('generateBtn').disabled = (selected.length !== 5);
   } else {
     bar.style.display = 'none';
@@ -1638,6 +1688,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
