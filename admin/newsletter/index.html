@@ -965,7 +965,7 @@ async function copyNewsletterHtml() {
     await saveDraft();
     // Fetch server-rendered HTML
     var resp = await fetch('/api/newsletter-preview?id=' + currentEditionId + '&raw=1', {
-      headers: window.adminAuth ? window.adminAuth.authHeaders() : {}
+      headers: {}
     });
     if (!resp.ok) { var err = await resp.json().catch(function() { return {}; }); throw new Error(err.error || 'Preview failed'); }
     var data = await resp.json();
@@ -1102,7 +1102,7 @@ async function executeSend() {
     var tier = document.getElementById('sendTier').value;
     var res = await fetch(API_BASE + '/send-newsletter', {
       method: 'POST',
-      headers: Object.assign({ 'Content-Type': 'application/json' }, window.adminAuth ? window.adminAuth.authHeaders() : {}),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ newsletter_id: currentEditionId, tier: tier })
     });
     if (!res.ok) { var err = await res.json().catch(function() { return {}; }); throw new Error(err.error || 'Send failed'); }
@@ -1293,7 +1293,7 @@ async function runAIResearch() {
   try {
     var resp = await fetch('/api/newsletter-research', {
       method: 'POST',
-      headers: Object.assign({ 'Content-Type': 'application/json' }, window.adminAuth ? window.adminAuth.authHeaders() : {}),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ newsletter_id: currentEditionId })
     });
     var data = await resp.json();
@@ -1405,7 +1405,7 @@ async function runAIGenerate() {
   try {
     var resp = await fetch('/api/newsletter-generate', {
       method: 'POST',
-      headers: Object.assign({ 'Content-Type': 'application/json' }, window.adminAuth ? window.adminAuth.authHeaders() : {}),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ newsletter_id: currentEditionId })
     });
     var data = await resp.json();
