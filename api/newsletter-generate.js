@@ -203,39 +203,46 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'Expected 5 stories in response', got: content.stories ? content.stories.length : 0 });
     }
 
-    // Search Pexels for story images
-    if (PEXELS_KEY) {
-      for (var p = 0; p < content.stories.length; p++) {
+    // Search Pexels for story images, fall back to existing URLs from newsletter_stories
+    for (var p = 0; p < content.stories.length; p++) {
+      var existingImg = stories[p] ? (stories[p].image_url || '') : '';
+      var existingAlt = stories[p] ? (stories[p].image_alt || '') : '';
+
+      if (PEXELS_KEY) {
         var suggestion = content.stories[p].image_suggestion || content.stories[p].headline || '';
         var img = await searchPexelsImage(suggestion);
         if (img) {
           content.stories[p].image_url = img.url;
           content.stories[p].image_alt = img.alt;
+        } else if (existingImg) {
+          // Pexels failed but we have an existing image from a previous run
+          content.stories[p].image_url = existingImg;
+          content.stories[p].image_alt = existingAlt;
         }
+      } else if (existingImg) {
+        // No Pexels key, use existing
+        content.stories[p].image_url = existingImg;
+        content.stories[p].image_alt = existingAlt;
       }
     }
 
-    // Update each newsletter_story with the generated body/actions
+    // Update each newsletter_story with generated body/actions AND image
     for (var s = 0; s < content.stories.length; s++) {
       var generated = content.stories[s];
       var original = stories[s];
       try {
-        await sb.mutate('newsletter_stories?id=eq.' + original.id, 'PATCH', {
+        var patch = {
           headline: generated.headline || original.headline,
           body: generated.body || '',
           action_items: generated.actions || '',
           image_suggestion: generated.image_suggestion || original.image_suggestion || '',
           updated_at: new Date().toISOString()
-        });
-        // Update image URL on the story record if we found one
+        };
         if (generated.image_url) {
-          try {
-            await sb.mutate('newsletter_stories?id=eq.' + original.id, 'PATCH', {
-              image_url: generated.image_url,
-              image_alt: generated.image_alt || ''
-            });
-          } catch (imgErr) { /* non-fatal */ }
+          patch.image_url = generated.image_url;
+          patch.image_alt = generated.image_alt || '';
         }
+        await sb.mutate('newsletter_stories?id=eq.' + original.id, 'PATCH', patch);
       } catch (e) {
         console.error('Failed to update story:', original.id, e.message);
       }
@@ -272,4 +279,5 @@ module.exports = async function handler(req, res) {
     try { return res.status(500).json({ error: 'Fatal: ' + fatal.message }); } catch(e2) {}
   }
 };
+
 
