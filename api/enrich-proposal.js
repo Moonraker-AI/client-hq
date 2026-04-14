@@ -319,10 +319,11 @@ module.exports = async function handler(req, res) {
     var coreAudits = await coreResp.json();
     if (coreAudits && coreAudits.length > 0) {
       enrichment.data.campaign_audit = {
-        c_score: coreAudits[0].c_score,
-        o_score: coreAudits[0].o_score,
-        r_score: coreAudits[0].r_score,
-        e_score: coreAudits[0].e_score,
+        c_score: coreAudits[0].score_credibility,
+        o_score: coreAudits[0].score_optimization,
+        r_score: coreAudits[0].score_reputation,
+        e_score: coreAudits[0].score_engagement,
+        cres_score: coreAudits[0].cres_score,
         variance_score: coreAudits[0].variance_score,
         audit_date: coreAudits[0].audit_date
       };
