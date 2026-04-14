@@ -1346,6 +1346,13 @@ function renderCandidates() {
     return;
   }
 
+  // Sort by published_date descending (most recent first), selected items retain their order
+  researchCandidates.sort(function(a, b) {
+    var da = a.published_date || '0000-00-00';
+    var db = b.published_date || '0000-00-00';
+    return db.localeCompare(da);
+  });
+
   // Count selected and track order
   var selectedList = researchCandidates.filter(function(s) { return s.selected; })
     .sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
