@@ -6,7 +6,7 @@
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
 
-// SerpAPI Google News search
+// SerpAPI Google News search - limited to top 8 results per query
 async function searchNews(query, apiKey) {
   var url = 'https://serpapi.com/search.json?engine=google_news' +
     '&q=' + encodeURIComponent(query) +
@@ -14,32 +14,25 @@ async function searchNews(query, apiKey) {
     '&api_key=' + apiKey;
   try {
     var resp = await fetch(url);
-    if (!resp.ok) return [];
+    if (!resp.ok) {
+      console.error('SerpAPI HTTP ' + resp.status + ' for "' + query + '"');
+      return [];
+    }
     var data = await resp.json();
     var results = [];
-    // Google News returns news_results array
     var items = data.news_results || [];
-    for (var i = 0; i < items.length; i++) {
+    // Take only top 8 results per query to keep payload manageable
+    var limit = Math.min(items.length, 8);
+    for (var i = 0; i < limit; i++) {
       var item = items[i];
-      results.push({
-        title: item.title || '',
-        snippet: item.snippet || '',
-        source: (item.source && item.source.name) || '',
-        link: item.link || '',
-        date: item.date || ''
-      });
-      // Also check sub-stories (Google News clusters)
-      if (item.stories && item.stories.length) {
-        for (var j = 0; j < item.stories.length; j++) {
-          var sub = item.stories[j];
-          results.push({
-            title: sub.title || '',
-            snippet: sub.snippet || '',
-            source: (sub.source && sub.source.name) || '',
-            link: sub.link || '',
-            date: sub.date || ''
-          });
-        }
+      if (item.title) {
+        results.push({
+          title: item.title,
+          snippet: (item.snippet || '').substring(0, 200),
+          source: (item.source && item.source.name) || '',
+          link: item.link || '',
+          date: item.date || ''
+        });
       }
     }
     return results;
@@ -116,6 +109,13 @@ module.exports = async function handler(req, res) {
   if (uniqueResults.length === 0) {
     return res.status(500).json({ error: 'No search results found. SerpAPI may be rate-limited.' });
   }
+
+  // Cap at 60 results to keep Claude's input manageable
+  if (uniqueResults.length > 60) {
+    uniqueResults = uniqueResults.slice(0, 60);
+  }
+
+  console.log('Newsletter research: ' + uniqueResults.length + ' unique results from SerpAPI, sending to Claude');
 
   // Phase 2: Claude analyzes and curates
   var today = new Date().toISOString().split('T')[0];
