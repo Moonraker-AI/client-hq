@@ -638,7 +638,7 @@ a:hover { color: var(--color-primary-hover); }
       var taskHtml = '--';
       if (taskTotal > 0) {
         taskHtml = '<div style="display:flex;align-items:center;gap:.5rem;">';
-        taskHtml += '<div style="flex:1;min-width:40px;height:6px;background:var(--color-bg);border-radius:3px;overflow:hidden;">';
+        taskHtml += '<div style="flex:1;min-width:40px;height:6px;background:var(--color-border);border-radius:3px;overflow:hidden;">';
         if (taskPct > 0) taskHtml += '<div style="width:' + taskPct + '%;height:100%;background:var(--color-success);"></div>';
         taskHtml += '</div>';
         taskHtml += '<span style="font-size:.75rem;color:var(--color-muted);white-space:nowrap;">' + taskComplete + '/' + taskTotal + '</span>';
