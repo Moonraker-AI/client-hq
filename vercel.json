@@ -37,6 +37,8 @@
     { "path": "/api/cron/process-queue", "schedule": "*/5 * * * *" },
     { "path": "/api/cron/process-followups", "schedule": "0 14 * * *" },
     { "path": "/api/cron/trigger-quarterly-audits", "schedule": "0 11 * * *" },
-    { "path": "/api/cron/process-audit-queue", "schedule": "*/30 * * * *" }
+    { "path": "/api/cron/process-audit-queue", "schedule": "*/30 * * * *" },
+    { "path": "/api/cron/process-scheduled-sends", "schedule": "*/5 * * * *" }
   ]
 }
+
