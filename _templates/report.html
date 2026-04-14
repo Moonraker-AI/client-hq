@@ -1239,9 +1239,15 @@ section { padding: 4.5rem 0; }
     if (!confirm('Approve this report for ' + monthLabel(currentSnap.report_month) + '? It will become visible to the client.')) return;
     var btn = document.getElementById('bannerApproveBtn');
     if (btn) { btn.textContent = 'Publishing...'; btn.disabled = true; }
+    var authToken = null;
+    try {
+      var stored = JSON.parse(localStorage.getItem('sb-ofmmwcjhdrhvxxkhcuww-auth-token') || '{}');
+      authToken = stored.access_token;
+    } catch(e) {}
+    if (!authToken) { alert('Admin session not found. Please log in at /admin first.'); if (btn) { btn.textContent = '\u2713 Approve & Publish'; btn.disabled = false; } return; }
     fetch('/api/action', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
       body: JSON.stringify({ action: 'update_record', table: 'report_snapshots', filters: { id: currentSnap.id }, data: { report_status: 'published', updated_at: new Date().toISOString() } })
     }).then(function(r) { return r.json(); }).then(function(res) {
       if (res.success) {
@@ -1267,6 +1273,7 @@ section { padding: 4.5rem 0; }
 </script>
 </body>
 </html>
+
 
 
 
