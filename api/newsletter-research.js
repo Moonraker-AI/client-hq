@@ -116,7 +116,9 @@ module.exports = async function handler(req, res) {
 
     if (!aiResp.ok) {
       var errBody = await aiResp.text();
-      return res.status(500).json({ error: 'Anthropic API error: ' + aiResp.status, detail: errBody.substring(0, 500) });
+      var errMsg = 'Anthropic API error ' + aiResp.status;
+      try { var errJson = JSON.parse(errBody); errMsg += ': ' + (errJson.error && errJson.error.message || errBody.substring(0, 200)); } catch(e) { errMsg += ': ' + errBody.substring(0, 200); }
+      return res.status(500).json({ error: errMsg });
     }
 
     var aiData = await aiResp.json();
