@@ -454,27 +454,35 @@ a:hover { color: var(--color-primary-hover); }
   var state = { contacts: [], contactMap: {}, audits: [], tasks: {}, currentFilter: 'all' };
 
   function loadData() {
-    Promise.all([
-      fetch(SB + '/rest/v1/contacts?select=id,slug,status,practice_name,email,first_name,last_name,website_url,lost&order=practice_name', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }),
-      fetch(SB + '/rest/v1/entity_audits?select=id,contact_id,client_slug,status,audit_tier,audit_date,audit_period,score_credibility,score_optimization,score_reputation,score_engagement,scores,total_tasks,created_at,updated_at&order=created_at.desc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }),
-      fetch(SB + '/rest/v1/checklist_items?select=client_slug,status,owner,priority,audit_id&order=client_slug,sort_order&limit=5000', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); })
-    ]).then(function(res) {
-      state.contacts = res[0] || [];
+    var cacheKey = 'mr-cache-audits-dir';
+    try {
+      var cached = JSON.parse(sessionStorage.getItem(cacheKey));
+      if (cached && (Date.now() - cached.ts) < 60000) {
+        processAuditsData(cached.data);
+        return;
+      }
+    } catch(e) {}
+
+    fetch('/api/admin/audits-directory').then(function(r) { return r.json(); }).then(function(data) {
+      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: data })); } catch(e) {}
+      processAuditsData(data);
+    });
+  }
+
+  function processAuditsData(data) {
+      state.contacts = data.contacts || [];
       state.contactMap = {};
       state.contacts.forEach(function(c) { state.contactMap[c.id] = c; state.contactMap[c.slug] = c; });
 
-      state.audits = res[1] || [];
+      state.audits = data.audits || [];
 
-      // Index tasks by audit_id and by client_slug
+      // Task summary is pre-aggregated: {audit_id, client_slug, total, complete}
       state.tasks = {};
       state.tasksBySlug = {};
-      (res[2] || []).forEach(function(t) {
-        if (t.audit_id) {
-          if (!state.tasks[t.audit_id]) state.tasks[t.audit_id] = [];
-          state.tasks[t.audit_id].push(t);
-        }
-        if (!state.tasksBySlug[t.client_slug]) state.tasksBySlug[t.client_slug] = [];
-        state.tasksBySlug[t.client_slug].push(t);
+      (data.taskSummary || []).forEach(function(t) {
+        var summary = { total: Number(t.total) || 0, complete: Number(t.complete) || 0 };
+        if (t.audit_id) state.tasks[t.audit_id] = summary;
+        if (t.client_slug) state.tasksBySlug[t.client_slug] = summary;
       });
 
       // Identify active/onboarding clients that need audits
@@ -496,7 +504,6 @@ a:hover { color: var(--color-primary-hover); }
       if (window.MoonrakerChat) {
         window.MoonrakerChat.setContext({ clientData: { contacts: state.contacts, audits: state.audits } });
       }
-    });
   }
 
   function getFilteredAudits() {
@@ -601,9 +608,9 @@ a:hover { color: var(--color-primary-hover); }
       var c = state.contactMap[ea.contact_id] || {};
       var slug = c.slug || ea.client_slug || '';
       var initials = ((c.first_name || '')[0] || '') + ((c.last_name || '')[0] || '') || '';
-      var tasks = state.tasks[ea.id] || state.tasksBySlug[slug] || [];
-      var taskComplete = tasks.filter(function(t) { return t.status === 'complete'; }).length;
-      var taskTotal = ea.total_tasks || tasks.length;
+      var taskSum = state.tasks[ea.id] || state.tasksBySlug[slug] || { total: 0, complete: 0 };
+      var taskComplete = taskSum.complete;
+      var taskTotal = ea.total_tasks || taskSum.total;
       var taskPct = taskTotal > 0 ? Math.round(taskComplete / taskTotal * 100) : 0;
 
       // Status styling
