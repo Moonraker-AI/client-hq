@@ -3082,9 +3082,25 @@ strong { font-weight: 600; color: var(--color-heading); }
   // ---- KEYWORD FORM (inside Intro Call) ----
   function renderKeywordForm(targetId) {
     // Renders into any element - used by both IC tab and Reports tab
+    // Lock mechanism: keywords with downstream dependencies (content pages, LF campaigns) cannot be deleted
     var targets = targetId ? [targetId] : ['icKeywordForm', 'rptKeywordForm'];
     var slug = state.contact.slug;
-    fetch(SB + '/rest/v1/tracked_keywords?client_slug=eq.' + slug + '&active=eq.true&order=priority.asc,keyword.asc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).then(function(kws) {
+    // Fetch active, non-retired keywords
+    var kwUrl = SB + '/rest/v1/tracked_keywords?client_slug=eq.' + slug + '&active=eq.true&retired_at=is.null&order=priority.asc,keyword.asc';
+    // Also fetch content_pages to compute per-keyword dependencies
+    var cpUrl = SB + '/rest/v1/content_pages?client_slug=eq.' + slug + '&select=tracked_keyword_id';
+    Promise.all([
+      fetch(kwUrl, { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }),
+      fetch(cpUrl, { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); })
+    ]).then(function(results) {
+      var kws = results[0] || [];
+      var cps = results[1] || [];
+      // Build a set of keyword IDs that have content pages
+      var kwWithContent = {};
+      cps.forEach(function(cp) { if (cp.tracked_keyword_id) kwWithContent[cp.tracked_keyword_id] = true; });
+      // Check if client has LF campaigns configured
+      var cfg = state.reportConfig || {};
+      var hasLfCampaigns = !!(cfg.lf_campaign_keys && Object.keys(cfg.lf_campaign_keys).length > 0);
       targets.forEach(function(tid) {
         var el = document.getElementById(tid);
         if (!el) return;
@@ -3096,12 +3112,25 @@ strong { font-weight: 600; color: var(--color-heading); }
           kws.forEach(function(kw) {
             var isNew = (kw.notes || '').toLowerCase().indexOf('new page') >= 0;
             var pageVal = isNew ? 'new' : 'existing';
+            // Determine lock state: keyword has content pages or client has LF campaigns
+            var hasContent = !!kwWithContent[kw.id];
+            var isLocked = hasContent || hasLfCampaigns;
+            var lockReasons = [];
+            if (hasContent) lockReasons.push('content pages');
+            if (hasLfCampaigns) lockReasons.push('LF campaigns');
+            var lockTitle = isLocked ? 'Locked: has active ' + lockReasons.join(' + ') + '. Follow keyword change protocol to retire.' : 'Delete';
             html += '<div style="display:grid;grid-template-columns:.5fr 1fr auto auto auto;gap:.5rem;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--color-border);font-size:.82rem;">';
-            html += '<div style="color:var(--color-heading);font-weight:500;">' + esc(kw.keyword) + '</div>';
+            html += '<div style="color:var(--color-heading);font-weight:500;display:flex;align-items:center;gap:.35rem;">';
+            if (isLocked) html += '<span style="font-size:.65rem;color:var(--color-warning);opacity:.7;" title="' + lockTitle + '">&#128274;</span>';
+            html += esc(kw.keyword) + '</div>';
             html += '<input type="text" value="' + esc(kw.target_page || '') + '" placeholder="e.g. /anxiety-therapy/" style="font-family:inherit;font-size:.78rem;padding:.25rem .4rem;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--color-muted);width:100%;transition:border-color .15s,background .15s;" onfocus="this.style.borderColor=\'var(--color-primary)\';this.style.background=\'var(--color-bg)\'" onblur="this.style.borderColor=\'transparent\';this.style.background=\'transparent\';updateKeyword(\'' + kw.id + '\', \'target_page\', this.value)">';
             html += '<select onchange="updateKeyword(\'' + kw.id + '\', \'priority\', parseInt(this.value))" style="font-family:inherit;font-size:.72rem;font-weight:600;padding:.15rem .3rem;border:1px solid transparent;border-radius:4px;background:' + (kw.priority === 1 ? 'rgba(0,212,126,.1)' : 'rgba(59,130,246,.1)') + ';color:' + (kw.priority === 1 ? '#00b86c' : '#3B82F6') + ';cursor:pointer;appearance:none;-webkit-appearance:none;text-align:center;"><option value="1"' + (kw.priority === 1 ? ' selected' : '') + '>P1</option><option value="2"' + (kw.priority !== 1 ? ' selected' : '') + '>P2</option></select>';
             html += '<select onchange="updateKeyword(\'' + kw.id + '\', \'notes\', this.value === \'new\' ? \'New page to create\' : \'Existing page\')" style="font-family:inherit;font-size:.72rem;font-weight:500;padding:.15rem .3rem;border:1px solid transparent;border-radius:4px;background:transparent;color:' + (isNew ? 'var(--color-primary)' : 'var(--color-info)') + ';cursor:pointer;appearance:none;-webkit-appearance:none;"><option value="existing"' + (pageVal === 'existing' ? ' selected' : '') + '>Existing</option><option value="new"' + (pageVal === 'new' ? ' selected' : '') + '>New</option></select>';
-            html += '<button onclick="deleteICKeyword(\'' + kw.id + '\')" style="width:22px;height:22px;border:none;background:transparent;color:var(--color-muted);cursor:pointer;font-size:.75rem;border-radius:4px;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background=\'rgba(239,68,68,.1)\';this.style.color=\'var(--color-danger)\'" onmouseout="this.style.background=\'transparent\';this.style.color=\'var(--color-muted)\'" title="Delete">&#10005;</button>';
+            if (isLocked) {
+              html += '<span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--color-muted);opacity:.5;cursor:help;" title="' + lockTitle + '">&#128274;</span>';
+            } else {
+              html += '<button onclick="deleteICKeyword(\'' + kw.id + '\')" style="width:22px;height:22px;border:none;background:transparent;color:var(--color-muted);cursor:pointer;font-size:.75rem;border-radius:4px;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background=\'rgba(239,68,68,.1)\';this.style.color=\'var(--color-danger)\'" onmouseout="this.style.background=\'transparent\';this.style.color=\'var(--color-muted)\'" title="Delete">&#10005;</button>';
+            }
             html += '</div>';
           });
         }
@@ -3143,7 +3172,7 @@ strong { font-weight: 600; color: var(--color-heading); }
   };
 
   window.deleteICKeyword = function(kwId) {
-    if (!confirm('Delete this keyword?')) return;
+    if (!confirm('Delete this keyword? Only unlocked keywords (no content pages or LF campaigns) can be deleted. For keywords with dependencies, use the keyword change protocol to retire instead.')) return;
     fetch('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete_record', table: 'tracked_keywords', filters: { id: kwId } }) }).then(function(r) { return r.json(); }).then(function(res) {
       if (res.success) renderKeywordForm();
       else alert('Failed to delete keyword');
