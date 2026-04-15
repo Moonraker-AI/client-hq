@@ -9,7 +9,8 @@ var auth = require('./_lib/auth');
 var nl = require('./_lib/newsletter-template');
 
 var RESEND_KEY = process.env.RESEND_API_KEY_NEWSLETTER || process.env.RESEND_API_KEY;
-var FROM_ADDRESS = 'Moonraker Weekly <newsletter@newsletter.moonraker.ai>';
+var FROM_ADDRESS = 'Scott Pope <newsletter@newsletter.moonraker.ai>';
+var REPLY_TO = 'scott@moonraker.ai';
 var BATCH_SIZE = 50;
 
 module.exports = async function handler(req, res) {
@@ -24,6 +25,7 @@ module.exports = async function handler(req, res) {
     var newsletterId = body.newsletter_id;
     var tier = body.tier || 'all';
     var overrideLimit = body.override_limit ? parseInt(body.override_limit, 10) : null;
+    var testEmail = body.test_email || null;
 
     if (!newsletterId) return res.status(400).json({ error: 'newsletter_id required' });
     if (!RESEND_KEY) return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
@@ -32,6 +34,26 @@ module.exports = async function handler(req, res) {
     var newsletters = await sb.query('newsletters?id=eq.' + newsletterId + '&select=*');
     if (!newsletters.length) return res.status(404).json({ error: 'Newsletter not found' });
     var newsletter = newsletters[0];
+
+    // TEST SEND: send to specific email with CC to chris, skip all warm-up/subscriber logic
+    if (testEmail) {
+      var testHtml = nl.build(newsletter, 'test');
+      var testResp = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + RESEND_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: FROM_ADDRESS,
+          to: [testEmail],
+          cc: ['chris@moonraker.ai'],
+          reply_to: REPLY_TO,
+          subject: '[TEST] ' + (newsletter.subject || 'Moonraker Weekly Newsletter'),
+          html: testHtml
+        })
+      });
+      var testData = await testResp.json();
+      if (!testResp.ok) return res.status(500).json({ error: 'Test send failed: ' + (testData.message || 'Unknown error') });
+      return res.status(200).json({ success: true, test: true, sent_to: testEmail, cc: 'chris@moonraker.ai', resend_id: testData.id });
+    }
 
     if (newsletter.status === 'sent') return res.status(400).json({ error: 'Newsletter already sent' });
     if (newsletter.status === 'sending') return res.status(400).json({ error: 'Newsletter is currently sending' });
@@ -126,6 +148,7 @@ module.exports = async function handler(req, res) {
           body: JSON.stringify({
             from: FROM_ADDRESS,
             to: [sub.email],
+            reply_to: REPLY_TO,
             subject: newsletter.subject || 'Moonraker Weekly Newsletter',
             html: emailHtml,
             headers: {
@@ -235,3 +258,4 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: e.message });
   }
 };
+
