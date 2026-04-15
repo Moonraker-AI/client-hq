@@ -201,8 +201,8 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
 .story-editor.is-minimized .story-num { margin-bottom:0; }
 .story-editor.is-minimized .story-num .drag-summary { display:inline;font-size:.8rem;font-weight:400;color:var(--color-body);margin-left:.35rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px; }
 .story-editor.drag-source { opacity:.4;border-color:var(--color-primary);background:var(--color-primary-subtle); }
-.story-editor.drag-over { border-color:var(--color-primary);border-style:dashed;background:var(--color-primary-subtle);transform:scale(1.01); }
-.story-editor.just-landed { animation:landPulse .6s ease; }
+.story-editor.drag-over { border-color:var(--color-primary);border-style:dashed;background:var(--color-primary-subtle); }
+.story-editor.just-landed { animation:landPulse .6s ease; border-color:var(--color-primary); }
 @keyframes landPulse { 0% { box-shadow:0 0 0 0 rgba(0,212,126,.3); } 50% { box-shadow:0 0 0 6px rgba(0,212,126,.15); } 100% { box-shadow:none; } }
 .verify-panel { padding:1rem 1.25rem;border-radius:12px;border:1px solid var(--color-border);background:var(--color-surface); }
 .verify-story { padding:.65rem .85rem;border-radius:8px;margin-bottom:.5rem;display:flex;align-items:flex-start;gap:.65rem; }
@@ -888,51 +888,79 @@ function toggleStory(index) {
 }
 
 // ---- Drag and Drop Reorder ----
-var dragSourceIndex = null;
+var draggedEl = null;
+var dragData = null; // data snapshot of the card being dragged
 
 function storyDragStart(e, index) {
-  dragSourceIndex = index;
+  draggedEl = document.getElementById('story-' + index);
+  // Snapshot the data from this card before we start moving things
+  dragData = {
+    headline: document.getElementById('s' + index + '-headline').value,
+    body: document.getElementById('s' + index + '-body').value,
+    actions: document.getElementById('s' + index + '-actions').value,
+    image: document.getElementById('s' + index + '-image').value,
+    imagealt: document.getElementById('s' + index + '-imagealt').value
+  };
   e.dataTransfer.effectAllowed = 'move';
-
-  // Minimize all stories and show headlines so you can see what you're reordering
-  for (var i = 0; i < 5; i++) {
-    var el = document.getElementById('story-' + i);
-    if (!el) continue;
-    el.classList.add('is-minimized');
-    // Show headline summary in the collapsed header
-    var headline = document.getElementById('s' + i + '-headline').value || '(empty)';
-    var summary = document.getElementById('dragSummary-' + i);
-    if (summary) {
-      summary.textContent = headline.length > 50 ? headline.substring(0, 50) + '...' : headline;
-      summary.style.display = 'inline';
+  // Use a tiny timeout so the drag image captures the un-minimized card
+  setTimeout(function() {
+    // Minimize all stories and show headlines
+    for (var i = 0; i < 5; i++) {
+      var el = document.getElementById('story-' + i);
+      if (!el) continue;
+      el.classList.add('is-minimized');
+      var headline = document.getElementById('s' + i + '-headline').value || '(empty)';
+      var summary = document.getElementById('dragSummary-' + i);
+      if (summary) {
+        summary.textContent = headline.length > 55 ? headline.substring(0, 55) + '...' : headline;
+        summary.style.display = 'inline';
+      }
     }
-    // Mark source vs targets
-    if (i === index) {
-      el.classList.add('drag-source');
-    }
-  }
+    draggedEl.classList.add('drag-source');
+  }, 0);
 }
 
 function storyDragOver(e, index) {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
-  var el = document.getElementById('story-' + index);
-  if (el && index !== dragSourceIndex) el.classList.add('drag-over');
+  if (!draggedEl) return;
+  var targetEl = document.getElementById('story-' + index);
+  if (!targetEl || targetEl === draggedEl) return;
+
+  // Move the dragged element in the DOM to show live reorder
+  var container = document.getElementById('storiesContainer');
+  var cards = Array.from(container.querySelectorAll('.story-editor'));
+  var dragIdx = cards.indexOf(draggedEl);
+  var targetIdx = cards.indexOf(targetEl);
+
+  if (dragIdx < targetIdx) {
+    container.insertBefore(draggedEl, targetEl.nextSibling);
+  } else {
+    container.insertBefore(draggedEl, targetEl);
+  }
 }
 
 function storyDragLeave(e, index) {
-  var el = document.getElementById('story-' + index);
-  if (el) el.classList.remove('drag-over');
+  // no-op, DOM movement handles visuals
 }
 
-function storyDrop(e, targetIndex) {
+function storyDrop(e, index) {
   e.preventDefault();
-  if (dragSourceIndex === null || dragSourceIndex === targetIndex) {
-    storyDragEnd(e);
-    return;
-  }
+  if (!draggedEl) return;
+  finalizeDragOrder();
+}
 
-  // Gather current values from all 5 stories
+function storyDragEnd(e) {
+  if (!draggedEl) return;
+  finalizeDragOrder();
+}
+
+function finalizeDragOrder() {
+  var container = document.getElementById('storiesContainer');
+  var cards = Array.from(container.querySelectorAll('.story-editor'));
+  var landedIndex = cards.indexOf(draggedEl);
+
+  // Gather data from all cards in their ORIGINAL positions (by ID)
   var allData = [];
   for (var i = 0; i < 5; i++) {
     allData.push({
@@ -944,50 +972,47 @@ function storyDrop(e, targetIndex) {
     });
   }
 
-  // Reorder: remove source, insert at target
-  var moved = allData.splice(dragSourceIndex, 1)[0];
-  allData.splice(targetIndex, 0, moved);
+  // Build the new order based on current DOM position
+  var newOrder = cards.map(function(card) {
+    var id = card.id.replace('story-', '');
+    return allData[parseInt(id)];
+  });
 
-  // Write back to form fields
+  // Reset DOM order: put cards back in 0,1,2,3,4 order
+  var sorted = cards.slice().sort(function(a, b) {
+    return parseInt(a.id.replace('story-', '')) - parseInt(b.id.replace('story-', ''));
+  });
+  sorted.forEach(function(card) { container.appendChild(card); });
+
+  // Write the reordered data into the sequential form fields
   for (var j = 0; j < 5; j++) {
-    document.getElementById('s' + j + '-headline').value = allData[j].headline;
-    document.getElementById('s' + j + '-body').value = allData[j].body;
-    document.getElementById('s' + j + '-actions').value = allData[j].actions;
-    document.getElementById('s' + j + '-image').value = allData[j].image;
-    document.getElementById('s' + j + '-imagealt').value = allData[j].imagealt;
+    document.getElementById('s' + j + '-headline').value = newOrder[j].headline;
+    document.getElementById('s' + j + '-body').value = newOrder[j].body;
+    document.getElementById('s' + j + '-actions').value = newOrder[j].actions;
+    document.getElementById('s' + j + '-image').value = newOrder[j].image;
+    document.getElementById('s' + j + '-imagealt').value = newOrder[j].imagealt;
   }
 
-  // Clear drag state on all cards
+  // Restore all cards: un-minimize, update summaries, clear classes
   for (var k = 0; k < 5; k++) {
     var el = document.getElementById('story-' + k);
     if (!el) continue;
-    el.classList.remove('dragging', 'drag-over', 'drag-source', 'is-minimized', 'just-landed');
+    el.classList.remove('is-minimized', 'drag-source', 'drag-over');
     var summary = document.getElementById('dragSummary-' + k);
     if (summary) summary.style.display = 'none';
   }
 
-  // Highlight the landed card and scroll to it
-  var landed = document.getElementById('story-' + targetIndex);
-  if (landed) {
-    landed.classList.add('just-landed');
-    landed.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    setTimeout(function() { landed.classList.remove('just-landed'); }, 700);
+  // Pulse the card at the landed position
+  var landedCard = document.getElementById('story-' + landedIndex);
+  if (landedCard) {
+    landedCard.classList.add('just-landed');
+    landedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    setTimeout(function() { landedCard.classList.remove('just-landed'); }, 700);
   }
 
-  toast('Moved to position ' + (targetIndex + 1));
-  dragSourceIndex = null;
-}
-
-function storyDragEnd(e) {
-  // Restore all stories
-  for (var i = 0; i < 5; i++) {
-    var el = document.getElementById('story-' + i);
-    if (!el) continue;
-    el.classList.remove('dragging', 'drag-over', 'drag-source', 'is-minimized');
-    var summary = document.getElementById('dragSummary-' + i);
-    if (summary) summary.style.display = 'none';
-  }
-  dragSourceIndex = null;
+  toast('Moved to position ' + (landedIndex + 1));
+  draggedEl = null;
+  dragData = null;
 }
 window.storyDragStart = storyDragStart;
 window.storyDragOver = storyDragOver;
