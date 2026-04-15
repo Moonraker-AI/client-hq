@@ -15,20 +15,19 @@ module.exports = async function handler(req, res) {
 
   if (!PEXELS_KEY) return res.status(500).json({ error: 'PEXELS_API_KEY not configured' });
 
-  var storyId = (req.body || {}).story_id;
+  var storyId = (req.body || {}).story_id || null;
   var customQuery = (req.body || {}).query || '';
-  if (!storyId) return res.status(400).json({ error: 'story_id required' });
+  if (!storyId && !customQuery) return res.status(400).json({ error: 'query or story_id required' });
 
-  // Load the story
-  var story;
-  try {
-    story = await sb.one('newsletter_stories?id=eq.' + storyId + '&select=id,headline,image_suggestion,image_url&limit=1');
-    if (!story) return res.status(404).json({ error: 'Story not found' });
-  } catch (e) {
-    return res.status(500).json({ error: 'Failed to load story: ' + e.message });
+  // If we have a story_id, load it for context
+  var story = null;
+  if (storyId) {
+    try {
+      story = await sb.one('newsletter_stories?id=eq.' + storyId + '&select=id,headline,image_suggestion,image_url&limit=1');
+    } catch (e) { /* non-fatal */ }
   }
 
-  var searchTerms = customQuery || story.image_suggestion || story.headline || '';
+  var searchTerms = customQuery || (story && story.image_suggestion) || (story && story.headline) || '';
   searchTerms = searchTerms.replace(/[^a-zA-Z0-9 ]/g, '').trim();
   if (!searchTerms) return res.status(400).json({ error: 'No search terms available' });
 
@@ -52,12 +51,16 @@ module.exports = async function handler(req, res) {
     var imageUrl = baseUrl + '?auto=compress&cs=tinysrgb&w=600&h=300&fit=crop';
     var imageAlt = photo.alt || searchTerms;
 
-    // Update the story record
-    await sb.mutate('newsletter_stories?id=eq.' + storyId, 'PATCH', {
-      image_url: imageUrl,
-      image_alt: imageAlt,
-      updated_at: new Date().toISOString()
-    });
+    // Update the story record if we have a story_id
+    if (storyId) {
+      try {
+        await sb.mutate('newsletter_stories?id=eq.' + storyId, 'PATCH', {
+          image_url: imageUrl,
+          image_alt: imageAlt,
+          updated_at: new Date().toISOString()
+        });
+      } catch (e) { /* non-fatal, image URL still returned */ }
+    }
 
     return res.status(200).json({
       success: true,
@@ -70,3 +73,4 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Image refresh failed: ' + e.message });
   }
 };
+
