@@ -4971,24 +4971,36 @@ strong { font-weight: 600; color: var(--color-heading); }
 
   window.pasteSurgeData = function(cpId) {
     var ta = document.getElementById('surge-paste-' + cpId);
-    if (!ta || !ta.value.trim()) return;
+    if (!ta || !ta.value.trim()) { toast('Paste Surge data first', 'warning'); return; }
     var raw = ta.value.trim();
     var cp = state.contentPages.find(function(p) { return p.id === cpId; });
     if (!cp) return;
     var surgeData = {};
     try { surgeData = JSON.parse(raw); } catch(e) { surgeData = { raw_text: raw }; }
+
+    // Extract RTPBA
+    var rtpba = null;
+    var text = typeof raw === 'string' ? raw : JSON.stringify(surgeData);
+    var markers = ['Ready-to-Publish', 'RTPBA', 'Ready to Publish'];
+    for (var i = 0; i < markers.length; i++) {
+      var idx = text.indexOf(markers[i]);
+      if (idx > -1) { rtpba = text.substring(idx, Math.min(idx + 8000, text.length)); break; }
+    }
+
+    var updateData = { surge_data: surgeData, surge_raw_data: raw.substring(0, 200000), surge_status: 'complete', status: 'audit_loaded', updated_at: new Date().toISOString() };
+    if (rtpba) updateData.rtpba = rtpba;
+
     fetch('/api/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update_record', table: 'content_pages', id: cpId, data: { surge_data: surgeData, status: 'audit_loaded' } })
+      body: JSON.stringify({ action: 'update_record', table: 'content_pages', filters: { id: cpId }, data: updateData })
     }).then(function(r) { return r.json(); }).then(function(res) {
       if (res.success) {
-        cp.surge_data = surgeData;
-        cp.status = 'audit_loaded';
-        toast('Surge data loaded', 'success');
+        Object.assign(cp, updateData);
+        toast('Surge data loaded' + (rtpba ? ' (RTPBA extracted)' : ''), 'success');
         renderContent();
-      }
-    });
+      } else { toast('Failed to save: ' + (res.error || ''), 'error'); }
+    }).catch(function(err) { toast('Error: ' + err.message, 'error'); });
   };
 
   window.deleteContentPage = function(id, name) {
@@ -5747,9 +5759,20 @@ strong { font-weight: 600; color: var(--color-heading); }
           if (cp.agent_task_id) {
             h += '<div style="font-size:.72rem;color:var(--color-muted);margin-bottom:.5rem;">Agent task: ' + esc(cp.agent_task_id) + '</div>';
           }
-          h += '<label style="font-size:.72rem;font-weight:600;color:var(--color-muted);display:block;margin-bottom:.25rem;">Or paste Surge data manually</label>';
+        }
+        // Show Surge paste for pages without data or needing a refresh
+        if (!cp.surge_data || cp.status === 'pending_audit') {
+          h += '<div style="margin-top:.5rem;">';
+          h += '<label style="font-size:.72rem;font-weight:600;color:var(--color-muted);display:block;margin-bottom:.25rem;">' + (cp.status === 'pending_audit' ? 'Or paste Surge data manually' : 'Paste Surge data') + '</label>';
           h += '<textarea class="paste-surge-area" id="surge-paste-' + cp.id + '" placeholder="Paste the full Surge audit output here..." onclick="event.stopPropagation()"></textarea>';
           h += '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); pasteSurgeData(\'' + cp.id + '\')" style="font-size:.75rem;">Load Surge Data</button>';
+          h += '</div>';
+        } else if (cp.surge_data) {
+          h += '<div style="margin-top:.5rem;"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); document.getElementById(\'surge-repaste-' + cp.id + '\').style.display=\'block\'" style="font-size:.72rem;color:var(--color-muted);">Re-paste Surge Data</button>';
+          h += '<div id="surge-repaste-' + cp.id + '" style="display:none;margin-top:.35rem;">';
+          h += '<textarea class="paste-surge-area" id="surge-paste-' + cp.id + '" placeholder="Paste updated Surge data..." onclick="event.stopPropagation()"></textarea>';
+          h += '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); pasteSurgeData(\'' + cp.id + '\')" style="font-size:.75rem;">Load Surge Data</button>';
+          h += '</div></div>';
         }
         h += '<div class="cp-actions" style="margin-top:.75rem;">';
         if (cp.status === 'audit_loaded') {
