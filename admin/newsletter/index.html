@@ -200,7 +200,7 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
 .story-editor.is-minimized { padding:.75rem 1.25rem; }
 .story-editor.is-minimized .story-num { margin-bottom:0; }
 .story-editor.is-minimized .story-num .drag-summary { display:inline;font-size:.8rem;font-weight:400;color:var(--color-body);margin-left:.35rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px; }
-.story-editor.drag-source { opacity:.4;border-color:var(--color-primary);background:var(--color-primary-subtle); }
+.story-editor.drag-source { opacity:.35; }
 .story-editor.drag-over { border-color:var(--color-primary);border-style:dashed;background:var(--color-primary-subtle); }
 .story-editor.just-landed { animation:landPulse .6s ease; border-color:var(--color-primary); }
 @keyframes landPulse { 0% { box-shadow:0 0 0 0 rgba(0,212,126,.3); } 50% { box-shadow:0 0 0 6px rgba(0,212,126,.15); } 100% { box-shadow:none; } }
@@ -903,21 +903,19 @@ function storyDragStart(e, index) {
   draggedEl = document.getElementById('story-' + index);
   e.dataTransfer.effectAllowed = 'move';
 
-  setTimeout(function() {
-    // Minimize all and show headlines
-    for (var i = 0; i < 5; i++) {
-      var el = document.getElementById('story-' + i);
-      if (!el) continue;
-      el.classList.add('is-minimized');
-      var headline = document.getElementById('s' + i + '-headline').value || '(empty)';
-      var summary = document.getElementById('dragSummary-' + i);
-      if (summary) {
-        summary.textContent = headline.length > 55 ? headline.substring(0, 55) + '...' : headline;
-        summary.style.display = 'inline';
-      }
+  // Minimize all cards immediately (sync, so browser ghost image is also minimized)
+  for (var i = 0; i < 5; i++) {
+    var el = document.getElementById('story-' + i);
+    if (!el) continue;
+    el.classList.add('is-minimized');
+    var headline = document.getElementById('s' + i + '-headline').value || '(empty)';
+    var summary = document.getElementById('dragSummary-' + i);
+    if (summary) {
+      summary.textContent = headline.length > 55 ? headline.substring(0, 55) + '...' : headline;
+      summary.style.display = 'inline';
     }
-    draggedEl.classList.add('drag-source');
-  }, 0);
+  }
+  draggedEl.classList.add('drag-source');
 }
 
 function storyDragOver(e, index) {
@@ -2147,6 +2145,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
