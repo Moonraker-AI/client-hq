@@ -181,12 +181,22 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
 .edition-stats { display: flex; gap: .75rem; font-size: .78rem; color: var(--color-muted); }
 
 /* Story editor card */
-.story-editor { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+.story-editor { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; transition: box-shadow .2s, opacity .2s; }
+.story-editor.dragging { opacity: 0.5; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
+.story-editor.drag-over { border-color: var(--color-primary); border-style: dashed; }
+.story-editor.is-minimized .story-fields { display: none; }
 .story-editor .story-num { font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--color-primary); margin-bottom: .75rem; display: flex; align-items: center; gap: .5rem; }
-.story-editor .collapse-toggle { color: var(--color-muted); cursor: pointer; margin-left: auto; display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;transition:all .15s; }
+.story-editor .drag-handle { cursor: grab; color: var(--color-muted); display:flex;align-items:center;padding:.15rem;border-radius:4px;transition:color .15s; }
+.story-editor .drag-handle:hover { color: var(--color-heading); }
+.story-editor .drag-handle:active { cursor: grabbing; }
+.story-editor .story-actions { display:flex;align-items:center;gap:.25rem;margin-left:auto; }
+.story-editor .collapse-toggle { color: var(--color-muted); cursor: pointer; display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;transition:all .15s; }
 .story-editor .collapse-toggle:hover { color: var(--color-primary);background:var(--color-primary-subtle); }
 .story-editor .collapse-toggle svg { transition:transform .2s ease; }
 .story-editor .collapse-toggle.is-collapsed svg { transform:rotate(-90deg); }
+.story-editor .refresh-img-btn { background:none;border:none;color:var(--color-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;transition:all .15s;padding:0; }
+.story-editor .refresh-img-btn:hover { color:var(--color-info);background:rgba(59,130,246,.08); }
+.story-editor .refresh-img-btn.loading { animation:spin 1s linear infinite; }
 .story-fields { display: grid; gap: .75rem; }
 .story-fields.collapsed { display: none; }
 
@@ -820,10 +830,14 @@ function initComposeForm() {
 
 function storyEditorHtml(index) {
   var num = index + 1;
-  return '<div class="story-editor" id="story-' + index + '">' +
+  return '<div class="story-editor" id="story-' + index + '" draggable="true" ondragstart="storyDragStart(event,' + index + ')" ondragover="storyDragOver(event,' + index + ')" ondragleave="storyDragLeave(event,' + index + ')" ondrop="storyDrop(event,' + index + ')" ondragend="storyDragEnd(event)">' +
     '<div class="story-num">' +
+      '<span class="drag-handle" title="Drag to reorder"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>' +
       '<span>Story ' + num + '</span>' +
-      '<span class="collapse-toggle" onclick="event.stopPropagation();toggleStory(' + index + ')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></span>' +
+      '<div class="story-actions">' +
+        '<button class="refresh-img-btn" onclick="event.stopPropagation();refreshStoryImage(' + index + ')" title="New image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg></button>' +
+        '<span class="collapse-toggle" onclick="event.stopPropagation();toggleStory(' + index + ')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></span>' +
+      '</div>' +
     '</div>' +
     '<div class="story-fields" id="storyFields-' + index + '">' +
       '<div class="form-group"><label class="form-label">Headline</label>' +
@@ -848,6 +862,118 @@ function toggleStory(index) {
   fields.classList.toggle('collapsed');
   toggle.classList.toggle('is-collapsed', fields.classList.contains('collapsed'));
 }
+
+// ---- Drag and Drop Reorder ----
+var dragSourceIndex = null;
+
+function storyDragStart(e, index) {
+  dragSourceIndex = index;
+  e.dataTransfer.effectAllowed = 'move';
+  e.target.closest('.story-editor').classList.add('dragging');
+  // Minimize all stories during drag for easy reorder
+  for (var i = 0; i < 5; i++) {
+    var el = document.getElementById('story-' + i);
+    if (el) el.classList.add('is-minimized');
+  }
+}
+
+function storyDragOver(e, index) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  var el = document.getElementById('story-' + index);
+  if (el && index !== dragSourceIndex) el.classList.add('drag-over');
+}
+
+function storyDragLeave(e, index) {
+  var el = document.getElementById('story-' + index);
+  if (el) el.classList.remove('drag-over');
+}
+
+function storyDrop(e, targetIndex) {
+  e.preventDefault();
+  if (dragSourceIndex === null || dragSourceIndex === targetIndex) return;
+
+  // Gather current values from all 5 stories
+  var allData = [];
+  for (var i = 0; i < 5; i++) {
+    allData.push({
+      headline: document.getElementById('s' + i + '-headline').value,
+      body: document.getElementById('s' + i + '-body').value,
+      actions: document.getElementById('s' + i + '-actions').value,
+      image: document.getElementById('s' + i + '-image').value,
+      imagealt: document.getElementById('s' + i + '-imagealt').value
+    });
+  }
+
+  // Reorder: remove source, insert at target
+  var moved = allData.splice(dragSourceIndex, 1)[0];
+  allData.splice(targetIndex, 0, moved);
+
+  // Write back to form fields
+  for (var j = 0; j < 5; j++) {
+    document.getElementById('s' + j + '-headline').value = allData[j].headline;
+    document.getElementById('s' + j + '-body').value = allData[j].body;
+    document.getElementById('s' + j + '-actions').value = allData[j].actions;
+    document.getElementById('s' + j + '-image').value = allData[j].image;
+    document.getElementById('s' + j + '-imagealt').value = allData[j].imagealt;
+  }
+
+  toast('Moved story ' + (dragSourceIndex + 1) + ' to position ' + (targetIndex + 1));
+  dragSourceIndex = null;
+}
+
+function storyDragEnd(e) {
+  dragSourceIndex = null;
+  // Restore all stories (remove minimize and drag classes)
+  for (var i = 0; i < 5; i++) {
+    var el = document.getElementById('story-' + i);
+    if (el) {
+      el.classList.remove('dragging', 'drag-over', 'is-minimized');
+    }
+  }
+}
+window.storyDragStart = storyDragStart;
+window.storyDragOver = storyDragOver;
+window.storyDragLeave = storyDragLeave;
+window.storyDrop = storyDrop;
+window.storyDragEnd = storyDragEnd;
+
+// ---- Refresh Story Image ----
+async function refreshStoryImage(index) {
+  var headline = document.getElementById('s' + index + '-headline').value;
+  var altText = document.getElementById('s' + index + '-imagealt').value;
+  if (!headline && !altText) { toast('Add a headline first', 'error'); return; }
+
+  // Find the story ID from researchCandidates (selected ones in order)
+  var selected = researchCandidates.filter(function(s) { return s.selected; })
+    .sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+  var storyId = selected[index] ? selected[index].id : null;
+
+  var btn = document.getElementById('story-' + index).querySelector('.refresh-img-btn');
+  btn.classList.add('loading');
+
+  try {
+    var resp = await fetch('/api/newsletter-refresh-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        story_id: storyId,
+        query: altText || headline
+      })
+    });
+    var data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Refresh failed');
+
+    document.getElementById('s' + index + '-image').value = data.image_url;
+    document.getElementById('s' + index + '-imagealt').value = data.image_alt || '';
+    toast('Image refreshed');
+  } catch (e) {
+    toast('Image refresh failed: ' + e.message, 'error');
+  } finally {
+    btn.classList.remove('loading');
+  }
+}
+window.refreshStoryImage = refreshStoryImage;
 
 function addQuickWinField(container) {
   if (!container) container = document.getElementById('quickWinsContainer');
