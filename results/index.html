@@ -193,9 +193,9 @@ html.dark .site-footer { background: #0A1630; }
   .testimonials-section { padding: 3rem 1rem; }
   .testimonial-card { padding: 1.75rem 1.5rem; }
   .testimonial-text { font-size: 1.0625rem; }
-  .partner-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; justify-items: center; align-items: center; width: 100%; }
-  .partner-row:first-child { grid-template-columns: 1fr 1fr 1fr; }
-  .partner-logo { height: auto; max-height: 52px; max-width: 100%; width: auto; }
+  .partner-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 1.25rem 1.5rem; width: 100%; }
+  .partner-row .partner-logo { width: calc(50% - 1rem); height: auto; max-height: 52px; max-width: none; object-fit: contain; }
+  .partner-row:first-child .partner-logo { width: calc(33.33% - 1.2rem); }
   .reviews-masonry { columns: 1; }
   .stats-bar { gap: 1.5rem; }
 }
