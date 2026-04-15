@@ -49,6 +49,7 @@ module.exports = async function handler(req, res) {
     if (!SERPAPI_KEY) return res.status(500).json({ error: 'SERPAPI_KEY not configured' });
 
     var newsletterId = (req.body || {}).newsletter_id;
+    var singleIndex = (req.body || {}).story_index; // optional: 0-indexed, verify only this story
     if (!newsletterId) return res.status(400).json({ error: 'newsletter_id required' });
 
     // Load newsletter content
@@ -63,14 +64,24 @@ module.exports = async function handler(req, res) {
     var stories = (newsletter.content || {}).stories || [];
     if (stories.length === 0) return res.status(400).json({ error: 'No stories to verify. Generate the draft first.' });
 
-    // Phase 1: Fetch source content for each story (sequential)
-    console.log('Newsletter verify: fetching sources for ' + stories.length + ' stories');
+    // Phase 1: Fetch source content (sequential)
+    var storiesToCheck = [];
+    if (singleIndex !== undefined && singleIndex !== null) {
+      var si = parseInt(singleIndex);
+      if (stories[si]) storiesToCheck.push({ story: stories[si], idx: si });
+    } else {
+      stories.forEach(function(s, i) { storiesToCheck.push({ story: s, idx: i }); });
+    }
+
+    if (storiesToCheck.length === 0) return res.status(400).json({ error: 'No stories to verify.' });
+
+    console.log('Newsletter verify: checking ' + storiesToCheck.length + ' story(ies)');
     var storyData = [];
-    for (var i = 0; i < stories.length; i++) {
-      var s = stories[i];
+    for (var i = 0; i < storiesToCheck.length; i++) {
+      var s = storiesToCheck[i].story;
       var sourceContent = await fetchSourceContent(s.source_url || '', s.headline || '');
       storyData.push({
-        index: i + 1,
+        index: storiesToCheck[i].idx + 1,
         headline: s.headline || '',
         body: (s.body || '').replace(/<[^>]*>/g, ' ').substring(0, 500),
         actions: s.actions || '',
@@ -149,3 +160,4 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Verification failed: ' + e.message });
   }
 };
+
