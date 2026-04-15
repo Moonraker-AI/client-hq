@@ -856,7 +856,7 @@ function storyEditorHtml(index) {
   return '<div class="story-editor" id="story-' + index + '" draggable="true" ondragstart="storyDragStart(event,' + index + ')" ondragover="storyDragOver(event,' + index + ')" ondragleave="storyDragLeave(event,' + index + ')" ondrop="storyDrop(event,' + index + ')" ondragend="storyDragEnd(event)">' +
     '<div class="story-num">' +
       '<span class="drag-handle" title="Drag to reorder"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>' +
-      '<span>Story ' + num + '</span>' +
+      '<span class="story-label" id="storyLabel-' + index + '">Story ' + num + '</span>' +
       '<span class="drag-summary" id="dragSummary-' + index + '" style="display:none;"></span>' +
       '<div class="story-actions">' +
         '<button class="refresh-img-btn" onclick="event.stopPropagation();refreshStoryImage(' + index + ')" title="Search for a different image"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>New Image</button>' +
@@ -889,22 +889,22 @@ function toggleStory(index) {
 
 // ---- Drag and Drop Reorder ----
 var draggedEl = null;
-var dragData = null; // data snapshot of the card being dragged
+
+// Update "Story N" labels to match current DOM order (always 1-5 top to bottom)
+function updateStoryLabels() {
+  var cards = document.getElementById('storiesContainer').querySelectorAll('.story-editor');
+  cards.forEach(function(card, pos) {
+    var label = card.querySelector('.story-label');
+    if (label) label.textContent = 'Story ' + (pos + 1);
+  });
+}
 
 function storyDragStart(e, index) {
   draggedEl = document.getElementById('story-' + index);
-  // Snapshot the data from this card before we start moving things
-  dragData = {
-    headline: document.getElementById('s' + index + '-headline').value,
-    body: document.getElementById('s' + index + '-body').value,
-    actions: document.getElementById('s' + index + '-actions').value,
-    image: document.getElementById('s' + index + '-image').value,
-    imagealt: document.getElementById('s' + index + '-imagealt').value
-  };
   e.dataTransfer.effectAllowed = 'move';
-  // Use a tiny timeout so the drag image captures the un-minimized card
+
   setTimeout(function() {
-    // Minimize all stories and show headlines
+    // Minimize all and show headlines
     for (var i = 0; i < 5; i++) {
       var el = document.getElementById('story-' + i);
       if (!el) continue;
@@ -927,32 +927,53 @@ function storyDragOver(e, index) {
   var targetEl = document.getElementById('story-' + index);
   if (!targetEl || targetEl === draggedEl) return;
 
-  // Move the dragged element in the DOM to show live reorder
   var container = document.getElementById('storiesContainer');
   var cards = Array.from(container.querySelectorAll('.story-editor'));
   var dragIdx = cards.indexOf(draggedEl);
   var targetIdx = cards.indexOf(targetEl);
+  if (dragIdx === targetIdx) return;
 
+  // FLIP step 1: snapshot old positions
+  var oldRects = {};
+  cards.forEach(function(card) { oldRects[card.id] = card.getBoundingClientRect(); });
+
+  // Move dragged card in DOM
   if (dragIdx < targetIdx) {
     container.insertBefore(draggedEl, targetEl.nextSibling);
   } else {
     container.insertBefore(draggedEl, targetEl);
   }
+
+  // Update positional labels so numbers always read 1-5 top to bottom
+  updateStoryLabels();
+
+  // FLIP step 2: animate other cards from old position to new
+  var newCards = Array.from(container.querySelectorAll('.story-editor'));
+  newCards.forEach(function(card) {
+    if (card === draggedEl) return; // dragged card stays put visually
+    var oldRect = oldRects[card.id];
+    if (!oldRect) return;
+    var newRect = card.getBoundingClientRect();
+    var dy = oldRect.top - newRect.top;
+    if (Math.abs(dy) > 2) {
+      card.style.transition = 'none';
+      card.style.transform = 'translateY(' + dy + 'px)';
+      card.offsetHeight; // force reflow
+      card.style.transition = 'transform .2s ease';
+      card.style.transform = '';
+    }
+  });
 }
 
-function storyDragLeave(e, index) {
-  // no-op, DOM movement handles visuals
-}
+function storyDragLeave(e, index) {}
 
 function storyDrop(e, index) {
   e.preventDefault();
-  if (!draggedEl) return;
-  finalizeDragOrder();
+  if (draggedEl) finalizeDragOrder();
 }
 
 function storyDragEnd(e) {
-  if (!draggedEl) return;
-  finalizeDragOrder();
+  if (draggedEl) finalizeDragOrder();
 }
 
 function finalizeDragOrder() {
@@ -960,7 +981,7 @@ function finalizeDragOrder() {
   var cards = Array.from(container.querySelectorAll('.story-editor'));
   var landedIndex = cards.indexOf(draggedEl);
 
-  // Gather data from all cards in their ORIGINAL positions (by ID)
+  // Gather data from all cards by original ID
   var allData = [];
   for (var i = 0; i < 5; i++) {
     allData.push({
@@ -972,19 +993,17 @@ function finalizeDragOrder() {
     });
   }
 
-  // Build the new order based on current DOM position
+  // Build new order from current DOM positions
   var newOrder = cards.map(function(card) {
-    var id = card.id.replace('story-', '');
-    return allData[parseInt(id)];
+    return allData[parseInt(card.id.replace('story-', ''))];
   });
 
-  // Reset DOM order: put cards back in 0,1,2,3,4 order
-  var sorted = cards.slice().sort(function(a, b) {
+  // Reset DOM to 0,1,2,3,4
+  cards.slice().sort(function(a, b) {
     return parseInt(a.id.replace('story-', '')) - parseInt(b.id.replace('story-', ''));
-  });
-  sorted.forEach(function(card) { container.appendChild(card); });
+  }).forEach(function(card) { container.appendChild(card); });
 
-  // Write the reordered data into the sequential form fields
+  // Write reordered data
   for (var j = 0; j < 5; j++) {
     document.getElementById('s' + j + '-headline').value = newOrder[j].headline;
     document.getElementById('s' + j + '-body').value = newOrder[j].body;
@@ -993,16 +1012,19 @@ function finalizeDragOrder() {
     document.getElementById('s' + j + '-imagealt').value = newOrder[j].imagealt;
   }
 
-  // Restore all cards: un-minimize, update summaries, clear classes
+  // Restore all cards
   for (var k = 0; k < 5; k++) {
     var el = document.getElementById('story-' + k);
     if (!el) continue;
     el.classList.remove('is-minimized', 'drag-source', 'drag-over');
+    el.style.transition = '';
+    el.style.transform = '';
     var summary = document.getElementById('dragSummary-' + k);
     if (summary) summary.style.display = 'none';
   }
+  updateStoryLabels();
 
-  // Pulse the card at the landed position
+  // Pulse the landed card
   var landedCard = document.getElementById('story-' + landedIndex);
   if (landedCard) {
     landedCard.classList.add('just-landed');
@@ -1012,7 +1034,6 @@ function finalizeDragOrder() {
 
   toast('Moved to position ' + (landedIndex + 1));
   draggedEl = null;
-  dragData = null;
 }
 window.storyDragStart = storyDragStart;
 window.storyDragOver = storyDragOver;
@@ -2126,6 +2147,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
