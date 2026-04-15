@@ -315,6 +315,93 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
   .sub-row .sub-name, .sub-row > div:last-child { display: none; }
 }
 .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .25rem; }
+
+/* Newsletter mobile responsive */
+@media (max-width: 768px) {
+  .content { padding: 1rem; }
+  .stat-row { grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+  .stat-card { padding: .75rem; }
+  .stat-card .value { font-size: 1.3rem; }
+
+  /* Compose toolbar: wrap buttons */
+  #tab-compose > div:first-child { flex-wrap: wrap; gap: .5rem; }
+  #tab-compose > div:first-child > div { display: flex; flex-wrap: wrap; gap: .35rem; }
+  #tab-compose > div:first-child .btn { font-size: .75rem; padding: .35rem .6rem; }
+
+  /* Edition meta: stack vertically */
+  .card > div[style*="grid-template-columns:100px"] { display: flex !important; flex-direction: column; gap: .75rem; }
+
+  /* Tabs */
+  .tab { font-size: .82rem; padding: .6rem .75rem; }
+
+  /* Story editor cards */
+  .story-editor { padding: .85rem; }
+  .story-editor .story-num { font-size: .95rem; gap: .35rem; flex-wrap: wrap; }
+  .story-editor .story-actions { gap: .2rem; }
+  .story-editor .refresh-img-btn { font-size: .65rem; padding: .15rem .35rem; }
+  .story-editor .refresh-img-btn svg { width: 10px; height: 10px; }
+  .story-fields textarea { font-size: .82rem; }
+  .story-fields input { font-size: .82rem; }
+
+  /* Story image fields: stack */
+  .story-image-row { display: flex !important; flex-direction: column; gap: .5rem; }
+
+  /* Candidate cards */
+  .candidates-grid { grid-template-columns: 1fr; gap: .5rem; }
+  .candidate-card { padding: .65rem .75rem; }
+  .candidate-headline { font-size: .82rem; }
+  .candidate-summary { font-size: .75rem; }
+
+  /* Selection bar */
+  .selection-bar { flex-direction: column; align-items: flex-start; gap: .35rem; padding: .5rem .75rem; }
+
+  /* Edition row */
+  .edition-row { padding: .75rem; gap: .5rem; flex-wrap: wrap; }
+  .edition-num { font-size: 1.2rem; }
+  .edition-subject { font-size: .82rem; }
+  .edition-right { gap: .5rem; }
+  .edition-date { font-size: .72rem; }
+
+  /* AI Research panel */
+  #aiPanel > div:first-child { flex-direction: column; gap: .5rem; align-items: flex-start !important; }
+  #aiPanel #researchBtn { align-self: flex-start; }
+
+  /* Verify results */
+  .verify-panel { padding: .75rem; }
+  .verify-story { padding: .5rem .65rem; }
+  .verify-actions { flex-wrap: wrap; }
+
+  /* Quick wins */
+  .qw-input { font-size: .82rem; }
+
+  /* Generate bar */
+  #generateBar { flex-direction: column; align-items: stretch; gap: .5rem; }
+  #generateBar .btn { text-align: center; }
+
+  /* Modal adjustments */
+  .modal { margin: 1rem; max-height: 90vh; overflow-y: auto; }
+
+  /* Drag summary text shorter on mobile */
+  .story-editor.is-minimized .story-num .drag-summary { max-width: 180px; }
+
+  /* Subscriber rows */
+  .sub-row { font-size: .78rem; padding: .5rem .75rem; }
+}
+
+@media (max-width: 480px) {
+  .content { padding: .75rem; }
+  .stat-card .value { font-size: 1.1rem; }
+  .stat-card .label { font-size: .65rem; }
+
+  /* Stack story action buttons vertically */
+  .story-editor .story-actions { flex-wrap: wrap; justify-content: flex-end; }
+
+  /* Compose title smaller */
+  #composeTitle { font-size: .95rem; }
+  
+  /* Edition row fully stacks */
+  .edition-right { width: 100%; justify-content: space-between; }
+}
 .section-header h2 { font-size: 1.35rem; margin: 0; }
 .section-desc { font-size: .82rem; color: var(--color-muted); margin-bottom: 1.25rem; }
 .tag { display: inline-flex; align-items: center; padding: .15rem .5rem; border-radius: 4px; font-size: .7rem; font-weight: 600; }
@@ -920,7 +1007,7 @@ function storyEditorHtml(index) {
       '<div class="form-group"><label class="form-label">Action Items</label>' +
         '<textarea class="form-input" id="s' + index + '-actions" rows="3" placeholder="3-5 specific steps. One per line."></textarea>' +
         '<div class="form-hint">One action item per line. Will be rendered as bullet points.</div></div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">' +
+      '<div class="story-image-row" style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">' +
         '<div class="form-group"><label class="form-label">Image URL</label>' +
           '<input type="text" class="form-input" id="s' + index + '-image" placeholder="https://..." /></div>' +
         '<div class="form-group"><label class="form-label">Image Alt Text</label>' +
@@ -2699,6 +2786,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
