@@ -869,6 +869,7 @@ function storyEditorHtml(index) {
       '<span class="story-label" id="storyLabel-' + index + '">Story ' + num + '</span>' +
       '<span class="drag-summary" id="dragSummary-' + index + '" style="display:none;"></span>' +
       '<div class="story-actions">' +
+        '<button class="refresh-img-btn" onclick="event.stopPropagation();regenerateStory(' + index + ')" title="Regenerate body and action items"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3m6.36.64l-2.12 2.12M21 12h-3m-.64 6.36l-2.12-2.12M12 21v-3m-4.24.64l2.12-2.12M3 12h3m.64-6.36l2.12 2.12"/></svg>Regenerate</button>' +
         '<button class="refresh-img-btn" onclick="event.stopPropagation();refreshStoryImage(' + index + ')" title="Search for a different image"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>New Image</button>' +
         '<span class="collapse-toggle" onclick="event.stopPropagation();toggleStory(' + index + ')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></span>' +
       '</div>' +
@@ -1116,6 +1117,39 @@ async function refreshStoryImage(index) {
 }
 window.refreshStoryImage = refreshStoryImage;
 
+// ---- Regenerate Story Content ----
+async function regenerateStory(index) {
+  var headline = document.getElementById('s' + index + '-headline').value;
+  if (!headline) { toast('Add a headline first', 'error'); return; }
+
+  var btns = document.getElementById('story-' + index).querySelectorAll('.refresh-img-btn');
+  var btn = btns[0]; // first button is Regenerate
+  var origHtml = btn.innerHTML;
+  btn.innerHTML = '<span style="display:inline-block;width:12px;height:12px;border:2px solid var(--color-primary-light);border-top-color:var(--color-primary);border-radius:50%;animation:spin 1s linear infinite;vertical-align:-1px;margin-right:.3rem;"></span>Writing...';
+  btn.disabled = true;
+
+  try {
+    var summary = document.getElementById('s' + index + '-body').value.replace(/<[^>]*>/g, ' ').substring(0, 300);
+    var resp = await fetch('/api/newsletter-regenerate-story', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ headline: headline, summary: summary })
+    });
+    var data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Regenerate failed');
+
+    if (data.body) document.getElementById('s' + index + '-body').value = data.body;
+    if (data.actions) document.getElementById('s' + index + '-actions').value = data.actions;
+    toast('Story ' + (index + 1) + ' content regenerated');
+  } catch (e) {
+    toast('Regenerate failed: ' + e.message, 'error');
+  } finally {
+    btn.innerHTML = origHtml;
+    btn.disabled = false;
+  }
+}
+window.regenerateStory = regenerateStory;
+
 // ---- Fact Verification ----
 async function verifyFacts() {
   if (!currentEditionId) { toast('Save as draft first', 'error'); return; }
@@ -1275,18 +1309,52 @@ async function swapStory(storyIndex, candidateId) {
   var candidate = researchCandidates.find(function(s) { return s.id === candidateId; });
   if (!candidate) return;
 
-  // Put the candidate's data into the story form
+  // Set headline immediately
   document.getElementById('s' + storyIndex + '-headline').value = candidate.headline || '';
-  document.getElementById('s' + storyIndex + '-body').value = '<p>' + (candidate.summary || '').replace(/\n/g, '</p><p>') + '</p>';
-  document.getElementById('s' + storyIndex + '-actions').value = 'Review the source article and identify three action items for your practice';
+  document.getElementById('s' + storyIndex + '-body').value = '(generating...)';
+  document.getElementById('s' + storyIndex + '-actions').value = '';
 
-  // Search for a Pexels image for the new story
+  // Set image (existing or fetch new)
   var imgField = document.getElementById('s' + storyIndex + '-image');
   var altField = document.getElementById('s' + storyIndex + '-imagealt');
   imgField.value = candidate.image_url || '';
-  altField.value = candidate.image_alt || candidate.headline || '';
+  altField.value = candidate.image_alt || '';
 
-  if (!candidate.image_url) {
+  // Hide swap list and clear verify
+  var listEl = document.getElementById('swapList-' + storyIndex);
+  if (listEl) listEl.style.display = 'none';
+  var verifyEl = document.getElementById('storyVerify-' + storyIndex);
+  if (verifyEl) { verifyEl.style.display = 'none'; verifyEl.innerHTML = ''; }
+
+  toast('Swapped story ' + (storyIndex + 1) + ', generating content...');
+
+  // Auto-generate body + actions
+  try {
+    var genResp = await fetch('/api/newsletter-regenerate-story', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        headline: candidate.headline,
+        summary: candidate.summary || '',
+        source_name: candidate.source_name || '',
+        source_url: candidate.source_url || ''
+      })
+    });
+    var genData = await genResp.json();
+    if (genResp.ok && genData.body) {
+      document.getElementById('s' + storyIndex + '-body').value = genData.body;
+      document.getElementById('s' + storyIndex + '-actions').value = genData.actions || '';
+      toast('Story ' + (storyIndex + 1) + ' content generated');
+    } else {
+      document.getElementById('s' + storyIndex + '-body').value = '<p>' + (candidate.summary || '') + '</p>';
+      toast('Content generation failed, summary used as fallback', 'error');
+    }
+  } catch (e) {
+    document.getElementById('s' + storyIndex + '-body').value = '<p>' + (candidate.summary || '') + '</p>';
+  }
+
+  // Fetch Pexels image if none
+  if (!imgField.value) {
     try {
       var imgResp = await fetch('/api/newsletter-refresh-image', {
         method: 'POST',
@@ -1300,14 +1368,6 @@ async function swapStory(storyIndex, candidateId) {
       }
     } catch (e) { /* non-fatal */ }
   }
-
-  // Hide the swap list and clear verify status
-  var listEl = document.getElementById('swapList-' + storyIndex);
-  if (listEl) listEl.style.display = 'none';
-  var verifyEl = document.getElementById('storyVerify-' + storyIndex);
-  if (verifyEl) { verifyEl.style.display = 'none'; verifyEl.innerHTML = ''; }
-
-  toast('Swapped story ' + (storyIndex + 1) + '. Review the body and re-generate action items.');
 }
 window.swapStory = swapStory;
 
@@ -2306,6 +2366,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
