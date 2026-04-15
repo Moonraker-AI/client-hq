@@ -616,8 +616,16 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
 
     <!-- Send mode toggle -->
     <div style="display:flex;gap:.5rem;margin-bottom:.75rem;">
-      <button class="btn btn-sm" id="modeNowBtn" style="flex:1;" onclick="setSendMode('now')">Send Now</button>
+      <button class="btn btn-sm" id="modeTestBtn" style="flex:1;" onclick="setSendMode('test')">Test</button>
+      <button class="btn btn-sm btn-secondary" id="modeNowBtn" style="flex:1;" onclick="setSendMode('now')">Send Now</button>
       <button class="btn btn-sm btn-secondary" id="modeScheduleBtn" style="flex:1;" onclick="setSendMode('schedule')">Schedule</button>
+    </div>
+
+    <!-- Test send fields (shown by default) -->
+    <div id="testFields" style="margin-bottom:.75rem;">
+      <label class="form-label" style="font-size:.78rem;">Send test to</label>
+      <input type="email" class="form-input" id="testEmailAddress" placeholder="your@email.com" style="font-size:.85rem;" value="chris@moonraker.ai" />
+      <div class="form-hint">Sends a test email with [TEST] prefix. CC'd to chris@moonraker.ai. Reply-to: scott@moonraker.ai</div>
     </div>
 
     <!-- Schedule fields (hidden by default) -->
@@ -629,7 +637,7 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
 
     <div class="modal-actions" style="gap:.5rem;">
       <button class="btn btn-secondary" onclick="closeSendModal()">Cancel</button>
-      <button class="btn" id="sendActionBtn" onclick="executeSend()" style="background:var(--color-danger);color:#fff;">Send Now</button>
+      <button class="btn" id="sendActionBtn" onclick="sendTest()" style="background:var(--color-info);color:#fff;">Send Test</button>
     </div>
   </div>
 </div>
@@ -1771,42 +1779,49 @@ async function confirmSend() {
     warmupEl.style.display = 'none';
   }
   document.getElementById('sendModal').classList.add('open');
-  setSendMode('now');
+  setSendMode('test');
 }
 window.confirmSend = confirmSend;
 window.closeSendModal = function() { document.getElementById('sendModal').classList.remove('open'); };
 
-var currentSendMode = 'now';
+var currentSendMode = 'test';
 function setSendMode(mode) {
   currentSendMode = mode;
+  var testBtn = document.getElementById('modeTestBtn');
   var nowBtn = document.getElementById('modeNowBtn');
   var schedBtn = document.getElementById('modeScheduleBtn');
-  var fields = document.getElementById('scheduleFields');
+  var testFields = document.getElementById('testFields');
+  var schedFields = document.getElementById('scheduleFields');
   var actionBtn = document.getElementById('sendActionBtn');
 
-  if (mode === 'now') {
-    nowBtn.className = 'btn btn-sm';
-    nowBtn.style.background = 'var(--color-primary)';
-    nowBtn.style.color = '#fff';
-    schedBtn.className = 'btn btn-sm btn-secondary';
-    schedBtn.style.background = '';
-    schedBtn.style.color = '';
-    fields.style.display = 'none';
+  // Reset all buttons
+  [testBtn, nowBtn, schedBtn].forEach(function(b) {
+    b.className = 'btn btn-sm btn-secondary';
+    b.style.background = '';
+    b.style.color = '';
+  });
+
+  // Activate selected
+  var activeBtn = mode === 'test' ? testBtn : mode === 'now' ? nowBtn : schedBtn;
+  activeBtn.className = 'btn btn-sm';
+  activeBtn.style.background = mode === 'now' ? 'var(--color-danger)' : 'var(--color-primary)';
+  activeBtn.style.color = '#fff';
+
+  testFields.style.display = mode === 'test' ? 'block' : 'none';
+  schedFields.style.display = mode === 'schedule' ? 'block' : 'none';
+
+  if (mode === 'test') {
+    actionBtn.textContent = 'Send Test';
+    actionBtn.style.background = 'var(--color-info)';
+    actionBtn.onclick = sendTest;
+  } else if (mode === 'now') {
     actionBtn.textContent = 'Send Now';
     actionBtn.style.background = 'var(--color-danger)';
     actionBtn.onclick = executeSend;
   } else {
-    schedBtn.className = 'btn btn-sm';
-    schedBtn.style.background = 'var(--color-primary)';
-    schedBtn.style.color = '#fff';
-    nowBtn.className = 'btn btn-sm btn-secondary';
-    nowBtn.style.background = '';
-    nowBtn.style.color = '';
-    fields.style.display = 'block';
     actionBtn.textContent = 'Schedule Send';
     actionBtn.style.background = 'var(--color-primary)';
     actionBtn.onclick = scheduleNewsletter;
-    // Default to tomorrow 10am ET
     if (!document.getElementById('scheduleDateTime').value) {
       var d = new Date();
       d.setDate(d.getDate() + 1);
@@ -1816,6 +1831,39 @@ function setSendMode(mode) {
   }
 }
 window.setSendMode = setSendMode;
+
+async function sendTest() {
+  var email = document.getElementById('testEmailAddress').value.trim();
+  if (!email) { toast('Enter a test email address', 'error'); return; }
+  if (!currentEditionId) { toast('Save as draft first', 'error'); return; }
+
+  // Save draft first
+  try {
+    var data = gatherContent();
+    await apiAction('update_record', 'newsletters', {
+      subject: data.subject,
+      preview_text: data.preview_text,
+      content: data.content
+    }, { id: currentEditionId });
+  } catch (e) { /* continue */ }
+
+  document.getElementById('sendModal').classList.remove('open');
+  toast('Sending test to ' + email + '...');
+
+  try {
+    var resp = await fetch('/api/send-newsletter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newsletter_id: currentEditionId, test_email: email })
+    });
+    var result = await resp.json();
+    if (!resp.ok) throw new Error(result.error || 'Test send failed');
+    toast('Test sent to ' + email + ' (CC: chris@moonraker.ai)');
+  } catch (e) {
+    toast('Test send failed: ' + e.message, 'error');
+  }
+}
+window.sendTest = sendTest;
 
 async function scheduleNewsletter() {
   var dt = document.getElementById('scheduleDateTime').value;
@@ -2451,6 +2499,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
