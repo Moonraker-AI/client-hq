@@ -30,17 +30,19 @@ module.exports = async function handler(req, res) {
     var clientSlug = body.client_slug;
     var rawCss = body.raw_css || '';
     var sampleContent = body.sample_content || '';
+    var computedCss = body.computed_css || null;
     var screenshotUrls = body.screenshot_urls || [];
     var siteUrl = body.site_url || '';
     var platform = body.platform || '';
     var existingSpecId = body.existing_spec_id || null;
+    var source = body.source || 'manual';
 
     if (!contactId || !clientSlug) {
       return res.status(400).json({ error: 'contact_id and client_slug required' });
     }
 
-    if (!rawCss && !sampleContent) {
-      return res.status(400).json({ error: 'Provide at least raw_css or sample_content for analysis' });
+    if (!rawCss && !sampleContent && !computedCss) {
+      return res.status(400).json({ error: 'Provide CSS data or sample content for analysis' });
     }
 
     // Build the analysis prompt
@@ -111,6 +113,10 @@ Important rules:
 
     var userMessage = 'Analyze this client website and produce the design spec JSON.\n\n';
 
+    if (source === 'automated_capture') {
+      userMessage += 'NOTE: This data was automatically captured from the live website using Playwright (getComputedStyle + content extraction). The CSS data is structured and reliable.\n\n';
+    }
+
     if (platform) {
       userMessage += 'PLATFORM: ' + platform + '\n';
     }
@@ -119,12 +125,25 @@ Important rules:
     }
     userMessage += '\n';
 
-    if (rawCss) {
+    if (computedCss) {
+      userMessage += '--- COMPUTED CSS (extracted via getComputedStyle) ---\n';
+      if (computedCss.allFonts) userMessage += 'FONTS FOUND: ' + computedCss.allFonts.join(', ') + '\n';
+      if (computedCss.allColors) userMessage += 'COLORS FOUND: ' + computedCss.allColors.join(', ') + '\n';
+      if (computedCss.bodyBackground) userMessage += 'BODY BACKGROUND: ' + computedCss.bodyBackground + '\n';
+      var elements = ['h1', 'h2', 'h3', 'p', 'a', 'button', 'nav', 'footer', 'body'];
+      elements.forEach(function(el) {
+        if (computedCss[el]) {
+          var s = computedCss[el];
+          userMessage += el.toUpperCase() + ': font=' + (s.fontFamily || '?') + ', size=' + (s.fontSize || '?') + ', weight=' + (s.fontWeight || '?') + ', color=' + (s.color || '?') + ', bg=' + (s.backgroundColor || 'transparent') + '\n';
+        }
+      });
+      userMessage += '\n';
+    } else if (rawCss) {
       userMessage += '--- RAW CSS / COMPUTED STYLES ---\n' + rawCss.substring(0, 15000) + '\n\n';
     }
 
     if (sampleContent) {
-      userMessage += '--- SAMPLE PAGE CONTENT (for voice analysis) ---\n' + sampleContent.substring(0, 10000) + '\n\n';
+      userMessage += '--- WEBSITE CONTENT (for voice/tone analysis) ---\n' + sampleContent.substring(0, 12000) + '\n\n';
     }
 
     if (screenshotUrls.length > 0) {
@@ -132,7 +151,7 @@ Important rules:
       screenshotUrls.forEach(function(url) {
         userMessage += '- ' + url + '\n';
       });
-      userMessage += '(Screenshots stored for reference. Base your analysis primarily on the CSS data.)\n\n';
+      userMessage += '(Full-page screenshots captured from the live site.)\n\n';
     }
 
     userMessage += 'Return ONLY the JSON object. No other text.';
