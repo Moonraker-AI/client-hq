@@ -1086,16 +1086,37 @@ strong { font-weight: 600; color: var(--color-heading); }
 
       <!-- TAB: Content (Pagemaster) -->
       <div class="tab-panel" id="tab-content">
-        <!-- 1. Design Spec (top, starts collapsed) -->
+        <!-- 1. Design and Config (top, starts collapsed) -->
         <div class="card" id="contentDesignSpec" style="margin-bottom:1.25rem;">
           <div class="card-header collapsible-header" onclick="toggleContentSection('designSpec')" style="cursor:pointer;">
             <h3 style="display:flex;align-items:center;gap:.5rem;">
               <span id="designSpecIcon" style="transition:transform .2s;display:inline-block;font-size:.7rem;">&#9654;</span>
-              Design Spec
+              Design and Config
               <span id="designSpecBadge" class="status-badge" style="font-size:.7rem;"></span>
             </h3>
           </div>
           <div id="designSpecBody" class="collapsed" style="overflow:hidden;transition:max-height .3s ease;max-height:0;">
+            <!-- CMS Config section (top of design spec) -->
+            <div id="cmsConfigSection" style="padding:.75rem 1rem;border-bottom:1px solid var(--color-border-tertiary);">
+              <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:.4rem;min-width:130px;">
+                  <span id="cmsPlatformIcon" style="font-size:.9rem;">&#127760;</span>
+                  <span id="cmsPlatformLabel" style="font-weight:600;font-size:.8rem;color:var(--color-text-secondary);">No platform set</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:.4rem;flex:1;min-width:180px;">
+                  <label style="font-size:.7rem;color:var(--color-text-tertiary);white-space:nowrap;">Login URL</label>
+                  <input type="text" id="cmsLoginUrl" placeholder="/wp-admin" style="flex:1;padding:.25rem .5rem;font-size:.8rem;border:1px solid var(--color-border-tertiary);border-radius:6px;background:var(--color-surface);color:var(--color-text-primary);max-width:200px;" onchange="saveCmsField('cms_login_url', this.value)">
+                </div>
+                <div id="cmsAppPasswordGroup" style="display:flex;align-items:center;gap:.4rem;flex:1;min-width:200px;">
+                  <label style="font-size:.7rem;color:var(--color-text-tertiary);white-space:nowrap;">App Password</label>
+                  <input type="password" id="cmsAppPassword" placeholder="Generate in WP Users > Profile" style="flex:1;padding:.25rem .5rem;font-size:.8rem;border:1px solid var(--color-border-tertiary);border-radius:6px;background:var(--color-surface);color:var(--color-text-primary);max-width:200px;" onchange="saveCmsField('cms_app_password', this.value)">
+                  <button onclick="togglePasswordVisibility('cmsAppPassword', this)" style="background:none;border:none;cursor:pointer;font-size:.7rem;color:var(--color-text-tertiary);padding:2px;" title="Show/hide">&#128065;</button>
+                </div>
+                <button class="btn btn-sm btn-ghost" id="btnRunScout" onclick="runWpScout()" title="Scan this site to detect theme, plugins, pages, and SEO setup" style="white-space:nowrap;display:none;">&#128269; Scout</button>
+              </div>
+              <div id="cmsScoutResult" style="display:none;margin-top:.5rem;padding:.4rem .6rem;background:var(--color-bg);border-radius:6px;font-size:.78rem;color:var(--color-text-secondary);"></div>
+            </div>
+            <!-- Design spec content (existing) -->
             <div id="designSpecContent" style="padding:0 1rem 1rem;"></div>
           </div>
         </div>
@@ -4931,6 +4952,54 @@ strong { font-weight: 600; color: var(--color-heading); }
   var contentFilter = 'all';
   var expandedContentId = null;
 
+  window.saveCmsField = async function(field, value) {
+    var c = state.contact;
+    if (!c) return;
+    try {
+      await apiAction('/api/action', 'POST', { table: 'contacts', action: 'update', id: c.id, data: { [field]: value } });
+      c[field] = value;
+      toast('Saved', 'success');
+    } catch(e) { toast('Failed to save: ' + e.message, 'error'); }
+  };
+
+  window.togglePasswordVisibility = function(inputId, btn) {
+    var inp = document.getElementById(inputId);
+    if (!inp) return;
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    btn.innerHTML = inp.type === 'password' ? '&#128065;' : '&#128064;';
+  };
+
+  window.runWpScout = async function() {
+    var c = state.contact;
+    if (!c || !c.website_url) { toast('Set website URL first', 'error'); return; }
+    if (!c.cms_app_password) { toast('Set an Application Password first (Users > Profile in WP admin)', 'error'); return; }
+
+    var btn = document.getElementById('btnRunScout');
+    btn.disabled = true; btn.innerHTML = '&#9203; Scouting...';
+    var resultDiv = document.getElementById('cmsScoutResult');
+
+    try {
+      var resp = await apiAction('/api/trigger-agent', 'POST', {
+        task_type: 'wp-scout',
+        payload: {
+          wp_admin_url: c.cms_login_url ? c.website_url.replace(/\/$/, '') + '/' + c.cms_login_url.replace(/^\//, '') : c.website_url.replace(/\/$/, '') + '/wp-admin',
+          wp_username: c.email,
+          wp_password: c.cms_app_password,
+          client_slug: c.slug
+        }
+      });
+      if (resp.task_id) {
+        resultDiv.style.display = 'block';
+        resultDiv.textContent = 'Scout running (task: ' + resp.task_id.substring(0, 12) + '). Check back in ~10 seconds.';
+        toast('Scout started', 'success');
+      }
+    } catch(e) {
+      toast('Scout failed: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false; btn.innerHTML = '&#128269; Scout';
+    }
+  };
+
   window.toggleContentSection = function(section) {
     var bodyMap = { designSpec: 'designSpecBody', keywords: 'contentKeywordsBody', servicePages: 'servicePagesBody', clinicians: 'cliniciansBody', neo: 'neoBody', synthesis: 'synthBody' };
     var iconMap = { designSpec: 'designSpecIcon', keywords: 'contentKeywordsIcon', servicePages: 'servicePagesIcon', clinicians: 'cliniciansIcon', neo: 'neoIcon', synthesis: 'synthIcon' };
@@ -5494,6 +5563,26 @@ strong { font-weight: 600; color: var(--color-heading); }
     var c = state.contact;
     var spec = state.designSpec;
     var pages = state.contentPages;
+
+    // -- CMS CONFIG (inside Design and Config card) --
+    var plat = (c.website_platform || '').toLowerCase();
+    var platformIcons = { wordpress: '&#128214;', squarespace: '&#9632;', wix: '&#9670;', showit: '&#9733;' };
+    var platformEl = document.getElementById('cmsPlatformLabel');
+    var iconEl = document.getElementById('cmsPlatformIcon');
+    if (platformEl) {
+      platformEl.textContent = plat ? (plat.charAt(0).toUpperCase() + plat.slice(1) + (c.website_builder ? ' + ' + c.website_builder : '')) : 'No platform set';
+      if (iconEl) iconEl.innerHTML = platformIcons[plat] || '&#127760;';
+    }
+    var loginInput = document.getElementById('cmsLoginUrl');
+    if (loginInput) loginInput.value = c.cms_login_url || '';
+    var pwInput = document.getElementById('cmsAppPassword');
+    if (pwInput) pwInput.value = c.cms_app_password || '';
+    // App Password only relevant for WordPress
+    var pwGroup = document.getElementById('cmsAppPasswordGroup');
+    if (pwGroup) pwGroup.style.display = (plat === 'wordpress') ? 'flex' : 'none';
+    // Scout button only for WordPress
+    var scoutBtn = document.getElementById('btnRunScout');
+    if (scoutBtn) scoutBtn.style.display = (plat === 'wordpress') ? '' : 'none';
 
     // -- KEYWORD TARGETS (primary home) --
     var kwBadge = document.getElementById('contentKeywordsBadge');
