@@ -1,4 +1,5 @@
 {
   "private": true,
-  "_deploy_trigger": 1776145740
+  "_deploy_trigger": 1776145740,
+  "description": "Moonraker Client HQ - Admin platform and client portal"
 }
