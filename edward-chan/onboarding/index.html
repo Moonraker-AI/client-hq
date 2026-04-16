@@ -1001,7 +1001,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
   // Route through /api/action (uses service role key, bypasses RLS)
   function apiAction(action, table, filters, data) {
-    return fetch('/api/action', {
+    return fetch('/api/onboarding-action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: action, table: table, filters: filters || undefined, data: data })
