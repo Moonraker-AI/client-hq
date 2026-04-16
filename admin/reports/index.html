@@ -6,59 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="/assets/logo.png">
 <title>Report Scheduler - Moonraker Admin</title>
+<link rel="stylesheet" href="/assets/admin-base.css">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-
-:root, [data-theme="light"] {
-  --color-primary: #00D47E;
-  --color-primary-hover: #00b86c;
-  --color-primary-light: #B4EEE0;
-  --color-primary-subtle: #DDF8F2;
-  --color-bg: #F7FDFB;
-  --color-surface: #FFFFFF;
-  --color-border: #E2E8F0;
-  --color-heading: #1E2A5E;
-  --color-body: #333F70;
-  --color-muted: #6B7599;
-  --color-navy: #141C3A;
-  --color-success: #00D47E;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
-  --color-info: #3B82F6;
-  --sidebar-bg: #FAFDFB;
-  --sidebar-border: #E8F0EC;
-  --sidebar-hover: #EEF8F3;
-}
-[data-theme="dark"] {
-  --color-primary: #00D47E;
-  --color-primary-hover: #00f598;
-  --color-primary-light: #1A4A38;
-  --color-primary-subtle: #0D2E22;
-  --color-bg: #080F0B;
-  --color-surface: #0E1A14;
-  --color-border: #1E3530;
-  --color-heading: #E8F5EF;
-  --color-body: #C8D8D0;
-  --color-muted: #5A7A6E;
-  --color-navy: #0A1630;
-  --color-success: #00D47E;
-  --color-warning: #F59E0B;
-  --color-danger: #FF6B6B;
-  --color-info: #60A5FA;
-  --sidebar-bg: #0A120E;
-  --sidebar-border: #162820;
-  --sidebar-hover: #12201A;
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; font-size: 17px; overflow-x: hidden; }
-body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.6; -webkit-font-smoothing: antialiased; }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
-h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.2; }
-a { color: var(--color-primary); text-decoration: none; }
-a:hover { color: var(--color-primary-hover); }
-strong { font-weight: 600; color: var(--color-heading); }
 
 /* Layout */
 .container { margin: 0 auto; padding: 0 2rem; }
