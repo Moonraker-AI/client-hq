@@ -1930,7 +1930,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
   window.removeClinician = function(bioId) {
     if (!confirm('Remove this clinician? This cannot be undone.')) return;
-    apiAction('delete_record', 'bio_materials', { id: bioId }).then(function() {
+    apiAction('delete_record', 'bio_materials', { id: bioId }, { contact_id: contact.id }).then(function() {
       additionalBios = additionalBios.filter(function(b) { return b.id !== bioId; });
       renderAdditionalClinicians();
     });
@@ -1957,7 +1957,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     };
 
     if (statusEl) { statusEl.textContent = 'Saving...'; statusEl.style.color = 'var(--color-muted)'; }
-    apiAction('update_record', 'bio_materials', { id: bio.id }, data).then(function(res) {
+    apiAction('update_record', 'bio_materials', { id: bio.id, contact_id: contact.id }, data).then(function(res) {
       if (res.success) {
         Object.assign(bio, data);
         if (statusEl) { statusEl.textContent = 'Saved'; statusEl.style.color = 'var(--color-success)'; setTimeout(function() { statusEl.textContent = ''; }, 2500); }
