@@ -90,7 +90,8 @@ module.exports = async function(req, res) {
           sb.query('neo_images?select=*&contact_id=eq.' + cid + '&order=created_at.desc&limit=20'),
           sb.query('endorsements?select=*&contact_id=eq.' + cid + '&order=created_at.desc&limit=50'),
           sb.query('content_audit_batches?select=*&client_slug=eq.' + s + '&order=created_at.desc&limit=5'),
-          sb.query('tracked_keywords?select=*&client_slug=eq.' + s + '&active=eq.true&order=keyword.asc')
+          sb.query('tracked_keywords?select=*&client_slug=eq.' + s + '&active=eq.true&order=keyword.asc'),
+          sb.query('bio_materials?select=*&contact_id=eq.' + cid + '&order=sort_order,is_primary.desc')
         ]);
         data.contentPages = results[0] || [];
         data.designSpec = (results[1] && results[1][0]) || null;
@@ -98,6 +99,7 @@ module.exports = async function(req, res) {
         data.endorsements = results[3] || [];
         data.auditBatches = results[4] || [];
         data.keywords = results[5] || [];
+        data.bioMaterials = results[6] || [];
         break;
       }
 
@@ -133,3 +135,4 @@ module.exports = async function(req, res) {
     res.status(500).json({ error: 'Failed to load tab data' });
   }
 };
+
