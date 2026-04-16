@@ -954,6 +954,16 @@ strong { font-weight: 600; color: var(--color-heading); }
   var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
   var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
 
+  // HTML-escape a string to prevent XSS in innerHTML
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  // Sanitize image URLs: only allow https: and data:image/ schemes
+  function safeSrc(url) {
+    if (!url || typeof url !== 'string') return '';
+    url = url.trim();
+    if (url.indexOf('https://') === 0 || url.indexOf('data:image/') === 0) return esc(url);
+    return '';
+  }
+
   var pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
   var CLIENT_SLUG = pathParts[0] || '';
 
@@ -1329,8 +1339,8 @@ strong { font-weight: 600; color: var(--color-heading); }
       // Show signed state (keep agreement visible for reference)
       document.getElementById('csaAlreadySigned').style.display = 'block';
       document.getElementById('signatureBlock').style.display = 'none';
-      var signedMsg = 'Signed by ' + signerName + ' on ' + new Date(signedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-      document.getElementById('signedDetails').innerHTML = signedMsg + (sigImage ? '<div class="sig-preview"><img src="' + sigImage + '" alt="Signature"></div>' : '');
+      var signedMsg = 'Signed by ' + esc(signerName) + ' on ' + new Date(signedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      document.getElementById('signedDetails').innerHTML = signedMsg + (sigImage && safeSrc(sigImage) ? '<div class="sig-preview"><img src="' + safeSrc(sigImage) + '" alt="Signature"></div>' : '');
     }).catch(function(err) {
       console.error('Failed to save agreement:', err);
       btn.disabled = false;
@@ -2024,8 +2034,8 @@ strong { font-weight: 600; color: var(--color-heading); }
           document.getElementById('signatureBlock').style.display = 'none';
           document.getElementById('csaAlreadySigned').style.display = 'block';
           var a = agreements[0];
-          var signedText = 'Signed by ' + a.signer_name + ' on ' + new Date(a.signed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-          document.getElementById('signedDetails').innerHTML = signedText + (a.signature_image ? '<div class="sig-preview"><img src="' + a.signature_image + '" alt="Signature"></div>' : '');
+          var signedText = 'Signed by ' + esc(a.signer_name) + ' on ' + new Date(a.signed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          document.getElementById('signedDetails').innerHTML = signedText + (a.signature_image && safeSrc(a.signature_image) ? '<div class="sig-preview"><img src="' + safeSrc(a.signature_image) + '" alt="Signature"></div>' : '');
         }
 
         // Check embed step states - show completion banners and hide embeds
