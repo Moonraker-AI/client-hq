@@ -289,13 +289,14 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
     + '<li><span class="check">&#10003;</span> Professional bio pages for each therapist at your practice</li>'
     + '<li><span class="check">&#10003;</span> 1 location page to clearly establish where you serve</li>'
     + '<li><span class="check">&#10003;</span> General FAQ page covering logistics, policies, and common client questions</li>'
-    + '<li><span class="check">&#10003;</span> Directory listings across 50+ platforms including all major data aggregators</li>'
+    + '<li><span class="check">&#10003;</span> Citation audit and listings via BrightLocal (15 citations + data aggregators)</li>'
     + '<li><span class="check">&#10003;</span> Social profile buildout and optimization across 9 platforms</li>'
     + '<li><span class="check">&#10003;</span> Entity Veracity Hub launch to verify and ground your practice online</li>'
     + '<li><span class="check">&#10003;</span> YouTube channel setup with optimized playlist for your main specialty</li>'
     + '<li><span class="check">&#10003;</span> Press release syndication across 500+ national and international news sites</li>'
     + '<li><span class="check">&#10003;</span> NEO image creation and distribution to build authority across high-traffic platforms</li>'
     + '<li><span class="check">&#10003;</span> Ongoing social posting across 4 platforms to reinforce your digital presence</li>'
+    + '<li><span class="check">&#10003;</span> Professional endorsement collection for clinician bio pages</li>'
     + '<li><span class="check">&#10003;</span> Hero section and CTA optimization to convert visitors into consultation bookings</li>'
     + '<li><span class="check">&#10003;</span> Monthly progress reports with visibility and engagement metrics</li>';
   var guaranteeFeature = '<li><span class="check">&#10003;</span> <strong>12-month performance guarantee: if we don\'t hit our shared goal in 12 months, we continue working for free until you get there</strong></li>';
@@ -739,6 +740,7 @@ async function createDriveFolder(name, parentId, headers) {
     return { error: e.message || String(e) };
   }
 }
+
 
 
 
