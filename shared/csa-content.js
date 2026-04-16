@@ -161,7 +161,7 @@ window.renderCSA = function(contactParam) {
       '<li>LiveDrive local signal deployment</li>' +
       '<li>Rising Tide social profile buildout and optimization across up to 9 platforms (YouTube, LinkedIn, Facebook, Instagram, Quora, Pinterest, TikTok, X, and Google Business Profile)</li>' +
       '<li>2 posts per month across 4 platforms: Google Business Profile, Facebook, LinkedIn, and Quora</li>' +
-      '<li>Named Entity Optimization (NEO) image creation and distribution across high-authority platforms</li>' +
+      '<li>NEO image creation and distribution across high-authority platforms</li>' +
       '<li>YouTube channel creation and optimization with a curated playlist for your primary specialty</li>' +
       '<li>Professional endorsement collection and publication on clinician bio pages</li>' +
       '<li>Monthly campaign reporting with AI-powered insights</li>' +
