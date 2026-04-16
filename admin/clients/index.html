@@ -964,15 +964,6 @@
           </div>
         </div>
 
-        <div style="margin-top:1rem;">
-          <div class="card" id="hostingCard">
-            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-              <h3>Website Hosting</h3>
-              <span id="hostingBadge" class="status-badge" style="font-size:.7rem;"></span>
-            </div>
-            <div id="hostingContent" style="padding:.75rem 1rem;font-size:.84rem;color:var(--color-muted);">Loading...</div>
-          </div>
-        </div>
       </div>
 
 
@@ -1042,6 +1033,18 @@
 
       <!-- TAB: Content (Pagemaster) -->
       <div class="tab-panel" id="tab-content">
+        <!-- 0. Website Hosting -->
+        <div class="card" id="hostingCard" style="margin-bottom:1.25rem;">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="display:flex;align-items:center;gap:.5rem;">
+              <span style="font-size:.85rem;">&#9729;</span>
+              Website Hosting
+            </h3>
+            <span id="hostingBadge" class="status-badge" style="font-size:.7rem;"></span>
+          </div>
+          <div id="hostingContent" style="padding:.75rem 1rem;font-size:.84rem;color:var(--color-muted);">Loading...</div>
+        </div>
+
         <!-- 1. Design and Config (top, starts collapsed) -->
         <div class="card" id="contentDesignSpec" style="margin-bottom:1.25rem;">
           <div class="card-header collapsible-header" onclick="toggleContentSection('designSpec')" style="cursor:pointer;">
@@ -1972,9 +1975,6 @@
     notes.textContent = c.notes || 'Click to add notes...';
     if (!c.notes) notes.style.color = 'var(--color-muted)';
     else notes.style.color = '';
-
-    // Hosting card
-    renderHostingCard(c);
   }
 
   function renderHostingCard(c) {
@@ -1990,8 +1990,10 @@
         headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
       }).then(function(r) { return r.json(); }).then(function(sites) {
         state._hostingSites[c.id] = sites || [];
+        var moonrakerSite = (sites || []).find(function(s) { return s.hosting_type === 'moonraker' && s.status === 'active'; });
+        state.clientSite = moonrakerSite || false;
         renderHostingCard(c);
-      }).catch(function() { state._hostingSites[c.id] = []; renderHostingCard(c); });
+      }).catch(function() { state._hostingSites[c.id] = []; state.clientSite = false; renderHostingCard(c); });
       el.innerHTML = '<span style="color:var(--color-muted);font-size:.8rem;">Loading...</span>';
       return;
     }
@@ -5758,16 +5760,7 @@
     var spec = state.designSpec;
     var pages = state.contentPages;
 
-    // Load client hosting config (once per client)
-    if (!state.clientSite && c && c.id) {
-      state.clientSite = 'loading';
-      fetch(SB + '/rest/v1/client_sites?contact_id=eq.' + c.id + '&hosting_type=eq.moonraker&status=eq.active&limit=1', {
-        headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
-      }).then(function(r) { return r.json(); }).then(function(sites) {
-        state.clientSite = (sites && sites.length > 0) ? sites[0] : false;
-        renderContent();
-      }).catch(function() { state.clientSite = false; });
-    }
+
 
     // -- CMS CONFIG (inside Design and Config card) --
     var plat = (c.website_platform || '').toLowerCase();
@@ -5795,6 +5788,9 @@
     if (scoutBtn) scoutBtn.style.display = scoutPlatforms.indexOf(plat) !== -1 ? '' : 'none';
     // Load latest scout result
     loadLatestScout(c.slug);
+
+    // Website Hosting card
+    renderHostingCard(c);
 
     // -- KEYWORD TARGETS (primary home) --
     var kwBadge = document.getElementById('contentKeywordsBadge');
