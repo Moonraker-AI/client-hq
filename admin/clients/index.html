@@ -1175,7 +1175,7 @@ strong { font-weight: 600; color: var(--color-heading); }
               Clinician Profiles
             </h3>
             <div onclick="event.stopPropagation()">
-              <button class="btn btn-sm btn-primary" onclick="addBioClinician()">+ Add Clinician</button>
+              <button class="btn btn-sm btn-primary" onclick="event.stopPropagation();addBioClinician()">+ Add Clinician</button>
             </div>
           </div>
           <div id="cliniciansBody" style="overflow:hidden;transition:max-height .3s ease;padding:0 1rem .75rem;">
@@ -8419,6 +8419,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 <script src="/shared/chat-panel.js"></script>
 </body>
 </html>
+
 
 
 
