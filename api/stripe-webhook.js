@@ -104,17 +104,23 @@ module.exports = async function handler(req, res) {
       // ── Premium Entity Audit payment ──
       var audits = await sb.query('entity_audits?contact_id=eq.' + contact.id + '&order=created_at.desc&limit=1');
       if (audits && audits.length > 0) {
-        await sb.mutate('entity_audits?id=eq.' + audits[0].id, 'PATCH', {
+        var upgradeResult = await sb.mutate('entity_audits?id=eq.' + audits[0].id, 'PATCH', {
           audit_tier: 'premium',
           stripe_payment_id: session.payment_intent || session.id
-        }, 'return=minimal');
+        });
+        if (!upgradeResult || upgradeResult.length === 0) {
+          console.error('stripe-webhook: CRITICAL — audit tier upgrade failed for audit ' + audits[0].id + ', payment ' + (session.payment_intent || session.id));
+        }
         results.action = 'entity_audit_upgraded';
         results.audit_id = audits[0].id;
       }
     } else {
       // ── CORE Marketing System payment ──
       if (contact.status === 'prospect') {
-        await sb.mutate('contacts?slug=eq.' + slug, 'PATCH', { status: 'onboarding' }, 'return=minimal');
+        var flipResult = await sb.mutate('contacts?slug=eq.' + slug, 'PATCH', { status: 'onboarding' });
+        if (!flipResult || flipResult.length === 0) {
+          console.error('stripe-webhook: CRITICAL — status flip to onboarding failed for ' + slug + ', payment ' + (session.payment_intent || session.id));
+        }
         results.action = 'status_flipped_to_onboarding';
         results.previous_status = 'prospect';
 

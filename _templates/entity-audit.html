@@ -535,9 +535,9 @@ section { padding: 4.5rem 0; }
       html += '<div class="fix-accordion"><button class="fix-toggle" onclick="this.parentElement.classList.toggle(\'open\')"><span class="fix-arrow">&#9654;</span> How to fix this</button>';
       if (IS_PREMIUM || idx === 0) {
         // Premium gets all, free gets first per pillar
-        html += '<div class="fix-content"><div class="fix-content-inner">' + f.fix + '</div></div>';
+        html += '<div class="fix-content"><div class="fix-content-inner">' + sanitizeHtml(f.fix) + '</div></div>';
       } else {
-        html += '<div class="fix-content"><div class="gated-wrap"><div class="gated-blur"><div class="fix-content-inner">' + f.fix + '</div></div>';
+        html += '<div class="fix-content"><div class="gated-wrap"><div class="gated-blur"><div class="fix-content-inner">' + sanitizeHtml(f.fix) + '</div></div>';
         html += '<div class="gated-overlay"><div class="gated-icon">&#128274;</div><h4>Premium Audit Content</h4>';
         html += '<p>Unlock all action steps, ready-to-use schema, and a personalized Loom walkthrough.</p>';
         html += '<a href="" class="gated-cta upgrade-link">Unlock Premium Audit</a></div></div></div>';
@@ -564,6 +564,30 @@ section { padding: 4.5rem 0; }
     findings.forEach(function(f, idx) { html += renderFinding(f, idx); });
     html += '</div></div></div>';
     return html;
+  }
+
+  // Sanitize trusted HTML (agent-generated rich content): strip scripts, event handlers, dangerous tags
+  function sanitizeHtml(html) {
+    if (!html) return '';
+    var tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    // Remove dangerous elements
+    var dangerous = tmp.querySelectorAll('script,iframe,object,embed,form,input,textarea,button,link,meta,base');
+    for (var i = dangerous.length - 1; i >= 0; i--) dangerous[i].remove();
+    // Remove event handlers and dangerous attributes from all elements
+    var all = tmp.querySelectorAll('*');
+    for (var j = 0; j < all.length; j++) {
+      var attrs = all[j].attributes;
+      for (var k = attrs.length - 1; k >= 0; k--) {
+        var name = attrs[k].name.toLowerCase();
+        if (name.indexOf('on') === 0) { all[j].removeAttribute(attrs[k].name); continue; }
+        var val = (attrs[k].value || '').trim().toLowerCase();
+        if ((name === 'href' || name === 'src' || name === 'action') && (val.indexOf('javascript:') === 0 || val.indexOf('data:text') === 0)) {
+          all[j].removeAttribute(attrs[k].name);
+        }
+      }
+    }
+    return tmp.innerHTML;
   }
 
   function escHtml(s) {
@@ -707,9 +731,9 @@ section { padding: 4.5rem 0; }
     // RTPBA section - show only if data exists, gate for free tier
     if (scores.rtpba) {
       if (IS_PREMIUM) {
-        document.getElementById('rtpbaContent').innerHTML = scores.rtpba;
+        document.getElementById('rtpbaContent').innerHTML = sanitizeHtml(scores.rtpba);
       } else {
-        document.getElementById('rtpbaContent').innerHTML = '<div class="gated-wrap gated-rtpba" style="min-height:300px;"><div class="gated-blur">' + scores.rtpba + '</div>' +
+        document.getElementById('rtpbaContent').innerHTML = '<div class="gated-wrap gated-rtpba" style="min-height:300px;"><div class="gated-blur">' + sanitizeHtml(scores.rtpba) + '</div>' +
           '<div class="gated-overlay"><div class="gated-icon">&#128196;</div><h4>Ready-to-Publish Content</h4>' +
           '<p>Your complete, AI-optimized homepage content is ready. Upgrade to the Premium Audit to access the full Ready-to-Publish Best Answer for your practice.</p>' +
           '<a href="" class="gated-cta upgrade-link">Unlock Premium Audit</a></div></div>';

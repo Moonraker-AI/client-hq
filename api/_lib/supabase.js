@@ -59,7 +59,7 @@ async function mutate(path, method, body, prefer) {
     headers: headers(prefer || 'return=representation'),
     body: body ? JSON.stringify(body) : undefined
   });
-  // For DELETE with no content
+  // For DELETE with no content or return=minimal success
   if (resp.status === 204) return null;
   var data = await resp.json();
   if (!resp.ok) {
@@ -67,6 +67,10 @@ async function mutate(path, method, body, prefer) {
     err.status = resp.status;
     err.detail = data;
     throw err;
+  }
+  // Warn on PATCH that matched zero rows — likely a CHECK constraint silent failure
+  if (method === 'PATCH' && Array.isArray(data) && data.length === 0) {
+    console.warn('[sb.mutate] PATCH returned 0 rows (possible CHECK constraint block): ' + path);
   }
   return data;
 }
