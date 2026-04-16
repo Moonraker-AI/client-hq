@@ -33,11 +33,7 @@ module.exports = async function handler(req, res) {
     var cleanContactId = String(contactId).replace(/^eq\./, '');
 
     // Verify this contact exists and is in onboarding status
-    var contactCheck = await sb.query('contacts', {
-      select: 'id,status',
-      id: 'eq.' + cleanContactId,
-      limit: 1
-    });
+    var contactCheck = await sb.query('contacts?select=id,status&id=eq.' + encodeURIComponent(cleanContactId) + '&limit=1');
     if (!contactCheck || contactCheck.length === 0) {
       return res.status(404).json({ error: 'Contact not found' });
     }
@@ -67,6 +63,7 @@ module.exports = async function handler(req, res) {
 
     if (action === 'delete_record') {
       if (!filters) return res.status(400).json({ error: 'filters required for delete' });
+      // For delete, we need contact_id from the filters or from data
       var fp2 = buildFilter(filters);
       var r3 = await fetch(baseUrl + '?' + fp2, { method: 'DELETE', headers: headers });
       if (!r3.ok) return res.status(r3.status).json({ error: 'Database error' });
