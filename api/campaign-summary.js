@@ -33,6 +33,58 @@ function ymKey(d) {
   return d.toISOString().slice(0, 7);            // "2025-10"
 }
 
+// ── Date helpers used in window calculation ──────────────────────────
+//
+// deriveContractMonths maps the contacts.plan_type enum to a month count.
+// "monthly" subscribers don't have a fixed end date, so we treat them as
+// 12-month default for reporting purposes (the API caps at today anyway).
+
+function deriveContractMonths(planType) {
+  if (planType === 'quarterly') return 3;
+  if (planType === 'annual') return 12;
+  if (planType === 'monthly') return 12;
+  return 12;
+}
+
+// addMonthsISO adds N months to a YYYY-MM-DD string and returns YYYY-MM-DD.
+// Handles month rollover correctly (e.g. Mar 31 + 1 month = Apr 30).
+
+function addMonthsISO(iso, months) {
+  var d = new Date(iso + 'T00:00:00Z');
+  var targetMonth = d.getUTCMonth() + months;
+  var targetYear = d.getUTCFullYear() + Math.floor(targetMonth / 12);
+  var normalizedMonth = ((targetMonth % 12) + 12) % 12;
+  var endOfTargetMonth = new Date(Date.UTC(targetYear, normalizedMonth + 1, 0)).getUTCDate();
+  var day = Math.min(d.getUTCDate(), endOfTargetMonth);
+  var out = new Date(Date.UTC(targetYear, normalizedMonth, day));
+  return out.toISOString().slice(0, 10);
+}
+
+// startOfMonthISO and endOfMonthISO snap a date to its calendar-month
+// boundaries. Used to extend the chart's display window so we don't show
+// stunted partial-month bars at engagement boundaries — the contract
+// window stays the source of truth for cost and guarantee math.
+
+function startOfMonthISO(iso) {
+  var d = new Date(iso + 'T00:00:00Z');
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString().slice(0, 10);
+}
+
+function endOfMonthISO(iso) {
+  var d = new Date(iso + 'T00:00:00Z');
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).toISOString().slice(0, 10);
+}
+
+// monthsBetween returns the rounded number of whole months between two
+// YYYY-MM-DD dates. Used for display-month count and cost calc so a
+// Mar 12 - Mar 12 contract reads as 12 months instead of 13.
+
+function monthsBetween(startISO, endISO) {
+  var s = new Date(startISO + 'T00:00:00Z');
+  var e = new Date(endISO + 'T00:00:00Z');
+  return Math.max(1, Math.round((e - s) / (30.44 * 24 * 60 * 60 * 1000)));
+}
+
 function buildMonthBuckets(startISO, endISO) {
   // Return ordered array of { ym, start, end, label }
   var start = new Date(startISO + 'T00:00:00Z');
@@ -361,26 +413,15 @@ async function pullLocalFalcon(reportConfig) {
 // ── Cost / unit economics ──────────────────────────────────────────
 //
 // Computes total spend across the engagement window. Uses contacts.plan_amount_cents
-// as the monthly retainer. Billed months = the actual length of the engagement
-// window (capped at the contract length when known). Works for engagements
-// of any length (3 months, 6 months, 12 months, etc.).
+// as the monthly retainer. Caller passes the billed-month count derived from
+// the contract window (decoupled from chart bucket count, which may extend
+// past the contract for visualization purposes).
 
-function pullCost(client, monthBuckets) {
+function pullCost(client, billedMonths) {
   if (!client.plan_amount_cents) {
     return { available: false, error: 'No plan_amount_cents set on contact' };
   }
   var monthlyCents = Number(client.plan_amount_cents);
-
-  // Determine billed months: prefer the explicit campaign window when
-  // campaign_end is set; otherwise use the elapsed buckets.
-  var billedMonths = monthBuckets.length;
-  if (client.campaign_start && client.campaign_end) {
-    var start = new Date(client.campaign_start + 'T00:00:00Z');
-    var end = new Date(client.campaign_end + 'T00:00:00Z');
-    var contractMonths = Math.max(1, Math.round((end - start) / (30.44 * 24 * 60 * 60 * 1000)));
-    billedMonths = Math.min(billedMonths, contractMonths);
-  }
-
   var totalCents = monthlyCents * billedMonths;
   return {
     available: true,
@@ -684,7 +725,7 @@ module.exports = async function handler(req, res) {
   try {
     // 1. Load client
     var clients = await sb.query('contacts?slug=eq.' + encodeURIComponent(slug)
-      + '&select=id,slug,first_name,last_name,practice_name,city,state_province,website_url,campaign_start,campaign_end,plan_amount_cents&limit=1');
+      + '&select=id,slug,first_name,last_name,practice_name,city,state_province,website_url,campaign_start,campaign_end,plan_type,plan_amount_cents&limit=1');
     if (!clients || clients.length === 0) {
       res.status(404).json({ error: 'Client not found' });
       return;
@@ -696,37 +737,60 @@ module.exports = async function handler(req, res) {
       + '&select=*&limit=1');
     var reportConfig = (configs && configs[0]) || null;
 
-    // 3. Build window: campaign_start → min(campaign_end, today)
+    // 3. Build window dates.
+    //
+    // Two related windows here:
+    //   contractStart/contractEnd — source of truth for cost, guarantee, and
+    //     the display label. Anchored to the actual contract dates.
+    //   displayStart/displayEnd   — extended to full calendar months at both
+    //     boundaries so the chart renders uniform monthly bars instead of
+    //     stunted partials. Capped at today on the high end so we don't
+    //     fetch future-dated data. Pre-engagement portion of the first bar
+    //     reflects the client's pre-campaign baseline, which gives us a
+    //     useful "started here" reference.
+    //
+    // End date precedence for contractEnd:
+    //   1. contacts.campaign_end (explicit override)
+    //   2. campaign_start + plan_type interval (annual=12mo, quarterly=3mo, monthly=12mo default)
+    //   3. campaign_start + 12 months (fallback when plan_type is null)
     var todayISO = new Date().toISOString().slice(0, 10);
-    var startISO = client.campaign_start || todayISO;
-    if (startISO > todayISO) startISO = todayISO;
-    var endISO = todayISO;
-    if (client.campaign_end && client.campaign_end < todayISO) {
-      endISO = client.campaign_end;
-    }
-    var monthBuckets = buildMonthBuckets(startISO, endISO);
+    var contractStartISO = client.campaign_start || todayISO;
+    if (contractStartISO > todayISO) contractStartISO = todayISO;
 
-    // Display-facing engagement length. When the contract has an explicit
-    // end date, use date math (rounded to whole months) so a Mar 12 - Mar 12
-    // contract reads as "12 months", not "13" due to partial-month buckets.
-    var displayMonths = monthBuckets.length;
-    if (client.campaign_start && client.campaign_end) {
-      var _s = new Date(client.campaign_start + 'T00:00:00Z');
-      var _e = new Date(client.campaign_end + 'T00:00:00Z');
-      displayMonths = Math.max(1, Math.round((_e - _s) / (30.44 * 24 * 60 * 60 * 1000)));
-    }
+    var contractMonths = deriveContractMonths(client.plan_type);
+    var contractEndISO = client.campaign_end || addMonthsISO(contractStartISO, contractMonths);
+
+    // For data pulls and cost: cap contract end at today
+    var endISO = contractEndISO < todayISO ? contractEndISO : todayISO;
+
+    // Display window for chart: full calendar months at both ends
+    var displayStartISO = startOfMonthISO(contractStartISO);
+    var displayEndCandidateISO = endOfMonthISO(endISO);
+    var displayEndISO = displayEndCandidateISO < todayISO ? displayEndCandidateISO : todayISO;
+
+    var monthBuckets = buildMonthBuckets(displayStartISO, displayEndISO);
+
+    // Display-facing engagement length, calculated from the contract window
+    // (start → derived end) using whole-month math so a Mar 12 - Mar 12
+    // contract reads as "12 months" instead of "13" due to partial-month buckets.
+    var displayMonths = monthsBetween(contractStartISO, contractEndISO);
+
+    // Billed months: capped at elapsed (so an in-flight 12-month contract
+    // 6 months in shows 6 billed, not 12)
+    var elapsedMonths = monthsBetween(contractStartISO, endISO);
+    var billedMonths = Math.min(elapsedMonths, displayMonths);
 
     // 4. Pull all sources in parallel
     var [bookings, gsc, localfalcon, deliverables, attribution] = await Promise.all([
       pullBookings(client, monthBuckets),
-      pullGsc(reportConfig && reportConfig.gsc_property, monthBuckets, startISO, endISO),
+      pullGsc(reportConfig && reportConfig.gsc_property, monthBuckets, displayStartISO, displayEndISO),
       pullLocalFalcon(reportConfig),
       pullDeliverables(client.id),
       pullAttribution(client.id)
     ]);
 
     // Cost + derived unit economics (synchronous)
-    var cost = pullCost(client, monthBuckets);
+    var cost = pullCost(client, billedMonths);
 
     // Performance guarantee status (synchronous, depends on attribution)
     var guarantee = evaluateGuarantee(reportConfig, attribution);
@@ -771,10 +835,12 @@ module.exports = async function handler(req, res) {
         campaign_start: client.campaign_start
       },
       window: {
-        start: startISO,
-        end: endISO,
-        days: Math.floor((new Date(endISO) - new Date(startISO)) / 86400000),
-        months: displayMonths
+        start: contractStartISO,
+        end: contractEndISO,
+        days: Math.floor((new Date(contractEndISO) - new Date(contractStartISO)) / 86400000),
+        months: displayMonths,
+        display_start: displayStartISO,
+        display_end: displayEndISO
       },
       bookings: bookings,
       gsc: gsc,
