@@ -12,6 +12,7 @@ var auth = require('./_lib/auth');
 var monitor = require('./_lib/monitor');
 var gh = require('./_lib/github');
 var fetchT = require('./_lib/fetch-with-timeout');
+var sanitizer = require('./_lib/html-sanitizer');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -547,10 +548,21 @@ ${surgeData}`;
     if (contact.status === 'lead' && !contact.lost && audit.audit_tier === 'free') {
       send({ step: 'auto_send', message: 'Sending scorecard email automatically (free lead audit)...' });
       try {
-        var internalAuth = process.env.CRON_SECRET || process.env.AGENT_API_KEY || '';
+        // process-entity-audit is invoked via the agent callback path;
+        // AGENT_API_KEY is the deliberate identity for the downstream
+        // send-audit-email call. Hard-require it; the previous
+        // CRON_SECRET || AGENT_API_KEY || '' fallback sent
+        // "Authorization: Bearer " with empty credentials if both
+        // env vars were missing, which fails closed at send-audit-email
+        // but pollutes error paths with a misleading auth-failure
+        // signature. Fail loud at the source instead.
+        var agentKey = process.env.AGENT_API_KEY;
+        if (!agentKey) {
+          throw new Error('AGENT_API_KEY not configured -- cannot call send-audit-email');
+        }
         var sendResp = await fetchT('https://clients.moonraker.ai/api/send-audit-email', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + internalAuth },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + agentKey },
           body: JSON.stringify({ audit_id: auditId })
         }, 30000);
         if (sendResp.ok) {
@@ -575,14 +587,14 @@ ${surgeData}`;
             body: JSON.stringify({
               from: 'Moonraker Notifications <notifications@clients.moonraker.ai>',
               to: ['notifications@clients.moonraker.ai'],
-              subject: 'Premium Entity Audit Ready for Review - ' + practiceName,
+              subject: 'Premium Entity Audit Ready for Review - ' + sanitizer.sanitizeText(practiceName, 200),
               html: '<p>A premium entity audit has been processed and is ready for your review.</p>' +
-                '<p><strong>Client:</strong> ' + contact.first_name + ' ' + contact.last_name + '</p>' +
-                '<p><strong>Practice:</strong> ' + practiceName + '</p>' +
-                '<p><strong>CRES Score:</strong> ' + (cresScore || 'N/A') + '</p>' +
+                '<p><strong>Client:</strong> ' + sanitizer.sanitizeText(contact.first_name, 100) + ' ' + sanitizer.sanitizeText(contact.last_name, 100) + '</p>' +
+                '<p><strong>Practice:</strong> ' + sanitizer.sanitizeText(practiceName, 200) + '</p>' +
+                '<p><strong>CRES Score:</strong> ' + sanitizer.sanitizeText(String(cresScore || 'N/A'), 20) + '</p>' +
                 '<p style="margin-top:16px;"><strong>Next steps:</strong></p>' +
                 '<ol><li>Record a personalized Loom walkthrough</li><li>Add the Loom URL to the audit in admin</li><li>Send the delivery email from admin</li></ol>' +
-                '<p><a href="https://clients.moonraker.ai/admin/clients#audit-' + auditId + '">Open in Admin</a></p>'
+                '<p><a href="https://clients.moonraker.ai/admin/clients#audit-' + encodeURIComponent(auditId) + '">Open in Admin</a></p>'
             })
           }, 15000);
           send({ step: 'notify_team_done', message: 'Team notified. Premium audit awaiting Loom review.' });
@@ -619,13 +631,13 @@ ${surgeData}`;
             body: JSON.stringify({
               from: 'Moonraker Notifications <notifications@clients.moonraker.ai>',
               to: ['notifications@clients.moonraker.ai'],
-              subject: 'Quarterly Audit Complete - ' + practiceName + ' (' + audit.audit_period + ')',
+              subject: 'Quarterly Audit Complete - ' + sanitizer.sanitizeText(practiceName, 200) + ' (' + sanitizer.sanitizeText(audit.audit_period, 50) + ')',
               html: '<div style="font-family:Inter,sans-serif;">' +
-                '<p>A quarterly entity audit has been completed for <strong>' + practiceName + '</strong> (' + audit.audit_period + ').</p>' +
-                '<p><strong>CRES Score:</strong> ' + cresScore + '/40</p>' +
+                '<p>A quarterly entity audit has been completed for <strong>' + sanitizer.sanitizeText(practiceName, 200) + '</strong> (' + sanitizer.sanitizeText(audit.audit_period, 50) + ').</p>' +
+                '<p><strong>CRES Score:</strong> ' + sanitizer.sanitizeText(String(cresScore), 20) + '/40</p>' +
                 varianceHtml +
                 '<p>This audit is for internal reference ahead of the client check-in call. It will not be sent to the client automatically.</p>' +
-                '<p><a href="https://clients.moonraker.ai/admin/clients#audit-' + auditId + '" style="color:#00D47E;">View in Admin</a></p>' +
+                '<p><a href="https://clients.moonraker.ai/admin/clients#audit-' + encodeURIComponent(auditId) + '" style="color:#00D47E;">View in Admin</a></p>' +
                 '</div>'
             })
           }, 15000);
