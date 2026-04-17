@@ -67,25 +67,17 @@ module.exports = async function handler(req, res) {
     // ============================================================
     send({ step: 'lookup', message: 'Looking up audit record...' });
 
-    var auditResp = await fetch(sb.url() + '/rest/v1/entity_audits?id=eq.' + auditId + '&select=*', {
-      headers: sb.headers()
-    });
-    var audits = await auditResp.json();
-    if (!audits || audits.length === 0) {
+    var audit = await sb.one('entity_audits?id=eq.' + auditId + '&select=*');
+    if (!audit) {
       send({ step: 'error', message: 'Audit not found' });
       return res.end();
     }
-    var audit = audits[0];
 
-    var contactResp = await fetch(sb.url() + '/rest/v1/contacts?id=eq.' + audit.contact_id + '&select=*', {
-      headers: sb.headers()
-    });
-    var contacts = await contactResp.json();
-    if (!contacts || contacts.length === 0) {
+    var contact = await sb.one('contacts?id=eq.' + audit.contact_id + '&select=*');
+    if (!contact) {
       send({ step: 'error', message: 'Contact not found' });
       return res.end();
     }
-    var contact = contacts[0];
 
     var practiceName = contact.practice_name || (contact.first_name + ' ' + contact.last_name).trim();
     var slug = contact.slug;
@@ -268,12 +260,11 @@ ${surgeData}`;
     var varianceFromPrevious = null;
     if (audit.audit_period !== 'initial') {
       try {
-        var prevAuditResp = await fetch(sb.url() + '/rest/v1/entity_audits?contact_id=eq.' + audit.contact_id +
+        var prevAudits = await sb.query('entity_audits?contact_id=eq.' + audit.contact_id +
           '&id=neq.' + auditId +
           '&status=in.(complete,delivered)' +
           '&select=cres_score,score_credibility,score_optimization,score_reputation,score_engagement,audit_period,audit_date' +
-          '&order=audit_date.desc&limit=1', { headers: sb.headers() });
-        var prevAudits = await prevAuditResp.json();
+          '&order=audit_date.desc&limit=1');
         if (prevAudits && prevAudits.length > 0) {
           var prev = prevAudits[0];
           varianceFromPrevious = {
@@ -328,15 +319,10 @@ ${surgeData}`;
       variance_from_previous: varianceFromPrevious
     };
 
-    var updateResp = await fetch(sb.url() + '/rest/v1/entity_audits?id=eq.' + auditId, {
-      method: 'PATCH',
-      headers: Object.assign({}, sb.headers(), { 'Prefer': 'return=minimal' }),
-      body: JSON.stringify(updateBody)
-    });
-
-    if (!updateResp.ok) {
-      var updateErr = await updateResp.text();
-      send({ step: 'error', message: 'Supabase update failed: ' + updateErr.substring(0, 200) });
+    try {
+      await sb.mutate('entity_audits?id=eq.' + auditId, 'PATCH', updateBody, 'return=minimal');
+    } catch (e) {
+      send({ step: 'error', message: 'Supabase update failed: ' + (e.message || '').substring(0, 200) });
       return res.end();
     }
 
@@ -354,10 +340,9 @@ ${surgeData}`;
     send({ step: 'checklist', message: 'Creating ' + allTasks.length + ' structured task records...' });
 
     // Delete any existing checklist_items for this audit (re-processing support)
-    await fetch(sb.url() + '/rest/v1/checklist_items?audit_id=eq.' + auditId, {
-      method: 'DELETE',
-      headers: Object.assign({}, sb.headers(), { 'Prefer': 'return=minimal' })
-    });
+    try {
+      await sb.mutate('checklist_items?audit_id=eq.' + auditId, 'DELETE', null, 'return=minimal');
+    } catch (_e) { /* non-fatal; best-effort cleanup */ }
 
     // Map severity to priority
     function severityToPriority(sev) {
@@ -406,18 +391,12 @@ ${surgeData}`;
 
     // Batch insert checklist_items
     if (checklistRows.length > 0) {
-      var insertResp = await fetch(sb.url() + '/rest/v1/checklist_items', {
-        method: 'POST',
-        headers: Object.assign({}, sb.headers(), { 'Prefer': 'return=minimal' }),
-        body: JSON.stringify(checklistRows)
-      });
-
-      if (!insertResp.ok) {
-        var insertErr = await insertResp.text();
-        send({ step: 'checklist_warning', message: 'Checklist insert issue: ' + insertErr.substring(0, 200) });
-        // Continue, non-fatal
-      } else {
+      try {
+        await sb.mutate('checklist_items', 'POST', checklistRows, 'return=minimal');
         send({ step: 'checklist_done', message: checklistRows.length + ' tasks created in checklist_items.' });
+      } catch (e) {
+        send({ step: 'checklist_warning', message: 'Checklist insert issue: ' + (e.message || '').substring(0, 200) });
+        // Continue, non-fatal
       }
     }
     } else {
@@ -692,6 +671,7 @@ ${surgeData}`;
     return res.end();
   }
 };
+
 
 
 
