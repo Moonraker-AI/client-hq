@@ -8,6 +8,7 @@
 // }
 
 var sb = require('./_lib/supabase');
+var rateLimit = require('./_lib/rate-limit');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -18,6 +19,19 @@ module.exports = async function handler(req, res) {
     return res.status(403).json({ error: 'Forbidden' });
   }
   if (!sb.isConfigured()) return res.status(500).json({ error: 'Service not configured' });
+
+  // Rate limit: 3 submissions/hour per IP. Replaces the old global 20/hour
+  // limit (H14) — a single spammer could exhaust the global window and block
+  // legitimate submissions. Per-IP caps the spammer without collateral damage.
+  var ip = rateLimit.getIp(req);
+  var rl = await rateLimit.check('ip:' + ip + ':submit-entity-audit', 3, 3600);
+  rateLimit.setHeaders(res, rl, 3);
+  if (!rl.allowed) {
+    if (rl.reset_at) {
+      res.setHeader('Retry-After', String(Math.max(1, Math.ceil((rl.reset_at - new Date()) / 1000))));
+    }
+    return res.status(429).json({ error: 'Too many submissions. Please try again later.' });
+  }
 
   var body = req.body || {};
   var firstName = (body.first_name || '').trim();
@@ -49,13 +63,6 @@ module.exports = async function handler(req, res) {
   var geoTarget = city && state ? city + ', ' + state : city || state || '';
 
   try {
-    // Rate limit: max 20 submissions per hour (prevents automated spam)
-    var oneHourAgo = new Date(Date.now() - 3600000).toISOString();
-    var recentAudits = await sb.query('entity_audits?created_at=gte.' + encodeURIComponent(oneHourAgo) + '&select=id&limit=21');
-    if (recentAudits && recentAudits.length >= 20) {
-      return res.status(429).json({ error: 'Too many submissions. Please try again later.' });
-    }
-
     // Check for existing contact with this slug
     var existing = await sb.query('contacts?slug=eq.' + encodeURIComponent(slug) + '&select=id&limit=1');
     if (existing && existing.length > 0) {
