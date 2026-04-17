@@ -23,6 +23,7 @@ var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
 var monitor = require('./_lib/monitor');
 var google = require('./_lib/google-delegated');
+var sanitizer = require('./_lib/html-sanitizer');
 
 
 module.exports = async function handler(req, res) {
@@ -117,7 +118,10 @@ module.exports = async function handler(req, res) {
   }
 
   var range = monthRange(reportMonth);
-  var practiceName = contact.practice_name || (contact.first_name + ' ' + contact.last_name).trim();
+  var practiceName = sanitizer.sanitizeText(
+    contact.practice_name || (contact.first_name + ' ' + contact.last_name).trim(),
+    200
+  );
 
   var campaignMonth = 1;
   if (contact.campaign_start) {
