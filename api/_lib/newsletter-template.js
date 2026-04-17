@@ -131,7 +131,26 @@ function signatureBlock() {
   '</td></tr>';
 }
 
-function build(newsletter, subscriberId) {
+// Migration notice shown during the warmup ramp only. Auto-disappears when warmup
+// completes (build() is called with warmupActive=false).
+function migrationNoticeBlock() {
+  return '<tr><td style="padding:0 0 20px;">' +
+    '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:' + C.lightGreen + ';border:1px solid ' + C.primary + ';border-radius:8px;">' +
+      '<tr><td style="padding:14px 18px;">' +
+        '<p style="font-family:' + F.body + ';font-size:13.5px;color:' + C.body + ';line-height:1.6;margin:0;">' +
+          '<strong style="color:' + C.heading + ';font-family:' + F.body + ';">A quick note.</strong> ' +
+          'You\'re receiving this from our new newsletter system. If a copy also arrives from our old platform, that\'s expected during the transition. ' +
+          'To make sure future issues don\'t land in spam, please mark this email "Not spam" and add ' +
+          '<strong style="color:' + C.heading + ';font-family:' + F.body + ';">newsletter@newsletter.moonraker.ai</strong> to your contacts. ' +
+          'Thanks for bearing with us.' +
+        '</p>' +
+      '</td></tr>' +
+    '</table>' +
+  '</td></tr>';
+}
+
+function build(newsletter, subscriberId, opts) {
+  opts = opts || {};
   var content = newsletter.content || {};
   var stories = content.stories || [];
   var quickWins = content.quick_wins || [];
@@ -140,6 +159,7 @@ function build(newsletter, subscriberId) {
   var year = new Date().getFullYear();
   var unsubUrl = UNSUBSCRIBE_BASE + (subscriberId ? '?sid=' + subscriberId : '');
   var storiesHtml = stories.map(function(s, i) { return storyBlock(s, i); }).join('');
+  var warmupActive = !!opts.warmupActive;
 
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">' +
     '<style>@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@700&family=Inter:wght@400;500;600&display=swap");' +
@@ -161,6 +181,8 @@ function build(newsletter, subscriberId) {
     // BODY: White content area with side borders
     '<tr><td class="email-body" style="background:' + C.white + ';padding:32px;border-left:1px solid ' + C.border + ';border-right:1px solid ' + C.border + ';">' +
     '<table cellpadding="0" cellspacing="0" border="0" width="100%">' +
+
+    (warmupActive ? migrationNoticeBlock() : '') +
 
     '<tr><td style="padding:0 0 20px;"><p style="font-family:' + F.body + ';font-size:15px;color:' + C.body + ';line-height:1.7;margin:0;text-align:center;">' +
       'We know running a therapy practice is more than sessions. It\'s managing visibility, trust, and compliance in a digital-first world. ' +
@@ -235,6 +257,7 @@ function buildBlog(newsletter) {
 }
 
 module.exports = { build: build, buildBlog: buildBlog, esc: esc, C: C, F: F };
+
 
 
 
