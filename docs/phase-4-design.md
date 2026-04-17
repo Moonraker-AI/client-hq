@@ -10,6 +10,7 @@
 - 0 endorsements ever submitted (C9 is purely theoretical right now — no attack surface exploited, and no rush if we want to prioritize other work first).
 - `activity_log` table exists with 126 rows, field-level change schema. Writes are from elsewhere in the codebase.
 - No `rate_limits` or `page_tokens` table yet.
+- `admin_profiles` role distinction exists: Chris is `owner`, Scott and support@ are `admin`. Manifest `require_role` enforcement works with no migration.
 
 ---
 
@@ -305,7 +306,7 @@ Reasoning:
 New file `api/_lib/action-schema.js` with table manifest. Update `api/action.js` and `api/onboarding-action.js` to consult the manifest. Update `_lib/postgrest-filter.js` (from C4 fix) to use structured filter input. Every mutation writes field-level rows to `activity_log`.
 
 Security additions:
-- `require_role` key in manifest: `'owner'` means only Chris (admin_profiles.role='owner'). `workspace_credentials` and `signed_agreements` should require owner.
+- `require_role` key in manifest: `'owner'` means only Chris (admin_profiles.role='owner'). `workspace_credentials` and `signed_agreements` should require owner. **Confirmed: role distinction already exists. Chris=`owner`, Scott & support=`admin`. No migration needed.**
 - `write: []` for read-only tables means any PATCH/POST is rejected.
 - `delete: false` rejects DELETE regardless of filters.
 
@@ -334,7 +335,7 @@ Each step is ~1 focused session. Total time-to-all-criticals-closed: 6-7 session
 
 1. **Page token lifetime for onboarding:** I suggested 90 days. Is that comfortable, or should it tie to the onboarding status flip (token invalidates when contact transitions to `active`)?
 2. **Rate limit for chat endpoints:** 20 req/min per IP is conservative — a real user clicking "ask again" a few times hits this. Is that the right ceiling, or do you want more headroom? (I can also key by contact_id where we have a token, which permits real users more while limiting casual attackers.)
-3. **Manifest: do we have an `admin_profiles.role` value for "owner" vs others?** If Scott/Karen are `role='admin'` and Chris is `role='owner'`, we can enforce that model. If everyone is `'admin'`, we need to add a role distinction first.
+3. **Manifest `role` distinction:** ✅ **Confirmed.** `admin_profiles` already has Chris=`owner` and Scott/support=`admin`. `require_role: 'owner'` works as-designed. No migration needed.
 4. **C9 urgency:** zero endorsements today means we have flexibility. Do you want to ship C9 before the endorsement feature gets real usage, or park it until endorsements start coming in? (Parking is fine; just noting the feature exists and is unused.)
 
-Once these are answered, we have enough to start Phase 4.
+Once Q1, Q2, Q4 are answered, we have enough to start Phase 4.
