@@ -60,10 +60,12 @@ function buildMonthBuckets(startISO, endISO) {
 // bookings, "Canceled event:" as cancellations.
 
 function deriveBookingSearchQuery(practiceName) {
-  // Match GReminders-style senders that include the practice name.
-  // Gmail search is case-insensitive. Quoted phrase keeps word order.
+  // GReminders booking notifications come from greminders.com.
+  // Cancellations are calendar invites from Google Calendar (calendar-notification@google.com),
+  // so a from:greminders filter would miss them entirely. Anchor on the two
+  // subject prefixes we actually classify, scoped to mentions of the practice.
   if (!practiceName) return null;
-  return 'from:greminders.com "' + practiceName + '"';
+  return '"' + practiceName + '" subject:("Appointment Scheduled" OR "Canceled event")';
 }
 
 function classifyBookingSubject(subject) {
