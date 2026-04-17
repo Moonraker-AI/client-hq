@@ -14,6 +14,7 @@
 
 var sb = require('./_lib/supabase');
 var pageToken = require('./_lib/page-token');
+var pgFilter = require('./_lib/postgrest-filter');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -90,7 +91,9 @@ module.exports = async function handler(req, res) {
 
     if (action === 'update_record') {
       if (!data) return res.status(400).json({ error: 'data required' });
-      var fp = buildFilter(filters);
+      var fp;
+      try { fp = pgFilter.buildFilter(filters); }
+      catch (e) { return res.status(400).json({ error: 'Bad filter: ' + e.message }); }
       var r2 = await fetch(baseUrl + '?' + fp, { method: 'PATCH', headers: headers, body: JSON.stringify(data) });
       var result2 = await r2.json();
       if (!r2.ok) { console.error('onboarding update error:', JSON.stringify(result2)); return res.status(r2.status).json({ error: 'Database update failed' }); }
@@ -98,7 +101,9 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === 'delete_record') {
-      var fp2 = buildFilter(filters);
+      var fp2;
+      try { fp2 = pgFilter.buildFilter(filters); }
+      catch (e) { return res.status(400).json({ error: 'Bad filter: ' + e.message }); }
       var r3 = await fetch(baseUrl + '?' + fp2, { method: 'DELETE', headers: headers });
       if (!r3.ok) return res.status(r3.status).json({ error: 'Database error' });
       return res.status(200).json({ success: true, action: 'deleted' });
@@ -111,23 +116,3 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Internal error' });
   }
 };
-
-// NOTE: buildFilter still has the PostgREST operator-prefix passthrough
-// documented as C4 in the audit. With token-bound contact_id enforcement
-// above, the blast radius is contained — an attacker would need a valid token
-// for a specific victim to do anything, and even then the forced contact_id
-// filter caps writes to that contact's rows. Full filter-injection fix moves
-// to Phase 4 Session 4 (action-schema manifest).
-function buildFilter(filters) {
-  var parts = [];
-  for (var key in filters) {
-    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key)) continue;
-    var val = filters[key];
-    if (typeof val === 'string' && /^(eq|neq|gt|gte|lt|lte|is|in)\./i.test(val)) {
-      parts.push(key + '=' + val);
-    } else {
-      parts.push(key + '=eq.' + encodeURIComponent(val));
-    }
-  }
-  return parts.join('&');
-}
