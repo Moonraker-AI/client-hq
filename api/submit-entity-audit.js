@@ -66,16 +66,15 @@ module.exports = async function handler(req, res) {
   var geoTarget = city && state ? city + ', ' + state : city || state || '';
 
   try {
-    // Check for existing contact with this slug
-    var existing = await sb.query('contacts?slug=eq.' + encodeURIComponent(slug) + '&select=id&limit=1');
-    if (existing && existing.length > 0) {
-      return res.status(409).json({
-        error: 'duplicate',
-        message: 'It looks like we already have your information on file. If you have not received your scorecard yet, please contact support@moonraker.ai.'
-      });
-    }
-
-    // Also check by email
+    // M9: slug pre-check removed — contacts_slug_key (UNIQUE) is the
+    // authoritative backstop, pre-check was racy and redundant. The
+    // catch block below detects 23505 by PostgREST error code and
+    // returns the slug-specific empathetic message.
+    //
+    // Email pre-check KEPT. The contacts table currently has no
+    // UNIQUE constraint on email (verified via pg_constraint), so
+    // removing this pre-check would allow duplicates. Filed as a
+    // separate finding — schema change is out of this session's scope.
     var byEmail = await sb.query('contacts?email=eq.' + encodeURIComponent(email) + '&select=id&limit=1');
     if (byEmail && byEmail.length > 0) {
       return res.status(409).json({
@@ -197,14 +196,27 @@ module.exports = async function handler(req, res) {
 
   } catch (err) {
     console.error('submit-entity-audit error:', err);
-    var msg = err.message || 'Something went wrong. Please try again.';
-    if (msg.indexOf('duplicate') !== -1 || msg.indexOf('unique') !== -1) {
+
+    // M9: detect unique-constraint violation via structured PostgREST
+    // error (err.detail.code === '23505') first, with constraint-name
+    // fallback, and substring match as the last resort for forward-compat
+    // with helper rewrites. sb.mutate attaches the raw PostgREST body
+    // as err.detail (see api/_lib/supabase.js).
+    var detail = err && err.detail;
+    var pgCode = detail && detail.code;
+    var msg = (err && err.message) || '';
+    var isUnique = (pgCode === '23505') ||
+                   msg.indexOf('contacts_slug_key') !== -1 ||
+                   msg.indexOf('duplicate key') !== -1 ||
+                   msg.indexOf('duplicate') !== -1 ||
+                   msg.indexOf('unique') !== -1;
+    if (isUnique) {
       return res.status(409).json({
         error: 'duplicate',
-        message: 'It looks like we already have a record for this practice. Please contact support@moonraker.ai.'
+        message: 'It looks like we already have your information on file. If you have not received your scorecard yet, please contact support@moonraker.ai.'
       });
     }
-    return res.status(500).json({ error: msg });
+    return res.status(500).json({ error: msg || 'Something went wrong. Please try again.' });
   }
 };
 
