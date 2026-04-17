@@ -7,6 +7,7 @@
 
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
+var google = require('./_lib/google-delegated');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -43,8 +44,12 @@ module.exports = async function handler(req, res) {
       if (!googleSA) return res.status(500).json({ error: 'GOOGLE_SERVICE_ACCOUNT_JSON not configured' });
 
       // Get access token
-      var token = await getGoogleAccessToken(googleSA);
-      if (token && token.error) return res.status(500).json({ error: 'Google auth failed: ' + token.error });
+      var token;
+      try {
+        token = await google.getServiceAccountToken('https://www.googleapis.com/auth/webmasters.readonly');
+      } catch (tokenErr) {
+        return res.status(500).json({ error: 'Google auth failed: ' + (tokenErr.message || String(tokenErr)) });
+      }
 
       // List all sites the service account has access to
       var sitesResp = await fetch('https://www.googleapis.com/webmasters/v3/sites', {
@@ -278,44 +283,6 @@ async function upsertReportConfig(clientSlug, data) {
   }
 }
 
-async function getGoogleAccessToken(saJson) {
-  try {
-    var sa = typeof saJson === 'string' ? JSON.parse(saJson) : saJson;
-    if (!sa.private_key || !sa.client_email) {
-      throw new Error('Service account JSON missing private_key or client_email');
-    }
-    var crypto = require('crypto');
 
-    var header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
-    var now = Math.floor(Date.now() / 1000);
-    var claims = Buffer.from(JSON.stringify({
-      iss: sa.client_email,
-      scope: 'https://www.googleapis.com/auth/webmasters.readonly',
-      aud: 'https://oauth2.googleapis.com/token',
-      iat: now,
-      exp: now + 3600
-    })).toString('base64url');
-
-    var signable = header + '.' + claims;
-    var signer = crypto.createSign('RSA-SHA256');
-    signer.update(signable);
-    var signature = signer.sign(sa.private_key, 'base64url');
-
-    var jwt = signable + '.' + signature;
-
-    var tokenResp = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=' + jwt
-    });
-    var tokenData = await tokenResp.json();
-    if (!tokenData.access_token) {
-      throw new Error('Google OAuth error: ' + (tokenData.error_description || tokenData.error || JSON.stringify(tokenData)));
-    }
-    return tokenData.access_token;
-  } catch (e) {
-    return { error: e.message || String(e) };
-  }
-}
 
 
