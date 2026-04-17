@@ -90,14 +90,20 @@ module.exports = async function handler(req, res) {
     if (!anthropicRes || !anthropicRes.ok) {
       var errText = anthropicRes ? await anthropicRes.text() : 'No response';
       var status = anthropicRes ? anthropicRes.status : 500;
-      console.error('Anthropic API error:', status, errText);
 
       var userMsg = 'API error';
       if (status === 529) userMsg = 'All models are experiencing high demand. Please try again in a moment.';
       else if (status === 401) userMsg = 'API key is invalid. Check ANTHROPIC_API_KEY in Vercel settings.';
       else if (status === 429) userMsg = 'Rate limit reached. Please wait a moment.';
 
-      return res.status(status).json({ error: userMsg, status: status, detail: errText });
+      // L28: Anthropic error bodies can include model names, org state, rate-limit
+      // context, and API-key-prefix confirmation. Route detail to monitor; keep
+      // response body minimal. Matches the H28 pattern in bootstrap-access.js.
+      await monitor.logError('chat', new Error('anthropic_upstream'), {
+        detail: { status: status, body: (errText || '').substring(0, 500) }
+      });
+
+      return res.status(status).json({ error: userMsg, status: status });
     }
 
     // Stream the SSE response, injecting model info as first event
