@@ -263,11 +263,15 @@ Prompt injection via admin-controlled `practice_name` affects report highlights.
 
 **Resolution (2026-04-17, commit `e4d9105`, Group D):** Added `var sanitizer = require('./_lib/html-sanitizer');` alongside existing `_lib` requires at L21-25. Sanitized at source at L120 by wrapping the `contact.practice_name || (contact.first_name + ' ' + contact.last_name).trim()` expression in `sanitizer.sanitizeText(..., 200)`. This closes the flagged Claude prompt site (`generateHighlights()` at L1034) and incidentally hardens all 8 downstream email/report rendering sites noted in the audit (L730, L812, L830, L859, L1071, L1089, L1108, L1115) in one edit — since `sanitizeText` treats `&` as literal text (not entity), practice names like "Smith & Jones Therapy" render correctly through all downstream email HTML sites. `metricsContext` at L973 is system-sourced Supabase numerics; left alone per scope fence.
 
-### H26. `api/generate-proposal.js:573-590` — onboarding seed is non-transactional DELETE+INSERT
+### H26. `api/generate-proposal.js:573-590` — onboarding seed is non-transactional DELETE+INSERT ✅ RESOLVED
 Crash between DELETE and INSERT leaves contact with zero onboarding steps. `auto_promote_to_active` trigger never fires. Use PostgREST upsert or RPC.
 
-### H27. `api/compile-report.js:726, 740, 743` — same non-transactional pattern for highlights
+**Resolution (2026-04-17, commit `4fc3f69`, Group E):** DELETE+POST pair replaced with upsert on the existing `UNIQUE(contact_id, step_key)` index using `Prefer: resolution=merge-duplicates,return=minimal`. The contact status flip at the top of the block also migrated from bare `fetch` to `sb.mutate`. Added a targeted stale-row cleanup (`onboarding_steps?contact_id=eq.X&step_key=not.in.(...)`) so future template shrinkage doesn't leave orphaned steps — scoped by `contact_id` so it can never touch another contact's rows. Production pre-check showed zero stale rows at migration time, so the cleanup is a future-proof no-op today. Each of the three sub-steps (status flip, stale cleanup, upsert) is independently try/caught and surfaces failures in `results.conversion.{status_error, stale_cleanup_error, onboarding_error}` rather than silently short-circuiting. Re-running proposal generation is now idempotent and never leaves the checklist empty; the zero-row window that would block `auto_promote_to_active` is closed.
+
+### H27. `api/compile-report.js:726, 740, 743` — same non-transactional pattern for highlights ✅ RESOLVED
 DELETE old, INSERT new. Crash between = zero highlights. Fallback on line 738-746 compounds it.
+
+**Resolution (2026-04-17, commit `886fe05`, Group E):** Both the primary `generateHighlights()` path (~L700) and the `buildFallbackHighlights()` path (~L713) replaced with upsert via `Prefer: resolution=merge-duplicates,return=minimal`. Backed by new migration `report_highlights_unique_slug_month_sort` which adds `UNIQUE(client_slug, report_month, sort_order)` — pre-verified zero duplicates across the existing 87 rows before creating the unique index. Both helpers already return rows shaped with that exact triple, so no upstream changes were needed. The B.2 try/catch warning wrappers are preserved; they now wrap a single upsert call instead of a DELETE+POST sequence, so the error surface is cleaner and the two-step window is eliminated.
 
 ### H28. `api/bootstrap-access.js:466-473` — response body returns `results` with provider error detail ✅ RESOLVED
 `results.{gbp,ga4,gtm,localfalcon}.error` can contain JSON excerpts from Google/LocalFalcon APIs including account IDs, quotas, internal messages. Admin-only but any log capture exposes raw provider error bodies.
@@ -363,8 +367,10 @@ Full 60s if VPS agent slow.
 
 **Resolution (2026-04-17, commit `274f273`, Group B.2):** Both `fetch` sites in the file wrapped with `fetchT`. The agent POST at L125 (`AGENT_URL + '/tasks/surge-audit'`) uses a 30s timeout — the agent endpoint spawns the browser-use session but should return the `task_id` quickly; fail-fast + requeue is preferable to hanging the full Vercel budget if the VPS is slow. The Resend notification at L168 (inside the agent-failed branch) uses a 10s timeout. Grep verification: `grep -cE '\\bfetch\\(' submit-entity-audit.js` → 0.
 
-### M11. `api/admin/deploy-to-r2.js:71` — DELETE-then-INSERT not idempotent
+### M11. `api/admin/deploy-to-r2.js:71` — DELETE-then-INSERT not idempotent ✅ RESOLVED
 Use PostgREST upsert with `Prefer: resolution=merge-duplicates`.
+
+**Resolution (2026-04-17, commit `9fe2810`, Group E):** The DELETE+POST was recording each R2 deploy into `site_deployments` (not `client_sites` as the original finding text implied — the handler writes HTML to R2 first, then updates the deployment-log row). If the invocation died between DELETE and POST the log row vanished even though the HTML was already live, so the admin UI then showed "never deployed" for a published page. Replaced with a straight upsert on the existing `UNIQUE(site_id, page_path)` index using `Prefer: resolution=merge-duplicates,return=representation` — the `return=representation` variant preserves the single-row shape downstream code depends on in the `deployment` variable. No schema changes needed.
 
 ### M12. `api/admin/manage-site.js:53` — domain "normalization" accepts paths, ports, anything
 Doesn't reject `domain:8080`, `domain/path`, `user:pass@domain`, `domain?q=x`. Malformed domain goes to CF custom-hostname API and stored in DB.
@@ -432,8 +438,10 @@ Currently safe (static values) but pattern invites future injection.
 ### M29. `api/chat.js:130-132` — 120s maxDuration may not cover heavy context
 Sonnet 4.6 + 8192 max_tokens + dumped DB = potentially slow. Monitor.
 
-### M30. `api/generate-proposal.js:79-81, 273-275, 543-547, 549-557, 563-569` — 5+ fire-and-forget PATCHes
+### M30. `api/generate-proposal.js:79-81, 273-275, 543-547, 549-557, 563-569` — 5+ fire-and-forget PATCHes ✅ RESOLVED
 `.catch(function(){})` swallows errors silently. If final PATCH (549) fails, proposal sits in `generating` forever.
+
+**Resolution (2026-04-17, commit `4d0fa27`, Group E):** Four in-scope serverless-side sites converted from `await fetch(...).catch(function(){})` to `await sb.mutate(...)` in try/catch — L90 (`status='generating'`), L284 (error-branch `status='review'` + notes), L594 (`contacts.checkout_options`), L605 (final `proposals` finalize with `status='ready'`, urls, content). The post-H26 `results` pattern already in the file is matched: non-critical sites push to `results.{status_update_error, checkout_options_error, finalize_error}`; the three most material sites (L90, L284, L605) additionally route through `monitor.logError('generate-proposal', err, { client_slug: slug, detail: { stage, proposal_id } })` with stage tags `set_status_generating`, `record_generation_failure`, `finalize_proposal`. The L605 finalize is the audit-flagged "stuck in generating forever" site — it's now the one that surfaces both as an admin-visible `results.finalize_error` and in `error_log`. No 500 returns added to the success path; all failures tracked via the existing `res.status(200).json({ ..., results })` shape at L739. One fire-and-forget site at L515 left intentionally alone: it's inside the backtick `trackingScript` template literal injected into the deployed proposal HTML as a `<script>`, so it's browser-side code, not a serverless handler invocation. **Scope note:** `api/generate-proposal.js` still uses raw `fetch(sb.url() + '/rest/v1/...')` for two reads at L62 (proposal load) and L80 (practice_type load). These are instances of the pattern already tracked as **L1** — left alone rather than folded in here, since M30's scope is explicitly the fire-and-forget PATCHes.
 
 ### M31. `api/seed-content-pages.js:21, 23` — `require('./_lib/supabase')` imported twice
 Harmless but indicates careless editing.
@@ -684,12 +692,12 @@ _(Brought forward from Phase 7 since Chris chose "ship now" over "wait for traff
 ## Running tallies
 
 - **Critical:** 9 total (C1–C9). **Resolved: 9 ✅** (all).
-- **High:** 36 total (H1–H36). **Resolved: 22** (H4, H5, H7, H8, H9, H10, H11, H14, H18, H19, H20, H21, H22, H24, H25, H28, H30, H31, H33, H34, H35, H36). **Open: 14.**
-- **Medium:** 38 total (M1–M38). **Resolved: 9** (M6, M8, M10, M13, M15, M16, M22, M26, M38; several more likely closed via Phase 4 action-schema work — needs verification sweep). **Open: ~29.**
+- **High:** 36 total (H1–H36). **Resolved: 24** (H4, H5, H7, H8, H9, H10, H11, H14, H18, H19, H20, H21, H22, H24, H25, H26, H27, H28, H30, H31, H33, H34, H35, H36). **Open: 12.**
+- **Medium:** 38 total (M1–M38). **Resolved: 11** (M6, M8, M10, M11, M13, M15, M16, M22, M26, M30, M38; several more likely closed via Phase 4 action-schema work — needs verification sweep). **Open: ~27.**
 - **Low:** 28 total (L1–L28). **Resolved: 5** (L8, L14, L16, L26, L27-documented-only). **Open: 23.**
 - **Nit:** 6 total (N1–N6). **Open: 6.**
 
-**Total: 117 findings. Resolved: ≥45. Open: ≤72.**
+**Total: 117 findings. Resolved: ≥49. Open: ≤68.**
 
 ### Resolution log
 | Finding | Commit / Session | Date |
@@ -731,6 +739,10 @@ _(Brought forward from Phase 7 since Chris chose "ship now" over "wait for traff
 | H24 | `0163f65` (compile-report — closure fetchT deleted, 16 Supabase calls migrated to sb helpers, 3 external calls wrapped, 0 bare fetch remaining, Group B.2) | 2026-04-17 |
 | M10 | `274f273` (submit-entity-audit — agent POST 30s, Resend fallback 10s, Group B.2) | 2026-04-17 |
 | M16 | `0d2c56d` (5a: 6 Supabase → sb helpers with error-shape preservation) + `2512c46` (5b: 13 external calls wrapped at tiered timeouts — Claude 60s, GitHub reads 15s / PUTs 30s, internal+Resend 15-30s, Group B.2) | 2026-04-17 |
+| H27 | `886fe05` (compile-report highlights — upsert on report_highlights_unique_slug_month_sort, Group E) | 2026-04-17 |
+| H26 | `4fc3f69` (generate-proposal onboarding_steps upsert + targeted stale-row cleanup, Group E) | 2026-04-17 |
+| M11 | `9fe2810` (deploy-to-r2 site_deployments upsert on UNIQUE(site_id, page_path), Group E) | 2026-04-17 |
+| M30 | `4d0fa27` (generate-proposal — 4 PATCHes await + try/catch with results tracking + monitor.logError on critical sites, Group E) | 2026-04-17 |
 
 Audit was performed across five sessions reading ~11,000 lines of API route code, the eight `_lib/` modules, relevant templates, and git history for secret leakage. Unread in detail: chat system prompt bodies (low-risk content), several `send-*-email.js` / `trigger-*` / `ingest-*` routes (expected to follow already-catalogued patterns), most `api/admin/*` read-only dashboard routes. The audit is considered comprehensive for Critical and High findings; Medium/Low/Nit counts would grow modestly with further reading.
 
