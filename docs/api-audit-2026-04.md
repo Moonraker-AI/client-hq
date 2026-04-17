@@ -154,8 +154,10 @@ Function returns input unchanged; `derSig` assignment is ignored. Comment claims
 ### H5. AI chat endpoints — no rate limiting ✅ RESOLVED
 `agreement-chat.js`, `content-chat.js`, `proposal-chat.js`, `report-chat.js` have zero auth and stream Claude. CORS header is browser enforcement; `curl` ignores it. Direct bill-amplification attack surface. Add IP-based rate limit + server-side Origin check that rejects empty Origin.
 
-### H6. `api/stripe-webhook.js:129-148` — fire-and-forget HTTP calls
+### H6. `api/stripe-webhook.js:129-148` — fire-and-forget HTTP calls ✅ RESOLVED
 Cross-function POSTs to `/api/notify-team` and `/api/setup-audit-schedule` with no retry. Convert to queue table + cron processor, or inline as importable modules.
+
+**Resolution (2026-04-18, commit `b3d5d8b`, Group G batch 2):** Inline-await + monitor.critical approach (option b from the session prompt; Stripe webhook volume is low, queue-table durability wasn't warranted). Both fire-and-forget `.catch()` POSTs at L161-182 of current main converted to awaited `fetchT(..., 15000)` calls wrapped in independent try/catch blocks. Each stage fires `monitor.critical('stripe-webhook', err, { client_slug: slug, detail: { stage: 'notify_team' | 'setup_audit_schedule', session_id, ... } })` on throw OR on non-2xx response — so both transport failures (timeout, DNS, connection reset) and handler-side failures (500 from notify-team, auth rejection) surface via the email alert to chris@moonraker.ai plus an error_log row with body_preview. `results.notify_team_failed` / `results.setup_audit_schedule_failed` booleans annotate the response body for any operator watching stripe webhook responses directly. `res.status(200)` preserved at the end — Stripe must not retry the webhook because the status flip + payments insert are already done and idempotent-but-noisy if re-run. The inner try/catch around `monitor.critical` itself is belt-and-suspenders: even if Resend is down and the critical email can't send, we don't mask the 200 back to Stripe. `fetchT` added to the top-of-file require list alongside the existing crypto / sb / monitor imports. Scope note: the `payments` INSERT at L191 still uses `console.log` on error — not in H6 scope (H6 is specifically the two cross-function POSTs), filed as candidate follow-up.
 
 ### H7. `api/_lib/supabase.js:15` — hardcoded fallback URL ✅ RESOLVED
 ```js
@@ -197,8 +199,10 @@ Fix alongside C6.
 
 **Resolution (2026-04-18, commits `502f6213` + `34fca146`, Group F):** All five sub-issues closed. **Empty-Origin bypass (`502f6213`):** flipped `if (origin && ...)` to `if (!origin || origin !== 'https://clients.moonraker.ai')` — same commit as H15's submit-entity-audit.js fix (shared pattern). **UUID validation + filter safety (`34fca146`):** added the canonical UUID regex check immediately after body parsing; returns 400 on non-UUID. `encodeURIComponent()` applied defense-in-depth at the three PostgREST concat sites inside `fetchPageContext` (content_pages, contacts, design_specs, practice_details). **Ownership (`34fca146`):** status-based gate per session prompt's option (c) — `fetchPageContext` now reads `contact.lost` and `contact.status` and returns `null` when the contact is lost; handler 404s. Page-token option (a) deferred: `content_preview` scope exists in `_lib/page-token.js` SCOPES, but deployed content-preview templates don't demonstrably inject `__PAGE_TOKEN__`, so switching to required-token verification would break production chatbots. Status-based gate is the interim. Opus 4.6 model choice + 4000 max_tokens unchanged — rate limit (20/min/IP from Phase 4 S4) is the cost control, and sub-issue (e) was always categorized as a note, not a fix.
 
-### H13. `api/agreement-chat.js:119+` — full CSA (~8K tokens) in every system prompt
+### H13. `api/agreement-chat.js:119+` — full CSA (~8K tokens) in every system prompt ✅ RESOLVED
 Pays for full CSA every request. Use Anthropic prompt caching with breakpoint after CSA block.
+
+**Resolution (2026-04-18, commit `fba6183`, Group G batch 2):** `buildSystemPrompt(context)` now returns a 2-element array of system content blocks instead of a single string. Block 1 is the preamble + CRITICAL RULES + WHAT YOU KNOW + `PAGE CONTENT` section including the `${pageContent.substring(0, 8000)}` interpolation (varies per conversation). Block 2 is the static `===== CLIENT SERVICE AGREEMENT (FULL TEXT) =====` through the response guidelines (`- End responses on an encouraging, forward-moving note when natural`), with `cache_control: { type: 'ephemeral' }` applied to the block. Call site changed from `system: systemPrompt` to `system: systemBlocks`. Concatenation of block1.text + block2.text is byte-identical to the original single-string prompt (split point is immediately after the interpolation, blank-line separator preserved on block 2's leading side) so model behavior is preserved. Expected effect: turn 2+ of the same conversation hits the Anthropic prompt cache for the full prefix (~8.5K tokens of preamble + CSA), dropping cached-prefix cost to ~10% of uncached tokens. Cross-conversation caching is partial (`pageContent` varies) — the larger win would require reordering the prompt to put the static CSA BEFORE pageContent, which is out of scope for operational resilience (would change prompt ordering and potentially model behavior). Filed as candidate follow-up. Scope fence respected: rate limit, origin check, Anthropic fetch retry+buffering, streaming pipe untouched. Smoke verification on first multi-turn agreement-chat session should confirm `usage.cache_read_input_tokens` is ~8K+ in the `message_start` event of turn 2+.
 
 ### H14. `api/submit-entity-audit.js:54-57` — global rate limit is DoS surface ✅ RESOLVED
 Attacker sending 20 requests in an hour blocks all legitimate submissions. Per-IP bucketing + captcha.
@@ -298,6 +302,14 @@ DELETE old, INSERT new. Crash between = zero highlights. Fallback on line 738-74
 Lines 92-148. Impersonates `chris@`, `scott@`, `support@` to run Gmail searches. Results stored in `proposals.enrichment_data` as plaintext JSONB. Admin JWT compromise → Gmail search oracle over team inboxes. `searchDomain` is admin-controlled (via `website_url`) — creating a contact with `website_url = 'moonraker.ai'` returns internal business communications.
 
 Also affects C4 blast radius: `enrichment_data` is readable via `action.js`, unencrypted. Encrypt at rest via `_lib/crypto.js`.
+
+**Status (2026-04-18, Group G batch 2):** 🔶 DEFERRED — BLOCKED ON DESIGN. Infra-check performed against current `_lib/crypto.js` surfaced four unresolved design decisions that exceed the 30-minute budget carved out for H29:
+1. **JSONB shape.** `crypto.encryptFields` only operates on string values (L86 `typeof === 'string'` gate) and `encrypt()` rejects non-strings. `enrichment_data` is a JSONB object with nested `emails[]`, `calls[]`, `audit_scores`, `audit_tasks`, `website_info`, `practice_details`. Three options: extend `encryptFields` to `JSON.stringify` JSONB fields before encrypt and `JSON.parse` after decrypt (simplest, one helper change), split `enrichment_data` into encrypted scalar columns (invasive schema change), or encrypt at the call site in `enrich-proposal.js` with a dedicated wrapper.
+2. **Read-path surface.** `enrichment_data` is read by `enrich-proposal.js` (self, post-write), `generate-proposal.js` (downstream consumer for Claude prompt context), and is reachable via `action.js` admin reads (the C4-blast-radius concern the finding calls out). Any encrypt-at-rest choice requires corresponding decrypt wiring at all readers; action.js's per-table SENSITIVE_FIELDS convention is currently scoped to `workspace_credentials` (`gmail_password`, `app_password`, `authenticator_secret_key`, `qr_code_image`) and extending it per-table is a shape change to the action.js module, not a one-field addition.
+3. **Legacy-row migration.** Existing `proposals` rows hold plaintext JSONB. `crypto.decrypt` passthrough on non-`v1:`-prefixed strings works for strings but not for object-typed legacy values that never round-tripped through `JSON.stringify`. A one-time backfill (encrypt-in-place) or a read-path dual-shape handler is needed; neither is trivial.
+4. **`enrichment_sources` sibling + rotation.** The same PATCH at `enrich-proposal.js:L391-397` writes both `enrichment_sources` (Gmail message IDs, Fathom recording IDs, search queries) and `enrichment_data`. Both are sensitive; consistency argues for encrypting both. Key-rotation story exists for `workspace_credentials` (admin UI re-saves on rotation) but not for a field that accumulates per-proposal forever — a bulk re-encrypt migration would be needed for rotation.
+
+**Recommendation:** Split H29 into a dedicated design session that picks between options (1)/(2)/(3), then a scoped code session that lands the chosen wiring plus a backfill migration for existing rows. Until then, the admin-JWT-gated read surface, Group B.1's token caching (which at least stops repeated gmail impersonation mints), and the rate-limit on enrich-proposal remain the interim controls.
 
 ### H30. `api/enrich-proposal.js:161` — Fathom dedup uses string match ✅ RESOLVED
 Works but is the sixth copy of `getDelegatedToken` (line 414) with no caching. Multiple Fathom + Gmail calls each mint fresh JWTs. Wasteful but not broken.
@@ -727,12 +739,12 @@ _(Brought forward from Phase 7 since Chris chose "ship now" over "wait for traff
 ## Running tallies
 
 - **Critical:** 9 total (C1–C9). **Resolved: 9 ✅** (all).
-- **High:** 36 total (H1–H36). **Resolved: 31** (H1, H2, H3, H4, H5, H7, H8, H9, H10, H11, H12, H14, H15, H17, H18, H19, H20, H21, H22, H24, H25, H26, H27, H28, H30, H31, H32, H33, H34, H35, H36). **Open: 5.**
+- **High:** 36 total (H1–H36). **Resolved: 33** (H1, H2, H3, H4, H5, H6, H7, H8, H9, H10, H11, H12, H13, H14, H15, H17, H18, H19, H20, H21, H22, H24, H25, H26, H27, H28, H30, H31, H32, H33, H34, H35, H36). **Open: 3** (H16, H23, H29 — H29 deferred on design).
 - **Medium:** 39 total (M1–M39; M39 added by Group F). **Resolved: 17** (M2, M6, M8, M9, M10, M11, M12, M13, M14, M15, M16, M18, M20, M22, M26, M30, M38; several more likely closed via Phase 4 action-schema work — needs verification sweep). **Open: ~22.**
 - **Low:** 28 total (L1–L28). **Resolved: 5** (L8, L14, L16, L26, L27-documented-only). **Open: 23.**
 - **Nit:** 6 total (N1–N6). **Open: 6.**
 
-**Total: 118 findings. Resolved: ≥62. Open: ≤56.**
+**Total: 118 findings. Resolved: ≥64. Open: ≤54.**
 
 ### Resolution log
 | Finding | Commit / Session | Date |
@@ -789,6 +801,8 @@ _(Brought forward from Phase 7 since Chris chose "ship now" over "wait for traff
 | H3 | `f1c0d22` (auth.js — delete rawToDer + derSig dead code, Group G batch 1) | 2026-04-18 |
 | M18 | `e092cae` (process-entity-audit.js — full auditId in checklist_items composite id) + `4fb46a7` (setup-audit-schedule.js same sister-site fix, Group G batch 1) | 2026-04-18 |
 | H17 | `7f094dc` (process-entity-audit.js — hard-require AGENT_API_KEY with loud throw, sanitizer.sanitizeText on every notification-email interpolation, encodeURIComponent on auditId href, Group G batch 1) | 2026-04-18 |
+| H6 | `b3d5d8b` (stripe-webhook.js — notify-team + setup-audit-schedule POSTs awaited via fetchT 15s, monitor.critical on throw or non-2xx per stage, results.*_failed flags in 200 response, Group G batch 2) | 2026-04-18 |
+| H13 | `fba6183` (agreement-chat.js — buildSystemPrompt returns 2-block array with cache_control ephemeral on static CSA+guidelines block, byte-identical concatenation preserves model behavior, Group G batch 2) | 2026-04-18 |
 
 Audit was performed across five sessions reading ~11,000 lines of API route code, the eight `_lib/` modules, relevant templates, and git history for secret leakage. Unread in detail: chat system prompt bodies (low-risk content), several `send-*-email.js` / `trigger-*` / `ingest-*` routes (expected to follow already-catalogued patterns), most `api/admin/*` read-only dashboard routes. The audit is considered comprehensive for Critical and High findings; Medium/Low/Nit counts would grow modestly with further reading.
 
