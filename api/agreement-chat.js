@@ -7,6 +7,8 @@
 //
 // ENV VARS: ANTHROPIC_API_KEY
 
+var rateLimit = require('./_lib/rate-limit');
+
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', 'https://clients.moonraker.ai');
@@ -22,6 +24,17 @@ module.exports = async function handler(req, res) {
   var origin = req.headers.origin || '';
   if (origin && origin !== 'https://clients.moonraker.ai') {
     return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  // Rate limit: 20 req/min per IP (protects Anthropic API credits)
+  var ip = rateLimit.getIp(req);
+  var rl = await rateLimit.check('ip:' + ip + ':agreement-chat', 20, 60);
+  rateLimit.setHeaders(res, rl, 20);
+  if (!rl.allowed) {
+    if (rl.reset_at) {
+      res.setHeader('Retry-After', String(Math.max(1, Math.ceil((rl.reset_at - new Date()) / 1000))));
+    }
+    return res.status(429).json({ error: 'Too many requests. Please slow down and try again.' });
   }
 
   var apiKey = process.env.ANTHROPIC_API_KEY;
