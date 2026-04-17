@@ -7,13 +7,23 @@ var { requireAdmin } = require('../_lib/auth');
 var crypto = require('crypto');
 
 var WORKER_URL = 'https://client-sites-worker.chris-b0d.workers.dev';
-var DEPLOY_SECRET = process.env.CF_R2_DEPLOY_SECRET || 'moonraker-r2-deploy-2026';
+var DEPLOY_SECRET = process.env.CF_R2_DEPLOY_SECRET;
+
+// Loud module-load warning so config issues surface in Vercel logs before the first deploy attempt.
+// Mirrors the C5 pattern used in api/_lib/crypto.js.
+if (!DEPLOY_SECRET) {
+  console.error('[deploy-to-r2] CRITICAL: CF_R2_DEPLOY_SECRET is not set. R2 deploys will return 500 until the env var is configured.');
+}
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   var admin = await requireAdmin(req, res);
   if (!admin) return;
+
+  if (!DEPLOY_SECRET) {
+    return res.status(500).json({ error: 'Deploy secret not configured' });
+  }
 
   try {
     var { site_id, page_path, html, content_page_id, deployed_by } = req.body;
