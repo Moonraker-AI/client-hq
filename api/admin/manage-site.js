@@ -68,6 +68,19 @@ async function handleProvision(req, res) {
   // Clean domain
   domain = domain.toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '').replace(/^www\./, '');
 
+  // M12: strict FQDN validation. The prior normalization strips protocol,
+  // trailing slash, and leading www., but accepts anything else — so
+  // domain.com:8080, domain.com/path, user:pass@host, domain.com?q=x all
+  // flowed through to the CF custom-hostname API and got persisted to
+  // client_sites.domain. Reject anything that isn't a well-formed FQDN.
+  //
+  // Constraints: 1-253 total chars, each label 1-63 chars of alnum or
+  // hyphen (no leading/trailing hyphen), final TLD 2-63 alpha chars.
+  var fqdnPattern = /^(?=.{1,253}$)(?:(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.)+[a-z]{2,63}$/;
+  if (!fqdnPattern.test(domain)) {
+    return res.status(400).json({ error: 'Invalid domain format' });
+  }
+
   // Check for duplicate
   var existing = await sb.one('client_sites?domain=eq.' + encodeURIComponent(domain) + '&select=id');
   if (existing) {
