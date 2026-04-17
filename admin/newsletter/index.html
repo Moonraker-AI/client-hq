@@ -353,6 +353,23 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
 .compose-action-bar.is-visible { display: flex; }
 .compose-action-bar .btn { white-space: nowrap; }
 
+/* Scroll-responsive + keyboard-aware hiding.
+   When hidden: translate off-screen and fade, but keep display:flex
+   so the transition runs. Hidden state is additive to .is-visible. */
+.compose-action-bar {
+  transition: transform .22s ease, opacity .22s ease;
+  transform: translateY(0);
+  opacity: 1;
+}
+.compose-action-bar.is-hidden {
+  transform: translateY(calc(100% + 2rem));
+  opacity: 0;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .compose-action-bar { transition: none; }
+}
+
 /* Reserve clearance so last fields don't hide behind the bar */
 body.compose-bar-visible #tab-compose.active { padding-bottom: 96px; }
 
@@ -1342,7 +1359,7 @@ function renderVerifyCard(storyIndex, c) {
   if (conf !== 'high') {
     sh += '<div class="verify-actions">';
     sh += '<button onclick="refineStory(' + storyIndex + ')">Refine for accuracy</button>';
-    sh += '<button class="swap-btn" onclick="showSwapList(' + storyIndex + ',this)">Swap &amp; verify</button>';
+    sh += '<button class="swap-btn" onclick="showSwapList(' + storyIndex + ')">Swap &amp; verify</button>';
     sh += '</div>';
     sh += '<div id="swapList-' + storyIndex + '" style="display:none;"></div>';
   }
@@ -1459,7 +1476,7 @@ async function refineStory(storyIndex) {
 window.refineStory = refineStory;
 
 // ---- Swap Story (show unselected candidates) ----
-function showSwapList(storyIndex, btn) {
+function showSwapList(storyIndex) {
   var listEl = document.getElementById('swapList-' + storyIndex);
   if (listEl.style.display === 'block') {
     listEl.style.display = 'none';
@@ -2661,6 +2678,8 @@ function updateComposeBar() {
   var isCompose = !!(active && active.id === 'tab-compose');
   bar.classList.toggle('is-visible', isCompose);
   document.body.classList.toggle('compose-bar-visible', isCompose);
+  // Reset hidden state on tab change so the bar greets the user revealed
+  if (isCompose) bar.classList.remove('is-hidden');
 }
 window.updateComposeBar = updateComposeBar;
 
@@ -2687,7 +2706,77 @@ document.addEventListener('DOMContentLoaded', function() {
   if (s) s.addEventListener('input', refreshSendBtnState);
   if (p) p.addEventListener('input', refreshSendBtnState);
   updateComposeBar();
+  installBarScrollBehavior();
+  installBarKeyboardBehavior();
 });
+
+// ---- Scroll-responsive bar hiding ----
+// Hide on scroll-down, reveal on scroll-up. Always revealed near the
+// top of the page and near the bottom so actions remain reachable.
+// Threshold of 8px kills noise from trackpad micro-scrolls.
+function installBarScrollBehavior() {
+  var bar = document.getElementById('composeActionBar');
+  if (!bar) return;
+  var lastY = window.scrollY || 0;
+  var ticking = false;
+  var THRESHOLD = 8;
+  var TOP_ZONE = 120;
+  var BOTTOM_ZONE = 120;
+
+  function check() {
+    ticking = false;
+    // Only apply when bar is active (compose tab)
+    if (!bar.classList.contains('is-visible')) { bar.classList.remove('is-hidden'); return; }
+    // If keyboard flag is set, keyboard controller owns visibility
+    if (bar.dataset.keyboardOpen === '1') return;
+
+    var y = window.scrollY || 0;
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    var docH = document.documentElement.scrollHeight;
+    var nearTop = y < TOP_ZONE;
+    var nearBottom = (y + vh) > (docH - BOTTOM_ZONE);
+    var delta = y - lastY;
+
+    if (nearTop || nearBottom) {
+      bar.classList.remove('is-hidden');
+    } else if (delta > THRESHOLD) {
+      bar.classList.add('is-hidden');    // scrolling down
+    } else if (delta < -THRESHOLD) {
+      bar.classList.remove('is-hidden'); // scrolling up
+    }
+    lastY = y;
+  }
+
+  window.addEventListener('scroll', function() {
+    if (!ticking) {
+      window.requestAnimationFrame(check);
+      ticking = true;
+    }
+  }, { passive: true });
+}
+
+// ---- Keyboard-aware hiding (mobile) ----
+// When the on-screen keyboard opens on iOS/Android, the visualViewport
+// shrinks. Hide the bar while the keyboard is up so it doesn't float
+// in the middle of the screen or cover the focused field.
+function installBarKeyboardBehavior() {
+  var bar = document.getElementById('composeActionBar');
+  if (!bar || !window.visualViewport) return;
+  var vv = window.visualViewport;
+  // Baseline: full-window height. Drop more than ~150px = keyboard up.
+  function check() {
+    var drop = (window.innerHeight || 0) - vv.height;
+    if (drop > 150) {
+      bar.dataset.keyboardOpen = '1';
+      bar.classList.add('is-hidden');
+    } else {
+      bar.dataset.keyboardOpen = '0';
+      bar.classList.remove('is-hidden');
+    }
+  }
+  vv.addEventListener('resize', check);
+  vv.addEventListener('scroll', check);
+}
 
 
 // ---- Toast ----
