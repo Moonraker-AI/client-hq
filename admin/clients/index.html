@@ -1995,6 +1995,15 @@
         var moonrakerSite = (sites || []).find(function(s) { return s.hosting_type === 'moonraker' && s.status === 'active'; });
         state.clientSite = moonrakerSite || false;
         renderHostingCard(c);
+        // Service Pages' Deploy-to-Site button depends on state.clientSite, which was null
+        // during the initial synchronous render. Re-render the Content tab now that the
+        // fetch resolved, but only if the user is still on the same contact + Content tab.
+        if (state.contact === c && typeof renderContent === 'function') {
+          var activeTab = document.querySelector('#tabBar .tab-btn.active');
+          if (activeTab && activeTab.dataset.tab === 'content') {
+            renderContent();
+          }
+        }
       }).catch(function() { state._hostingSites[c.id] = []; state.clientSite = false; renderHostingCard(c); });
       el.innerHTML = '<span style="color:var(--color-muted);font-size:.8rem;">Loading...</span>';
       return;
