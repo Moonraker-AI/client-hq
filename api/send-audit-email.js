@@ -8,6 +8,7 @@
 var email = require('./_lib/email-template');
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
+var monitor = require('./_lib/monitor');
 
 var FOOTER_NOTE = 'Questions? Reply to this email or <a href="' + email.CALENDAR_URL + '" style="font-family:Inter,sans-serif;color:#00D47E;text-decoration:none;font-weight:500;">book a call with Scott</a>.';
 
@@ -117,7 +118,11 @@ module.exports = async function handler(req, res) {
     var emailResult = await emailResp.json();
     if (!emailResp.ok) {
       console.error('Resend error:', emailResult);
-      return res.status(500).json({ ok: false, error: 'Email send failed', detail: emailResult });
+      await monitor.logError('send-audit-email', new Error('Resend send failed: HTTP ' + emailResp.status), {
+        client_slug: slug,
+        detail: { stage: 'resend_send', audit_id: auditId, status: emailResp.status, resend_response: emailResult }
+      });
+      return res.status(500).json({ ok: false, error: 'Email send failed' });
     }
 
     // Update audit status
@@ -159,7 +164,11 @@ module.exports = async function handler(req, res) {
 
   } catch (err) {
     console.error('send-audit-email error:', err);
-    return res.status(500).json({ ok: false, error: err.message });
+    await monitor.logError('send-audit-email', err, {
+      client_slug: (typeof slug !== 'undefined' ? slug : null),
+      detail: { stage: 'outer_catch', audit_id: auditId }
+    });
+    return res.status(500).json({ ok: false, error: 'Internal server error' });
   }
 };
 
@@ -275,3 +284,4 @@ function buildEmail3(firstName, practiceName, cres, strongest, weakest, bookingU
 
   return { dayOffset: 14, subject: 'A quick roadmap for ' + (practiceName || 'your practice'), html: wrapFollowup(content) };
 }
+
