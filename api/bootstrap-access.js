@@ -19,6 +19,7 @@
 
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
+var monitor = require('./_lib/monitor');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -58,7 +59,8 @@ module.exports = async function handler(req, res) {
     if (!contacts || contacts.length === 0) return res.status(404).json({ error: 'Contact not found: ' + clientSlug });
     contact = contacts[0];
   } catch (e) {
-    return res.status(500).json({ error: 'Failed to load contact: ' + e.message });
+    await monitor.logError('bootstrap-access', e, { client_slug: clientSlug, detail: { stage: 'load_contact' } });
+    return res.status(500).json({ error: 'Failed to load contact' });
   }
 
   // ─── Load or create report_configs ─────────────────────────────
@@ -77,7 +79,8 @@ module.exports = async function handler(req, res) {
       config = Array.isArray(inserted) ? inserted[0] : inserted;
     }
   } catch (e) {
-    return res.status(500).json({ error: 'Failed to load/create report_config: ' + e.message });
+    await monitor.logError('bootstrap-access', e, { client_slug: clientSlug, detail: { stage: 'load_report_config' } });
+    return res.status(500).json({ error: 'Failed to load or create report config' });
   }
 
   var configUpdates = {};
@@ -93,9 +96,12 @@ module.exports = async function handler(req, res) {
       if (data.error && (data.error.status === 'ALREADY_EXISTS' || (data.error.message || '').indexOf('already') >= 0)) {
         return { added: true, already_existed: true };
       }
-      return { added: false, error: JSON.stringify(data).substring(0, 300) };
+      // Raw provider body stays in logs only; response gets a safe summary.
+      console.warn('[bootstrap-access] ' + label + ' add failed', JSON.stringify({ status: resp.status, data: data }).substring(0, 1000));
+      return { added: false, error: 'add_failed_http_' + resp.status };
     } catch (e) {
-      return { added: false, error: e.message };
+      console.warn('[bootstrap-access] ' + label + ' add threw:', e.message);
+      return { added: false, error: 'add_failed' };
     }
   }
 
@@ -103,11 +109,20 @@ module.exports = async function handler(req, res) {
   // GBP: Find location, add team as Owners, SA as Manager
   // ═══════════════════════════════════════════════════════════════
   if (services.includes('gbp')) {
+    // Debug strings stay local to this block. They may contain raw Google
+    // error bodies and other clients' location titles, so they must NOT be
+    // interpolated into thrown error messages or response fields. They are
+    // logged via monitor.logError on failure for operator debugging.
+    var gbpDebugA = 'not attempted';
+    var gbpDebugB = 'not attempted';
     try {
       if (!googleSA) throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON not configured');
 
       var gbpToken = await getDelegatedToken(googleSA, IMPERSONATE_USER, 'https://www.googleapis.com/auth/business.manage');
-      if (gbpToken.error) throw new Error('Token failed: ' + gbpToken.error);
+      if (gbpToken.error) {
+        gbpDebugA = 'token error: ' + gbpToken.error;
+        throw new Error('Google authentication failed');
+      }
 
       var authH = { 'Authorization': 'Bearer ' + gbpToken, 'Content-Type': 'application/json' };
 
@@ -116,13 +131,12 @@ module.exports = async function handler(req, res) {
       var matchedAccount = null;
 
       // Approach A: Search across all accessible locations (wildcard account)
-      var debugA = 'not attempted';
       try {
         var directLocResp = await fetch('https://mybusinessbusinessinformation.googleapis.com/v1/accounts/-/locations?readMask=name,title,websiteUri,storefrontAddress&pageSize=100', { headers: authH });
         if (directLocResp.ok) {
           var directLocData = await directLocResp.json();
           var allLocs = directLocData.locations || [];
-          debugA = 'ok, ' + allLocs.length + ' locations found';
+          gbpDebugA = 'ok, ' + allLocs.length + ' locations found';
 
           for (var dli = 0; dli < allLocs.length; dli++) {
             var dloc = allLocs[dli];
@@ -133,29 +147,28 @@ module.exports = async function handler(req, res) {
             if (websiteDomain && dWebsite && (dWebsite.indexOf(websiteDomain) >= 0 || websiteDomain.indexOf(dWebsite) >= 0)) { matchedLocation = dloc; break; }
           }
           if (!matchedLocation && allLocs.length > 0) {
-            debugA += '. Titles checked: ' + allLocs.slice(0, 5).map(function(l) { return '"' + (l.title || 'untitled') + '"'; }).join(', ');
+            gbpDebugA += '. Titles checked: ' + allLocs.slice(0, 5).map(function(l) { return '"' + (l.title || 'untitled') + '"'; }).join(', ');
           }
         } else {
           var errBody = await directLocResp.text();
-          debugA = 'HTTP ' + directLocResp.status + ': ' + errBody.substring(0, 200);
+          gbpDebugA = 'HTTP ' + directLocResp.status + ': ' + errBody.substring(0, 200);
         }
-      } catch (e) { debugA = 'exception: ' + e.message; }
+      } catch (e) { gbpDebugA = 'exception: ' + e.message; }
 
       // Approach B: List accounts then locations (works when support@ has account-level access)
-      var debugB = 'not attempted';
       if (!matchedLocation) {
         var acctResp = await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts', { headers: authH });
         var acctData = await acctResp.json();
         var accounts = acctData.accounts || [];
-        debugB = accounts.length + ' accounts found';
-        if (accounts.length > 0) debugB += ': ' + accounts.map(function(a) { return a.name + ' (' + (a.accountName || 'unnamed') + ')'; }).join(', ');
+        gbpDebugB = accounts.length + ' accounts found';
+        if (accounts.length > 0) gbpDebugB += ': ' + accounts.map(function(a) { return a.name + ' (' + (a.accountName || 'unnamed') + ')'; }).join(', ');
 
         for (var ai = 0; ai < accounts.length && !matchedLocation; ai++) {
           var acct = accounts[ai];
           var locResp = await fetch('https://mybusinessbusinessinformation.googleapis.com/v1/' + acct.name + '/locations?readMask=name,title,websiteUri,storefrontAddress', { headers: authH });
           var locData = await locResp.json();
           var locations = locData.locations || [];
-          debugB += ' | ' + acct.name + ': ' + locations.length + ' locations';
+          gbpDebugB += ' | ' + acct.name + ': ' + locations.length + ' locations';
 
           for (var li = 0; li < locations.length; li++) {
             var loc = locations[li];
@@ -168,7 +181,7 @@ module.exports = async function handler(req, res) {
         }
       }
 
-      if (!matchedLocation) throw new Error('No GBP location matching "' + practiceName + '" or "' + websiteDomain + '". Debug: Approach A=' + debugA + '. Approach B=' + debugB);
+      if (!matchedLocation) throw new Error('No matching GBP location found (check Leadsie access)');
 
       var locName = matchedLocation.name;
       var gbpLocationId = locName.split('/').pop();
@@ -200,7 +213,7 @@ module.exports = async function handler(req, res) {
         location_name: locName,
         location_title: matchedLocation.title,
         gbp_location_id: gbpLocationId,
-        account: matchedAccount.name,
+        account: matchedAccount && matchedAccount.name,
         users_added: {
           [TEAM_MEMBERS[0].email]: gbpAdds[0],
           [TEAM_MEMBERS[1].email]: gbpAdds[1],
@@ -208,8 +221,13 @@ module.exports = async function handler(req, res) {
         }
       };
     } catch (e) {
-      errors.push('GBP: ' + e.message);
-      results.gbp = { success: false, error: e.message };
+      await monitor.logError('bootstrap-access', e, {
+        client_slug: clientSlug,
+        detail: { provider: 'gbp', approachA: gbpDebugA, approachB: gbpDebugB }
+      });
+      var reason = (e && e.message) || 'GBP bootstrap failed';
+      errors.push('GBP: ' + reason);
+      results.gbp = { success: false, error: reason };
     }
   }
 
@@ -217,11 +235,15 @@ module.exports = async function handler(req, res) {
   // GA4: Find property, add team as Admin, SA as Viewer
   // ═══════════════════════════════════════════════════════════════
   if (services.includes('ga4')) {
+    var ga4DebugToken = null;
     try {
       if (!googleSA) throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON not configured');
 
       var ga4Token = await getDelegatedToken(googleSA, IMPERSONATE_USER, 'https://www.googleapis.com/auth/analytics.manage.users');
-      if (ga4Token.error) throw new Error('Token failed: ' + ga4Token.error);
+      if (ga4Token.error) {
+        ga4DebugToken = ga4Token.error;
+        throw new Error('Google authentication failed');
+      }
 
       var ga4AuthH = { 'Authorization': 'Bearer ' + ga4Token, 'Content-Type': 'application/json' };
 
@@ -245,7 +267,7 @@ module.exports = async function handler(req, res) {
       if (!matchedProperty && config.ga4_property) {
         matchedProperty = { property: config.ga4_property.replace('properties/', ''), displayName: config.ga4_property };
       }
-      if (!matchedProperty) throw new Error('No GA4 property matching "' + practiceName + '" or "' + websiteDomain + '"');
+      if (!matchedProperty) throw new Error('No matching GA4 property found (check Leadsie access)');
 
       var propertyResource = matchedProperty.property;
       if (!propertyResource.startsWith('properties/')) propertyResource = 'properties/' + propertyResource;
@@ -281,8 +303,13 @@ module.exports = async function handler(req, res) {
         }
       };
     } catch (e) {
-      errors.push('GA4: ' + e.message);
-      results.ga4 = { success: false, error: e.message };
+      await monitor.logError('bootstrap-access', e, {
+        client_slug: clientSlug,
+        detail: { provider: 'ga4', token_error: ga4DebugToken }
+      });
+      var reason = (e && e.message) || 'GA4 bootstrap failed';
+      errors.push('GA4: ' + reason);
+      results.ga4 = { success: false, error: reason };
     }
   }
 
@@ -290,11 +317,15 @@ module.exports = async function handler(req, res) {
   // GTM: Find container, add team as Admin, SA as Read
   // ═══════════════════════════════════════════════════════════════
   if (services.includes('gtm')) {
+    var gtmDebugToken = null;
     try {
       if (!googleSA) throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON not configured');
 
       var gtmToken = await getDelegatedToken(googleSA, IMPERSONATE_USER, 'https://www.googleapis.com/auth/tagmanager.manage.users');
-      if (gtmToken.error) throw new Error('Token failed: ' + gtmToken.error);
+      if (gtmToken.error) {
+        gtmDebugToken = gtmToken.error;
+        throw new Error('Google authentication failed');
+      }
 
       var gtmAuthH = { 'Authorization': 'Bearer ' + gtmToken, 'Content-Type': 'application/json' };
 
@@ -331,7 +362,7 @@ module.exports = async function handler(req, res) {
         }
       }
 
-      if (!matchedContainer) throw new Error('No GTM container matching "' + websiteDomain + '" or "' + practiceName + '"');
+      if (!matchedContainer) throw new Error('No matching GTM container found');
 
       var gtmPermUrl = 'https://tagmanager.googleapis.com/tagmanager/v2/' + matchedGtmAccount.path + '/user_permissions';
 
@@ -369,8 +400,13 @@ module.exports = async function handler(req, res) {
         }
       };
     } catch (e) {
-      errors.push('GTM: ' + e.message);
-      results.gtm = { success: false, error: e.message };
+      await monitor.logError('bootstrap-access', e, {
+        client_slug: clientSlug,
+        detail: { provider: 'gtm', token_error: gtmDebugToken }
+      });
+      var reason = (e && e.message) || 'GTM bootstrap failed';
+      errors.push('GTM: ' + reason);
+      results.gtm = { success: false, error: reason };
     }
   }
 
@@ -378,6 +414,7 @@ module.exports = async function handler(req, res) {
   // LocalFalcon: Search + add location
   // ═══════════════════════════════════════════════════════════════
   if (services.includes('localfalcon')) {
+    var lfDebugAddResp = null;
     try {
       if (!lfKey) throw new Error('LOCALFALCON_API_KEY not configured');
 
@@ -409,7 +446,7 @@ module.exports = async function handler(req, res) {
             configUpdates.localfalcon_place_id = nameMatch.place_id;
             results.localfalcon = { success: true, place_id: nameMatch.place_id, location_name: nameMatch.name, already_saved: true };
           } else {
-            throw new Error('No LocalFalcon results for "' + practiceName + '"' + (proximity ? ' near ' + proximity : ''));
+            throw new Error('No LocalFalcon results found for this practice');
           }
         } else {
           var best = lfResults[0];
@@ -418,15 +455,23 @@ module.exports = async function handler(req, res) {
             body: 'api_key=' + lfKey + '&platform=google&place_id=' + encodeURIComponent(best.place_id)
           });
           var lfAddData = await lfAddResp.json();
-          if (!lfAddData.success) throw new Error('Add failed: ' + (lfAddData.message || 'unknown'));
+          if (!lfAddData.success) {
+            lfDebugAddResp = lfAddData;
+            throw new Error('LocalFalcon add location failed');
+          }
 
           configUpdates.localfalcon_place_id = best.place_id;
           results.localfalcon = { success: true, place_id: best.place_id, location_name: best.name, added: true };
         }
       }
     } catch (e) {
-      errors.push('LocalFalcon: ' + e.message);
-      results.localfalcon = { success: false, error: e.message };
+      await monitor.logError('bootstrap-access', e, {
+        client_slug: clientSlug,
+        detail: { provider: 'localfalcon', add_response: lfDebugAddResp }
+      });
+      var reason = (e && e.message) || 'LocalFalcon bootstrap failed';
+      errors.push('LocalFalcon: ' + reason);
+      results.localfalcon = { success: false, error: reason };
     }
   }
 
@@ -437,7 +482,10 @@ module.exports = async function handler(req, res) {
       await fetch(sb.url() + '/rest/v1/report_configs?id=eq.' + config.id, {
         method: 'PATCH', headers: sb.headers(), body: JSON.stringify(configUpdates)
       });
-    } catch (e) { errors.push('Config save: ' + e.message); }
+    } catch (e) {
+      await monitor.logError('bootstrap-access', e, { client_slug: clientSlug, detail: { stage: 'config_save' } });
+      errors.push('Config save failed');
+    }
   }
 
   // ─── Update deliverable statuses ───────────────────────────────
@@ -462,17 +510,63 @@ module.exports = async function handler(req, res) {
         body: JSON.stringify({ status: 'delivered', delivered_at: new Date().toISOString(), notes: 'Auto: ' + upd.note, updated_at: new Date().toISOString() })
       });
     }
-  } catch (e) { errors.push('Deliverable update: ' + e.message); }
+  } catch (e) {
+    await monitor.logError('bootstrap-access', e, { client_slug: clientSlug, detail: { stage: 'deliverable_update' } });
+    errors.push('Deliverable update failed');
+  }
+
+  // ─── Sanitize response: drop internal resource identifiers that admin UI
+  // never consumes. Keep human-readable titles and IDs that the UI actively
+  // uses (gbp_location_id, place_id) plus config_updates (unchanged).
+  // Internal fields dropped: gbp.location_name, gbp.account, ga4.property,
+  // gtm.account. See H28.
+  var publicResults = {};
+  ['gbp', 'ga4', 'gtm', 'localfalcon'].forEach(function(svc) {
+    if (!results[svc]) return;
+    var r = results[svc];
+    if (svc === 'gbp') {
+      publicResults.gbp = pickDefined({
+        success: r.success, location_title: r.location_title,
+        gbp_location_id: r.gbp_location_id, users_added: r.users_added,
+        error: r.error
+      });
+    } else if (svc === 'ga4') {
+      publicResults.ga4 = pickDefined({
+        success: r.success, display_name: r.display_name,
+        users_added: r.users_added, error: r.error
+      });
+    } else if (svc === 'gtm') {
+      publicResults.gtm = pickDefined({
+        success: r.success, container_name: r.container_name,
+        container_id: r.container_id, users_added: r.users_added,
+        error: r.error
+      });
+    } else if (svc === 'localfalcon') {
+      publicResults.localfalcon = pickDefined({
+        success: r.success, place_id: r.place_id, location_name: r.location_name,
+        already_configured: r.already_configured, already_saved: r.already_saved,
+        added: r.added, error: r.error
+      });
+    }
+  });
 
   return res.status(200).json({
     success: errors.length === 0,
     client_slug: clientSlug,
     practice_name: practiceName,
-    results: results,
+    results: publicResults,
     config_updates: configUpdates,
     errors: errors
   });
 };
+
+// Strip undefined keys so the JSON response doesn't render "field": undefined
+// as missing-but-hinted-at. Keeps shape clean for admin UI conditionals.
+function pickDefined(obj) {
+  var out = {};
+  Object.keys(obj).forEach(function(k) { if (obj[k] !== undefined) out[k] = obj[k]; });
+  return out;
+}
 
 
 // ═══════════════════════════════════════════════════════════════════
