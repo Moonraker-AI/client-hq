@@ -187,8 +187,12 @@ function buildSystemPrompt(ctx) {
     parts.push('\n\n## ' + dataLabel + '\n```json\n' + JSON.stringify(clientData, null, 2) + '\n```');
   }
 
-  // Include lightweight client index for cross-client operations
-  var clientIndex = ctx.clientIndex || null;
+  // Include lightweight client index for cross-client operations.
+  // Scope reduction (H23): drop clientIndex on deep-dive pages where
+  // clientSlug is set. The full client-specific clientData is already
+  // loaded, and the ~60-client roster would be noise costing ~5K
+  // tokens per turn.
+  var clientIndex = clientSlug ? null : (ctx.clientIndex || null);
   if (clientIndex && clientIndex.length > 0) {
     parts.push('\n\n## Client Index (' + clientIndex.length + ' clients)\n```json\n' + JSON.stringify(clientIndex) + '\n```');
   }
