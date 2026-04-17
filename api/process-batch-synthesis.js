@@ -45,12 +45,8 @@ module.exports = async function(req, res) {
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
 
     // 3. Check for existing entity audit to get the audit_id for checklist items
-    var auditResp = await fetch(
-      sb.url() + '/rest/v1/entity_audits?client_slug=eq.' + batch.client_slug +
-      '&status=in.(complete,delivered)&order=created_at.desc&limit=1',
-      { headers: sb.headers() }
-    );
-    var audits = await auditResp.json();
+    var audits = await sb.query('entity_audits?client_slug=eq.' + batch.client_slug +
+      '&status=in.(complete,delivered)&order=created_at.desc&limit=1');
     var auditId = (audits && audits[0]) ? audits[0].id : null;
 
     // 4. Send synthesis to Claude for extraction
@@ -174,14 +170,15 @@ module.exports = async function(req, res) {
     var itemsCreated = 0;
     for (var j = 0; j < items.length; j++) {
       var item = items[j];
-      var createResp = await fetch(sb.url() + '/rest/v1/checklist_items', {
-        method: 'POST',
-        headers: Object.assign({}, sb.headers(), {
-          'Prefer': 'return=minimal,resolution=ignore-duplicates'
-        }),
-        body: JSON.stringify(item)
-      });
-      if (createResp.ok || createResp.status === 409) itemsCreated++;
+      try {
+        await sb.mutate('checklist_items', 'POST', item, 'return=minimal,resolution=ignore-duplicates');
+        itemsCreated++;
+      } catch (e) {
+        // 409 Conflict on duplicate is expected — sb.mutate still throws but
+        // the row already existed. Treat any 409 as success to preserve the
+        // original behavior (createResp.status === 409 → itemsCreated++).
+        if (e.status === 409) itemsCreated++;
+      }
     }
 
     // 8. Store processed synthesis on batch record
