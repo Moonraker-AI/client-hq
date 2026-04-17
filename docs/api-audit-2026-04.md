@@ -582,7 +582,9 @@ Retry-with-refreshed-keys block is cut-and-paste. Extract helper.
 ### L6. `api/submit-entity-audit.js` — agent error swallowed, no requeue
 Memory says `process-audit-queue.js` handles this. Verify.
 
-**Current state (2026-04-18, Group I reconciliation):** Verification shows the gap is real, not resolved. `submit-entity-audit.js:112` inserts rows with `status='pending'` and flips to `'agent_running'` only on successful agent trigger (L149); on agent failure, status stays at `'pending'` forever, and `cron/process-audit-queue.js:138` only picks up `status='queued'`. Team notification email at L170-184 is the sole fallback — and the admin URL fragment in that email is itself broken (see L9). A one-line fix (flip to `'queued'` on agent failure so the cron auto-retries) would close the gap, but it's a state-machine change on a public-facing endpoint and warrants product sign-off. Parked for a future ops-batch session with Chris/Scott.
+**Current state (2026-04-18, Group I reconciliation):** Verification shows the gap is real, not resolved. `submit-entity-audit.js:112` inserts rows with `status='pending'` and flips to `'agent_running'` only on successful agent trigger (L149); on agent failure, status stays at `'pending'` forever, and `cron/process-audit-queue.js:138` only picks up `status='queued'`. Team notification email at L170-184 is the sole fallback — and the admin URL fragment in that email is itself broken (see L9).
+
+**Product decision (Chris, 2026-04-18):** Flip failed audits to `'queued'` on agent-trigger failure so the cron auto-retries indefinitely; team notification stays as an internal FYI (no manual intervention expected). Scope reminder for the fix session: submit-side only. The cron's existing `agent_error` terminal transition (when the agent is alive but returns non-2xx on dispatch) is desirable and should not be touched — "indefinite" means "as long as the agent is unreachable," which is exactly what causes submit-time failures. **Queued for Group J as a mandatory pre-task** before the Medium classify sweep begins.
 
 ### L7. `api/report-chat.js:62, 68` — retry logic duplicated between catch and 529 handler
 
