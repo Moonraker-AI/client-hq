@@ -7,7 +7,7 @@
 
 ## Where the audit stands
 
-All 9 Criticals closed. **Twenty-two Highs closed** (H4, H5, H7, H8, H9, H10, H11, H14, H18, H19, H20, H21, H22, H24, H25, H28, H30, H31, H33, H34, H35, H36). **M6, M8, M10, M13, M15, M16, M22, M26 (now fully resolved), M38 closed.** **L8**, L14, L16, L26, L27 closed. Group C closed the template-escape surface; Group B.1 collapsed the `getDelegatedToken` duplication; Group D hardened every Claude-prompting route with `sanitizer.sanitizeText` at untrusted-input sources plus delimiter framing around large blobs, closing the prompt-injection half of M26 that was deferred from Group A. Group B.2 extracted `fetchWithTimeout` into `_lib/` and eliminated every bare `fetch()` call across the four files with the biggest AbortController gap (`_lib/supabase.js`, `compile-report.js`, `submit-entity-audit.js`, `process-entity-audit.js`), closing H4/H24/M10/M16. H36 (8th `getDelegatedToken` copy in `convert-to-prospect.js`, discovered during B.1 verification) closed as Group D pre-task. `authenticator_secret_key` null-on-all-rows investigation resolved: `SENSITIVE_FIELDS` includes it; the null state just means no 2FA setup has been saved yet through the admin UI. Not a bug.
+All 9 Criticals closed. **Twenty-four Highs closed** (H4, H5, H7, H8, H9, H10, H11, H14, H18, H19, H20, H21, H22, H24, H25, H26, H27, H28, H30, H31, H33, H34, H35, H36). **M6, M8, M10, M11, M13, M15, M16, M22, M26 (fully resolved), M30, M38 closed.** **L8**, L14, L16, L26, L27 closed. Group C closed the template-escape surface; Group B.1 collapsed the `getDelegatedToken` duplication; Group D hardened every Claude-prompting route with `sanitizer.sanitizeText` at untrusted-input sources plus delimiter framing around large blobs, closing the prompt-injection half of M26. Group B.2 extracted `fetchWithTimeout` into `_lib/` and eliminated every bare `fetch()` call across the four files with the biggest AbortController gap. Group E converted every non-transactional DELETE+INSERT pair into a PostgREST `resolution=merge-duplicates` upsert (with stale-row cleanup on onboarding_steps) and converted `generate-proposal.js` fire-and-forget PATCHes into awaited try/catch + monitor.logError. H36 (8th `getDelegatedToken` copy in `convert-to-prospect.js`, discovered during B.1 verification) closed as Group D pre-task. `authenticator_secret_key` null-on-all-rows investigation resolved: `SENSITIVE_FIELDS` includes it; the null state just means no 2FA setup has been saved yet through the admin UI. Not a bug.
 
 ~72 findings remain. None of them are attack chains of the same severity as C1-C9. Most are hardening, consistency, and observability work. Ordering them linearly doesn't match their actual value; grouping them does.
 
@@ -84,7 +84,8 @@ All 9 Criticals closed. **Twenty-two Highs closed** (H4, H5, H7, H8, H9, H10, H1
 
 | ID | Issue | Effort |
 |---|---|---|
-| H15 | submit-entity-audit empty-Origin bypass | One session |
+| H12 | content-chat.js empty-Origin bypass + unauthenticated Opus 4.6 streaming + content_page_id no UUID validation + no ownership check | One session |
+| H15 | submit-entity-audit empty-Origin bypass | Included |
 | H32 | digest.js recipients from request body, no allowlist | Included |
 | M9 | submit-entity-audit slug race condition | Included |
 | M12 | manage-site domain "normalization" too permissive | Included |
@@ -140,17 +141,296 @@ Items I recommend marking "won't fix" or "needs design":
 
 Reasoning:
 - Group E closed 2026-04-17 (see retrospective below). Four commits landed across 3 files; every Vercel deploy READY. PostgREST upsert with `Prefer: resolution=merge-duplicates` is now the canonical replacement for DELETE+INSERT pairs backed by a unique index; fire-and-forget PATCHes have been purged from `generate-proposal.js` serverside.
-- Group F is a natural next step. It's input-validation and boundary-check work on public-ish endpoints — a different skill set from the timeout/upsert/prompt-injection sessions that came before, but the same one-theme-per-session shape. Six findings cluster cleanly: H15 (submit-entity-audit empty-Origin bypass), H32 (digest.js recipients without allowlist), M9 (submit-entity-audit slug race), M12 (manage-site domain normalization), M14 (content-chat silent-nulls), M20 (newsletter-unsubscribe UUID-probing oracle).
+- Group F is a natural next step. It's input-validation and boundary-check work on public-ish endpoints — a different skill set from the timeout/upsert/prompt-injection sessions that came before, but the same one-theme-per-session shape. Seven findings cluster cleanly: H12 (content-chat public/unauthenticated Opus streaming with filter injection + no UUID validation + no ownership check — the biggest remaining public attack surface), H15 (submit-entity-audit empty-Origin bypass), H32 (digest.js recipients without allowlist), M9 (submit-entity-audit slug race), M12 (manage-site domain normalization), M14 (content-chat silent-nulls), M20 (newsletter-unsubscribe UUID-probing oracle).
 
 Recommended sequence after Group F:
 
-1. **Group F — public endpoint hardening** (1 session) — closes H15, H32 + M9, M12, M14, M20
+1. **Group F — public endpoint hardening** (1 session) — closes H12, H15, H32 + M9, M12, M14, M20
 2. **Group G — operational resilience** (1-2 sessions) — H1, H3, H6, H13, H17, H23, H29 + small Mediums
 3. **Group B.3 — Supabase helper migration** (1-2 sessions) — remaining files outside the B.2 four; also covers L1 (the raw-fetch pattern noted during Group E's M30 review in `generate-proposal.js:62,80`)
 4. **Group I — Lows + Nits sweep** (1 session)
 5. **Group H — M1 Stripe metadata** (once dashboard metadata is added)
 
 Approximately 4-6 sessions to clear the remaining open findings, or we stop earlier once diminishing returns kick in. The call on "when to stop" gets clearer around session 2 when what's left is mostly Low/Nit polish.
+
+## Prompt for next session (Group F — Public endpoint hardening)
+
+```
+Public endpoint hardening session. Seven findings clustered around input
+validation + boundary checks on endpoints exposed to untrusted callers
+(public forms, admin JWT compromise surface, or trusted-identity misuse).
+
+Read docs/api-audit-2026-04.md sections H12, H15, H32, M9, M12, M14,
+M20 first. Then walk through your plan before touching code.
+
+─────────────────────────────────────────────────────────────────────
+Pre-verified state (current main)
+─────────────────────────────────────────────────────────────────────
+
+| File                          | Findings          | Current state summary |
+|-------------------------------|-------------------|----------------------|
+| api/content-chat.js           | H12, M14          | Origin + rate-limit + sanitizer already wired (good). Needs UUID validation + ownership + fail-loud on Supabase error |
+| api/submit-entity-audit.js    | H15, M9           | Origin check works when present but empty-Origin still bypasses; slug check-then-insert is TOCTOU |
+| api/digest.js                 | H32               | Admin/internal auth ✓, but `recipients` accepted from request body without allowlist |
+| api/admin/manage-site.js      | M12               | `domain.toLowerCase().replace(...)` strips protocol/trailing slash but doesn't reject `:port`, `/path`, `user:pass@`, `?query` |
+| api/newsletter-unsubscribe.js | M20               | UUID-format gate ✓, but valid-UUID-but-nonexistent still triggers PATCH zero-rows log warning — oracle for probing valid SIDs |
+
+─────────────────────────────────────────────────────────────────────
+Fix 1: H12 — api/content-chat.js UUID validation + ownership check
+─────────────────────────────────────────────────────────────────────
+
+content-chat.js already has Origin check, rate limit (20/min/IP), and
+sanitizer in buildSystemPrompt (Group D). Remaining surface:
+
+Site 1 — content_page_id validation (line 59-65):
+  var contentPageId = context.content_page_id || '';
+  if (contentPageId) {
+    var fetched = await fetchPageContext(contentPageId);
+    // ...
+  }
+
+  Issue: no UUID format check; attacker can pass arbitrary strings that
+  concat into `?id=eq.` in fetchPageContext at line 124.
+
+  Fix: UUID validation at the top of the handler (after rate limit,
+  before fetchPageContext). On invalid UUID, return 400:
+    var uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (contentPageId && !uuidPattern.test(contentPageId)) {
+      return res.status(400).json({ error: 'Invalid content_page_id' });
+    }
+
+  Also pass contentPageId through encodeURIComponent at the PostgREST
+  query sites (line 124 and ~135) even though UUID format is already
+  validated — defense in depth.
+
+Site 2 — no ownership check:
+  Anyone with a valid content_page_id UUID can hit this endpoint. The
+  audit notes "no ownership check — anyone with a content_page_id UUID
+  can stream Claude content about that client."
+
+  Options:
+  a) Require a page-token (scope='content-preview', contact_id bound).
+     The content preview pages are client-facing slug URLs, so a token
+     fits the C3/C7 page-token pattern. HIGHEST defense, highest effort.
+  b) Check `pages[0].status` in fetchPageContext — if the content page
+     is in a status that forbids preview (e.g. archived, deleted),
+     return 404. MODEST defense.
+  c) Scope ownership to lifecycle status: derive contact from
+     pages[0].contact_id, verify contact.status is `active`/`onboarding`/
+     `prospect` (not `lost`). Prevents streaming Claude content for a
+     lost contact.
+
+  Recommended: (c) at minimum. (a) if page-token infrastructure is ready
+  to extend; check docs/phase-4-design.md for whether a `content-preview`
+  scope already exists in page-token SCOPES. If it does, use it;
+  otherwise, defer the full token-scoped fix and log (c) as the interim.
+
+  If going with (c), return 404 (not 403) to avoid revealing existence:
+    if (!contact || contact.lost || contact.status === 'lost') {
+      return res.status(404).json({ error: 'Content page not found' });
+    }
+
+Site 3 — M14 fail-loud on Supabase error in fetchPageContext:
+  Current (line 142-144):
+    } catch(e) {
+      return { page: null, contact: null, spec: null };
+    }
+
+  Silent null return lets Claude call proceed with empty context — an
+  expensive no-op that burns Anthropic credits. Worse: if pages/contacts
+  table is intermittently unreachable, every chat request runs a futile
+  Opus call.
+
+  Fix: throw instead of returning nulls. The handler's existing logic
+  doesn't catch fetchPageContext — add a try/catch around line 63 that
+  returns 503:
+    try {
+      var fetched = await fetchPageContext(contentPageId);
+      // ...
+    } catch (e) {
+      return res.status(503).json({ error: 'Service temporarily unavailable' });
+    }
+
+─────────────────────────────────────────────────────────────────────
+Fix 2: H15 — api/submit-entity-audit.js empty-Origin bypass
+─────────────────────────────────────────────────────────────────────
+
+Current (line 19-22):
+  var origin = req.headers.origin || '';
+  if (origin && origin !== 'https://clients.moonraker.ai') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+The `if (origin && ...)` branch skips the check when origin is empty.
+`curl` sends no Origin header, so it passes. Rate limit at 3/hr/IP
+(already shipped) is the real control against curl-based abuse, but
+the audit calls out closing the empty-Origin bypass as defense-in-depth.
+
+Fix: require Origin to be set AND match:
+  var origin = req.headers.origin || '';
+  if (!origin || origin !== 'https://clients.moonraker.ai') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+Same pattern applies to content-chat.js line 30-32 — the audit notes
+H12's empty-Origin bypass inherits from the same pattern. Fix both
+files identically. Group A-style: shared pattern, one commit per file,
+sanitized similarly.
+
+─────────────────────────────────────────────────────────────────────
+Fix 3: M9 — api/submit-entity-audit.js slug TOCTOU
+─────────────────────────────────────────────────────────────────────
+
+Current flow (lines 66-100):
+  1. Check `contacts?slug=eq.X` — 409 if exists
+  2. Check `contacts?email=eq.X` — 409 if exists
+  3. sb.mutate('contacts', 'POST', {..., slug: X})
+  4. On unique-constraint error (line 199), substring match on
+     'duplicate|unique' → 409
+
+The check-then-insert is a TOCTOU race: two concurrent submissions
+with the same slug pass the check, then one hits the unique constraint
+at step 3. Current fallback works (string match on error message) but
+is fragile.
+
+Fix: eliminate the pre-check entirely. Just POST and rely on the
+unique constraint. On 23505 (Postgres unique violation) or error
+containing 'duplicate key' / 'contacts_slug_key' / 'contacts_email_key',
+return 409 with the existing user message.
+
+Verify the constraint names first via Supabase MCP:
+  execute_sql: select conname from pg_constraint where conrelid = 'public.contacts'::regclass;
+
+Likely constraint names are contacts_slug_key and contacts_email_key.
+Match on both.
+
+Preserve the user-facing error messages exactly — they're empathetic
+and already written for the audit intake form.
+
+─────────────────────────────────────────────────────────────────────
+Fix 4: H32 — api/digest.js recipient allowlist
+─────────────────────────────────────────────────────────────────────
+
+Current (line 23): `var recipients = body.recipients;` accepted raw.
+auth.requireAdminOrInternal gate exists at L11, so surface is admin
+JWT compromise or CRON_SECRET compromise — but the `from:` field
+sends as `notifications@clients.moonraker.ai` (trusted internal
+identity), so a compromised admin JWT could spray trusted-identity
+emails to arbitrary addresses.
+
+Fix: allowlist recipient domains to `@moonraker.ai` (covers all team
+members). Reject any recipient outside the allowlist:
+
+  var ALLOWED_DOMAIN = '@moonraker.ai';
+  var invalidRecipients = recipients.filter(function(r) {
+    return String(r).indexOf(ALLOWED_DOMAIN) === -1;
+  });
+  if (invalidRecipients.length > 0) {
+    return res.status(400).json({
+      error: 'Recipients must be @moonraker.ai addresses',
+      invalid: invalidRecipients
+    });
+  }
+
+Keep `from:` and `to:` allowlist check off (they're stable internal
+values; locking them down is overkill).
+
+─────────────────────────────────────────────────────────────────────
+Fix 5: M12 — api/admin/manage-site.js domain validation
+─────────────────────────────────────────────────────────────────────
+
+Current (line 69):
+  domain = domain.toLowerCase().replace(/^https?:\\/\\//, '').replace(/\\/+$/, '').replace(/^www\\./, '');
+
+Strips protocol, trailing slash, www. But doesn't reject:
+  - `:port`                 → `domain.com:8080`
+  - `/path`                 → `domain.com/admin`
+  - `user:pass@host`        → basic auth prefix
+  - `?query`                → tracking params
+  - Characters outside FQDN charset
+
+Fix: after the normalization, validate against a strict FQDN regex:
+  var fqdnPattern = /^(?=.{1,253}$)(?!-)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$/;
+  if (!fqdnPattern.test(domain)) {
+    return res.status(400).json({ error: 'Invalid domain format' });
+  }
+
+Admin-only endpoint, but bad input reaches the Cloudflare custom-
+hostname API (line ~173) which will either reject it noisily or
+create a hostname record with a malformed value.
+
+─────────────────────────────────────────────────────────────────────
+Fix 6: M20 — api/newsletter-unsubscribe.js UUID-probing oracle
+─────────────────────────────────────────────────────────────────────
+
+Current UUID gate (line 31-37) short-circuits on non-UUID format.
+But valid-UUID-but-nonexistent still runs sb.mutate at line 40, which
+logs `[sb.mutate] PATCH returned 0 rows` warning. An attacker could
+probe valid UUIDs by monitoring 5xx vs 200 response timing, or by
+inspecting server logs if they have any visibility.
+
+Fix: silence the zero-rows warning on this specific PATCH. Two options:
+  a) Check existence first: `sb.one('newsletter_subscribers?id=eq.X&select=id&limit=1')`.
+     If null, return success anyway (don't reveal existence).
+  b) Wrap the sb.mutate with a try/catch that doesn't log + treat
+     zero-rows as success.
+
+Recommended: (a). It's explicit and avoids adding zero-rows suppression
+machinery. Response shape stays identical (same unsubPage HTML or JSON)
+regardless of whether the subscriber existed.
+
+─────────────────────────────────────────────────────────────────────
+Testing
+─────────────────────────────────────────────────────────────────────
+
+- Each commit's Vercel deploy must go READY.
+- Smoke tests (non-blocking):
+    * content-chat.js: valid content_page_id still works; invalid UUID
+      returns 400; unknown UUID returns 404 (not 503, not 500).
+    * submit-entity-audit.js: valid submission works; duplicate slug
+      returns 409 with same user-friendly message; curl with no Origin
+      returns 403.
+    * digest.js: `recipients` containing a non-moonraker.ai address
+      returns 400 with invalid list.
+    * manage-site.js: invalid domain (`domain.com/path`) returns 400.
+    * newsletter-unsubscribe.js: valid-format-but-nonexistent SID
+      returns 200 (same as success). No zero-rows log warning.
+
+─────────────────────────────────────────────────────────────────────
+Out of scope
+─────────────────────────────────────────────────────────────────────
+
+- Page-token infrastructure extension to content-preview scope (might be
+  added in a later session; H12's minimum-viable fix is the status check).
+- Retries / timeouts on the Anthropic stream in content-chat.js (Group
+  B.2 scope; chat.js wasn't in that list, but add fetchWithTimeout only
+  if it's trivial — don't rabbit-hole).
+- CSRF protection via custom headers / tokens — existing rate limit +
+  Origin check covers the practical surface.
+- Other endpoints with similar empty-Origin bypass: if you spot them in
+  this session, file as new findings rather than fix inline (keep commit
+  scope clean).
+
+─────────────────────────────────────────────────────────────────────
+Deliverables
+─────────────────────────────────────────────────────────────────────
+
+Commit shape (suggested):
+  c1: H12 — content-chat.js UUID validation + ownership status check + M14 fail-loud
+  c2: H15 — submit-entity-audit.js + content-chat.js require-Origin (shared pattern, 1 commit)
+  c3: M9 — submit-entity-audit.js remove TOCTOU pre-check
+  c4: H32 — digest.js recipient allowlist
+  c5: M12 — manage-site.js FQDN validation
+  c6: M20 — newsletter-unsubscribe.js existence check before PATCH
+
+Final: doc update to api-audit-2026-04.md:
+  - Mark H12, H15, H32, M9, M12, M14, M20 resolved in resolution log
+  - Tallies: Highs 24 → 27 resolved (H12, H15, H32), Mediums 11 → 15 resolved (M9, M12, M14, M20)
+
+Also update post-phase-4-status.md: mark Group F complete, recommend
+Group G batch 1 as next.
+```
+
 
 ## Group B.1 — H21 google-auth migration ✅ COMPLETE (2026-04-17)
 
