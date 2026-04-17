@@ -201,6 +201,20 @@ module.exports = async function handler(req, res) {
         await incrementStat(send.newsletter_id, 'stats_complained');
         break;
 
+      case 'email.sent':
+        // Fires the moment Resend accepts the email for sending. We already
+        // wrote sent_at when the send-newsletter handler got the batch response,
+        // so no update needed. Log and return.
+        await logEvent('ok_noop', { eventType: type, emailId: messageId });
+        return res.status(200).json({ ok: true, noop: true });
+
+      case 'email.delivery_delayed':
+        // Recipient server temporarily deferred. Not a failure — Resend retries.
+        // We don't change status here; we'll get email.delivered or email.bounced
+        // once the retry resolves.
+        await logEvent('ok_noop', { eventType: type, emailId: messageId });
+        return res.status(200).json({ ok: true, noop: true });
+
       default:
         await logEvent('unhandled_type', { eventType: type, emailId: messageId, headers: hdrs });
         return res.status(200).json({ ok: true, skipped: 'unhandled type: ' + type });
