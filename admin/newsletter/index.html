@@ -493,7 +493,7 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem;">
             <div>
               <h3 style="font-size:.95rem;margin:0;">AI Story Research</h3>
-              <p style="font-size:.78rem;color:var(--color-muted);margin-top:.2rem;">Searches 8 news categories via SerpAPI, then Claude curates the most relevant stories for therapists.</p>
+              <p style="font-size:.78rem;color:var(--color-muted);margin-top:.2rem;">Searches core + rotating news categories across US and Canada via SerpAPI, then Claude curates the most relevant stories for therapists.</p>
             </div>
             <div style="display:flex;gap:.5rem;align-items:center;">
               <span id="aiResearchStatus" style="font-size:.78rem;color:var(--color-muted);"></span>
@@ -504,6 +504,8 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
           </div>
           <!-- Selection bar (shown when candidates exist) -->
           <div id="selectionBar" style="display:none;"></div>
+          <!-- Search stats (populated after research runs) -->
+          <div id="searchStatsPanel" style="display:none;"></div>
           <!-- Candidates grid -->
           <div id="candidatesGrid" style="display:none;"></div>
           <!-- Generate button (appears after 5 selected) -->
@@ -1696,6 +1698,8 @@ function newEdition() {
   document.getElementById('selectionBar').style.display = 'none';
   document.getElementById('generateBar').style.display = 'none';
   document.getElementById('aiResearchStatus').textContent = '';
+  document.getElementById('searchStatsPanel').style.display = 'none';
+  document.getElementById('searchStatsPanel').innerHTML = '';
   document.getElementById('subjectSuggestions').style.display = 'none';
   document.getElementById('verifyResults').style.display = 'none';
 
@@ -1715,7 +1719,7 @@ function editEdition(id) {
   initComposeForm();
   populateCompose(ed);
   // Load AI research candidates if they exist
-  loadResearchCandidates(ed.id);
+  loadResearchCandidates(ed.id, ed.search_stats);
   switchTab('compose');
 }
 window.editEdition = editEdition;
@@ -2238,7 +2242,7 @@ async function runAIResearch() {
   var hasSelected = researchCandidates.some(function(s) { return s.selected; });
   var progressMsg = hasSelected
     ? 'Searching for more stories (keeping ' + researchCandidates.filter(function(s) { return s.selected; }).length + ' selected)...'
-    : 'Searching 8 news categories via SerpAPI...';
+    : 'Searching core + rotating news categories via SerpAPI...';
   grid.innerHTML = '<div class="research-progress"><div class="research-spinner"></div><div><div style="font-size:.85rem;font-weight:600;color:var(--color-heading);">' + progressMsg + '</div><div style="font-size:.78rem;color:var(--color-muted);margin-top:.15rem;">Finding recent stories, then Claude curates the most relevant for therapists. Takes 30-60 seconds.</div></div></div>';
 
   try {
@@ -2254,8 +2258,20 @@ async function runAIResearch() {
     var preserved = researchCandidates.filter(function(s) { return s.selected; });
     var newStories = data.stories || [];
     researchCandidates = preserved.concat(newStories);
-    var dupNote = data.duplicates_removed > 0 ? ' (' + data.duplicates_removed + ' duplicates filtered)' : '';
-    document.getElementById('aiResearchStatus').textContent = (data.search_results_found || '?') + ' results searched, ' + newStories.length + ' new stories' + (preserved.length ? ', ' + preserved.length + ' kept' : '') + dupNote;
+
+    // Status line: concise funnel summary
+    var preF = data.pre_filtered_duplicates || 0;
+    var safetyF = data.safety_duplicates_removed || 0;
+    var totalFiltered = preF + safetyF;
+    var dupNote = totalFiltered > 0 ? ' (' + totalFiltered + ' dup' + (totalFiltered === 1 ? '' : 's') + ' filtered)' : '';
+    document.getElementById('aiResearchStatus').textContent =
+      (data.search_results_found || 0) + ' unique candidates, ' +
+      newStories.length + ' new stor' + (newStories.length === 1 ? 'y' : 'ies') +
+      (preserved.length ? ', ' + preserved.length + ' kept' : '') + dupNote;
+
+    // Render search stats panel (collapsible diagnostic view)
+    renderSearchStats(data.search_stats);
+
     renderCandidates();
     toast('Found ' + newStories.length + ' new stories' + dupNote);
     loadEditions();
@@ -2269,6 +2285,61 @@ async function runAIResearch() {
   }
 }
 window.runAIResearch = runAIResearch;
+
+// Render the collapsible search stats diagnostic panel
+function renderSearchStats(stats) {
+  var panel = document.getElementById('searchStatsPanel');
+  if (!panel) return;
+  if (!stats || !stats.queries) { panel.style.display = 'none'; return; }
+
+  var t = stats.totals || {};
+  var queries = stats.queries || [];
+
+  // Funnel summary (always visible at top of the details)
+  var funnelBits = [];
+  if (typeof t.raw === 'number') funnelBits.push(t.raw + ' raw');
+  if (typeof t.unique === 'number') funnelBits.push(t.unique + ' unique');
+  if (t.pre_filtered_dups) funnelBits.push(t.pre_filtered_dups + ' pre-filtered');
+  if (typeof t.sent_to_ai === 'number') funnelBits.push(t.sent_to_ai + ' sent to AI');
+  if (typeof t.saved === 'number') funnelBits.push(t.saved + ' saved');
+  var funnelLine = funnelBits.join(' → ');
+
+  // Per-query rows
+  var rows = queries.map(function(q) {
+    var tag = q.core ? 'core' : (q.locale === 'ca' ? 'CA' : 'rot');
+    var tagColor = q.core ? 'var(--color-primary)' : (q.locale === 'ca' ? '#d97706' : 'var(--color-muted)');
+    var sel = q.selected_count || 0;
+    var selBadge = sel > 0
+      ? '<span style="display:inline-block;padding:.05rem .4rem;border-radius:4px;background:var(--color-primary);color:#fff;font-weight:600;font-size:.7rem;">' + sel + '</span>'
+      : '<span style="color:var(--color-muted);">0</span>';
+    return '<tr>' +
+      '<td style="padding:.3rem .5rem;"><span style="display:inline-block;padding:.05rem .35rem;border:1px solid ' + tagColor + ';color:' + tagColor + ';border-radius:3px;font-size:.65rem;font-weight:600;text-transform:uppercase;">' + tag + '</span></td>' +
+      '<td style="padding:.3rem .5rem;font-size:.78rem;">' + escHtml(q.query) + '</td>' +
+      '<td style="padding:.3rem .5rem;text-align:right;color:var(--color-muted);font-size:.78rem;">' + (q.raw_count || 0) + '</td>' +
+      '<td style="padding:.3rem .5rem;text-align:right;font-size:.78rem;">' + selBadge + '</td>' +
+      '</tr>';
+  }).join('');
+
+  panel.innerHTML =
+    '<details style="margin:.75rem 0;background:var(--color-bg);border:1px solid var(--color-border);border-radius:6px;">' +
+      '<summary style="padding:.5rem .75rem;font-size:.78rem;font-weight:600;color:var(--color-heading);cursor:pointer;list-style:none;">' +
+        '🔎 Search details: ' + funnelLine +
+      '</summary>' +
+      '<div style="padding:.25rem .5rem .75rem;">' +
+        '<table style="width:100%;border-collapse:collapse;">' +
+          '<thead><tr style="border-bottom:1px solid var(--color-border);color:var(--color-muted);font-size:.7rem;text-transform:uppercase;">' +
+            '<th style="padding:.3rem .5rem;text-align:left;">Type</th>' +
+            '<th style="padding:.3rem .5rem;text-align:left;">Query</th>' +
+            '<th style="padding:.3rem .5rem;text-align:right;">Raw</th>' +
+            '<th style="padding:.3rem .5rem;text-align:right;">Selected</th>' +
+          '</tr></thead>' +
+          '<tbody>' + rows + '</tbody>' +
+        '</table>' +
+      '</div>' +
+    '</details>';
+  panel.style.display = 'block';
+}
+window.renderSearchStats = renderSearchStats;
 
 function renderCandidates() {
   var grid = document.getElementById('candidatesGrid');
@@ -2489,7 +2560,7 @@ async function runAIGenerate() {
 window.runAIGenerate = runAIGenerate;
 
 // Load existing research candidates when editing an edition
-async function loadResearchCandidates(newsletterId) {
+async function loadResearchCandidates(newsletterId, searchStats) {
   try {
     var stories = await sb('newsletter_stories', 'newsletter_id=eq.' + newsletterId + '&order=sort_order&limit=20');
     if (stories && stories.length) {
@@ -2504,6 +2575,8 @@ async function loadResearchCandidates(newsletterId) {
         btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:.3rem;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Research More';
       }
     }
+    // Render search stats panel if present (historical view)
+    if (searchStats) renderSearchStats(searchStats);
   } catch (e) { /* non-fatal */ }
 }
 
@@ -2667,6 +2740,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
