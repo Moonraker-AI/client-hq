@@ -505,11 +505,23 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
   html = html.replace('</body>', trackingScript + '\n</body>');
 
   // ─── 5. Deploy all pages to GitHub ────────────────────────────
+  //
+  // Sign a scope='onboarding' token bound to this contact. The onboarding
+  // page reads it as window.__PAGE_TOKEN__ and sends it on every call to
+  // /api/onboarding-action, which verifies and uses the contact_id from the
+  // token instead of from the request body.
+  var signedOnboardingToken = '';
+  try {
+    signedOnboardingToken = pageToken.sign({ scope: 'onboarding', contact_id: contact.id });
+  } catch (e) {
+    return res.status(500).json({ error: 'Failed to sign onboarding page token: ' + e.message });
+  }
+
   var pagesToDeploy = [
     { dest: slug + '/proposal/index.html', content: html },
     { template: '_templates/router.html', dest: slug + '/index.html' },
     { template: '_templates/checkout.html', dest: slug + '/checkout/index.html' },
-    { template: '_templates/onboarding.html', dest: slug + '/onboarding/index.html' }
+    { template: '_templates/onboarding.html', dest: slug + '/onboarding/index.html', replacements: { '{{PAGE_TOKEN}}': signedOnboardingToken } }
   ];
 
   for (var p of pagesToDeploy) {
@@ -523,6 +535,13 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
         if (!tplResp.ok) { results.deploy.push({ path: p.dest, ok: false, error: 'Template not found' }); continue; }
         var tplData = await tplResp.json();
         fileContent = Buffer.from(tplData.content, 'base64').toString('utf-8');
+
+        // Apply any page-specific replacements (e.g. {{PAGE_TOKEN}} for onboarding)
+        if (p.replacements) {
+          Object.keys(p.replacements).forEach(function(key) {
+            fileContent = fileContent.split(key).join(String(p.replacements[key]));
+          });
+        }
       }
 
       // Check if file already exists (need SHA for update)
