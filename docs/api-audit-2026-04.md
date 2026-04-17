@@ -263,14 +263,20 @@ RTPBA originates from Surge agent output parsed from client's website. Narrower 
 ### H32. `api/digest.js:91` — recipients from request body, no allowlist
 Admin with JWT sends digest from trusted `notifications@clients.moonraker.ai` to arbitrary addresses. Spamming oracle with trusted identity. Server-side allowlist (e.g. `*@moonraker.ai`).
 
-### H33. `api/newsletter-generate.js:172, 180` — raw Claude output leaked in error responses
+### H33. `api/newsletter-generate.js:172, 180` — raw Claude output leaked in error responses ✅ RESOLVED
 On parse failure, full generated text returned. Inconsistent with other routes' error handling. Truncate.
 
-### H34. `api/send-audit-email.js:120, 162` — internal error detail in response body
+**Resolution (2026-04-17, commit `a8155dc`):** Added `var monitor = require('./_lib/monitor');`. Seven 5xx sites refactored: load-newsletter catch, load-stories catch, Anthropic non-2xx, AI response missing text blocks, AI response missing JSON braces, outer catch, and fatal wrapper. Each now calls `monitor.logError('newsletter-generate', err, { detail: { stage, newsletter_id, ... } })` with provider bodies (`errBody.substring(0,500)`), raw AI response shape (`Object.keys(aiData)`, `block_count`), and raw text previews routed to `error_log`. Response bodies now return generic strings (`'Failed to load newsletter'`, `'AI service error'`, `'No text response from AI'`, `'Could not parse AI response'`, `'Generation failed'`) with no `detail` or `raw` fields. Fatal wrapper's `monitor.logError` is defensively wrapped in its own `try/catch` so the outermost `res.json` fallback still fires even if logging throws. Parallel duplicate commit `eb60174` was overwritten by this one; functionally equivalent pattern application.
+
+### H34. `api/send-audit-email.js:120, 162` — internal error detail in response body ✅ RESOLVED
 `detail: emailResult` returns entire Resend response including error context. `err.message` same.
 
-### H35. `api/generate-content-page.js:145, 167, 229` — error details in NDJSON stream
+**Resolution (2026-04-17, commits `225d5a0` + follow-up `19b9199`):** Added `var monitor = require('./_lib/monitor');`. L120 Resend non-2xx site: raw Resend response (`emailResult`) now routed via `monitor.logError('send-audit-email', ..., { client_slug: slug, detail: { stage: 'resend_send', audit_id, status, resend_response } })`; response body is generic `'Email send failed'` with no `detail`. Existing `console.error('Resend error:', emailResult)` preserved for Vercel logs. L162 outer catch: `monitor.logError` with `client_slug: (typeof slug !== 'undefined' ? slug : null)` + `detail: { stage: 'outer_catch', audit_id }`; response body is generic `'Internal server error'`. The `typeof` guard accommodates pre-slug-assignment errors (hoisted `var` is defined but undefined). Parallel duplicate commit `adfbe7a` was overwritten by `225d5a0`; `19b9199` restored `client_slug` logging that was accidentally dropped in the overwrite.
+
+### H35. `api/generate-content-page.js:145, 167, 229` — error details in NDJSON stream ✅ RESOLVED
 `errText.substring(0, 500)` (Anthropic response body) and `responseText.substring(0, 500)` (Claude generated content) sent as `detail`/`raw_preview` in stream. Admin-only but noise.
+
+**Resolution (2026-04-17, commit `b17c790`):** Added `var monitor = require('./_lib/monitor');`. Three `send({step:'error', ...})` NDJSON sites refactored: L146 Claude non-2xx, L168 HTML-too-short, L248 outer catch. Each now calls `monitor.logError('generate-content-page', err, { client_slug: clientSlug, detail: { stage, content_page_id, ... } })` with raw detail (Anthropic response body, Claude HTML preview, raw response length) routed to `error_log` server-side. Stream payloads preserve the `{step:'error', message:'...'}` shape the admin UI expects, but `message` values are now generic (`'AI service error'`, `'Generated content was too short. Please retry.'`, `'Generation failed'`) with `detail` and `raw_preview` fields removed. Outer catch's `monitor.logError` call is wrapped in `try/catch` to preserve the stream-closed safety net for `send()`.
 
 ---
 
@@ -317,8 +323,10 @@ Use PostgREST upsert with `Prefer: resolution=merge-duplicates`.
 ### M12. `api/admin/manage-site.js:53` — domain "normalization" accepts paths, ports, anything
 Doesn't reject `domain:8080`, `domain/path`, `user:pass@domain`, `domain?q=x`. Malformed domain goes to CF custom-hostname API and stored in DB.
 
-### M13. `api/newsletter-webhook.js:119` — returns `e.message` with status 200
+### M13. `api/newsletter-webhook.js:119` — returns `e.message` with status 200 ✅ RESOLVED
 Leaks error detail. Useful to attacker probing C6 bug.
+
+**Resolution (2026-04-17, commit `3a9019d`):** The `db_error` terminal catch's response body changed from `{ ok: false, error: e.message }` to `{ ok: false }`. Error detail was already captured by the pre-existing `logEvent('db_error', { headers: hdrs, detail: { error: e.message, stack: (e.stack || '').slice(0, 500) } })` call at L257 which writes to `webhook_log`, so no additional `monitor.logError` was added (would have been duplicate logging). Inline code comment added explaining the 200 status rationale (prevent Resend retries on our storage errors when the webhook signature itself was valid). Other error-response sites in the file (`body_read_failed`, `sig_bad_secret_format`, `bad_json`) already followed the pattern (`logEvent` + generic user-facing response); spot-confirmed they were not leaking.
 
 ### M14. `api/content-chat.js:108` — `fetchPageContext` silently returns nulls on error
 If Supabase is down, prompt runs with nulls — expensive no-op. Short-circuit with 503.
@@ -356,8 +364,10 @@ Silently PATCHes `report_configs.gsc_property` when configured value fails. No b
 ### M25. `api/compile-report.js:1138` — markdown fence strip corrupts JSON with nested fences
 Same as process-entity-audit.js:226 bug. Extract to helper.
 
-### M26. `api/chat.js:175-177, 126` — prompt injection surface + error leak
+### M26. `api/chat.js:175-177, 126` — prompt injection surface + error leak 🔶 PARTIAL
 `page`, `tab`, `clientSlug` interpolated unsanitized. `err.message` leaked in 500.
+
+**Resolution — err-leak half only (2026-04-17, commit `9dc8c7b`):** Added `var monitor = require('./_lib/monitor');`. L126 outer catch now calls `monitor.logError('chat', err, { detail: { stage: 'outer_catch' } })` and returns generic `{ error: 'Internal server error' }` with no `detail` field. Existing `console.error('Chat handler error:', err)` at L125 preserved. **Prompt-injection half still open** (page/tab/clientSlug raw-interpolation at L175-177 in system prompt builder) — deferred to Group D (AI prompt injection hardening session) where it will be batched with H25, H31, and M15 under a consistent `<user_data>` delimiter pattern mirroring the C9 endorsement sanitization.
 
 ### M27. `api/bootstrap-access.js:55, 66, 436, 459` — `clientSlug` unencoded in PostgREST URLs
 Line 38 only checks truthiness. Validate as `^[a-z0-9-]{1,60}$`.
@@ -614,12 +624,12 @@ _(Brought forward from Phase 7 since Chris chose "ship now" over "wait for traff
 ## Running tallies
 
 - **Critical:** 9 total (C1–C9). **Resolved: 9 ✅** (all).
-- **High:** 35 total (H1–H35). **Resolved: 8** (H5, H7, H8, H9, H10, H11, H14, H28). **Open: 27.**
-- **Medium:** 38 total (M1–M38). **Resolved: 2+** (M8 confirmed; M38 added + resolved same session; several more likely closed via Phase 4 action-schema work — needs verification sweep). **Open: ~35.**
+- **High:** 35 total (H1–H35). **Resolved: 11** (H5, H7, H8, H9, H10, H11, H14, H28, H33, H34, H35). **Open: 24.**
+- **Medium:** 38 total (M1–M38). **Resolved: 3+ full + 1 partial** (M8 confirmed; M38 added + resolved same session; M13 resolved; M26 err-leak half resolved, prompt-injection half deferred to Group D; several more likely closed via Phase 4 action-schema work — needs verification sweep). **Open: ~34.**
 - **Low:** 27 total (L1–L27). **Resolved: 4** (L8, L14, L26, L27-documented-only). **Open: 23.**
 - **Nit:** 6 total (N1–N6). **Open: 6.**
 
-**Total: 115 findings. Resolved: ≥23. Open: ≤92.**
+**Total: 115 findings. Resolved: ≥27 (+1 partial). Open: ≤87.**
 
 ### Resolution log
 | Finding | Commit / Session | Date |
@@ -642,5 +652,11 @@ _(Brought forward from Phase 7 since Chris chose "ship now" over "wait for traff
 | H7 | `330e6da` (supabase.js fallback removed, fail-closed) | 2026-04-17 |
 | H28 | `0c9bc85` (bootstrap-access response sanitized, monitor.logError) | 2026-04-17 |
 | H21 (partial) | `7adedb6` — helper `_lib/google-delegated.js` created; 5 duplicates still pending | 2026-04-17 |
+| H33 | `a8155dc` (newsletter-generate — 7 sites routed through monitor, generic 5xx bodies) | 2026-04-17 |
+| H34 | `225d5a0` + `19b9199` (send-audit-email — Resend + outer catch through monitor; follow-up restored client_slug) | 2026-04-17 |
+| H35 | `b17c790` (generate-content-page NDJSON — 3 stream-error sites through monitor) | 2026-04-17 |
+| M13 | `3a9019d` (newsletter-webhook — drop e.message from terminal db_error response; logEvent already captures detail) | 2026-04-17 |
+| M26 (partial) | `9dc8c7b` — err-leak half resolved; prompt-injection half (page/tab/clientSlug interpolation) deferred to Group D | 2026-04-17 |
 
 Audit was performed across five sessions reading ~11,000 lines of API route code, the eight `_lib/` modules, relevant templates, and git history for secret leakage. Unread in detail: chat system prompt bodies (low-risk content), several `send-*-email.js` / `trigger-*` / `ingest-*` routes (expected to follow already-catalogued patterns), most `api/admin/*` read-only dashboard routes. The audit is considered comprehensive for Critical and High findings; Medium/Low/Nit counts would grow modestly with further reading.
+
