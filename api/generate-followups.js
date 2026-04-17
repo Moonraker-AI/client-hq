@@ -32,10 +32,8 @@ module.exports = async function handler(req, res) {
   // Load proposal + contact
   var proposal, contact;
   try {
-    var pResp = await fetch(sb.url() + '/rest/v1/proposals?id=eq.' + proposalId + '&select=*,contacts(*)&limit=1', { headers: sb.headers() });
-    var proposals = await pResp.json();
-    if (!proposals || proposals.length === 0) return res.status(404).json({ error: 'Proposal not found' });
-    proposal = proposals[0];
+    proposal = await sb.one('proposals?id=eq.' + proposalId + '&select=*,contacts(*)&limit=1');
+    if (!proposal) return res.status(404).json({ error: 'Proposal not found' });
     contact = proposal.contacts;
   } catch (e) {
     return res.status(500).json({ error: 'Failed to load proposal: ' + e.message });
@@ -46,8 +44,7 @@ module.exports = async function handler(req, res) {
 
   // Check if followups already exist
   try {
-    var existResp = await fetch(sb.url() + '/rest/v1/proposal_followups?proposal_id=eq.' + proposalId + '&select=id&limit=1', { headers: sb.headers() });
-    var existing = await existResp.json();
+    var existing = await sb.query('proposal_followups?proposal_id=eq.' + proposalId + '&select=id&limit=1');
     if (existing && existing.length > 0) {
       return res.status(400).json({ error: 'Follow-ups already exist for this proposal. Delete existing ones first.' });
     }
@@ -63,10 +60,9 @@ module.exports = async function handler(req, res) {
   // Load practice_type for results personalization
   var practiceType = 'group'; // default
   try {
-    var pdResp = await fetch(sb.url() + '/rest/v1/practice_details?contact_id=eq.' + contact.id + '&select=practice_type&limit=1', { headers: sb.headers() });
-    var pdRows = await pdResp.json();
-    if (pdRows && pdRows.length > 0 && pdRows[0].practice_type) {
-      practiceType = pdRows[0].practice_type;
+    var pd = await sb.one('practice_details?contact_id=eq.' + contact.id + '&select=practice_type&limit=1');
+    if (pd && pd.practice_type) {
+      practiceType = pd.practice_type;
     }
   } catch (e) { /* default to group */ }
 
@@ -111,12 +107,7 @@ module.exports = async function handler(req, res) {
   });
 
   try {
-    var insertResp = await fetch(sb.url() + '/rest/v1/proposal_followups', {
-      method: 'POST',
-      headers: sb.headers('return=representation'),
-      body: JSON.stringify(rows)
-    });
-    var inserted = await insertResp.json();
+    var inserted = await sb.mutate('proposal_followups', 'POST', rows);
 
     return res.status(200).json({
       ok: true,
