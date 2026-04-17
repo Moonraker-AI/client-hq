@@ -55,10 +55,8 @@ module.exports = async function handler(req, res) {
   // ─── Load contact ──────────────────────────────────────────────
   var contact;
   try {
-    var cResp = await fetch(sb.url() + '/rest/v1/contacts?slug=eq.' + clientSlug + '&select=*&limit=1', { headers: sb.headers() });
-    var contacts = await cResp.json();
-    if (!contacts || contacts.length === 0) return res.status(404).json({ error: 'Contact not found: ' + clientSlug });
-    contact = contacts[0];
+    contact = await sb.one('contacts?slug=eq.' + clientSlug + '&select=*&limit=1');
+    if (!contact) return res.status(404).json({ error: 'Contact not found: ' + clientSlug });
   } catch (e) {
     await monitor.logError('bootstrap-access', e, { client_slug: clientSlug, detail: { stage: 'load_contact' } });
     return res.status(500).json({ error: 'Failed to load contact' });
@@ -67,16 +65,9 @@ module.exports = async function handler(req, res) {
   // ─── Load or create report_configs ─────────────────────────────
   var config;
   try {
-    var cfResp = await fetch(sb.url() + '/rest/v1/report_configs?client_slug=eq.' + clientSlug + '&limit=1', { headers: sb.headers() });
-    var configs = await cfResp.json();
-    if (configs && configs.length > 0) {
-      config = configs[0];
-    } else {
-      var insertResp = await fetch(sb.url() + '/rest/v1/report_configs', {
-        method: 'POST', headers: sb.headers(),
-        body: JSON.stringify({ client_slug: clientSlug, active: true })
-      });
-      var inserted = await insertResp.json();
+    config = await sb.one('report_configs?client_slug=eq.' + clientSlug + '&limit=1');
+    if (!config) {
+      var inserted = await sb.mutate('report_configs', 'POST', { client_slug: clientSlug, active: true });
       config = Array.isArray(inserted) ? inserted[0] : inserted;
     }
   } catch (e) {
@@ -486,9 +477,7 @@ module.exports = async function handler(req, res) {
   if (Object.keys(configUpdates).length > 0) {
     try {
       configUpdates.updated_at = new Date().toISOString();
-      await fetch(sb.url() + '/rest/v1/report_configs?id=eq.' + config.id, {
-        method: 'PATCH', headers: sb.headers(), body: JSON.stringify(configUpdates)
-      });
+      await sb.mutate('report_configs?id=eq.' + config.id, 'PATCH', configUpdates);
     } catch (e) {
       await monitor.logError('bootstrap-access', e, { client_slug: clientSlug, detail: { stage: 'config_save' } });
       errors.push('Config save failed');
@@ -512,9 +501,8 @@ module.exports = async function handler(req, res) {
     }
     for (var du = 0; du < deliverableUpdates.length; du++) {
       var upd = deliverableUpdates[du];
-      await fetch(sb.url() + '/rest/v1/deliverables?contact_id=eq.' + contact.id + '&deliverable_type=eq.' + upd.type + '&status=neq.delivered', {
-        method: 'PATCH', headers: sb.headers(),
-        body: JSON.stringify({ status: 'delivered', delivered_at: new Date().toISOString(), notes: 'Auto: ' + upd.note, updated_at: new Date().toISOString() })
+      await sb.mutate('deliverables?contact_id=eq.' + contact.id + '&deliverable_type=eq.' + upd.type + '&status=neq.delivered', 'PATCH', {
+        status: 'delivered', delivered_at: new Date().toISOString(), notes: 'Auto: ' + upd.note, updated_at: new Date().toISOString()
       });
     }
   } catch (e) {
