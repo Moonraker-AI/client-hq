@@ -61,11 +61,30 @@ module.exports = async function handler(req, res) {
   var specData = null;
   var contentPageId = context.content_page_id || '';
 
+  // H12: validate UUID format before any PostgREST concat. Rejects
+  // arbitrary strings that would otherwise flow into '?id=eq.<value>'.
+  var uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (contentPageId && !uuidPattern.test(contentPageId)) {
+    return res.status(400).json({ error: 'Invalid content_page_id' });
+  }
+
   if (contentPageId) {
-    var fetched = await fetchPageContext(contentPageId);
-    pageData = fetched.page;
-    contactData = fetched.contact;
-    specData = fetched.spec;
+    // H12 ownership + M14 fail-loud: fetchPageContext now throws on
+    // Supabase error (503) and returns null when the page does not
+    // exist OR when the owning contact is lost (404, no existence
+    // oracle between the two cases).
+    try {
+      var fetched = await fetchPageContext(contentPageId);
+      if (!fetched) {
+        return res.status(404).json({ error: 'Content page not found' });
+      }
+      pageData = fetched.page;
+      contactData = fetched.contact;
+      specData = fetched.spec;
+    } catch (e) {
+      console.error('[content-chat] fetchPageContext error:', e && e.message);
+      return res.status(503).json({ error: 'Service temporarily unavailable' });
+    }
   }
 
   var systemPrompt = buildSystemPrompt(pageData, contactData, specData);
@@ -119,36 +138,65 @@ module.exports = async function handler(req, res) {
 
 
 // ─── Fetch page + contact + spec from Supabase ────────────────
+// Returns:
+//   - the full {page, contact, spec, practice} bundle on success
+//   - null when the content page does not exist OR when the owning contact
+//     is lost (caller 404s, no oracle for distinguishing)
+// Throws on Supabase misconfiguration or non-ok HTTP — caller maps to 503.
 async function fetchPageContext(contentPageId) {
-  if (!sb.isConfigured()) return { page: null, contact: null, spec: null };
-  var headers = sb.headers();
-
-  try {
-    // Get content page
-    var cpResp = await fetch(
-      sb.url() + '/rest/v1/content_pages?id=eq.' + contentPageId + '&limit=1',
-      { headers: headers }
-    );
-    var pages = await cpResp.json();
-    if (!pages || pages.length === 0) return { page: null, contact: null, spec: null };
-    var page = pages[0];
-
-    // Get contact and design spec in parallel
-    var results = await Promise.all([
-      fetch(sb.url() + '/rest/v1/contacts?id=eq.' + page.contact_id + '&limit=1', { headers: headers }).then(function(r) { return r.json(); }),
-      fetch(sb.url() + '/rest/v1/design_specs?contact_id=eq.' + page.contact_id + '&limit=1', { headers: headers }).then(function(r) { return r.json(); }),
-      fetch(sb.url() + '/rest/v1/practice_details?contact_id=eq.' + page.contact_id + '&limit=1', { headers: headers }).then(function(r) { return r.json(); })
-    ]);
-
-    return {
-      page: page,
-      contact: (results[0] && results[0][0]) || null,
-      spec: (results[1] && results[1][0]) || null,
-      practice: (results[2] && results[2][0]) || null
-    };
-  } catch(e) {
-    return { page: null, contact: null, spec: null };
+  if (!sb.isConfigured()) {
+    throw new Error('Supabase not configured');
   }
+  var headers = sb.headers();
+  // Defense-in-depth: contentPageId is already UUID-validated upstream,
+  // but encode anyway — keeps the PostgREST URL well-formed if the
+  // validation ever loosens.
+  var encodedId = encodeURIComponent(contentPageId);
+
+  // Get content page
+  var cpResp = await fetch(
+    sb.url() + '/rest/v1/content_pages?id=eq.' + encodedId + '&limit=1',
+    { headers: headers }
+  );
+  if (!cpResp.ok) {
+    throw new Error('content_pages fetch failed: ' + cpResp.status);
+  }
+  var pages = await cpResp.json();
+  if (!pages || pages.length === 0) return null;
+  var page = pages[0];
+
+  // Get contact, design spec, and practice details in parallel
+  var encodedContactId = encodeURIComponent(page.contact_id);
+  var results = await Promise.all([
+    fetch(sb.url() + '/rest/v1/contacts?id=eq.' + encodedContactId + '&limit=1', { headers: headers }).then(function(r) {
+      if (!r.ok) throw new Error('contacts fetch failed: ' + r.status);
+      return r.json();
+    }),
+    fetch(sb.url() + '/rest/v1/design_specs?contact_id=eq.' + encodedContactId + '&limit=1', { headers: headers }).then(function(r) {
+      if (!r.ok) throw new Error('design_specs fetch failed: ' + r.status);
+      return r.json();
+    }),
+    fetch(sb.url() + '/rest/v1/practice_details?contact_id=eq.' + encodedContactId + '&limit=1', { headers: headers }).then(function(r) {
+      if (!r.ok) throw new Error('practice_details fetch failed: ' + r.status);
+      return r.json();
+    })
+  ]);
+
+  var contact = (results[0] && results[0][0]) || null;
+
+  // Ownership gate: don't stream Claude content about lost contacts.
+  // Check both `lost` boolean and `status` — a client can be status='active'
+  // and lost=true simultaneously. Return null (not throw) so caller 404s.
+  if (!contact || contact.lost === true || contact.status === 'lost') {
+    return null;
+  }
+
+  return {
+    page: page,
+    contact: contact,
+    spec: (results[1] && results[1][0]) || null,
+    practice: (results[2] && results[2][0]) || null
+  };
 }
 
 
