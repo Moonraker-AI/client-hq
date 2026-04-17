@@ -103,7 +103,7 @@ module.exports = async function handler(req, res) {
     }
 
     var client = new pg.Client({
-      connectionString: dbUrl,
+      connectionString: dbUrl.replace(/[?&]sslmode=[^&]*/g, ''),
       ssl: { rejectUnauthorized: false }
     });
     await client.connect();
