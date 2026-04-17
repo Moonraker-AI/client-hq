@@ -75,15 +75,10 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({ error: 'R2 deploy failed', detail: workerResult });
     }
 
-    // Upsert deployment record
-    // Delete existing record for this path then insert (PostgREST upsert with composite unique)
-    await sb.mutate(
-      'site_deployments?site_id=eq.' + site_id + '&page_path=eq.' + encodeURIComponent(normalizedPath),
-      'DELETE',
-      null,
-      'return=minimal'
-    );
-
+    // Upsert deployment record. M11: previously DELETE-then-POST, which left
+    // a zero-row window for (site_id, page_path) if the invocation crashed
+    // between the two writes. Existing UNIQUE(site_id, page_path) index lets
+    // us use a straight PostgREST upsert instead.
     var deployment = await sb.mutate('site_deployments', 'POST', {
       site_id: site_id,
       page_path: normalizedPath,
@@ -92,7 +87,7 @@ module.exports = async function handler(req, res) {
       content_hash: contentHash,
       deployed_by: deployed_by || 'pagemaster',
       deployed_at: new Date().toISOString()
-    }, 'return=representation');
+    }, 'resolution=merge-duplicates,return=representation');
 
     return res.status(200).json({
       success: true,
