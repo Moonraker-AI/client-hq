@@ -55,8 +55,7 @@ module.exports = async function(req, res) {
       kwFilter += '&id=in.(' + body.keyword_ids.join(',') + ')';
     }
 
-    var kwResp = await fetch(sb.url() + '/rest/v1/' + kwFilter, { headers: sb.headers() });
-    var keywords = await kwResp.json();
+    var keywords = await sb.query(kwFilter);
 
     if (!keywords || keywords.length === 0) {
       return res.status(400).json({ error: 'No active P1 keywords with target pages found.' });
@@ -69,12 +68,8 @@ module.exports = async function(req, res) {
     }
 
     // 3. Check for existing running batch
-    var existingResp = await fetch(
-      sb.url() + '/rest/v1/content_audit_batches?client_slug=eq.' + body.client_slug +
-      '&status=in.(queued,agent_running,extracting,processing)&limit=1',
-      { headers: sb.headers() }
-    );
-    var existing = await existingResp.json();
+    var existing = await sb.query('content_audit_batches?client_slug=eq.' + body.client_slug +
+      '&status=in.(queued,agent_running,extracting,processing)&limit=1');
     if (existing && existing.length > 0) {
       return res.status(409).json({
         error: 'A batch audit is already in progress for this client.',
@@ -92,16 +87,13 @@ module.exports = async function(req, res) {
       triggered_by: body.triggered_by || 'admin'
     };
 
-    var batchResp = await fetch(sb.url() + '/rest/v1/content_audit_batches', {
-      method: 'POST',
-      headers: Object.assign({}, sb.headers(), { 'Prefer': 'return=representation' }),
-      body: JSON.stringify(batchData)
-    });
-    if (!batchResp.ok) {
-      var batchErr = await batchResp.text();
-      return res.status(500).json({ error: 'Failed to create batch record', detail: batchErr.substring(0, 300) });
+    var batchResult;
+    try {
+      batchResult = await sb.mutate('content_audit_batches', 'POST', batchData);
+    } catch (e) {
+      return res.status(500).json({ error: 'Failed to create batch record', detail: (e.message || '').substring(0, 300) });
     }
-    var batch = (await batchResp.json())[0];
+    var batch = batchResult[0];
 
     // 5. Upsert content_pages for each keyword
     var pages = [];
@@ -127,10 +119,9 @@ module.exports = async function(req, res) {
       } else {
         // Create new content_page
         var pageSlug = kw.keyword.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        var newPageResp = await fetch(sb.url() + '/rest/v1/content_pages', {
-          method: 'POST',
-          headers: Object.assign({}, sb.headers(), { 'Prefer': 'return=representation' }),
-          body: JSON.stringify({
+        var newPage;
+        try {
+          var newPageResult = await sb.mutate('content_pages', 'POST', {
             contact_id: contact.id,
             client_slug: contact.slug,
             page_type: kw.keyword_type === 'location' ? 'location' : 'service',
@@ -142,14 +133,12 @@ module.exports = async function(req, res) {
             batch_id: batch.id,
             surge_status: 'pending',
             status: 'pending_audit'
-          })
-        });
-        if (!newPageResp.ok) {
-          var pageErr = await newPageResp.text();
-          console.error('Failed to create content page for keyword:', kw.keyword, pageErr);
+          });
+          newPage = newPageResult[0];
+        } catch (e) {
+          console.error('Failed to create content page for keyword:', kw.keyword, e.message);
           continue;
         }
-        var newPage = (await newPageResp.json())[0];
         pageId = newPage.id;
       }
 
