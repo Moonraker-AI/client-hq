@@ -6,6 +6,7 @@
 
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
+var sanitizer = require('./_lib/html-sanitizer');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -184,6 +185,24 @@ module.exports = async function handler(req, res) {
     var notes = '';
     if (verifyFlags.length > 0) {
       notes = 'VERIFY flags (' + verifyFlags.length + '): ' + verifyFlags.join('; ');
+    }
+
+    // 7b. Sanitize the generated HTML before save.
+    //
+    // Defense-in-depth against stored XSS on the deployed client site.
+    // Upstream inputs (endorsements especially) are already sanitized on
+    // submission, but Claude itself could in principle produce unsafe output
+    // — a rogue prompt injection, a confused generation, a template instruction
+    // that asks for literal <script>. The allowlist sanitizer strips all
+    // <script>, <iframe>, <object>, <embed>, event handlers, and
+    // javascript:/data: URLs. Legitimate content pages use only structural
+    // and inline tags plus <style> for theming, all of which stay.
+    var htmlBefore = html.length;
+    html = sanitizer.sanitizeHtml(html);
+    if (html.length !== htmlBefore) {
+      var diff = htmlBefore - html.length;
+      notes = (notes ? notes + ' ' : '') + 'Sanitizer stripped ' + diff + ' bytes of unsafe markup.';
+      send({ step: 'sanitized', message: 'Sanitizer stripped ' + diff + ' bytes', bytes_removed: diff });
     }
 
     // 8. Save to content_pages
