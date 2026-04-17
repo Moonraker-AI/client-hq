@@ -1,31 +1,35 @@
 # Post-Phase-4 Status Report
 
-**Date:** 2026-04-17 (late session — Group A small-wins complete)
-**Purpose:** Reconcile what's actually closed, group the ~92 remaining findings, and recommend a path forward that matches the value-per-session curve we've been on.
+**Date:** 2026-04-17 (late session — Group A fully complete)
+**Purpose:** Reconcile what's actually closed, group the ~87 remaining findings, and recommend a path forward that matches the value-per-session curve we've been on.
 
 ---
 
 ## Where the audit stands
 
-All 9 Criticals closed. **Eight Highs closed** (H5, H7, H8, H9, H10, H11, H14, H28). M8 and M38 closed; **L8**, L14, L26, L27 closed. H21 has scaffolding landed (`api/_lib/google-delegated.js`) but 5 duplicate sites still need migration. `authenticator_secret_key` null-on-all-rows investigation resolved: `SENSITIVE_FIELDS` includes it; the null state just means no 2FA setup has been saved yet through the admin UI. Not a bug.
+All 9 Criticals closed. **Eleven Highs closed** (H5, H7, H8, H9, H10, H11, H14, H28, H33, H34, H35). M8, M13, M38 closed; M26 err-leak half closed, prompt-injection half deferred to Group D. **L8**, L14, L26, L27 closed. H21 has scaffolding landed (`api/_lib/google-delegated.js`) but 5 duplicate sites still need migration. `authenticator_secret_key` null-on-all-rows investigation resolved: `SENSITIVE_FIELDS` includes it; the null state just means no 2FA setup has been saved yet through the admin UI. Not a bug.
 
-~92 findings remain. None of them are attack chains of the same severity as C1-C9. Most are hardening, consistency, and observability work. Ordering them linearly doesn't match their actual value; grouping them does.
+~87 findings remain. None of them are attack chains of the same severity as C1-C9. Most are hardening, consistency, and observability work. Ordering them linearly doesn't match their actual value; grouping them does.
 
 ---
 
 ## Grouping of remaining work
 
-### Group A — Secret & config hygiene (partially complete)
+### Group A — Secret & config hygiene ✅ COMPLETE
 
 | ID | Issue | Status |
 |---|---|---|
 | H10 | `api/admin/manage-site.js:15,18` — hardcoded CF account/zone IDs | ✅ closed `e772fa9` |
 | H7 | `api/_lib/supabase.js:15` — hardcoded Supabase URL fallback | ✅ closed `330e6da` |
 | H28 | `bootstrap-access.js` leaks provider error detail in response body | ✅ closed `0c9bc85` |
+| H33 | `newsletter-generate.js` raw Claude output in error responses | ✅ closed `a8155dc` |
+| H34 | `send-audit-email.js` Resend response + err.message in 5xx | ✅ closed `225d5a0` + `19b9199` |
+| H35 | `generate-content-page.js` NDJSON stream error detail leaks | ✅ closed `b17c790` |
+| M13 | `newsletter-webhook.js` e.message in response body | ✅ closed `3a9019d` |
+| M26 (err-leak half) | `chat.js` err.message in outer catch | ✅ closed `9dc8c7b` (prompt-injection half → Group D) |
 | L15 | Onboarding template anon key exp 2089 | Design question (deferred) |
-| H33, H34, H35, M13, M26 | `err.message` leaks in various 5xx responses | **Open — next session (pattern fix)** |
 
-**Small-wins portion complete.** Pattern fix for the 5 error-leak findings is the next Group A session.
+**Group A done.** 8 findings closed (6 Highs + 1 Medium + 1 Medium-partial). Pattern established: `monitor.logError(route, err, { client_slug, detail: { stage, ... } })` server-side + generic user-facing response. Replicated cleanly across 6 files in two sessions.
 
 ### Group B — Shared library extraction (2-3 sessions, mechanical)
 
