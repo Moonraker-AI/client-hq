@@ -539,8 +539,8 @@ Before coding Phase 3+:
 5. ✅ **C3 + C7** — Sessions P4S1–P4S3. `api/_lib/page-token.js` (stateless HMAC), `api/onboarding-action.js` now requires verified page_token. Token minted at onboarding page deploy; contact_id sourced from verified token, not request body. Filter injection bug closed via shared helper (P4S5). 22+ existing onboarding pages redeployed with tokens.
 6. ✅ **C4** — Session P4S5. `api/_lib/postgrest-filter.js` rejects operator-prefix passthrough; `api/_lib/action-schema.js` per-table manifest (permissive defaults, tightening follows as observed). `api/action.js` writes field-level rows to `activity_log` on every mutation. `api/onboarding-action.js` shares the filter helper.
 
-### Phase 5 — Hardening passes (PENDING)
-8. **H9** — rotate `CF_R2_DEPLOY_SECRET`, remove source fallback, fail-closed.
+### Phase 5 — Hardening passes (IN PROGRESS)
+8. ✅ **H9 + L14** — commit `36ac5bb` (2026-04-17). Rotated `CF_R2_DEPLOY_SECRET` in Vercel, removed source fallback from `api/admin/deploy-to-r2.js:10`, module-load warning + request-time 500 on missing env var. The old fallback `'moonraker-r2-deploy-2026'` no longer works against the worker.
 9. **H21 + N6** — extract `_lib/google-auth.js`, delete 7 duplicate `getDelegatedToken` copies.
 10. **H4 + H24 + M10 + M16 + the many AbortController gaps** — extract `fetchWithTimeout`, apply everywhere.
 11. **Pattern 12** — migrate inline Supabase fetches to helper in the five big files. Mechanical, test-with-deploy.
@@ -568,12 +568,12 @@ _(Brought forward from Phase 7 since Chris chose "ship now" over "wait for traff
 ## Running tallies
 
 - **Critical:** 9 total (C1–C9). **Resolved: 9 ✅** (all).
-- **High:** 35 total (H1–H35). **Resolved: 4** (H5, H8, H11, H14). **Open: 31.**
+- **High:** 35 total (H1–H35). **Resolved: 5** (H5, H8, H9, H11, H14). **Open: 30.**
 - **Medium:** 37 total (M1–M37). **Resolved: 1+** (M8 confirmed; several more likely closed via Phase 4 action-schema work — needs verification sweep). **Open: ~36.**
-- **Low:** 25 total (L1–L25). **Open: 25.**
+- **Low:** 25 total (L1–L25). **Resolved: 1** (L14). **Open: 24.**
 - **Nit:** 6 total (N1–N6). **Open: 6.**
 
-**Total: 112 findings. Resolved: ≥14. Open: ≤98.**
+**Total: 112 findings. Resolved: ≥16. Open: ≤96.**
 
 ### Resolution log
 | Finding | Commit / Session | Date |
@@ -587,5 +587,6 @@ _(Brought forward from Phase 7 since Chris chose "ship now" over "wait for traff
 | C9 | Phase 4 S7 (submit-endorsement + html-sanitizer) | 2026-04-17 |
 | H5 | Phase 4 S4 (rate-limit chat endpoints) | 2026-04-17 |
 | H14 | Phase 4 S4 (per-IP submit-entity-audit limit) | 2026-04-17 |
+| H9 + L14 | `36ac5bb` (rotate CF_R2_DEPLOY_SECRET, remove fallback) | 2026-04-17 |
 
 Audit was performed across five sessions reading ~11,000 lines of API route code, the eight `_lib/` modules, relevant templates, and git history for secret leakage. Unread in detail: chat system prompt bodies (low-risk content), several `send-*-email.js` / `trigger-*` / `ingest-*` routes (expected to follow already-catalogued patterns), most `api/admin/*` read-only dashboard routes. The audit is considered comprehensive for Critical and High findings; Medium/Low/Nit counts would grow modestly with further reading.
