@@ -208,9 +208,9 @@ section { padding: 4.5rem 0; }
 .reveal.visible { opacity: 1; transform: translateY(0); }
 
 /* Footer */
-.footer { background: var(--color-navy); color: rgba(232,245,239,.55); padding: 2.5rem 0; text-align: center; font-size: .8125rem; }
-.footer img { height: 28px; opacity: .85; margin-bottom: .75rem; }
-.footer a { color: var(--color-primary); }
+.confidential { text-align: center; padding: 2rem 0; color: var(--color-muted); font-size: .8125rem; letter-spacing: .04em; }
+.footer { background: var(--color-navy); color: rgba(232,245,239,.4); padding: 3rem 0; text-align: center; font-size: .8125rem; }
+.footer img { height: 28px; opacity: .6; margin-bottom: .75rem; }
 
 /* Hidden utility */
 .hidden { display: none !important; }
@@ -454,13 +454,8 @@ section { padding: 4.5rem 0; }
     </div>
   </section>
 
-  <footer class="footer">
-    <div class="container">
-      <img src="/assets/logo.png" alt="Moonraker">
-      <p>Moonraker AI &middot; Marketing for therapy practices</p>
-      <p style="margin-top:.5rem"><a href="https://moonraker.ai">moonraker.ai</a></p>
-    </div>
-  </footer>
+  <div class="confidential"><div class="container">This campaign summary is confidential and prepared exclusively for <span id="footerPractice">our client</span>.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai</div></div>
+  <footer class="footer"><div class="container"><img src="/assets/logo.png" alt="Moonraker"><br>moonraker.ai</div></footer>
 
 </main>
 
@@ -712,6 +707,12 @@ section { padding: 4.5rem 0; }
     document.getElementById('windowLabel').textContent = fmtDate(data.window.start) + " \u2192 " + fmtDate(data.window.end) + "  (" + data.window.months + " months)";
 
     document.title = 'Campaign Summary | ' + (data.client.practice || 'Moonraker');
+
+    // Footer confidentiality line
+    var footerPractice = document.getElementById('footerPractice');
+    if (footerPractice && data.client.practice) {
+      footerPractice.textContent = data.client.practice;
+    }
 
     // ── Headline KPIs ───────────────────────────────────────────────
     renderHeadlineKpis(data);
