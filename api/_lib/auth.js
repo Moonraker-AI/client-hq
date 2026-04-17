@@ -100,10 +100,6 @@ async function verifyJwt(token) {
   var signingInput = parts[0] + '.' + parts[1];
   var signature = b64urlDecode(parts[2]);
 
-  // ES256 JWTs use raw R||S format (64 bytes), but Node expects DER
-  // Convert raw signature to DER format
-  var derSig = rawToDer(signature);
-
   var valid = nodeCrypto.verify(
     'sha256',
     Buffer.from(signingInput),
@@ -136,12 +132,6 @@ async function verifyJwt(token) {
   if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
 
   return payload;
-}
-
-// Convert raw R||S (64 bytes) to DER format for ECDSA
-// Not needed when using dsaEncoding: 'ieee-p1363', but kept for reference
-function rawToDer(raw) {
-  return raw; // Node handles ieee-p1363 natively
 }
 
 // ── Token extraction ──────────────────────────────────────────────
