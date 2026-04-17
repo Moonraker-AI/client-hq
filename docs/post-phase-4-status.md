@@ -7,9 +7,9 @@
 
 ## Where the audit stands
 
-All 9 Criticals closed. **Twenty-seven Highs closed** (H4, H5, H7, H8, H9, H10, H11, H12, H14, H15, H18, H19, H20, H21, H22, H24, H25, H26, H27, H28, H30, H31, H32, H33, H34, H35, H36). **M6, M8, M9, M10, M11, M12, M13, M14, M15, M16, M20, M22, M26 (fully resolved), M30, M38 closed.** **L8**, L14, L16, L26, L27 closed. Group C closed the template-escape surface; Group B.1 collapsed the `getDelegatedToken` duplication; Group D hardened every Claude-prompting route with `sanitizer.sanitizeText` at untrusted-input sources plus delimiter framing around large blobs, closing the prompt-injection half of M26. Group B.2 extracted `fetchWithTimeout` into `_lib/` and eliminated every bare `fetch()` call across the four files with the biggest AbortController gap. Group E converted every non-transactional DELETE+INSERT pair into a PostgREST `resolution=merge-duplicates` upsert (with stale-row cleanup on onboarding_steps) and converted `generate-proposal.js` fire-and-forget PATCHes into awaited try/catch + monitor.logError. Group F hardened every public-facing input validation surface: UUID regex + encodeURIComponent at concat sites on `content-chat.js`, require-Origin on `submit-entity-audit.js` + `content-chat.js`, FQDN validation on `admin/manage-site.js`, recipient allowlist on `digest.js`, existence check before PATCH on `newsletter-unsubscribe.js`, and TOCTOU pre-check removal on `submit-entity-audit.js`. H36 (8th `getDelegatedToken` copy in `convert-to-prospect.js`, discovered during B.1 verification) closed as Group D pre-task. `authenticator_secret_key` null-on-all-rows investigation resolved: `SENSITIVE_FIELDS` includes it; the null state just means no 2FA setup has been saved yet through the admin UI. Not a bug.
+All 9 Criticals closed. **Thirty-one Highs closed** (H1, H2, H3, H4, H5, H7, H8, H9, H10, H11, H12, H14, H15, H17, H18, H19, H20, H21, H22, H24, H25, H26, H27, H28, H30, H31, H32, H33, H34, H35, H36). **M2, M6, M8, M9, M10, M11, M12, M13, M14, M15, M16, M18, M20, M22, M26 (fully resolved), M30, M38 closed.** **L8**, L14, L16, L26, L27 closed. Group C closed the template-escape surface; Group B.1 collapsed the `getDelegatedToken` duplication; Group D hardened every Claude-prompting route with `sanitizer.sanitizeText` at untrusted-input sources plus delimiter framing around large blobs, closing the prompt-injection half of M26. Group B.2 extracted `fetchWithTimeout` into `_lib/` and eliminated every bare `fetch()` call across the four files with the biggest AbortController gap. Group E converted every non-transactional DELETE+INSERT pair into a PostgREST `resolution=merge-duplicates` upsert (with stale-row cleanup on onboarding_steps) and converted `generate-proposal.js` fire-and-forget PATCHes into awaited try/catch + monitor.logError. Group F hardened every public-facing input validation surface: UUID regex + encodeURIComponent at concat sites on `content-chat.js`, require-Origin on `submit-entity-audit.js` + `content-chat.js`, FQDN validation on `admin/manage-site.js`, recipient allowlist on `digest.js`, existence check before PATCH on `newsletter-unsubscribe.js`, and TOCTOU pre-check removal on `submit-entity-audit.js`. Group G batch 1 closed the operational-resilience cherry-picks: 60s TTL + last_login_at throttle in `_lib/auth.js`, `rawToDer` dead-code removal, hard-required `AGENT_API_KEY` plus `sanitizer.sanitizeText` on team notification emails in `process-entity-audit.js`, full-UUID composite `checklist_items` id across both writer sites, and H2 doc-marked after verifying the P4S5 `postgrest-filter` extraction had already closed it. H36 (8th `getDelegatedToken` copy in `convert-to-prospect.js`, discovered during B.1 verification) closed as Group D pre-task. `authenticator_secret_key` null-on-all-rows investigation resolved: `SENSITIVE_FIELDS` includes it; the null state just means no 2FA setup has been saved yet through the admin UI. Not a bug.
 
-~72 findings remain. None of them are attack chains of the same severity as C1-C9. Most are hardening, consistency, and observability work. Ordering them linearly doesn't match their actual value; grouping them does.
+~66 findings remain. None of them are attack chains of the same severity as C1-C9. Most are hardening, consistency, and observability work. Ordering them linearly doesn't match their actual value; grouping them does.
 
 ---
 
@@ -94,22 +94,24 @@ All 9 Criticals closed. **Twenty-seven Highs closed** (H4, H5, H7, H8, H9, H10, 
 
 **Recommendation:** One session. All input-validation/boundary-check fixes on public-ish endpoints.
 
-### Group G — Operational resilience (1 session)
+### Group G — Operational resilience (Group G batch 1 ✅ COMPLETE 2026-04-18, batch 2 pending)
 
-| ID | Issue | Effort |
+| ID | Issue | Status |
 |---|---|---|
-| H1 | `_profileCache` no TTL | 15 min |
-| H2 | Still listed as open — but H2 is just "same bug in two files" and the helper is extracted; verify and close | 5 min |
-| H3 | `rawToDer` dead code — delete | 5 min |
-| H6 | Stripe webhook fire-and-forget to `/api/notify-team` with no retry | 30 min (queue table or inline) |
-| H13 | Agreement-chat 8K CSA on every prompt — add Anthropic prompt caching | 30 min |
-| H17 | process-entity-audit internal auth fallback empty-string | 15 min |
-| H29 | enrich-proposal encrypt `enrichment_data` at rest | 30 min |
-| M2 | `last_login_at` updated every request — throttle | 15 min |
-| M18 | checklist_items composite ID 8-hex-char collision | 10 min |
-| M19 | Webhook race with auto-send audit email | Needs design |
+| H1 | `_profileCache` no TTL | ✅ closed `6e8a51a` (batch 1) |
+| H2 | Still listed as open — but H2 is just "same bug in two files" and the helper is extracted; verify and close | ✅ closed `e00be4c` (Phase 4 S5; doc-marked batch 1) |
+| H3 | `rawToDer` dead code — delete | ✅ closed `f1c0d22` (batch 1) |
+| H6 | Stripe webhook fire-and-forget to `/api/notify-team` with no retry | Batch 2 (30 min, queue table or inline) |
+| H13 | Agreement-chat 8K CSA on every prompt — add Anthropic prompt caching | Batch 2 (30 min) |
+| H17 | process-entity-audit internal auth fallback empty-string + HTML injection | ✅ closed `7f094dc` (batch 1) |
+| H29 | enrich-proposal encrypt `enrichment_data` at rest | Batch 2 (30 min; requires encryption key infra check) |
+| M2 | `last_login_at` updated every request — throttle | ✅ closed `6e8a51a` (batch 1; bundled with H1) |
+| M18 | checklist_items composite ID 8-hex-char collision | ✅ closed `e092cae` + `4fb46a7` (batch 1; sister site in setup-audit-schedule.js fixed together) |
+| M19 | Webhook race with auto-send audit email | Parked — needs product decision |
 
-**Recommendation:** Two short sessions, cherry-pick the 15-30 min items into groups of 4-5.
+**Batch 1 status:** Six findings closed (H1, H2, H3, H17, M2, M18) across 5 code commits + 1 doc commit. H2 closed without code (incidentally resolved by P4S5). M18 closed across two files in the same group — sister site in `setup-audit-schedule.js:124` had identical copy-pasted pattern writing into the same collision surface.
+
+**Batch 2 next:** H6, H13, H29. H29 is the only one with an infra prerequisite (encryption-key-at-rest strategy).
 
 ### Group H — M1 Stripe metadata detection (0.5 session)
 
@@ -137,25 +139,24 @@ Items I recommend marking "won't fix" or "needs design":
 
 ## Recommended next session
 
-**Group G batch 1 — operational resilience, cherry-pick the 15-30 min items.**
+**Group G batch 2 — operational resilience, heavier items.**
 
 Reasoning:
-- Group F closed 2026-04-18 (see retrospective below). Six commits + one doc commit landed; every Vercel deploy READY. Public endpoints are now input-validation-hardened: UUID gates and Origin-required on content-chat; FQDN gate on manage-site; recipient allowlist on digest; PATCH-zero-rows oracle closed on unsubscribe; slug TOCTOU replaced with 23505 catch. M39 filed mid-session (email has no UNIQUE constraint, needs a product call).
-- Group G is the next natural theme. Per the original grouping, it bundles a mix of 15-30 minute cleanups (`_profileCache` TTL, `rawToDer` dead code, `last_login_at` throttle, checklist_items ID collision, H2 verify-and-close) with a few meatier items (H6 Stripe fire-and-forget retry, H13 agreement-chat prompt caching, H17 internal auth fallback, H29 encrypt enrichment_data). The recommendation in the original Group G table was "Two short sessions, cherry-pick the 15-30 min items into groups of 4-5" — that still fits. Session 1 would bundle H1, H2, H3, M2, M18 (all small), with H17 included if it fits the time budget.
-- M19 stays parked (needs product call on Stripe-late-lands behavior). M1 still waits on metadata being added to Stripe payment links. H13 is worth pulling forward if Opus cost on agreement-chat has become noticeable; otherwise batch 2.
+- Group G batch 1 closed 2026-04-18 (see retrospective below). Five code commits + one doc commit landed; every Vercel deploy READY. Six findings closed (H1, H2, H3, H17, M2, M18). H2 closed without code via the P4S5 helper extraction that already happened on 2026-04-17. M18 closed across two writer sites (`process-entity-audit.js:374` primary + `setup-audit-schedule.js:124` sister site) — same copy-pasted pattern, same collision surface, bundled into one commit group.
+- Batch 2 is the meatier half of Group G: H6 (Stripe webhook fire-and-forget retry), H13 (agreement-chat 8K CSA prompt caching), H29 (enrich-proposal encryption at rest for `enrichment_data`). H29 requires a short encryption-key infra check (does `crypto.encryptFields` already cover this table, or does the key rotation story need extending?) before code change.
+- M19 stays parked (needs product call on Stripe-late-lands behavior). M1 still waits on metadata being added to Stripe payment links. M37 stays parked (auto-schedule intent question).
 
-Recommended sequence after Group F:
+Recommended sequence after Group G batch 1:
 
-1. **Group G batch 1 — quick wins** (1 short session) — H1, H2, H3, M2, M18 (and H17 if time allows)
-2. **Group G batch 2 — heavier** (1 session) — H6, H13, H29 (H29 requires encryption key infra check)
-3. **Group B.3 — Supabase helper migration** (1-2 sessions) — remaining files outside B.2's four; closes L1 and the raw-fetch pattern in `generate-proposal.js:62,80`, `submit-entity-audit.js` email pre-check (which becomes relevant again if M39 resolves to a schema change)
-4. **Group I — Lows + Nits sweep** (1 session)
-5. **Group H — M1 Stripe metadata** (once dashboard metadata is added)
-6. **M39 + M19** — product-decision items, not code-only; fold in when Chris or Scott makes the call
+1. **Group G batch 2 — heavier** (1 session) — H6, H13, H29 (H29 requires encryption key infra check first)
+2. **Group B.3 — Supabase helper migration** (1-2 sessions) — remaining files outside B.2's four; closes L1 and the raw-fetch pattern in `generate-proposal.js:62,80`, `submit-entity-audit.js` email pre-check (which becomes relevant again if M39 resolves to a schema change)
+3. **Group I — Lows + Nits sweep** (1 session)
+4. **Group H — M1 Stripe metadata** (once dashboard metadata is added)
+5. **M39 + M19 + M37** — product-decision items, not code-only; fold in when Chris or Scott makes the call
 
-Approximately 4-5 sessions to clear the remaining open findings, or stop earlier once diminishing returns kick in.
+Approximately 3-4 sessions to clear the remaining open findings, or stop earlier once diminishing returns kick in.
 
-## Prompt for next session (Group G batch 1 — operational resilience cherry-picks)
+## Executed prompt — Group G batch 1 (historical, for reference)
 
 ```
 Operational resilience session — batch 1. A mix of short cleanups with
@@ -603,6 +604,196 @@ Out of scope for Group F (flagged as new finding or candidate future work):
 - `api/submit-entity-audit.js` outer catch at L216 still returns `err.message` in the 500 response body when the error isn't a unique-violation. Not worsened by Group F's edit; out of the M9 scope (which was strictly the TOCTOU). Small cleanup candidate for the Lows + Nits sweep.
 - Page-token option (a) for content-chat.js — wiring the `content_preview` scope at deploy time and requiring a valid page token on each chat call. Needs a deploy-pipeline audit (where templates get `__PAGE_TOKEN__` injected) before it can be turned on safely. Candidate future session if the status-based gate proves insufficient; no evidence it will.
 - H12 sub-issue: Opus 4.6 model choice + 4000 max_tokens. Was always a cost note, not a security fix. Rate limit is the cost control.
+
+## Group G batch 1 — Operational resilience cherry-picks ✅ COMPLETE (2026-04-18)
+
+Six findings closed across five code commits + one doc commit. Three touched `api/_lib/auth.js` (H1, M2 bundled + H3 separate), three touched `api/process-entity-audit.js` (M18 primary + H17 sub 1 auth + H17 sub 2 HTML sanitization) plus one sister-site fix in `api/setup-audit-schedule.js` (M18). One finding (H2) closed without a code change — already resolved incidentally by P4S5 on 2026-04-17, just needed the doc mark.
+
+Commits landed on main:
+
+- `6e8a51a` — **H1 + M2.** `api/_lib/auth.js` cache TTL + `last_login_at` throttle, bundled because both touch `_profileCache` and M2's throttle depends on H1's extended SELECT. `_profileCache` entries now store `{ profile, fetched_at }` with a 60s TTL (`PROFILE_CACHE_TTL_MS`). New `maybeUpdateLastLogin(userId)` helper reads the cached profile's `last_login_at`, skips the PATCH if `now - prevTs < LAST_LOGIN_THROTTLE_MS` (60s), and updates the cache in-place before firing so concurrent same-window calls short-circuit. Replaces the inline fire-and-forget PATCH at both `requireAdmin` (formerly L198-204) and `requireAdminOrInternal` (formerly L253-259). SELECT at the cache-miss path extended from `id,email,display_name,role` to `id,email,display_name,role,last_login_at`. Trade-offs: up to 60s stale profile after a role change; up to 60s of missed `last_login_at` granularity. Both match the thresholds called out in the findings.
+- `f1c0d22` — **H3.** `api/_lib/auth.js` dead code deletion. Removed the `var derSig = rawToDer(signature)` assignment and its two-line misleading comment at the call site, plus the `function rawToDer(raw) { return raw }` declaration and its comment block below `verifyJwt`. Both `nodeCrypto.verify` calls already passed the raw `signature` buffer; `derSig` was never referenced. `dsaEncoding: 'ieee-p1363'` handles the raw R||S format natively. No behavioral change. Grep-verified no `rawToDer`/`derSig` tokens remain.
+- `e092cae` + `4fb46a7` — **M18** (both writer sites). `checklist_items.id` column verified via `information_schema.columns` as unconstrained `text`. Existing data: 1875 rows across 80 distinct 8-char prefixes, no collisions, uniform 12-char ids. Primary fix in `process-entity-audit.js:374` switches `auditId.substring(0, 8) + '-' + idx.padStart(3, '0')` to `auditId + '-' + idx.padStart(3, '0')` (44-char composite). Sister fix in `setup-audit-schedule.js:124` applies the identical substitution to the lead-to-client conversion path's `tasks` JSONB explosion. Both writer sites were emitting into the same collision surface; closing only one would have left the bug open. No downstream reader parses the prefix — templates access rows by `client_slug` or `audit_id`, the one direct-id read (`_templates/progress.html:316`) is opaque.
+- `7f094dc` — **H17** both sub-issues. Added `var sanitizer = require('./_lib/html-sanitizer')` to the top-of-file imports alongside the other `_lib` modules. **Sub 1:** `var internalAuth = process.env.CRON_SECRET || process.env.AGENT_API_KEY || ''` replaced with a bare `process.env.AGENT_API_KEY` read and an explicit `throw` if missing. The route is only invoked from the agent callback path, so CRON_SECRET was never semantically correct here. The throw lands in the existing try/catch which emits `step: 'auto_send_warning'` with the error text — an env regression now surfaces loudly instead of silently 401ing at `send-audit-email`. **Sub 2:** Both team notification email bodies (premium-review at L579-585 and quarterly at L623-628) wrap every interpolated variable in `sanitizer.sanitizeText()` at reasonable length caps — first_name/last_name 100, practiceName 200, audit_period 50, cresScore 20. `auditId` uses `encodeURIComponent` inside the anchor href because `sanitizeText` would strip the hyphens a UUID requires. Subject lines sanitized too. `varianceHtml` left raw because it's built from server-computed numeric scores with no user-controlled surface.
+- `e00be4c` (pre-existing, doc-marked 2026-04-18) — **H2.** Phase 4 S5 had already extracted `api/_lib/postgrest-filter.js` with an operator allowlist and per-value `encodeURIComponent`, and wired both `api/action.js` (L60, L96, L132) and `api/onboarding-action.js` (L95, L105) to call `pgFilter.buildFilter(filters)`. Both files' local `buildFilter` declarations were deleted at that time. The audit doc had not been updated to reflect the resolution — Group G batch 1 walkthrough verified on current main and added the Resolution block.
+- Doc commit (next) — `api-audit-2026-04.md` marks H1/H2/H3/H17/M2/M18 ✅ RESOLVED with Resolution blocks; Highs 27 → 31, Mediums 15 → 17; total ≥56 → ≥62 resolved across 118 findings; 6 rows appended to the Resolution log. `post-phase-4-status.md` marks Group G batch 1 complete and points the "Recommended next session" at batch 2.
+
+Net result:
+- H1, H2, H3, H17, M2, M18 fully resolved.
+- `api/_lib/auth.js` now has bounded admin-profile staleness (60s instead of unbounded-warm-instance) and a sustainable PATCH rate on `admin_profiles.last_login_at` (at most 1/min/admin instead of per-request). Both changes composed cleanly in a single cache-shape change.
+- `api/process-entity-audit.js` notification emails no longer expose team inboxes to HTML injection from public-audit submitters. The internal-auth path is now a single deliberate env var with a loud failure mode.
+- `checklist_items` collision surface closed across both writer sites.
+- Tallies: **Highs 31 / 36 resolved (5 open: H6, H13, H16, H23, H29). Mediums 17 / 39 resolved. Total ≥62 resolved / ≤56 open across 118 findings.**
+
+Behavior-preservation notes:
+- H1's 60s TTL accepts up to 60s of stale role/display_name/email after a write. For admin role elevation or removal that's within the "normal operational latency" band — admin UI could force-refresh by setting `fetched_at = 0` if that ever becomes load-bearing, but no current flow needs it.
+- M2's cache-first-then-fire ordering is deliberate: if the PATCH fails, the cache holds a `nowIso` that didn't persist to DB, which means concurrent same-window requests correctly skip (we didn't want them piling on the failed PATCH), and the next request after the 60s window will see cache expiry and try again. The lost `last_login_at` granularity on PATCH failure is bounded by the same 60s and matches the finding's stated tolerance.
+- H3 preserved signature-verification semantics exactly — both `nodeCrypto.verify` calls already used the raw buffer. The deletion is pure dead-code removal; no crypto change.
+- M18's sister site fix in `setup-audit-schedule.js:124` is a scope expansion over the audit's stated site, justified because it's the same bug on the same column. The commit message and Resolution block call it out explicitly. Future auditors tracing back from the finding to current main will see both writer sites updated with matching commit references.
+- H17 sub 2 chose `sanitizer.sanitizeText` rather than local `esc()` because the file already uses sanitizer-based patterns elsewhere (it's the canonical helper per Group D/F precedent) and the notification bodies are plain-text-shaped with minimal HTML structure; strict tag-strip is appropriate. `varianceHtml` stays raw because it's server-computed; an alternative would be to escape the numeric interpolations inside `fmtDelta` defensively, but those are guaranteed to be numbers by the computation path and escaping them would add noise without adding safety.
+
+Out of scope for Group G batch 1 (flagged as candidate follow-up):
+- `api/process-entity-audit.js` has additional HTML interpolation sites outside the two notification emails — the scorecard template read/substitute/push path around L419-538 and the entity-audit suite deploy around L480-540. The session prompt explicitly scoped H17 to the two team notification emails and asked for any additional sites to be filed separately. On inspection during the H17 edit, the scorecard template path substitutes admin-controlled values (practice name, slug, scores) into a GitHub-stored HTML template using `.replace(/\n/g, '')` — that's a different shape from the notification emails (template is trusted, values are admin-JWT-gated) and sits closer in shape to H16's template-placeholder concern than to H17's public-submitter concern. Left for a future session; no action this batch.
+- `setup-audit-schedule.js` wasn't explicitly scoped into M18 but got pulled in as same-bug. Reasonable alternative would be to file it as a separate Medium (e.g. M40) and leave the fix for a future session. Chose the bundle approach because the pattern was byte-identical copy-paste and fixing only one of two writers is an incomplete remediation. If a reviewer prefers the separate-ID convention, the Resolution log row and the commit message both make the scope expansion visible.
+
+## Prompt for next session (Group G batch 2 — operational resilience, heavier items)
+
+```
+Operational resilience session — batch 2. Three heavier items from
+the original Group G list: H6, H13, H29. Batch 1 (H1, H2, H3, H17,
+M2, M18) closed 2026-04-18.
+
+Read docs/api-audit-2026-04.md sections H6, H13, H29 first, then
+walk through your plan before touching code.
+
+─────────────────────────────────────────────────────────────────────
+Pre-verification required at session start (current main)
+─────────────────────────────────────────────────────────────────────
+
+Batch 1's code changes are on main. Verify before starting:
+  - api/_lib/auth.js has PROFILE_CACHE_TTL_MS constant and
+    maybeUpdateLastLogin helper (H1 + M2 landed `6e8a51a`)
+  - api/_lib/auth.js has no `rawToDer` or `derSig` references
+    (H3 landed `f1c0d22`)
+  - api/process-entity-audit.js has `var sanitizer = require(...)`
+    import and `sanitizer.sanitizeText` wrappers in both notification
+    email bodies (H17 landed `7f094dc`)
+  - api/process-entity-audit.js and api/setup-audit-schedule.js use
+    the full auditId/adopted.id in checklist_items composite id, no
+    `.substring(0, 8)` (M18 landed `e092cae` + `4fb46a7`)
+
+If any of the above don't match expected state, pause and investigate
+before touching batch 2 code.
+
+─────────────────────────────────────────────────────────────────────
+Findings to close this session
+─────────────────────────────────────────────────────────────────────
+
+| Finding | Site | Shape | Est size |
+|---------|------|-------|----------|
+| H6 | api/stripe-webhook.js:129-148 | Fire-and-forget POSTs to /api/notify-team and /api/setup-audit-schedule with no retry, no await | 30 min |
+| H13 | api/agreement-chat.js:119+ | Full ~8K-token CSA in every system prompt; Anthropic prompt caching with cache_control breakpoint would collapse after first turn | 30 min |
+| H29 | api/enrich-proposal.js | Searches three team inboxes via domain-wide delegation; stores enrichment_data in contacts table unencrypted | 30 min + infra check |
+
+─────────────────────────────────────────────────────────────────────
+H29 infra prerequisite (do this first)
+─────────────────────────────────────────────────────────────────────
+
+Before touching H29 code, verify encryption infrastructure:
+  - Read api/_lib/crypto.js to confirm current SENSITIVE_FIELDS list
+    and v1:-prefix ciphertext convention (C5/H8 context).
+  - Check whether `enrichment_data` is already in SENSITIVE_FIELDS
+    (spot-check contacts table schema; the column is JSONB so the
+    encryption path may need shape extension — crypto.encryptFields
+    currently expects string fields).
+  - Decide: extend encryptFields to handle JSONB by JSON.stringify-ing
+    to ciphertext (simplest), OR split enrichment_data into separate
+    encrypted scalar columns (more invasive), OR encrypt at the
+    application layer with a dedicated wrapper.
+
+If the decision path adds >30 min of design work, file H29 as
+blocked on design and proceed with H6 and H13 only. Not every
+audit item needs to close in one session.
+
+─────────────────────────────────────────────────────────────────────
+H6 shape
+─────────────────────────────────────────────────────────────────────
+
+Current (approx — verify on main):
+  // After Stripe webhook determines product type
+  fetch('https://clients.moonraker.ai/api/notify-team', {...}).catch(...);
+  fetch('https://clients.moonraker.ai/api/setup-audit-schedule', {...}).catch(...);
+  return res.status(200).json({ received: true });
+
+Problem: if either POST fails, there's no retry and no surfacing.
+Stripe has already been 200-acknowledged so Stripe won't retry.
+Team notification missed, audit schedule not set up, no alert.
+
+Two viable shapes:
+  (a) Queue table (webhook_deliveries or similar) with pending/
+      complete/failed status and a cron processor. More durable
+      but adds a new table + cron + backoff logic.
+  (b) Inline await with monitor.critical on failure and admin
+      retry UI button. Simpler. Accepts that a transient outage
+      at notify-team could still silently fail, but the critical
+      alert email would fire.
+
+Recommendation per original audit: either works; (b) is lighter.
+Choose based on current Stripe webhook volume — if it's under
+10/day, (b) is fine; if higher, (a) is better.
+
+─────────────────────────────────────────────────────────────────────
+H13 shape
+─────────────────────────────────────────────────────────────────────
+
+api/agreement-chat.js builds a system prompt that includes the full
+CSA (Client Services Agreement, ~8K tokens) on every turn of the
+conversation. Anthropic's prompt caching can cache that block after
+the first turn, dropping cost on subsequent turns to ~10% of the
+cached prefix token count.
+
+Shape:
+  messages: [
+    { role: 'user', content: 'CSA context + user question', cache_control: { type: 'ephemeral' } },
+    ...
+  ]
+
+Breakpoint placement: after the CSA block and before the current
+user turn. The CSA text is static per-conversation — should hit
+cache on every turn after turn 1.
+
+Verify current agreement-chat.js structure before editing — if
+it's using the streaming SDK, the cache_control shape goes on the
+specific content block, not the message. Test with a multi-turn
+agreement flow and confirm cache-read token counts on the response.
+
+SCOPE FENCE: don't refactor the retry+buffering logic. Only the
+prompt-caching addition. See "scope fences" in the base instructions
+for streaming chat endpoints.
+
+─────────────────────────────────────────────────────────────────────
+Testing
+─────────────────────────────────────────────────────────────────────
+
+- Each commit's Vercel deploy must go READY.
+- Smoke tests (non-blocking):
+    * H6: Stripe test event (via Stripe CLI or dashboard test mode)
+      triggers the webhook; confirm notify-team + setup-audit-schedule
+      both fire and any failure surfaces in error_log or a critical
+      alert email.
+    * H13: Send two turns on an agreement-chat conversation; second
+      response's usage.cache_read_input_tokens should be ~8K+.
+    * H29: If in scope — encrypt a test enrichment_data row, verify
+      DB column is v1:-prefixed, verify read path still returns the
+      decrypted object shape.
+
+─────────────────────────────────────────────────────────────────────
+Out of scope (existing parked items)
+─────────────────────────────────────────────────────────────────────
+
+- M19 (Stripe-late-lands webhook race), M37 (auto-schedule post-
+  submit status flip), M39 (contacts.email UNIQUE) — all three
+  need product decisions before they're code-ready.
+- H16 and H23 — not in Group G; H16 is template-placeholder-substitution,
+  H23 is `api/chat.js` admin-DB-in-prompt. Both are candidates for
+  a dedicated session but outside Group G's operational-resilience theme.
+
+─────────────────────────────────────────────────────────────────────
+Deliverables
+─────────────────────────────────────────────────────────────────────
+
+Commit shape (suggested):
+  c1: H6 — stripe-webhook.js retry/queue logic
+  c2: H13 — agreement-chat.js prompt caching breakpoint
+  c3: H29 — enrich-proposal.js encrypt enrichment_data (if infra check passes)
+
+Then doc update:
+  - api-audit-2026-04.md: mark H6/H13/H29 ✅ RESOLVED with Resolution
+    blocks. Update tallies. Append rows to Resolution log.
+  - post-phase-4-status.md: mark Group G batch 2 complete,
+    recommend Group B.3 or Group I next based on whichever reads
+    like better value at the time.
+```
 
 ## Closing thought on the grouping approach
 
