@@ -627,11 +627,11 @@ ${surgeData}`;
           var varianceHtml = '';
           if (varianceFromPrevious) {
             var d = varianceFromPrevious;
-            function fmtDelta(val) {
+            var fmtDelta = function(val) {
               if (!val) return '<span style="color:#6B7599;">-</span>';
               var color = val > 0 ? '#00D47E' : val < 0 ? '#EF4444' : '#6B7599';
               return '<span style="color:' + color + ';">' + (val > 0 ? '+' : '') + val + '</span>';
-            }
+            };
             varianceHtml =
               '<table cellpadding="0" cellspacing="0" border="0" style="font-size:14px;margin:12px 0;">' +
               '<tr><td style="padding:4px 16px 4px 0;font-weight:600;">CRES</td><td>' + (d.cres.previous || 0) + ' &rarr; ' + d.cres.current + ' ' + fmtDelta(d.cres.delta) + '</td></tr>' +
