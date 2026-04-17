@@ -12,36 +12,8 @@ var auth = require('./_lib/auth');
 
 var PEXELS_KEY = process.env.PEXELS_API_KEY || '';
 
-// Primary image source: FTS match against the self-hosted stock_images library.
-// Avoids hotlinking, no CSP issues, ~2,189 curated therapy-appropriate images.
-// Returns { url, alt } or null.
-async function matchStockImage(suggestion) {
-  if (!suggestion) return null;
-  try {
-    var rows = await sb.mutate('rpc/match_stock_image', 'POST', {
-      suggestion: suggestion,
-      limit_n: 1
-    });
-    if (Array.isArray(rows) && rows.length > 0) {
-      var row = rows[0];
-      if (row && row.hosted_url) {
-        // Build alt from the first sentence of rich_description for accessibility
-        var alt = '';
-        if (row.rich_description) {
-          alt = row.rich_description.split(/[.!?]/)[0].trim().substring(0, 200);
-        }
-        if (!alt) alt = (row.mood_tags || '').split(',')[0].trim().substring(0, 200);
-        if (!alt) alt = suggestion.substring(0, 200);
-        return { url: row.hosted_url, alt: alt, source: 'stock_images' };
-      }
-    }
-  } catch (e) {
-    console.error('Stock image match failed for "' + suggestion.substring(0, 60) + '":', e.message);
-  }
-  return null;
-}
-
-// Fallback: hit Pexels API (retained as safety net if stock library doesn't match).
+// Newsletter stories use Pexels for image sourcing. Larger pool of compliance-relevant
+// imagery than the internal stock library (which is reserved for client sites).
 async function searchPexelsImage(query) {
   if (!PEXELS_KEY || !query) return null;
   try {
@@ -59,8 +31,7 @@ async function searchPexelsImage(query) {
       return {
         url: baseUrl + '?auto=compress&cs=tinysrgb&w=600&h=300&fit=crop',
         alt: photo.alt || searchTerms,
-        photographer: photo.photographer || '',
-        source: 'pexels'
+        photographer: photo.photographer || ''
       };
     }
   } catch (e) {
@@ -240,25 +211,22 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'Expected 5 stories in response', got: content.stories ? content.stories.length : 0 });
     }
 
-    // Match images: stock_images FTS first, Pexels fallback, then any existing image
+    // Search Pexels for story images, fall back to any existing URL from prior run
     for (var p = 0; p < content.stories.length; p++) {
       var existingImg = stories[p] ? (stories[p].image_url || '') : '';
       var existingAlt = stories[p] ? (stories[p].image_alt || '') : '';
-      var suggestion = content.stories[p].image_suggestion || content.stories[p].headline || '';
 
-      // 1. Try self-hosted stock library (preferred: no CSP, curated, permanent)
-      var img = await matchStockImage(suggestion);
-
-      // 2. Fallback to Pexels API if stock library has no match
-      if (!img && PEXELS_KEY) {
-        img = await searchPexelsImage(suggestion);
-      }
-
-      if (img) {
-        content.stories[p].image_url = img.url;
-        content.stories[p].image_alt = img.alt;
+      if (PEXELS_KEY) {
+        var suggestion = content.stories[p].image_suggestion || content.stories[p].headline || '';
+        var img = await searchPexelsImage(suggestion);
+        if (img) {
+          content.stories[p].image_url = img.url;
+          content.stories[p].image_alt = img.alt;
+        } else if (existingImg) {
+          content.stories[p].image_url = existingImg;
+          content.stories[p].image_alt = existingAlt;
+        }
       } else if (existingImg) {
-        // 3. Final fallback: keep existing image from a prior run
         content.stories[p].image_url = existingImg;
         content.stories[p].image_alt = existingAlt;
       }
@@ -317,6 +285,7 @@ module.exports = async function handler(req, res) {
     try { return res.status(500).json({ error: 'Fatal: ' + fatal.message }); } catch(e2) {}
   }
 };
+
 
 
 
