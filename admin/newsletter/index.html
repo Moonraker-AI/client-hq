@@ -2456,6 +2456,15 @@ async function postImport(subscribers, resubscribe) {
   return res.json();
 }
 
+// After add/import: re-render the list in a way that preserves the user's
+// current search state. If the search box has content, re-run the server-side
+// search (which will include the just-added row). Otherwise do a full reload.
+function refreshSubscriberView() {
+  var q = ((document.getElementById('subSearch') || {}).value || '').trim();
+  if (q) filterSubscribers();
+  else loadSubscribers();
+}
+
 var MANUAL_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function addManualSubscriber() {
@@ -2491,7 +2500,7 @@ async function addManualSubscriber() {
       toast('Added ' + email);
       clearManualFields(true);
       loadSubscriberStats();
-      loadSubscribers();
+      refreshSubscriberView();
     } else if (row.result === 'already_active') {
       toast(email + ' is already subscribed', 'error');
     } else if (row.result === 'invalid_email') {
@@ -2508,7 +2517,7 @@ async function addManualSubscriber() {
           toast('Resubscribed ' + email);
           clearManualFields(true);
           loadSubscriberStats();
-          loadSubscribers();
+          refreshSubscriberView();
         } else {
           toast('Resubscribe failed: ' + (row2.result || 'unknown'), 'error');
         }
@@ -2592,7 +2601,7 @@ async function runImport() {
       toast(bits.length ? bits.join(', ') : 'Nothing imported');
       closeImportModal();
       loadSubscriberStats();
-      loadSubscribers();
+      refreshSubscriberView();
     } catch (err) {
       toast('Import failed: ' + err.message, 'error');
     } finally {
@@ -3167,19 +3176,73 @@ function flashFields(ids) {
 
 // ---- Search filter ----
 var allLoadedSubs = [];
+// Server-side search. The default list is capped at 500 rows, so a
+// client-only filter would silently miss subscribers outside that window.
+// When the query box is empty we fall back to the in-memory list;
+// when it has content, we hit the DB with a PostgREST `or=(ilike...)`.
+var _subSearchTimer = null;
+var _subSearchSeq = 0;
+
 function filterSubscribers() {
-  var q = (document.getElementById('subSearch').value || '').toLowerCase().trim();
+  var q = (document.getElementById('subSearch').value || '').trim();
   if (!q) {
-    renderSubscriberList(allLoadedSubs);
+    if (_subSearchTimer) { clearTimeout(_subSearchTimer); _subSearchTimer = null; }
+    document.getElementById('subCount').textContent = (allLoadedSubs ? allLoadedSubs.length : 0) + ' shown';
+    renderSubscriberList(allLoadedSubs || []);
     return;
   }
-  var filtered = allLoadedSubs.filter(function(s) {
-    return (s.email || '').toLowerCase().indexOf(q) >= 0 ||
-      ((s.first_name || '') + ' ' + (s.last_name || '')).toLowerCase().indexOf(q) >= 0;
-  });
-  renderSubscriberList(filtered);
+
+  if (_subSearchTimer) clearTimeout(_subSearchTimer);
+  _subSearchTimer = setTimeout(function() { runSubSearch(q); }, 250);
 }
 window.filterSubscribers = filterSubscribers;
+
+async function runSubSearch(q) {
+  // Strip characters that would break the PostgREST or=(...) grammar or
+  // be misinterpreted as ilike wildcards. A literal underscore is harmless
+  // (matches any single char) — we leave it alone.
+  var safe = q.toLowerCase().replace(/[%,()]/g, '').trim();
+  if (!safe) {
+    document.getElementById('subCount').textContent = '0 matches';
+    renderSubscriberList([]);
+    return;
+  }
+
+  var seq = ++_subSearchSeq;
+  var pat = encodeURIComponent('*' + safe + '*');
+
+  var filter = document.getElementById('subFilter').value;
+  var sortVal = document.getElementById('subSort').value;
+  var orderBy = sortVal === 'recent' ? 'created_at.desc'
+    : sortVal === 'email' ? 'email.asc'
+    : 'last_name.asc.nullslast,first_name.asc.nullslast,email.asc';
+
+  var params = 'select=*'
+    + '&or=(email.ilike.' + pat + ',first_name.ilike.' + pat + ',last_name.ilike.' + pat + ')'
+    + '&order=' + orderBy
+    + '&limit=500';
+
+  if (filter === 'active') params += '&status=eq.active';
+  else if (filter === 'hot') params += '&status=eq.active&engagement_tier=eq.hot';
+  else if (filter === 'warm') params += '&status=eq.active&engagement_tier=eq.warm';
+  else if (filter === 'cold') params += '&status=eq.active&engagement_tier=eq.cold';
+  else if (filter === 'unsubscribed') params += '&status=eq.unsubscribed';
+  else if (filter === 'bounced') params += '&status=eq.bounced';
+
+  try {
+    var results = await sb('newsletter_subscribers', params);
+    // Ignore stale responses — user kept typing after this fetch began
+    if (seq !== _subSearchSeq) return;
+    document.getElementById('subCount').textContent = results.length + ' match' + (results.length === 1 ? '' : 'es');
+    renderSubscriberList(results);
+  } catch (e) {
+    console.error('Subscriber search failed:', e);
+    if (seq === _subSearchSeq) {
+      document.getElementById('subCount').textContent = 'Search failed';
+    }
+  }
+}
+window.runSubSearch = runSubSearch;
 
 // ---- Sidebar: collapse, mobile, theme ----
 (function() {
