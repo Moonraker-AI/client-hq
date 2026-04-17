@@ -481,10 +481,17 @@ textarea.form-input { resize: vertical; min-height: 80px; line-height: 1.6; }
               <input type="text" class="form-input" id="editionPreview" placeholder="Short preview shown in inbox" />
             </div>
           </div>
-          <!-- Subject line suggestions from AI -->
+          <!-- Subject line + preview text suggestions from AI -->
           <div id="subjectSuggestions" style="display:none;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--color-border);">
-            <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);margin-bottom:.4rem;">AI Suggestions</div>
-            <div id="subjectSuggestionsList" style="display:flex;flex-wrap:wrap;gap:.4rem;"></div>
+            <div id="subjectLineGroup" style="display:none;margin-bottom:.75rem;">
+              <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);margin-bottom:.4rem;">Subject Line Options</div>
+              <div id="subjectLinesList" style="display:flex;flex-wrap:wrap;gap:.4rem;"></div>
+            </div>
+            <div id="previewTextGroup" style="display:none;">
+              <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);margin-bottom:.4rem;">Preview Text Options</div>
+              <div id="previewTextsList" style="display:flex;flex-wrap:wrap;gap:.4rem;"></div>
+            </div>
+            <div style="font-size:.7rem;color:var(--color-muted);margin-top:.5rem;font-style:italic;">Click any option to fill the matching field above.</div>
           </div>
         </div>
 
@@ -1045,13 +1052,15 @@ async function refreshStoryImage(index) {
   btn.lastChild.textContent = 'Searching...';
 
   try {
+    // Build payload. When we have a story_id, let the server use the row's image_suggestion.
+    // Only fall back to headline if we have no story_id (shouldn't happen here but defensive).
+    var payload = { story_id: storyId };
+    if (!storyId) payload.query = headline;
+
     var resp = await fetch('/api/newsletter-refresh-image', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        story_id: storyId,
-        query: altText || headline
-      })
+      body: JSON.stringify(payload)
     });
     var data = await resp.json();
     if (!resp.ok) throw new Error(data.error || 'Refresh failed');
@@ -2511,20 +2520,26 @@ async function runAIGenerate() {
     // Populate final thoughts
     document.getElementById('finalThoughts').value = content.final_thoughts || '';
 
-    // Show subject line suggestions
+    // Show subject line suggestions (organized into two labeled groups)
     if (content.subject_lines && content.subject_lines.length) {
       var sugEl = document.getElementById('subjectSuggestions');
-      var listEl = document.getElementById('subjectSuggestionsList');
       sugEl.style.display = 'block';
-      listEl.innerHTML = '';
+
+      var subjectListEl = document.getElementById('subjectLinesList');
+      var subjectGroup = document.getElementById('subjectLineGroup');
+      subjectListEl.innerHTML = '';
       content.subject_lines.forEach(function(subj) {
         var chip = document.createElement('span');
         chip.className = 'subject-chip';
         chip.textContent = subj;
         chip.onclick = function() { document.getElementById('editionSubject').value = subj; };
-        listEl.appendChild(chip);
+        subjectListEl.appendChild(chip);
       });
-      // Also show preview text suggestions
+      subjectGroup.style.display = 'block';
+
+      var previewListEl = document.getElementById('previewTextsList');
+      var previewGroup = document.getElementById('previewTextGroup');
+      previewListEl.innerHTML = '';
       if (content.preview_texts && content.preview_texts.length) {
         content.preview_texts.forEach(function(prev) {
           var chip = document.createElement('span');
@@ -2532,8 +2547,11 @@ async function runAIGenerate() {
           chip.style.borderStyle = 'dashed';
           chip.textContent = prev;
           chip.onclick = function() { document.getElementById('editionPreview').value = prev; };
-          listEl.appendChild(chip);
+          previewListEl.appendChild(chip);
         });
+        previewGroup.style.display = 'block';
+      } else {
+        previewGroup.style.display = 'none';
       }
     }
 
@@ -2740,6 +2758,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
