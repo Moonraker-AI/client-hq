@@ -39,8 +39,11 @@ async function logError(route, error, opts) {
   // Truncate message to 1000 chars
   if (message.length > 1000) message = message.substring(0, 1000);
 
-  // Also console.error for Vercel logs (ephemeral but immediate)
-  console.error('[' + severity.toUpperCase() + '] ' + route + ': ' + message);
+  // Also console.error for Vercel logs (ephemeral but immediate).
+  // N3: sanitize CR/LF so user-sourced content that propagates into error.message
+  // (e.g. PostgREST echoing an invalid slug) cannot forge multi-line log entries.
+  var safeMessage = message.replace(/[\r\n]+/g, ' \\n ');
+  console.error('[' + severity.toUpperCase() + '] ' + route + ': ' + safeMessage);
 
   try {
     await sb.mutate('error_log', 'POST', {
