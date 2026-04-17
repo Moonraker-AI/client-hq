@@ -13,6 +13,7 @@
 
 var sb = require('./_lib/supabase');
 var pageToken = require('./_lib/page-token');
+var rateLimit = require('./_lib/rate-limit');
 
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -29,6 +30,20 @@ module.exports = async function handler(req, res) {
   var origin = req.headers.origin || '';
   if (origin && origin !== 'https://clients.moonraker.ai') {
     return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  // Rate limit: 20 req/min per IP (protects Anthropic API credits). Placed
+  // before token verify so that attackers spamming random tokens also get
+  // throttled — the JWT check is cheap, but the point of the limit is to
+  // cap per-IP bursts regardless of whether the token is valid.
+  var ip = rateLimit.getIp(req);
+  var rl = await rateLimit.check('ip:' + ip + ':proposal-chat', 20, 60);
+  rateLimit.setHeaders(res, rl, 20);
+  if (!rl.allowed) {
+    if (rl.reset_at) {
+      res.setHeader('Retry-After', String(Math.max(1, Math.ceil((rl.reset_at - new Date()) / 1000))));
+    }
+    return res.status(429).json({ error: 'Too many requests. Please slow down and try again.' });
   }
 
   var apiKey = process.env.ANTHROPIC_API_KEY;
