@@ -71,10 +71,8 @@ module.exports = async function handler(req, res) {
     for (var i = 0; i < tables.length; i++) {
       var t = tables[i];
       try {
-        var delResp = await fetch(sb.url() + '/rest/v1/' + t.table + '?' + t.filter, {
-          method: 'DELETE', headers: sb.headers('return=minimal')
-        });
-        results.supabase.push({ table: t.table, ok: delResp.ok });
+        await sb.mutate(t.table + '?' + t.filter, 'DELETE', null, 'return=minimal');
+        results.supabase.push({ table: t.table, ok: true });
       } catch (e) {
         results.supabase.push({ table: t.table, ok: false, error: e.message });
       }
@@ -82,10 +80,8 @@ module.exports = async function handler(req, res) {
 
     // Delete the contact itself
     try {
-      var contactDel = await fetch(sb.url() + '/rest/v1/contacts?id=eq.' + contactId, {
-        method: 'DELETE', headers: sb.headers('return=minimal')
-      });
-      results.supabase.push({ table: 'contacts', ok: contactDel.ok });
+      await sb.mutate('contacts?id=eq.' + contactId, 'DELETE', null, 'return=minimal');
+      results.supabase.push({ table: 'contacts', ok: true });
     } catch (e) {
       results.supabase.push({ table: 'contacts', ok: false, error: e.message });
     }
