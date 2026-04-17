@@ -3,11 +3,16 @@
 // Uses Claude Sonnet 4.6 with full context of the proposal, CSA, and services.
 // Fetches structured proposal data from Supabase for accurate, personalized responses.
 //
-// POST { messages: [...], context: { page_content, slug } }
+// POST { messages: [...], context: { page_content, slug, page_token } }
+//
+// page_token is required and must verify under scope='proposal'. The verified
+// contact_id binds the Anthropic call to a single contact — the slug in the
+// body is advisory only (included in page_content context).
 //
 // ENV VARS: ANTHROPIC_API_KEY, SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_SUPABASE_URL
 
 var sb = require('./_lib/supabase');
+var pageToken = require('./_lib/page-token');
 
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -37,14 +42,37 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'messages array required' });
   }
 
-  // Fetch structured proposal data from Supabase if slug is available
-  var proposalData = null;
-  var contactData = null;
-  var slug = context.slug || '';
-  if (slug) {
-    proposalData = await fetchProposalData(slug);
-    if (proposalData) contactData = proposalData._contact;
+  // ── Verify page token before anything expensive ──────────────────
+  // The token is baked into the proposal HTML by generate-proposal.js at deploy
+  // time and includes the contact_id in its signed payload. This proves the
+  // chat request came from a legitimate proposal page we deployed, and binds
+  // the request to a specific contact — we never trust a contact_id (or slug)
+  // from the request body after this point.
+  var submittedToken = context.page_token;
+  if (!submittedToken) {
+    return res.status(403).json({ error: 'Page token required' });
   }
+
+  var tokenData;
+  try {
+    tokenData = pageToken.verify(submittedToken, 'proposal');
+  } catch (e) {
+    // Thrown only when PAGE_TOKEN_SECRET is not configured — that's a server
+    // config error, surface as 500 so it's visible in logs, not 403.
+    console.error('[proposal-chat] page-token verify threw:', e.message);
+    return res.status(500).json({ error: 'Auth system unavailable' });
+  }
+  if (!tokenData) {
+    return res.status(403).json({ error: 'Invalid or expired page token' });
+  }
+
+  var verifiedContactId = tokenData.contact_id;
+
+  // Fetch structured proposal data using the verified contact_id.
+  // The slug from the request body is no longer used for lookup — it's advisory
+  // only (for the page_content context string).
+  var proposalData = await fetchProposalByContactId(verifiedContactId);
+  var contactData = proposalData ? proposalData._contact : null;
 
   var systemPrompt = buildSystemPrompt(context, proposalData, contactData);
 
@@ -96,20 +124,25 @@ module.exports = async function handler(req, res) {
 };
 
 // ─── Fetch proposal + contact data from Supabase ───────────────
-async function fetchProposalData(slug) {
+// Keyed by contact_id (from the verified page token), not by slug from the
+// request body. This means the Anthropic call is always scoped to the contact
+// the token was issued for — a prospect cannot receive another prospect's
+// pricing context by swapping the slug in their request.
+async function fetchProposalByContactId(contactId) {
   if (!sb.isConfigured()) return null;
+  if (!contactId) return null;
 
   try {
-    // Look up contact by slug, then get their latest proposal
+    // Look up the contact by verified id
     var cResp = await fetch(
-      sb.url() + '/rest/v1/contacts?slug=eq.' + encodeURIComponent(slug) + '&select=id,first_name,last_name,credentials,practice_name,email,website_url,city,state_province&limit=1',
+      sb.url() + '/rest/v1/contacts?id=eq.' + encodeURIComponent(contactId) + '&select=id,first_name,last_name,credentials,practice_name,email,website_url,city,state_province&limit=1',
       { headers: sb.headers() }
     );
     var contacts = await cResp.json();
     if (!contacts || contacts.length === 0) return null;
     var contact = contacts[0];
 
-    // Get the latest proposal for this contact
+    // Get the latest deployed proposal for this contact
     var pResp = await fetch(
       sb.url() + '/rest/v1/proposals?contact_id=eq.' + contact.id + '&status=in.(ready,sent,viewed)&order=created_at.desc&select=campaign_lengths,custom_pricing,billing_options,proposal_content&limit=1',
       { headers: sb.headers() }
