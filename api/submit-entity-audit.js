@@ -14,9 +14,11 @@ var fetchT = require('./_lib/fetch-with-timeout');
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // Origin validation: block cross-origin abuse
+  // Origin validation: block cross-origin abuse.
+  // Empty Origin is now rejected (H15) — curl and non-browser callers that
+  // strip the header previously bypassed the check.
   var origin = req.headers.origin || '';
-  if (origin && origin !== 'https://clients.moonraker.ai') {
+  if (!origin || origin !== 'https://clients.moonraker.ai') {
     return res.status(403).json({ error: 'Forbidden' });
   }
   if (!sb.isConfigured()) return res.status(500).json({ error: 'Service not configured' });

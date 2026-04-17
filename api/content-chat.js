@@ -25,9 +25,11 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Origin validation: block cross-origin abuse (protects Anthropic API credits)
+  // Origin validation: block cross-origin abuse (protects Anthropic API credits).
+  // Empty Origin is now rejected (H15) — curl and non-browser callers that
+  // strip the header previously bypassed the check.
   var origin = req.headers.origin || '';
-  if (origin && origin !== 'https://clients.moonraker.ai') {
+  if (!origin || origin !== 'https://clients.moonraker.ai') {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
