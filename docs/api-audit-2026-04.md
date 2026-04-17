@@ -149,11 +149,13 @@ Function returns input unchanged; `derSig` assignment is ignored. Comment claims
 ### H6. `api/stripe-webhook.js:129-148` — fire-and-forget HTTP calls
 Cross-function POSTs to `/api/notify-team` and `/api/setup-audit-schedule` with no retry. Convert to queue table + cron processor, or inline as importable modules.
 
-### H7. `api/_lib/supabase.js:15` — hardcoded fallback URL
+### H7. `api/_lib/supabase.js:15` — hardcoded fallback URL ✅ RESOLVED
 ```js
 SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
 ```
 Throw if env var unset instead of falling back.
+
+**Resolution (2026-04-17, commit `330e6da`):** Fallback string removed. `url()` now throws `'NEXT_PUBLIC_SUPABASE_URL not configured'` on first call if env var is unset. Module-load `console.error` surfaces the gap in Vercel logs before the first route hits `url()`. Mirrors the H9/H10/C5 pattern. `NEXT_PUBLIC_SUPABASE_URL` verified set across production/preview/development prior to removing the fallback.
 
 ### H8. `api/_lib/crypto.js:45` — decrypt returns literal error strings as values
 `'[encrypted - key not available]'` and `'[decryption failed]'` flow back to callers as if they were plaintext. Read-then-write cycle would encrypt the error strings. Throw instead.
@@ -222,6 +224,8 @@ Helper signature invites misuse. Every caller must remember to escape. Rename to
 
 Extract once to `_lib/google-auth.js` with token caching keyed on `(scope, impersonate)`. Replace all sites.
 
+**Partial progress (2026-04-17, commit `7adedb6`):** Helper module `api/_lib/google-delegated.js` created with `getDelegatedAccessToken(mailbox, scope)`, `getServiceAccountToken(scope)`, `getFirstWorkingImpersonation(mailboxes, scope, testFn)`, and `_tokenCache` keyed on `${mailbox||'sa'}|${scope}`. First and only caller so far is the new `api/campaign-summary.js` feature (not part of audit scope). **The 5 existing duplicate sites listed above still hold their own copies** — migration is the remaining H21 work. Not yet resolved; the design step is now skipped when this ships.
+
 ### H22. `api/generate-proposal.js:361` — AI-generated `next_steps` rendered into deployed HTML unescaped
 If `enrichment_data` (admin-written, unsanitized) contains prompt injection convincing Claude to emit `<script>`, ends up in prospect-facing deployed proposal. Also line 330: `customPricing.amount_cents / 100` admin-controlled, no type validation, flows into checkout card HTML.
 
@@ -240,8 +244,10 @@ Crash between DELETE and INSERT leaves contact with zero onboarding steps. `auto
 ### H27. `api/compile-report.js:726, 740, 743` — same non-transactional pattern for highlights
 DELETE old, INSERT new. Crash between = zero highlights. Fallback on line 738-746 compounds it.
 
-### H28. `api/bootstrap-access.js:466-473` — response body returns `results` with provider error detail
+### H28. `api/bootstrap-access.js:466-473` — response body returns `results` with provider error detail ✅ RESOLVED
 `results.{gbp,ga4,gtm,localfalcon}.error` can contain JSON excerpts from Google/LocalFalcon APIs including account IDs, quotas, internal messages. Admin-only but any log capture exposes raw provider error bodies.
+
+**Resolution (2026-04-17, commit `0c9bc85`):** Added `var monitor = require('./_lib/monitor');`. Every catch site (`load_contact`, `load_report_config`, GBP/GA4/GTM/LocalFalcon providers, `config_save`, `deliverable_update`) now calls `monitor.logError('bootstrap-access', e, { client_slug, detail: { provider, ... } })` with raw debug (token errors, GBP Approach A/B strings, LF add response) routed to `error_log` server-side. Response body now uses a new `publicResults` object (built via `pickDefined()` filter) that drops internal resource identifiers — `gbp.account`, `gbp.location_name`, `ga4.property`, `gtm.account` — and keeps only admin-UI-consumed fields (`location_title`, `gbp_location_id`, `display_name`, `container_name`, `container_id`, `place_id`, `users_added`). Thrown error messages in provider blocks replaced with generic strings (`'Google authentication failed'`, `'No matching GBP location found (check Leadsie access)'`, `'LocalFalcon add location failed'`, etc.) so `reason = e.message` can no longer carry PII. `errors` array entries follow the same generic pattern.
 
 ### H29. `api/enrich-proposal.js` — searches three team inboxes via domain-wide delegation
 Lines 92-148. Impersonates `chris@`, `scott@`, `support@` to run Gmail searches. Results stored in `proposals.enrichment_data` as plaintext JSONB. Admin JWT compromise → Gmail search oracle over team inboxes. `searchDomain` is admin-controlled (via `website_url`) — creating a contact with `website_url = 'moonraker.ai'` returns internal business communications.
@@ -426,8 +432,10 @@ Memory says `process-audit-queue.js` handles this. Verify.
 
 ### L7. `api/report-chat.js:62, 68` — retry logic duplicated between catch and 529 handler
 
-### L8. `api/newsletter-webhook.js:41` — unhandled Resend types dropped silently
+### L8. `api/newsletter-webhook.js:41` — unhandled Resend types dropped silently ✅ RESOLVED
 `email.sent`, `email.scheduled`, `email.delivery_delayed` hit default branch, discarded. Log to `newsletter_events`.
+
+**Resolution (2026-04-17, commits `994f51a` + `bd0e195`):** `994f51a` added `webhook_log` observability with `logEvent('unhandled_type', { eventType, emailId, headers })` in the default branch, so every unrecognized type now leaves a trail. `bd0e195` then added explicit `case 'email.sent'` and `case 'email.delivery_delayed'` no-op branches that call `logEvent('ok_noop', ...)` — the audit's cited types specifically. `email.scheduled` still falls through to the `unhandled_type` default (which is correct — it's logged, just not acted on).
 
 ### L9. `api/submit-entity-audit.js:172` — admin link uses `#audit-` fragment
 Verify admin clients page scrolls to/opens that anchor.
@@ -575,7 +583,11 @@ Before coding Phase 3+:
 8b. ✅ **H10** — commit `e772fa9` (2026-04-17). Removed hardcoded `CF_ACCOUNT_ID` + `MOONRAKER_ZONE_ID` literals; added `CF_ZONE_ID` env var; fail-closed on missing CF config.
 8c. ✅ **M38** (new, discovered during H9 smoke test) — Supabase migration `add_authenticated_admin_policy_client_sites` (2026-04-17). Added missing `authenticated_admin_full` RLS policy to `client_sites`; admin hosting card now renders correctly.
 8d. ✅ **L26** (new) — commit `402a579` (2026-04-17). Fixed `renderContent()` race so Service Pages re-renders after async hosting fetch resolves.
-9. **H21 + N6** — extract `_lib/google-auth.js`, delete 7 duplicate `getDelegatedToken` copies.
+8e. ✅ **H7** — commit `330e6da` (2026-04-17). Removed `api/_lib/supabase.js` hardcoded URL fallback; module-load warning + throw on first `url()` call if env missing.
+8f. ✅ **H28** — commit `0c9bc85` (2026-04-17). `bootstrap-access.js` response body now uses filtered `publicResults` object; every catch site routes raw debug to `monitor.logError`; provider-specific thrown strings replaced with generic messages.
+8g. ✅ **L8** — commits `994f51a` + `bd0e195` (2026-04-17). Newsletter webhook now logs every unhandled type via `logEvent('unhandled_type', …)`; added explicit no-op handlers for `email.sent` and `email.delivery_delayed`.
+8h. 🔶 **H21 (partial)** — commit `7adedb6` (2026-04-17). Helper `api/_lib/google-delegated.js` created with token caching; used by new `campaign-summary.js`. 5 existing duplicate sites still pending migration.
+9. **H21 migration** — replace 5 duplicate `getDelegatedToken` sites (bootstrap-access, compile-report ×2, generate-proposal, enrich-proposal, discover-services) and `_lib/google-drive.js` implementation with the now-live `_lib/google-delegated.js` helper.
 10. **H4 + H24 + M10 + M16 + the many AbortController gaps** — extract `fetchWithTimeout`, apply everywhere.
 11. **Pattern 12** — migrate inline Supabase fetches to helper in the five big files. Mechanical, test-with-deploy.
 
@@ -602,12 +614,12 @@ _(Brought forward from Phase 7 since Chris chose "ship now" over "wait for traff
 ## Running tallies
 
 - **Critical:** 9 total (C1–C9). **Resolved: 9 ✅** (all).
-- **High:** 35 total (H1–H35). **Resolved: 6** (H5, H8, H9, H10, H11, H14). **Open: 29.**
+- **High:** 35 total (H1–H35). **Resolved: 8** (H5, H7, H8, H9, H10, H11, H14, H28). **Open: 27.**
 - **Medium:** 38 total (M1–M38). **Resolved: 2+** (M8 confirmed; M38 added + resolved same session; several more likely closed via Phase 4 action-schema work — needs verification sweep). **Open: ~35.**
-- **Low:** 27 total (L1–L27). **Resolved: 3** (L14, L26, L27-documented-only). **Open: 24.**
+- **Low:** 27 total (L1–L27). **Resolved: 4** (L8, L14, L26, L27-documented-only). **Open: 23.**
 - **Nit:** 6 total (N1–N6). **Open: 6.**
 
-**Total: 115 findings. Resolved: ≥20. Open: ≤95.**
+**Total: 115 findings. Resolved: ≥23. Open: ≤92.**
 
 ### Resolution log
 | Finding | Commit / Session | Date |
@@ -626,5 +638,9 @@ _(Brought forward from Phase 7 since Chris chose "ship now" over "wait for traff
 | M38 | migration `add_authenticated_admin_policy_client_sites` | 2026-04-17 |
 | L26 | `402a579` (renderContent race fix) | 2026-04-17 |
 | L27 | documented-only (workflow gap, not a bug) | 2026-04-17 |
+| L8 | `994f51a` + `bd0e195` (webhook_log + explicit noop handlers) | 2026-04-17 |
+| H7 | `330e6da` (supabase.js fallback removed, fail-closed) | 2026-04-17 |
+| H28 | `0c9bc85` (bootstrap-access response sanitized, monitor.logError) | 2026-04-17 |
+| H21 (partial) | `7adedb6` — helper `_lib/google-delegated.js` created; 5 duplicates still pending | 2026-04-17 |
 
 Audit was performed across five sessions reading ~11,000 lines of API route code, the eight `_lib/` modules, relevant templates, and git history for secret leakage. Unread in detail: chat system prompt bodies (low-risk content), several `send-*-email.js` / `trigger-*` / `ingest-*` routes (expected to follow already-catalogued patterns), most `api/admin/*` read-only dashboard routes. The audit is considered comprehensive for Critical and High findings; Medium/Low/Nit counts would grow modestly with further reading.
