@@ -944,6 +944,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 <div class="footer-bar" id="footerBar">Confidential &middot; &copy; 2026 Moonraker AI &middot; moonraker.ai</div>
 
 <script src="https://msg.moonraker.ai/js/form_embed.js" type="text/javascript"></script>
+<script>window.__PAGE_TOKEN__ = "onboarding.ZWJkNzk1ODMtZTZiZC00MGIzLTg4MzYtNmQ5NTYxZThhZmNl.1784174899.icCtSsi4Hv0jPxKzBTcIemx17thoVyjvlmSGROCaWH0";</script>
 <script>
 (function() {
   'use strict';
@@ -954,9 +955,6 @@ strong { font-weight: 600; color: var(--color-heading); }
   var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
   var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
 
-  var pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
-  var CLIENT_SLUG = pathParts[0] || '';
-
   // HTML-escape a string to prevent XSS in innerHTML
   function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
   // Sanitize image URLs: only allow https: and data:image/ schemes
@@ -966,6 +964,9 @@ strong { font-weight: 600; color: var(--color-heading); }
     if (url.indexOf('https://') === 0 || url.indexOf('data:image/') === 0) return esc(url);
     return '';
   }
+
+  var pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
+  var CLIENT_SLUG = pathParts[0] || '';
 
   if (!CLIENT_SLUG) { document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">No client specified.</p>'; return; }
 
@@ -1009,12 +1010,20 @@ strong { font-weight: 600; color: var(--color-heading); }
       .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); });
   }
 
-  // Route through /api/action (uses service role key, bypasses RLS)
+  // Route through /api/onboarding-action (uses service role key, bypasses RLS).
+  // page_token is required — the server verifies it and uses the token's
+  // contact_id as the source of truth, ignoring any contact_id we send.
   function apiAction(action, table, filters, data) {
     return fetch('/api/onboarding-action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: action, table: table, filters: filters || undefined, data: data })
+      body: JSON.stringify({
+        action: action,
+        table: table,
+        filters: filters || undefined,
+        data: data,
+        page_token: window.__PAGE_TOKEN__ || null
+      })
     }).then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); });
   }
 
@@ -1270,6 +1279,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     if (!sigHasDrawn) return null;
     var canvas = document.getElementById('sigCanvas');
     if (!canvas) return null;
+    // Create a clean export canvas at 1x resolution
     var exp = document.createElement('canvas');
     var rect = document.getElementById('sigCanvasContainer').getBoundingClientRect();
     exp.width = Math.round(rect.width);
@@ -1297,6 +1307,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     var sigImage = getSignatureDataURL();
 
+    // Append signature block to the stored document HTML
     var sigBlock = '<div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid #ddd;">' +
       '<p style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem;">Signature</p>' +
       (sigImage ? '<img src="' + sigImage + '" style="max-height:60px;display:block;margin-bottom:.75rem;" alt="Client signature">' : '') +
@@ -2117,6 +2128,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 <script src="/shared/csa-content.js"></script>
 </body>
 </html>
+
 
 
 
