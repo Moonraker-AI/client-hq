@@ -8,11 +8,19 @@
 //   await sb.mutate('contacts?id=eq.' + id, 'PATCH', { status: 'active' });
 //   await sb.mutate('deliverables', 'POST', { contact_id: id, title: 'Setup' }, 'return=representation');
 
+// Loud warning at module load if NEXT_PUBLIC_SUPABASE_URL is unset, so config
+// gaps surface in Vercel logs before any route hits url(). Mirrors the H9/H10
+// pattern in api/admin/manage-site.js and api/_lib/crypto.js.
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  console.error('[supabase] CRITICAL: NEXT_PUBLIC_SUPABASE_URL is not set. All Supabase calls will throw at url() invocation.');
+}
+
 var SUPABASE_URL = null;
 
 function url() {
   if (!SUPABASE_URL) {
-    SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
+    SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!SUPABASE_URL) throw new Error('NEXT_PUBLIC_SUPABASE_URL not configured');
   }
   return SUPABASE_URL;
 }
