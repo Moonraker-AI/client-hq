@@ -23,11 +23,7 @@ module.exports = async function(req, res) {
 
   try {
     // Find batches in processing status
-    var batchResp = await fetch(
-      sb.url() + '/rest/v1/content_audit_batches?status=eq.processing&order=created_at.asc&limit=5',
-      { headers: sb.headers() }
-    );
-    var batches = await batchResp.json();
+    var batches = await sb.query('content_audit_batches?status=eq.processing&order=created_at.asc&limit=5');
 
     if (!batches || batches.length === 0) {
       return res.status(200).json({ message: 'No batches to process', processed: 0 });
@@ -41,12 +37,8 @@ module.exports = async function(req, res) {
 
       try {
         // Find next page to process
-        var pageResp = await fetch(
-          sb.url() + '/rest/v1/content_pages?batch_id=eq.' + batch.id +
-          '&surge_status=eq.raw_stored&order=created_at.asc&limit=1',
-          { headers: sb.headers() }
-        );
-        var pages = await pageResp.json();
+        var pages = await sb.query('content_pages?batch_id=eq.' + batch.id +
+          '&surge_status=eq.raw_stored&order=created_at.asc&limit=1');
 
         if (!pages || pages.length === 0) {
           // All pages done, check completion
@@ -123,11 +115,7 @@ module.exports = async function(req, res) {
 
 
 async function checkBatchComplete(batchId) {
-  var pagesResp = await fetch(
-    sb.url() + '/rest/v1/content_pages?batch_id=eq.' + batchId + '&select=surge_status',
-    { headers: sb.headers() }
-  );
-  var allPages = await pagesResp.json();
+  var allPages = await sb.query('content_pages?batch_id=eq.' + batchId + '&select=surge_status');
   if (!allPages) return;
 
   var processed = allPages.filter(function(p) { return p.surge_status === 'processed'; }).length;
