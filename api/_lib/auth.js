@@ -155,22 +155,59 @@ function extractToken(req) {
   return null;
 }
 
-// ── Admin profile cache (per-invocation) ──────────────────────────
+// ── Admin profile cache (per-invocation, 60s TTL) ─────────────────
+//
+// Cache entries are { profile, fetched_at } keyed by userId. The TTL
+// bounds how long a revoked admin's access survives after their row is
+// removed from admin_profiles (previously unbounded — only a cold start
+// would clear the cache, which can be 15+ minutes on a warm Vercel
+// instance).
+//
+// The cached profile also holds last_login_at so maybeUpdateLastLogin
+// can throttle writes to at most one PATCH per 60s per admin without
+// an extra DB read on every request.
 
 var _profileCache = {};
+var PROFILE_CACHE_TTL_MS = 60000;
+var LAST_LOGIN_THROTTLE_MS = 60000;
 
 async function getAdminProfile(userId) {
-  if (_profileCache[userId]) return _profileCache[userId];
+  var cached = _profileCache[userId];
+  if (cached && (Date.now() - cached.fetched_at) < PROFILE_CACHE_TTL_MS) {
+    return cached.profile;
+  }
   try {
     var profile = await sb.one(
-      'admin_profiles?id=eq.' + userId + '&select=id,email,display_name,role&limit=1'
+      'admin_profiles?id=eq.' + userId + '&select=id,email,display_name,role,last_login_at&limit=1'
     );
-    if (profile) _profileCache[userId] = profile;
+    if (profile) _profileCache[userId] = { profile: profile, fetched_at: Date.now() };
     return profile;
   } catch (e) {
     console.error('[auth] Admin profile lookup failed:', e.message);
     return null;
   }
+}
+
+// Fire-and-forget last_login_at update, throttled to >=60s per admin.
+// 29+ admin routes x several calls per page view means the old
+// unthrottled version was a sustained PATCH/second stream during normal
+// use. Updates the cached value before firing so concurrent calls in
+// the same window short-circuit without hitting the DB again.
+function maybeUpdateLastLogin(userId) {
+  var cached = _profileCache[userId];
+  if (!cached || !cached.profile) return;
+  var prevTs = cached.profile.last_login_at
+    ? new Date(cached.profile.last_login_at).getTime() : 0;
+  var now = Date.now();
+  if ((now - prevTs) < LAST_LOGIN_THROTTLE_MS) return;
+  var nowIso = new Date(now).toISOString();
+  cached.profile.last_login_at = nowIso;
+  sb.mutate(
+    'admin_profiles?id=eq.' + userId,
+    'PATCH',
+    { last_login_at: nowIso },
+    'return=minimal'
+  ).catch(function() {});
 }
 
 // ── Main middleware ────────────────────────────────────────────────
@@ -195,13 +232,8 @@ async function requireAdmin(req, res) {
     return null;
   }
 
-  // Update last_login_at (fire-and-forget)
-  sb.mutate(
-    'admin_profiles?id=eq.' + payload.sub,
-    'PATCH',
-    { last_login_at: new Date().toISOString() },
-    'return=minimal'
-  ).catch(function() {});
+  // Update last_login_at (throttled, fire-and-forget)
+  maybeUpdateLastLogin(payload.sub);
 
   return {
     id: profile.id,
@@ -250,13 +282,8 @@ async function requireAdminOrInternal(req, res) {
     return null;
   }
 
-  // Update last_login_at (fire-and-forget)
-  sb.mutate(
-    'admin_profiles?id=eq.' + payload.sub,
-    'PATCH',
-    { last_login_at: new Date().toISOString() },
-    'return=minimal'
-  ).catch(function() {});
+  // Update last_login_at (throttled, fire-and-forget)
+  maybeUpdateLastLogin(payload.sub);
 
   return {
     id: profile.id,
