@@ -211,7 +211,7 @@ section { padding: 4.5rem 0; }
     <div class="container hero-content reveal">
       <span class="badge">Campaign Summary</span>
       <h1 id="heroHeadline">What we've built together.</h1>
-      <p class="subtitle" id="heroSubtitle"></p>
+      <p class="subtitle" id="heroSubtitle">A snapshot of search visibility, traffic, and bookings since we began working together.</p>
       <span class="window-pill">Engagement window: <strong id="windowLabel">—</strong></span>
 
       <div class="kpi-grid" id="kpiGrid"></div>
@@ -239,7 +239,7 @@ section { padding: 4.5rem 0; }
         <div class="chart-legend">
           <span><span class="swatch" style="background:#00D47E"></span>Bookings (left axis)</span>
           <span><span class="swatch" style="background:#3B82F6"></span>Cancellations (left axis)</span>
-          <span id="clicksLegend" class="hidden"><span class="swatch line" style="color:#141C3A"></span>Organic clicks (right axis)</span>
+          <span id="clicksLegend" class="hidden"><span class="swatch line line-swatch" style="color:#141C3A"></span>Organic clicks (right axis)</span>
         </div>
         <div class="chart-canvas-wrap">
           <canvas id="bookingsChart" role="img" aria-label="Monthly bookings, cancellations, and organic clicks across the engagement window"></canvas>
@@ -265,7 +265,7 @@ section { padding: 4.5rem 0; }
         </div>
         <div class="chart-legend">
           <span><span class="swatch" style="background:#00D47E"></span>Impressions (left axis)</span>
-          <span><span class="swatch line" style="color:#141C3A"></span>Average position (right axis, inverted)</span>
+          <span><span class="swatch line line-swatch" style="color:#141C3A"></span>Average position (right axis, inverted)</span>
         </div>
         <div class="chart-canvas-wrap">
           <canvas id="gscChart" role="img" aria-label="Monthly impressions and average position trend from Google Search Console"></canvas>
@@ -392,6 +392,121 @@ section { padding: 4.5rem 0; }
     return document.documentElement.getAttribute('data-theme') === 'dark'
       ? '#E8F5EF' : '#141C3A';
   }
+
+  // ── Natural-language hero narrative ─────────────────────────────
+  // Builds a 2-3 sentence story for the hero subtitle from whatever
+  // data sources are available. Speaks to the practice owner directly.
+  function buildHeroNarrative(data) {
+    var b = data.bookings && data.bookings.available ? data.bookings : null;
+    var g = data.gsc && data.gsc.available ? data.gsc : null;
+    var months = data.window.months;
+    var windowPhrase = describeWindow(months);
+
+    var sentences = [];
+
+    // Sentence 1: visibility multiplier (the "wow" stat)
+    if (g && g.totals && g.totals.impressions > 0) {
+      var firstM = g.by_month.find(function(m) { return m.impressions > 0; });
+      var lastFull = pickLastFullMonth(g.by_month);
+      if (firstM && lastFull && firstM.impressions > 0 && lastFull !== firstM) {
+        var mult = lastFull.impressions / firstM.impressions;
+        if (mult >= 1.5) {
+          sentences.push('In the ' + windowPhrase + ' since we started working together, your monthly search visibility has grown ' + describeMultiplier(mult) + '.');
+        }
+      }
+    }
+
+    // Sentence 2: position improvement + bookings outcome
+    var positionPart = '';
+    if (g && g.position_first && g.position_last && (g.position_first - g.position_last) >= 2) {
+      positionPart = "You've moved from " + naturalPage(g.position_first) + ' to ' + naturalPage(g.position_last) + ' on Google';
+    }
+    var bookingPart = '';
+    if (b && b.net > 0) {
+      bookingPart = fmtNum(b.net) + ' net consultations have come through your booking pipeline along the way';
+    }
+    if (positionPart && bookingPart) {
+      sentences.push(positionPart + ' \u2014 and ' + bookingPart + '.');
+    } else if (positionPart) {
+      sentences.push(positionPart + '.');
+    } else if (bookingPart && sentences.length === 0) {
+      sentences.push('In the ' + windowPhrase + ' since we started, ' + bookingPart + '.');
+    } else if (bookingPart) {
+      sentences.push('And ' + bookingPart + '.');
+    }
+
+    // Sentence 3: bridge to the rest of the page
+    if (sentences.length > 0) {
+      sentences.push("Below is the full picture of what that growth looks like, month by month.");
+    } else {
+      return 'A snapshot of search visibility, traffic, and bookings since we began working together.';
+    }
+    return sentences.join(' ');
+  }
+
+  function describeWindow(months) {
+    if (months <= 1) return 'first month';
+    var words = { 2:'two', 3:'three', 4:'four', 5:'five', 6:'six', 7:'seven', 8:'eight', 9:'nine', 10:'ten', 11:'eleven' };
+    if (months <= 11) return words[months] + ' months';
+    if (months <= 14) return 'year';
+    if (months <= 17) return 'year-plus';
+    if (months <= 23) return months + ' months';
+    var y = Math.round(months / 12);
+    return y + ' years';
+  }
+
+  function describeMultiplier(m) {
+    if (m >= 100) return 'more than a hundredfold';
+    if (m >= 50)  return 'more than fiftyfold';
+    if (m >= 20)  return 'more than twentyfold';
+    if (m >= 10)  return 'more than tenfold';
+    if (m >= 5)   return Math.round(m) + 'x';
+    if (m >= 2)   return 'more than ' + Math.floor(m) + 'x';
+    if (m > 1.2)  return 'meaningfully';
+    return 'modestly';
+  }
+
+  function naturalPage(pos) {
+    if (pos <= 3)  return 'the top three results on Google';
+    if (pos <= 10) return 'the top of page one';
+    if (pos <= 15) return 'the bottom half of page one';
+    if (pos <= 20) return 'page two';
+    if (pos <= 30) return 'page three';
+    return 'page ' + Math.ceil(pos / 10);
+  }
+
+  // Heuristic: if the last month's impressions are <60% of the previous
+  // month, treat it as partial (mid-month) and use the prior month for
+  // "current state" comparisons.
+  function pickLastFullMonth(byMonth) {
+    if (!byMonth || byMonth.length === 0) return null;
+    var last = byMonth[byMonth.length - 1];
+    if (byMonth.length < 2) return last;
+    var prev = byMonth[byMonth.length - 2];
+    if (last.impressions < prev.impressions * 0.6) return prev;
+    return last;
+  }
+
+  // Repaint chart line colors and legend swatches for the current theme.
+  // Charts capture borderColor at creation time, so a theme toggle that
+  // doesn't repaint leaves dark navy lines invisible on the dark surface
+  // (and vice versa).
+  function applyChartTheme() {
+    var color = lineColor();
+    [bookingsChart, gscChart].forEach(function(ch) {
+      if (!ch) return;
+      ch.data.datasets.forEach(function(d) {
+        if (d.type === 'line') {
+          d.borderColor = color;
+          d.backgroundColor = color;
+        }
+      });
+      ch.update('none');
+    });
+    document.querySelectorAll('.line-swatch').forEach(function(el) {
+      el.style.color = color;
+    });
+  }
   function showError(msg) {
     document.getElementById('loadingState').classList.add('hidden');
     document.getElementById('errorMsg').textContent = msg;
@@ -421,7 +536,7 @@ section { padding: 4.5rem 0; }
 
     // Hero
     document.getElementById('heroHeadline').textContent = "What we've built for " + data.client.practice + ".";
-    document.getElementById('heroSubtitle').textContent = "A snapshot of the search visibility, traffic, and bookings generated since we started working together.";
+    document.getElementById('heroSubtitle').textContent = buildHeroNarrative(data);
     document.getElementById('windowLabel').textContent = fmtDate(data.window.start) + " \u2192 " + fmtDate(data.window.end) + "  (" + data.window.months + " months)";
 
     document.title = 'Campaign Summary | ' + (data.client.practice || 'Moonraker');
@@ -443,6 +558,10 @@ section { padding: 4.5rem 0; }
 
     // ── Top-line insight + renewal copy ─────────────────────────────
     renderInsight(data);
+
+    // Make sure chart line colors and legend swatches match the active
+    // theme on first paint (the user may have landed in dark mode).
+    applyChartTheme();
 
     // Trigger reveal
     setTimeout(checkReveal, 100);
@@ -816,6 +935,7 @@ section { padding: 4.5rem 0; }
         themeBtn.innerHTML = '&#x1F319;';
         try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
       }
+      applyChartTheme();
     }
     if (document.startViewTransition) { document.startViewTransition(apply); } else { apply(); }
   });
