@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campaign Summary | Moonraker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root, [data-theme="light"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00b86c;
+  --color-primary-light: #B4EEE0;
+  --color-primary-subtle: #DDF8F2;
+  --color-bg: #F7FDFB;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-heading: #1E2A5E;
+  --color-body: #333F70;
+  --color-muted: #6B7599;
+  --color-navy: #141C3A;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+}
+[data-theme="dark"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00f598;
+  --color-primary-light: #1A4A38;
+  --color-primary-subtle: #0D2E22;
+  --color-bg: #080F0B;
+  --color-surface: #0E1A14;
+  --color-border: #1E3530;
+  --color-heading: #E8F5EF;
+  --color-body: #C8D8D0;
+  --color-muted: #5A7A6E;
+  --color-navy: #0A1630;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #FF6B6B;
+  --color-info: #60A5FA;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.7; -webkit-font-smoothing: antialiased; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
+h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.15; }
+h1 { font-size: 2.75rem; letter-spacing: -0.02em; }
+h2 { font-size: 2rem; margin-bottom: .75rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.35rem; }
+h4 { font-size: 1.15rem; }
+p { margin-bottom: 1rem; }
+a { color: var(--color-primary); text-decoration: none; transition: color .2s; }
+a:hover { color: var(--color-primary-hover); }
+strong { font-weight: 600; color: var(--color-heading); }
+
+.progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--color-primary); width: 0%; z-index: 999; transition: width .1s linear; box-shadow: 0 0 8px rgba(0,212,126,.4); }
+
+.section-nav { position: fixed; right: 2rem; top: 50%; transform: translateY(-50%); z-index: 100; display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 1140px) { .section-nav { display: none; } }
+.section-nav a { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 8px; border-radius: 8px; font-size: .75rem; font-weight: 500; color: var(--color-muted); text-decoration: none; transition: all .25s ease; white-space: nowrap; }
+.section-nav a:hover { color: var(--color-heading); background: var(--color-surface); }
+.section-nav a.active { color: var(--color-primary); background: var(--color-primary-subtle); }
+.section-nav .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-border); flex-shrink: 0; transition: all .25s ease; }
+.section-nav a.active .nav-dot { background: var(--color-primary); width: 8px; height: 8px; box-shadow: 0 0 6px rgba(0,212,126,.5); }
+
+.container { max-width: 1060px; margin: 0 auto; padding: 0 3rem; }
+@media (max-width: 768px) { .container { padding: 0 1.5rem; } }
+section { padding: 4.5rem 0; }
+.divider { height: 1px; background: var(--color-border); border: none; margin: 0; }
+
+.theme-toggle { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 200; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; transition: all .25s ease; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.theme-toggle:hover { border-color: var(--color-primary); box-shadow: 0 2px 12px rgba(0,212,126,.15); }
+
+.header { background: var(--color-navy); padding: 2rem 0; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; top: -60%; right: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(0,212,126,.08) 0%, transparent 70%); pointer-events: none; }
+.header-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.header img { height: 36px; }
+.header-meta { text-align: right; }
+.header-meta p { margin: 0; font-size: .8125rem; color: rgba(232,245,239,.45); }
+.header-meta .name { color: #E8F5EF; font-weight: 600; font-size: .9375rem; }
+
+.hero { padding: 5.5rem 0 3rem; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; top: -100px; right: -80px; width: 500px; height: 500px; background: radial-gradient(circle at 30% 40%, rgba(0,212,126,.06) 0%, transparent 60%); pointer-events: none; }
+.hero-content { position: relative; z-index: 1; }
+.hero h1 { margin-bottom: 1rem; }
+.hero .subtitle { font-size: 1.0625rem; color: var(--color-muted); line-height: 1.7; margin-bottom: 1.5rem; }
+.badge { display: inline-block; background: var(--color-primary-subtle); color: var(--color-primary); font-weight: 600; font-size: .75rem; padding: .4rem 1rem; border-radius: 100px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 1rem; }
+.window-pill { display: inline-flex; align-items: center; gap: .5rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 100px; padding: .5rem 1rem; font-size: .8125rem; color: var(--color-body); font-weight: 500; }
+.window-pill strong { color: var(--color-heading); font-weight: 600; }
+
+/* Headline KPI cards */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 2rem 0; }
+.kpi-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.5rem; transition: transform .3s, box-shadow .3s; }
+.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+.kpi-label { font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); margin-bottom: .5rem; }
+.kpi-value { font-family: 'Outfit', sans-serif; font-size: 2.25rem; font-weight: 700; color: var(--color-heading); line-height: 1; }
+.kpi-context { font-size: .8125rem; color: var(--color-muted); margin-top: .5rem; line-height: 1.4; }
+.kpi-delta { display: inline-flex; align-items: center; gap: .25rem; font-size: .8125rem; font-weight: 600; margin-top: .5rem; padding: .2rem .55rem; border-radius: 6px; }
+.kpi-delta.up { color: var(--color-success); background: rgba(0,212,126,.08); }
+.kpi-delta.down { color: var(--color-danger); background: rgba(239,68,68,.06); }
+
+/* Charts */
+.chart-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.75rem; margin: 1.5rem 0; }
+.chart-card-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+.chart-card-header h3 { font-size: 1.15rem; }
+.chart-card-header .subtle { font-size: .8125rem; color: var(--color-muted); }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; font-size: .8125rem; color: var(--color-muted); }
+.chart-legend span { display: flex; align-items: center; gap: 6px; }
+.chart-legend .swatch { width: 14px; height: 10px; border-radius: 2px; display: inline-block; }
+.chart-legend .swatch.line { background: transparent; border-bottom: 2px dashed currentColor; height: 2px; }
+.chart-canvas-wrap { position: relative; width: 100%; height: 360px; }
+@media (max-width: 600px) { .chart-canvas-wrap { height: 300px; } }
+
+/* Data tables */
+.data-table-wrap { overflow-x: auto; margin: 1rem 0; border-radius: 12px; border: 1px solid var(--color-border); }
+.data-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+.data-table thead th { background: var(--color-navy); color: #E8F5EF; font-weight: 600; font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; padding: .75rem 1rem; text-align: left; white-space: nowrap; }
+.data-table tbody td { padding: .65rem 1rem; border-bottom: 1px solid var(--color-border); color: var(--color-body); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: var(--color-primary-subtle); }
+.data-table .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+.data-table .truncate { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.data-table a { color: var(--color-body); }
+.data-table a:hover { color: var(--color-primary); }
+
+/* Section heading */
+.section-eyebrow { font-size: .75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-primary); margin-bottom: .5rem; }
+.section-intro { color: var(--color-muted); font-size: 1rem; max-width: 720px; margin-bottom: 2rem; }
+
+/* Insight callout */
+.insight { background: var(--color-primary-subtle); border-left: 3px solid var(--color-primary); border-radius: 8px; padding: 1.25rem 1.5rem; margin: 1.5rem 0; }
+.insight h4 { color: var(--color-heading); font-size: .95rem; margin-bottom: .35rem; font-family: 'Outfit', sans-serif; font-weight: 700; }
+.insight p { font-size: .9375rem; margin: 0; color: var(--color-body); }
+
+/* Performance Guarantee section */
+.guarantee-banner { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 18px; overflow: hidden; margin: 2rem 0; }
+.guarantee-header { background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%); padding: 2rem 2.5rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+.guarantee-badge { background: rgba(255,255,255,.18); color: #FFF; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .8125rem; letter-spacing: .08em; text-transform: uppercase; padding: .5rem 1.1rem; border-radius: 100px; backdrop-filter: blur(10px); }
+.guarantee-headline { color: #FFF; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.65rem; margin: 0; line-height: 1.2; }
+.guarantee-headline .check { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #FFF; color: var(--color-primary); border-radius: 50%; font-size: 1.1rem; margin-right: .5rem; vertical-align: middle; }
+.guarantee-pending { background: linear-gradient(135deg, #6B7599 0%, #5A6385 100%); }
+.guarantee-pending .guarantee-headline .check { color: #6B7599; }
+.guarantee-body { padding: 2rem 2.5rem; }
+.guarantee-rows { display: grid; gap: .85rem; margin-bottom: 1.5rem; }
+.guarantee-row { display: flex; align-items: baseline; gap: .65rem; padding: .85rem 0; border-bottom: 1px solid var(--color-border); }
+.guarantee-row:last-child { border-bottom: none; }
+.guarantee-row .label { flex: 1; color: var(--color-body); font-size: .9375rem; }
+.guarantee-row .value { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.15rem; color: var(--color-heading); }
+.guarantee-row.delivered .value { color: var(--color-success); font-size: 1.35rem; }
+.guarantee-row.delivered .delta { display: inline-block; font-size: .75rem; font-weight: 600; color: var(--color-success); background: rgba(0,212,126,.1); padding: .25rem .6rem; border-radius: 100px; vertical-align: middle; }
+.guarantee-note { color: var(--color-muted); font-size: .8125rem; margin: 0; line-height: 1.5; padding-top: 1rem; border-top: 1px solid var(--color-border); }
+
+/* Attribution YoY table */
+.attribution-table { margin: 2rem 0 1rem; }
+.attribution-table h3 { font-size: 1.15rem; margin-bottom: .35rem; }
+.attribution-table .source-name { font-weight: 500; color: var(--color-heading); }
+.attribution-table .growth-up { color: var(--color-success); font-weight: 600; font-size: .8125rem; }
+.attribution-table .growth-down { color: var(--color-danger); font-weight: 600; font-size: .8125rem; }
+.attribution-source-pill { display: inline-block; font-size: .6875rem; font-weight: 600; padding: .15rem .55rem; border-radius: 100px; margin-left: .5rem; vertical-align: middle; }
+.attribution-source-pill.organic { background: rgba(0,212,126,.12); color: #006e44; }
+.attribution-source-pill.ai { background: rgba(139,92,246,.12); color: #5b21b6; }
+
+/* Striking distance section */
+.striking-intro { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem; }
+.striking-summary { background: var(--color-primary-subtle); border-radius: 12px; padding: 1.25rem 1.5rem; }
+.striking-summary strong { color: var(--color-primary); }
+
+/* Deliverables section */
+.deliverables-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.deliverable-cat { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.5rem; transition: transform .3s, box-shadow .3s; }
+.deliverable-cat:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+.deliverable-cat-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .9375rem; color: var(--color-heading); margin-bottom: .35rem; letter-spacing: -.005em; }
+.deliverable-cat-count { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 700; color: var(--color-primary); line-height: 1; margin-bottom: .5rem; }
+.deliverable-cat-items { font-size: .8125rem; color: var(--color-muted); line-height: 1.5; margin-top: .5rem; }
+.deliverable-cat-items li { margin-left: 1rem; }
+
+/* Year 2 callout */
+.year2-callout { background: var(--color-primary-subtle); border-radius: 14px; padding: 2rem 2.25rem; margin: 2rem 0; border: 1px solid var(--color-primary-light); }
+.year2-callout h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.25rem; color: var(--color-heading); margin-bottom: .65rem; }
+.year2-callout p { color: var(--color-body); font-size: .9375rem; margin-bottom: .85rem; line-height: 1.65; }
+.year2-callout p:last-child { margin-bottom: 0; }
+
+/* Renewal CTA */
+.renewal-cta { background: var(--color-navy); color: #E8F5EF; border-radius: 18px; padding: 3rem 2.5rem; margin: 2rem 0; text-align: center; position: relative; overflow: hidden; }
+.renewal-cta::before { content: ''; position: absolute; top: -120px; left: -100px; width: 360px; height: 360px; background: radial-gradient(circle, rgba(0,212,126,.13) 0%, transparent 70%); pointer-events: none; }
+.renewal-cta::after { content: ''; position: absolute; bottom: -150px; right: -120px; width: 420px; height: 420px; background: radial-gradient(circle, rgba(0,212,126,.10) 0%, transparent 70%); pointer-events: none; }
+.renewal-cta h2 { color: #E8F5EF; font-size: 1.85rem; margin-bottom: .65rem; position: relative; z-index: 1; }
+.renewal-cta p { color: rgba(232,245,239,.75); font-size: 1rem; max-width: 540px; margin: 0 auto 1.5rem; position: relative; z-index: 1; }
+.cta-button { display: inline-flex; align-items: center; gap: .5rem; background: var(--color-primary); color: #FFFFFF; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .9375rem; padding: .85rem 1.75rem; border-radius: 10px; text-decoration: none; transition: all .25s; position: relative; z-index: 1; }
+.cta-button:hover { background: var(--color-primary-hover); color: #FFFFFF; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,212,126,.35); }
+
+/* Loading + empty */
+.loading-wrap { padding: 6rem 0; text-align: center; }
+.loading-spinner { display: inline-block; width: 40px; height: 40px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: .9375rem; color: var(--color-muted); margin-top: 1rem; }
+.empty-state { text-align: center; padding: 4rem 2rem; }
+.empty-state h3 { color: var(--color-heading); margin-bottom: .5rem; }
+.empty-state p { color: var(--color-muted); }
+
+/* Reveal animation */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* Footer */
+.footer { background: var(--color-navy); color: rgba(232,245,239,.55); padding: 2.5rem 0; text-align: center; font-size: .8125rem; }
+.footer img { height: 28px; opacity: .85; margin-bottom: .75rem; }
+.footer a { color: var(--color-primary); }
+
+/* Hidden utility */
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">&#x1F319;</button>
+
+<nav class="section-nav" id="sectionNav">
+  <a href="#headline"><span class="nav-dot"></span> Headline</a>
+  <a href="#guarantee" id="navGuarantee"><span class="nav-dot"></span> Guarantee</a>
+  <a href="#bookings" id="navBookings"><span class="nav-dot"></span> Bookings</a>
+  <a href="#search" id="navSearch"><span class="nav-dot"></span> Search visibility</a>
+  <a href="#queries" id="navQueries"><span class="nav-dot"></span> Top queries</a>
+  <a href="#striking" id="navStriking"><span class="nav-dot"></span> Striking distance</a>
+  <a href="#shipped" id="navShipped"><span class="nav-dot"></span> What we shipped</a>
+  <a href="#local" id="navLocal"><span class="nav-dot"></span> Local visibility</a>
+  <a href="#renewal"><span class="nav-dot"></span> What's next</a>
+</nav>
+
+<header class="header">
+  <div class="container header-inner">
+    <img src="/assets/logo.png" alt="Moonraker">
+    <div class="header-meta">
+      <p class="name" id="headerName">Campaign Summary</p>
+      <p id="headerPractice">&nbsp;</p>
+    </div>
+  </div>
+</header>
+
+<div id="loadingState" class="loading-wrap">
+  <div class="loading-spinner"></div>
+  <p class="loading-text">Loading campaign data…</p>
+</div>
+
+<div id="errorState" class="hidden">
+  <section><div class="container empty-state">
+    <h3>Unable to load campaign summary</h3>
+    <p id="errorMsg">There was a problem connecting to the data source. Please try refreshing.</p>
+  </div></section>
+</div>
+
+<main id="content" class="hidden">
+
+  <section class="hero" id="headline">
+    <div class="container hero-content reveal">
+      <span class="badge">Campaign Summary</span>
+      <h1 id="heroHeadline">What we've built together.</h1>
+      <p class="subtitle" id="heroSubtitle">A snapshot of search visibility, traffic, and bookings since we began working together.</p>
+      <span class="window-pill">Engagement window: <strong id="windowLabel">—</strong></span>
+
+      <div class="kpi-grid" id="kpiGrid"></div>
+    </div>
+  </section>
+
+  <hr class="divider" id="guaranteeDivider">
+
+  <section id="guarantee">
+    <div class="container reveal">
+      <div class="section-eyebrow">Performance guarantee</div>
+      <h2 id="guaranteeTitle">Performance guarantee result</h2>
+      <p class="section-intro" id="guaranteeIntro">Your contract included a performance guarantee tied to new client revenue from the campaign. Here's how it landed.</p>
+
+      <div class="guarantee-banner" id="guaranteeBanner">
+        <div class="guarantee-header" id="guaranteeHeader">
+          <h3 class="guarantee-headline" id="guaranteeHeadline"><span class="check">&#10003;</span><span id="guaranteeHeadlineText">Loading…</span></h3>
+        </div>
+        <div class="guarantee-body">
+          <div class="guarantee-rows" id="guaranteeRows"></div>
+          <p class="guarantee-note" id="guaranteeNote"></p>
+        </div>
+      </div>
+
+      <div class="attribution-table" id="attributionTable">
+        <h3>Year-over-year revenue from new client attribution</h3>
+        <p class="section-intro" id="attributionIntro">Reported by your admin team, based on patient self-reported referral source at intake.</p>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>Source</th>
+              <th class="num" id="attrBaselineCol">Baseline</th>
+              <th class="num" id="attrCurrentCol">Current</th>
+              <th class="num">YoY change</th>
+            </tr></thead>
+            <tbody id="attributionBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <section id="bookings">
+    <div class="container reveal">
+      <div class="section-eyebrow">Booking pipeline</div>
+      <h2 id="bookingsTitle">Booked consultations through your scheduling pipeline</h2>
+      <p class="section-intro" id="bookingsIntro">Counted from new-appointment notifications sent to <strong>calls@moonraker.ai</strong>, net of cancellations. This is your full pipeline volume across all sources, including organic, referral, paid, and repeat bookings, not just SEO-attributed.</p>
+
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <h3>Bookings vs. organic clicks, by month</h3>
+          <span class="subtle" id="bookingsChartSubtle"></span>
+        </div>
+        <div class="chart-legend">
+          <span><span class="swatch" style="background:#00D47E"></span>Net consultations (left axis)</span>
+          <span id="clicksLegend" class="hidden"><span class="swatch line line-swatch" style="color:#141C3A"></span>Organic clicks (right axis)</span>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="bookingsChart" role="img" aria-label="Monthly bookings, cancellations, and organic clicks across the engagement window"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" id="searchDivider">
+
+  <section id="search">
+    <div class="container reveal">
+      <div class="section-eyebrow">Search visibility</div>
+      <h2>Organic search performance</h2>
+      <p class="section-intro" id="gscIntro">Aggregated from Google Search Console for <span id="gscSiteUrl">your site</span>.</p>
+
+      <div class="kpi-grid" id="gscKpiGrid"></div>
+
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <h3>Impressions and average position</h3>
+          <span class="subtle">Position 1 is best (top of page 1)</span>
+        </div>
+        <div class="chart-legend">
+          <span><span class="swatch" style="background:#00D47E"></span>Impressions (left axis)</span>
+          <span><span class="swatch line line-swatch" style="color:#141C3A"></span>Average position (right axis, inverted)</span>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="gscChart" role="img" aria-label="Monthly impressions and average position trend from Google Search Console"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" id="queriesDivider">
+
+  <section id="queries">
+    <div class="container reveal">
+      <div class="section-eyebrow">Top queries &amp; pages</div>
+      <h2>What people are finding you for</h2>
+      <p class="section-intro">Top searches and landing pages from the most recent 90 days of organic traffic.</p>
+
+      <h3 style="margin-top:1.5rem">Top search queries</h3>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th>Query</th>
+            <th class="num">Clicks</th>
+            <th class="num">Impressions</th>
+            <th class="num">Avg position</th>
+          </tr></thead>
+          <tbody id="topQueriesBody"></tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top:2.5rem">Top landing pages</h3>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th>Page</th>
+            <th class="num">Clicks</th>
+            <th class="num">Impressions</th>
+            <th class="num">Avg position</th>
+          </tr></thead>
+          <tbody id="topPagesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" id="strikingDivider">
+
+  <section id="striking">
+    <div class="container reveal">
+      <div class="section-eyebrow">Looking forward</div>
+      <h2>Queries already in striking distance of page one</h2>
+      <p class="section-intro">Search terms currently ranking on page two (positions 11-20) where you're already getting impressions. Each one we move into the top ten represents new clicks on autopilot.</p>
+
+      <div class="striking-summary" id="strikingSummary"></div>
+
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th>Query</th>
+            <th class="num">Current position</th>
+            <th class="num">Monthly impressions</th>
+            <th class="num">Estimated lift if top 10</th>
+          </tr></thead>
+          <tbody id="strikingBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" id="shippedDivider">
+
+  <section id="shipped">
+    <div class="container reveal">
+      <div class="section-eyebrow">What we shipped</div>
+      <h2 id="shippedTitle">What we shipped</h2>
+      <p class="section-intro">A grouped view of the work delivered across the engagement. Categories cover the full SEO build: setup, content, authority, and ongoing strategy.</p>
+      <div id="deliverablesContent"></div>
+    </div>
+  </section>
+
+  <hr class="divider" id="localDivider">
+
+  <section id="local">
+    <div class="container reveal">
+      <div class="section-eyebrow">Local visibility</div>
+      <h2>Map pack &amp; AI search performance</h2>
+      <p class="section-intro" id="lfIntro">Geogrid scans across Google, Apple, ChatGPT, Gemini, Perplexity, and AI Overviews.</p>
+      <div id="lfContent"></div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <section id="renewal">
+    <div class="container reveal">
+      <div class="year2-callout hidden" id="year2Callout">
+        <h3 id="year2Heading"></h3>
+        <div id="year2Body"></div>
+      </div>
+
+      <div class="renewal-cta">
+        <h2>Let's keep building this momentum.</h2>
+        <p id="renewalBody">The compounding effect of consistent SEO investment is just beginning to show. The next phase builds on every signal we've established so far.</p>
+        <a href="https://msg.moonraker.ai/widget/bookings/moonraker-free-strategy-call" class="cta-button">Schedule a renewal conversation &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <img src="/assets/logo.png" alt="Moonraker">
+      <p>Moonraker AI &middot; Marketing for therapy practices</p>
+      <p style="margin-top:.5rem"><a href="https://moonraker.ai">moonraker.ai</a></p>
+    </div>
+  </footer>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+  // Slug from URL: /[slug]/campaign-summary
+  var pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
+  var CLIENT_SLUG = pathParts[0] || '';
+
+  if (!CLIENT_SLUG) {
+    showError('No client slug in URL.');
+    return;
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────
+  function fmtNum(n) {
+    if (n == null || isNaN(n)) return '—';
+    return Math.round(n).toLocaleString('en-US');
+  }
+  function fmtCompact(n) {
+    if (n == null || isNaN(n)) return '—';
+    if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+    return Math.round(n).toString();
+  }
+  function fmtPct(n, decimals) {
+    if (n == null || isNaN(n)) return '—';
+    return (n * 100).toFixed(decimals == null ? 2 : decimals) + '%';
+  }
+  function fmtDate(iso) {
+    if (!iso) return '';
+    var d = new Date(iso + 'T00:00:00Z');
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  }
+  function ymLabel(ym) {
+    // "2025-10" -> "Oct 25"
+    var d = new Date(ym + '-01T00:00:00Z');
+    return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' });
+  }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  // Slightly muted navy in light mode, soft cream-gray in dark mode.
+  // Uses the design system's --color-body equivalents in each theme so the
+  // line reads as a "data accent" rather than a heading. Hardcoded to avoid
+  // CSS-var resolution races at chart paint time.
+  function lineColor() {
+    return document.documentElement.getAttribute('data-theme') === 'dark'
+      ? '#C8D8D0' : '#333F70';
+  }
+
+  // ── Natural-language hero narrative ─────────────────────────────
+  // Builds a 2-3 sentence story for the hero subtitle from whatever
+  // data sources are available. When a performance guarantee + attribution
+  // data are both present, leads with the guarantee story. Otherwise falls
+  // back to the visibility/bookings narrative.
+  function buildHeroNarrative(data) {
+    var b = data.bookings && data.bookings.available ? data.bookings : null;
+    var g = data.gsc && data.gsc.available ? data.gsc : null;
+    var guarantee = data.guarantee && data.guarantee.available ? data.guarantee : null;
+    var attr = data.attribution && data.attribution.available ? data.attribution : null;
+    var months = data.window.months;
+    var windowPhrase = describeWindow(months);
+
+    // Path A: We have a guarantee + attribution data → lead with that
+    if (guarantee && guarantee.met !== null && attr && attr.yoy) {
+      var sentences = [];
+      var googGrowth = attr.yoy.google.revenue_growth_pct;
+      if (googGrowth != null && googGrowth >= 0.5) {
+        var pct = Math.round(googGrowth * 100);
+        sentences.push('In the ' + windowPhrase + ' since we started, your Google-attributed new client revenue grew ' + pct + '% \u2014 from $' + Math.round(attr.yoy.google.revenue_dollars_baseline).toLocaleString() + ' to $' + Math.round(attr.yoy.google.revenue_dollars_current).toLocaleString() + '.');
+      }
+      if (guarantee.met_by_total || guarantee.met_by_google) {
+        var bestRev = guarantee.met_by_total ? guarantee.total_online_dollars : guarantee.google_only_dollars;
+        var bestLabel = guarantee.met_by_total ? 'across all online sources' : 'from Google alone';
+        var threshold = guarantee.threshold_dollars;
+        var overPct = Math.round(((bestRev / threshold) - 1) * 100);
+        sentences.push('That ' + bestLabel + ' put you at $' + Math.round(bestRev).toLocaleString() + ' in tracked new client revenue \u2014 ' + (overPct > 0 ? overPct + '% past' : 'meeting') + ' the $' + Math.round(threshold).toLocaleString() + ' performance guarantee built into the contract.');
+      }
+      sentences.push("Below is the full picture of how the campaign delivered, where it's headed next, and the search visibility that drove it.");
+      return sentences.join(' ');
+    }
+
+    // Path B: No guarantee/attribution → fall back to visibility narrative
+    var sentences = [];
+
+    // Sentence 1: visibility multiplier (the "wow" stat)
+    if (g && g.totals && g.totals.impressions > 0) {
+      var firstM = g.by_month.find(function(m) { return m.impressions > 0; });
+      var lastFull = pickLastFullMonth(g.by_month);
+      if (firstM && lastFull && firstM.impressions > 0 && lastFull !== firstM) {
+        var mult = lastFull.impressions / firstM.impressions;
+        if (mult >= 1.5) {
+          sentences.push('In the ' + windowPhrase + ' since we started working together, your monthly search visibility has grown ' + describeMultiplier(mult) + '.');
+        }
+      }
+    }
+
+    // Sentence 2: position improvement + bookings outcome
+    var positionPart = '';
+    if (g && g.position_first && g.position_last && (g.position_first - g.position_last) >= 2) {
+      positionPart = "You've moved from " + naturalPage(g.position_first) + ' to ' + naturalPage(g.position_last) + ' on Google';
+    }
+    var bookingPart = '';
+    if (b && b.net > 0) {
+      bookingPart = fmtNum(b.net) + ' net consultations have come through your booking pipeline along the way';
+    }
+    if (positionPart && bookingPart) {
+      sentences.push(positionPart + ' \u2014 and ' + bookingPart + '.');
+    } else if (positionPart) {
+      sentences.push(positionPart + '.');
+    } else if (bookingPart && sentences.length === 0) {
+      sentences.push('In the ' + windowPhrase + ' since we started, ' + bookingPart + '.');
+    } else if (bookingPart) {
+      sentences.push('And ' + bookingPart + '.');
+    }
+
+    // Sentence 3: bridge to the rest of the page
+    if (sentences.length > 0) {
+      sentences.push("Below is the full picture of what that growth looks like, month by month.");
+    } else {
+      return 'A snapshot of search visibility, traffic, and bookings since we began working together.';
+    }
+    return sentences.join(' ');
+  }
+
+  function describeWindow(months) {
+    if (months <= 1) return 'first month';
+    var words = { 2:'two', 3:'three', 4:'four', 5:'five', 6:'six', 7:'seven', 8:'eight', 9:'nine', 10:'ten', 11:'eleven' };
+    if (months <= 11) return words[months] + ' months';
+    if (months <= 14) return 'year';
+    if (months <= 17) return 'year-plus';
+    if (months <= 23) return months + ' months';
+    var y = Math.round(months / 12);
+    return y + ' years';
+  }
+
+  function describeMultiplier(m) {
+    if (m >= 100) return 'more than a hundredfold';
+    if (m >= 50)  return 'more than fiftyfold';
+    if (m >= 20)  return 'more than twentyfold';
+    if (m >= 10)  return 'more than tenfold';
+    if (m >= 5)   return Math.round(m) + 'x';
+    if (m >= 2)   return 'more than ' + Math.floor(m) + 'x';
+    if (m > 1.2)  return 'meaningfully';
+    return 'modestly';
+  }
+
+  // Engagement-period phrase used in copy like "How your first year measured up"
+  // or "How your first three months measured up". Always lowercase since it
+  // gets dropped into mid-sentence positions.
+  function engagementPeriodPhrase(months) {
+    if (months <= 1) return 'first month';
+    var words = ['', '', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven'];
+    if (months <= 11) return 'first ' + words[months] + ' months';
+    if (months <= 13) return 'first year';
+    if (months <= 23) return 'first ' + months + ' months';
+    return 'first ' + Math.round(months / 12) + ' years';
+  }
+
+  // Sentence-case period label used as a column header or row prefix
+  // (e.g. "Year 1", "First 3 months", "First year"). Capitalized.
+  function currentPeriodLabel(months) {
+    if (months <= 1) return 'First month';
+    if (months <= 11) return 'First ' + months + ' months';
+    if (months <= 13) return 'Year 1';
+    return 'First ' + Math.round(months / 12) + ' years';
+  }
+
+  function naturalPage(pos) {
+    if (pos <= 3)  return 'the top three results on Google';
+    if (pos <= 10) return 'the top of page one';
+    if (pos <= 15) return 'the bottom half of page one';
+    if (pos <= 20) return 'page two';
+    if (pos <= 30) return 'page three';
+    return 'page ' + Math.ceil(pos / 10);
+  }
+
+  // Heuristic: if the last month's impressions are <60% of the previous
+  // month, treat it as partial (mid-month) and use the prior month for
+  // "current state" comparisons.
+  function pickLastFullMonth(byMonth) {
+    if (!byMonth || byMonth.length === 0) return null;
+    var last = byMonth[byMonth.length - 1];
+    if (byMonth.length < 2) return last;
+    var prev = byMonth[byMonth.length - 2];
+    if (last.impressions < prev.impressions * 0.6) return prev;
+    return last;
+  }
+
+  // Repaint chart line colors and legend swatches for the current theme.
+  // Charts capture borderColor at creation time, so a theme toggle that
+  // doesn't repaint leaves dark navy lines invisible on the dark surface
+  // (and vice versa).
+  // Repaint chart line colors and legend swatches for the current theme.
+  // Chart.js doesn't reliably repaint point markers via dataset mutation +
+  // update(), so we destroy and recreate both charts. renderBookings and
+  // renderGsc are idempotent — they call chart.destroy() before creating
+  // a new instance.
+  function applyChartTheme() {
+    var color = lineColor();
+    document.querySelectorAll('.line-swatch').forEach(function(el) {
+      el.style.color = color;
+    });
+    if (_currentData) {
+      renderBookings(_currentData);
+      renderGsc(_currentData);
+    }
+  }
+  function showError(msg) {
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('errorMsg').textContent = msg;
+    document.getElementById('errorState').classList.remove('hidden');
+  }
+
+  // ── Data load ────────────────────────────────────────────────────
+  fetch('/api/campaign-summary?client=' + encodeURIComponent(CLIENT_SLUG))
+    .then(function(r) {
+      if (!r.ok) return r.json().then(function(j) { throw new Error(j.error || ('HTTP ' + r.status)); });
+      return r.json();
+    })
+    .then(render)
+    .catch(function(err) {
+      console.error('Campaign summary load failed:', err);
+      showError(err.message || 'Unknown error');
+    });
+
+  // Stash for theme-toggle re-renders. Chart.js doesn't reliably repaint
+  // point markers via update() when only dataset properties change, so we
+  // destroy and recreate both charts on theme switch.
+  var _currentData = null;
+
+  // ── Render ──────────────────────────────────────────────────────
+  function render(data) {
+    _currentData = data;
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('content').classList.remove('hidden');
+
+    // Header
+    document.getElementById('headerName').textContent = 'Campaign summary for ' + (data.client.name || data.client.practice);
+    document.getElementById('headerPractice').textContent = data.client.practice + (data.client.location ? ' \u00B7 ' + data.client.location : '');
+
+    // Hero
+    document.getElementById('heroHeadline').textContent = "What we've built for " + data.client.practice + ".";
+    document.getElementById('heroSubtitle').textContent = buildHeroNarrative(data);
+    document.getElementById('windowLabel').textContent = fmtDate(data.window.start) + " \u2192 " + fmtDate(data.window.end) + "  (" + data.window.months + " months)";
+
+    document.title = 'Campaign Summary | ' + (data.client.practice || 'Moonraker');
+
+    // ── Headline KPIs ───────────────────────────────────────────────
+    renderHeadlineKpis(data);
+
+    // ── Performance Guarantee + Attribution ─────────────────────────
+    renderGuarantee(data);
+    renderAttribution(data);
+
+    // ── Bookings section ────────────────────────────────────────────
+    renderBookings(data);
+
+    // ── GSC section ─────────────────────────────────────────────────
+    renderGsc(data);
+
+    // ── Queries section ─────────────────────────────────────────────
+    renderQueries(data);
+
+    // ── Striking distance section ───────────────────────────────────
+    renderStriking(data);
+
+    // ── Deliverables section ────────────────────────────────────────
+    renderDeliverables(data);
+
+    // ── Local visibility section ────────────────────────────────────
+    renderLocal(data);
+
+    // ── Next-period callout (Year 2 / Quarter 2 / etc) ─────────────
+    renderNextPeriod(data);
+
+    // Make sure chart line colors and legend swatches match the active
+    // theme on first paint (the user may have landed in dark mode).
+    applyChartTheme();
+
+    // Trigger reveal
+    setTimeout(checkReveal, 100);
+    initSectionNav();
+  }
+
+  function renderHeadlineKpis(data) {
+    var grid = document.getElementById('kpiGrid');
+    var cards = [];
+
+    if (data.bookings && data.bookings.available) {
+      cards.push({
+        label: 'Net consultations',
+        value: fmtNum(data.bookings.net),
+        context: 'Booked through your scheduling pipeline'
+      });
+    }
+    if (data.cost_per_consultation && data.cost_per_consultation.available) {
+      cards.push({
+        label: 'Cost per consultation',
+        value: '$' + Math.round(data.cost_per_consultation.dollars).toLocaleString(),
+        context: '$' + Math.round(data.cost_per_consultation.total_invested_dollars).toLocaleString() + ' invested · pipeline volume'
+      });
+    }
+    if (data.conversion && data.conversion.available) {
+      cards.push({
+        label: 'Click-to-booking',
+        value: '1 in ' + fmtNum(data.conversion.clicks_per_booking),
+        context: 'Of every ' + fmtNum(data.conversion.clicks_per_booking) + ' organic visitors books a consultation'
+      });
+    }
+    if (data.gsc && data.gsc.available) {
+      if (data.gsc.position_first && data.gsc.position_last) {
+        var startPos = data.gsc.position_first.toFixed(1);
+        var endPos = data.gsc.position_last.toFixed(1);
+        cards.push({
+          label: 'Average position',
+          value: startPos + ' \u2192 ' + endPos,
+          context: positionContext(data.gsc.position_first, data.gsc.position_last)
+        });
+      } else {
+        cards.push({
+          label: 'Organic clicks',
+          value: fmtCompact(data.gsc.totals.clicks),
+          context: 'Cumulative across the engagement'
+        });
+      }
+    }
+
+    if (cards.length === 0) {
+      grid.innerHTML = '<p style="color:var(--color-muted)">No campaign data is available yet for this client.</p>';
+      return;
+    }
+
+    grid.innerHTML = cards.map(function(c) {
+      return '<div class="kpi-card">'
+        + '<div class="kpi-label">' + escapeHtml(c.label) + '</div>'
+        + '<div class="kpi-value">' + c.value + '</div>'
+        + '<div class="kpi-context">' + escapeHtml(c.context) + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  function positionContext(startP, endP) {
+    function pageOf(p) {
+      if (p <= 10) return 'top of page 1';
+      if (p <= 20) return 'page 2';
+      if (p <= 30) return 'page 3';
+      return 'page ' + Math.ceil(p / 10);
+    }
+    return pageOf(startP) + ' \u2192 ' + pageOf(endP);
+  }
+
+  // ── Bookings + combined chart ────────────────────────────────────
+  var bookingsChart = null;
+  function renderBookings(data) {
+    var b = data.bookings;
+    var section = document.getElementById('bookings');
+    if (!b || !b.available) {
+      section.classList.add('hidden');
+      var d = section.previousElementSibling;
+      if (d && d.classList.contains('divider')) d.classList.add('hidden');
+      var nav = document.getElementById('navBookings');
+      if (nav) nav.classList.add('hidden');
+      return;
+    }
+
+    document.getElementById('bookingsTitle').textContent =
+      fmtNum(b.net) + ' consultations booked through the engagement';
+
+    document.getElementById('bookingsChartSubtle').textContent =
+      fmtNum(b.net) + ' net';
+
+    var labels = b.by_month.map(function(m) { return ymLabel(m.ym); });
+    var netData = b.by_month.map(function(m) { return Math.max(0, m.booked - m.canceled); });
+
+    var datasets = [
+      {
+        type: 'bar',
+        label: 'Net consultations',
+        data: netData,
+        backgroundColor: '#00D47E',
+        borderColor: '#00b86c',
+        borderWidth: 0,
+        yAxisID: 'y',
+        order: 3
+      }
+    ];
+
+    // Overlay GSC clicks if available
+    if (data.gsc && data.gsc.available) {
+      var clicksByMonth = {};
+      data.gsc.by_month.forEach(function(r) { clicksByMonth[r.ym] = r.clicks; });
+      var clicksAligned = b.by_month.map(function(m) { return clicksByMonth[m.ym] || 0; });
+      datasets.push({
+        type: 'line',
+        label: 'Organic clicks',
+        data: clicksAligned,
+        borderColor: lineColor(),
+        backgroundColor: lineColor(),
+        pointBackgroundColor: lineColor(),
+        pointBorderColor: lineColor(),
+        borderDash: [5, 3],
+        borderWidth: 2.5,
+        pointRadius: 3.5,
+        pointHoverRadius: 5,
+        pointStyle: 'rect',
+        tension: 0.25,
+        yAxisID: 'y1',
+        // Higher order = drawn earlier = appears BEHIND the bars.
+        // Matches the GSC chart's natural stacking.
+        order: 10
+      });
+      document.getElementById('clicksLegend').classList.remove('hidden');
+    }
+
+    var ctx = document.getElementById('bookingsChart').getContext('2d');
+    if (bookingsChart) bookingsChart.destroy();
+    bookingsChart = new Chart(ctx, {
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(c) {
+                var v = Math.round(c.parsed.y);
+                if (c.dataset.label === 'Organic clicks') return 'Clicks: ' + v.toLocaleString();
+                return c.dataset.label + ': ' + v;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { autoSkip: false, maxRotation: 0, font: { size: 11 } }, grid: { display: false } },
+          y: {
+            position: 'left', beginAtZero: true,
+            title: { display: true, text: 'Consultations', font: { size: 11 } },
+            ticks: { font: { size: 11 } },
+            grid: { color: 'rgba(128,128,128,0.1)' }
+          },
+          y1: {
+            position: 'right', beginAtZero: true,
+            title: { display: true, text: 'Organic clicks', font: { size: 11 } },
+            ticks: { font: { size: 11 }, callback: function(v) { return Math.round(v).toLocaleString(); } },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+
+  // ── GSC section ──────────────────────────────────────────────────
+  var gscChart = null;
+  function renderGsc(data) {
+    var g = data.gsc;
+    var section = document.getElementById('search');
+    if (!g || !g.available) {
+      section.classList.add('hidden');
+      var d = document.getElementById('searchDivider');
+      if (d) d.classList.add('hidden');
+      var nav = document.getElementById('navSearch');
+      if (nav) nav.classList.add('hidden');
+      return;
+    }
+
+    document.getElementById('gscSiteUrl').textContent = g.site_url || 'your site';
+
+    var grid = document.getElementById('gscKpiGrid');
+    grid.innerHTML = [
+      kpiCard('Total clicks', fmtCompact(g.totals.clicks), 'Organic visits over the engagement'),
+      kpiCard('Total impressions', fmtCompact(g.totals.impressions), 'Times your site appeared in results'),
+      kpiCard('Average CTR', fmtPct(g.totals.ctr, 2), 'Click-through rate, all impressions'),
+      kpiCard('Latest avg position', g.totals.position ? g.totals.position.toFixed(1) : '—', 'Across all queries the site ranks for')
+    ].join('');
+
+    // Chart: impressions bars + position line (inverted)
+    var labels = g.by_month.map(function(m) { return ymLabel(m.ym); });
+    var imps = g.by_month.map(function(m) { return m.impressions; });
+    var pos = g.by_month.map(function(m) { return m.position || null; });
+
+    var ctx = document.getElementById('gscChart').getContext('2d');
+    if (gscChart) gscChart.destroy();
+    gscChart = new Chart(ctx, {
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            type: 'bar',
+            label: 'Impressions',
+            data: imps,
+            backgroundColor: '#00D47E',
+            borderWidth: 0,
+            yAxisID: 'y'
+          },
+          {
+            type: 'line',
+            label: 'Avg position',
+            data: pos,
+            borderColor: lineColor(),
+            backgroundColor: lineColor(),
+            pointBackgroundColor: lineColor(),
+            pointBorderColor: lineColor(),
+            borderDash: [5, 3],
+            borderWidth: 2.5,
+            pointRadius: 3.5,
+            pointHoverRadius: 5,
+            pointStyle: 'rect',
+            tension: 0.25,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(c) {
+                if (c.dataset.label === 'Avg position') return 'Position: ' + c.parsed.y.toFixed(1);
+                return 'Impressions: ' + Math.round(c.parsed.y).toLocaleString();
+              }
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { autoSkip: false, maxRotation: 0, font: { size: 11 } }, grid: { display: false } },
+          y: {
+            position: 'left', beginAtZero: true,
+            title: { display: true, text: 'Impressions', font: { size: 11 } },
+            ticks: { font: { size: 11 }, callback: function(v) { return fmtCompact(v); } },
+            grid: { color: 'rgba(128,128,128,0.1)' }
+          },
+          y1: {
+            position: 'right', reverse: true, beginAtZero: false, suggestedMin: 1,
+            title: { display: true, text: 'Avg position (lower = better)', font: { size: 11 } },
+            ticks: { font: { size: 11 }, callback: function(v) { return v.toFixed(0); } },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+
+  function kpiCard(label, value, context) {
+    return '<div class="kpi-card">'
+      + '<div class="kpi-label">' + escapeHtml(label) + '</div>'
+      + '<div class="kpi-value">' + value + '</div>'
+      + '<div class="kpi-context">' + escapeHtml(context) + '</div>'
+      + '</div>';
+  }
+
+  // ── Top queries / pages ─────────────────────────────────────────
+  function renderQueries(data) {
+    var g = data.gsc;
+    var section = document.getElementById('queries');
+    if (!g || !g.available || (!g.top_queries && !g.top_pages)) {
+      section.classList.add('hidden');
+      var d = document.getElementById('queriesDivider');
+      if (d) d.classList.add('hidden');
+      var nav = document.getElementById('navQueries');
+      if (nav) nav.classList.add('hidden');
+      return;
+    }
+
+    var qBody = document.getElementById('topQueriesBody');
+    qBody.innerHTML = (g.top_queries || []).map(function(r) {
+      return '<tr>'
+        + '<td class="truncate">' + escapeHtml(r.query) + '</td>'
+        + '<td class="num">' + fmtNum(r.clicks) + '</td>'
+        + '<td class="num">' + fmtNum(r.impressions) + '</td>'
+        + '<td class="num">' + (r.position ? r.position.toFixed(1) : '—') + '</td>'
+        + '</tr>';
+    }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--color-muted);padding:1.5rem">No query data yet</td></tr>';
+
+    var pBody = document.getElementById('topPagesBody');
+    pBody.innerHTML = (g.top_pages || []).map(function(r) {
+      var label = r.page.replace(/^https?:\/\/[^\/]+/, '') || '/';
+      return '<tr>'
+        + '<td class="truncate"><a href="' + escapeHtml(r.page) + '" target="_blank" rel="noopener">' + escapeHtml(label) + '</a></td>'
+        + '<td class="num">' + fmtNum(r.clicks) + '</td>'
+        + '<td class="num">' + fmtNum(r.impressions) + '</td>'
+        + '<td class="num">' + (r.position ? r.position.toFixed(1) : '—') + '</td>'
+        + '</tr>';
+    }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--color-muted);padding:1.5rem">No page data yet</td></tr>';
+  }
+
+  // ── Local visibility ────────────────────────────────────────────
+  function renderLocal(data) {
+    var lf = data.localfalcon;
+    var section = document.getElementById('local');
+    if (!lf || !lf.available) {
+      section.classList.add('hidden');
+      var d = document.getElementById('localDivider');
+      if (d) d.classList.add('hidden');
+      var nav = document.getElementById('navLocal');
+      if (nav) nav.classList.add('hidden');
+      return;
+    }
+    // Future: render geogrid cards here
+    document.getElementById('lfContent').innerHTML = '<p style="color:var(--color-muted)">Local visibility data is in place.</p>';
+  }
+
+  // ── Performance Guarantee section ──────────────────────────────
+  function renderGuarantee(data) {
+    var g = data.guarantee;
+    var section = document.getElementById('guarantee');
+    if (!g || !g.available) {
+      section.classList.add('hidden');
+      var d = document.getElementById('guaranteeDivider');
+      if (d) d.classList.add('hidden');
+      var nav = document.getElementById('navGuarantee');
+      if (nav) nav.classList.add('hidden');
+      return;
+    }
+
+    var headline = document.getElementById('guaranteeHeadlineText');
+    var header = document.getElementById('guaranteeHeader');
+    var rows = document.getElementById('guaranteeRows');
+    var note = document.getElementById('guaranteeNote');
+
+    // Determine status: met by total > met by google > pending
+    var status, statusLabel;
+    if (g.met_by_total) {
+      status = 'met';
+      var mult = g.multiple_total;
+      if (mult >= 1.5) statusLabel = 'Guarantee exceeded by ' + Math.round((mult - 1) * 100) + '%';
+      else if (mult >= 1.05) statusLabel = 'Guarantee exceeded';
+      else statusLabel = 'Guarantee met';
+    } else if (g.met_by_google) {
+      status = 'met';
+      statusLabel = 'Guarantee met (Google attribution alone)';
+    } else if (g.met === null) {
+      status = 'pending';
+      statusLabel = 'Pending attribution data';
+    } else {
+      status = 'short';
+      statusLabel = 'Tracking gap. See attribution table.';
+    }
+
+    headline.textContent = statusLabel;
+    header.classList.toggle('guarantee-pending', status !== 'met');
+
+    var periodLabel = currentPeriodLabel(data.window.months);
+
+    // Build the rows
+    var html = '';
+    if (data.cost && data.cost.available) {
+      html += rowHtml(periodLabel + ' investment',
+        '$' + Math.round(data.cost.total_dollars).toLocaleString());
+    }
+    html += rowHtml('Guarantee threshold (2x investment in new client revenue)',
+      '$' + Math.round(g.threshold_dollars).toLocaleString());
+
+    if (g.google_only_dollars != null) {
+      var googMet = g.met_by_google;
+      var googOver = g.over_by_google_dollars;
+      var googDelta = googMet
+        ? '<span class="delta">' + (googOver >= 100 ? '+$' + Math.round(googOver).toLocaleString() : Math.round((g.multiple_google - 1) * 100) + '% over') + '</span>'
+        : '';
+      html += '<div class="guarantee-row delivered">'
+        + '<span class="label">' + escapeHtml(periodLabel) + ' from Google attribution</span>'
+        + googDelta
+        + '<span class="value">$' + Math.round(g.google_only_dollars).toLocaleString() + '</span>'
+        + '</div>';
+    }
+    if (g.total_online_dollars != null && g.total_online_cents !== g.google_only_cents) {
+      var totMet = g.met_by_total;
+      var totOver = g.over_by_total_dollars;
+      var totDelta = totMet
+        ? '<span class="delta">' + (g.multiple_total >= 1.1 ? Math.round((g.multiple_total - 1) * 100) + '% over' : '+$' + Math.round(totOver).toLocaleString()) + '</span>'
+        : '';
+      html += '<div class="guarantee-row delivered">'
+        + '<span class="label">' + escapeHtml(periodLabel) + ' from all online sources</span>'
+        + totDelta
+        + '<span class="value">$' + Math.round(g.total_online_dollars).toLocaleString() + '</span>'
+        + '</div>';
+    }
+    rows.innerHTML = html;
+
+    if (status === 'pending') {
+      note.textContent = 'Attribution data hasn\u2019t been recorded yet. Once we have year-one source numbers from your admin team, this section will show whether the guarantee was met.';
+    } else if (status === 'short') {
+      note.textContent = 'Note: tracked attribution captures only patients who self-reported their referral source at intake. Your booking pipeline shows ' + (data.bookings && data.bookings.available ? fmtNum(data.bookings.net) + ' net consultations' : 'meaningful volume') + ' over the same window, suggesting the actual organic-attributed revenue is materially higher than what surfaces in your current tracking.';
+    } else {
+      note.textContent = 'This result reflects your admin team\u2019s tagged attribution data, including patients who self-reported the channel at intake. Actual organic-driven revenue is likely higher; we\u2019ll close that gap going forward.';
+    }
+  }
+
+  function rowHtml(label, value) {
+    return '<div class="guarantee-row">'
+      + '<span class="label">' + escapeHtml(label) + '</span>'
+      + '<span class="value">' + escapeHtml(value) + '</span>'
+      + '</div>';
+  }
+
+  // ── Attribution YoY table ──────────────────────────────────────
+  function renderAttribution(data) {
+    var attr = data.attribution;
+    var tableEl = document.getElementById('attributionTable');
+    if (!attr || !attr.available || !attr.yoy) {
+      tableEl.classList.add('hidden');
+      return;
+    }
+
+    // Set baseline + current column headers
+    var baseline = attr.periods.find(function(p) { return p.is_baseline; });
+    var current = attr.periods.slice().reverse().find(function(p) { return !p.is_baseline; });
+
+    if (baseline) document.getElementById('attrBaselineCol').textContent = formatPeriodShort(baseline);
+    if (current) document.getElementById('attrCurrentCol').textContent = formatPeriodShort(current);
+
+    var body = document.getElementById('attributionBody');
+
+    // Combine sources from baseline + current, indexed by source name
+    var sourceMap = {};
+    function ingest(period, key) {
+      if (!period) return;
+      period.sources.forEach(function(s) {
+        var name = s.source_name;
+        if (!sourceMap[name]) sourceMap[name] = { name: name, category: s.source_category, baseline_revenue_dollars: 0, baseline_appointments: 0, current_revenue_dollars: 0, current_appointments: 0 };
+        sourceMap[name][key + '_revenue_dollars'] = s.revenue_dollars;
+        sourceMap[name][key + '_appointments'] = s.appointment_count;
+      });
+    }
+    ingest(baseline, 'baseline');
+    ingest(current, 'current');
+
+    var rows = Object.values(sourceMap).map(function(s) {
+      var growth = null;
+      if (s.baseline_revenue_dollars > 0) {
+        growth = (s.current_revenue_dollars - s.baseline_revenue_dollars) / s.baseline_revenue_dollars;
+      }
+      var growthHtml = '';
+      if (growth != null) {
+        var pct = Math.round(growth * 100);
+        growthHtml = '<span class="' + (pct >= 0 ? 'growth-up' : 'growth-down') + '">' + (pct >= 0 ? '+' : '') + pct + '%</span>';
+      } else if (s.current_revenue_dollars > 0) {
+        growthHtml = '<span class="growth-up">new</span>';
+      } else {
+        growthHtml = '<span style="color:var(--color-muted)">\u2014</span>';
+      }
+      var pillClass = (s.category && s.category.indexOf('ai') !== -1) ? 'ai' : 'organic';
+      var pillLabel = (s.category === 'ai_search') ? 'AI search' : (s.category === 'organic_search' ? 'Organic' : '');
+      return '<tr>'
+        + '<td><span class="source-name">' + escapeHtml(s.name) + '</span>'
+        + (pillLabel ? '<span class="attribution-source-pill ' + pillClass + '">' + pillLabel + '</span>' : '')
+        + '</td>'
+        + '<td class="num">' + (s.baseline_revenue_dollars > 0 ? '$' + Math.round(s.baseline_revenue_dollars).toLocaleString() + ' <span style="color:var(--color-muted);font-size:.75rem">(' + s.baseline_appointments + ')</span>' : '\u2014') + '</td>'
+        + '<td class="num">' + (s.current_revenue_dollars > 0 ? '$' + Math.round(s.current_revenue_dollars).toLocaleString() + ' <span style="color:var(--color-muted);font-size:.75rem">(' + s.current_appointments + ')</span>' : '\u2014') + '</td>'
+        + '<td class="num">' + growthHtml + '</td>'
+        + '</tr>';
+    });
+
+    // Total row
+    var totalGrowth = null;
+    if (baseline && current && baseline.totals.revenue_dollars > 0) {
+      totalGrowth = (current.totals.revenue_dollars - baseline.totals.revenue_dollars) / baseline.totals.revenue_dollars;
+    }
+    rows.push('<tr style="background:var(--color-primary-subtle);font-weight:600">'
+      + '<td><strong>Total</strong></td>'
+      + '<td class="num">' + (baseline ? '<strong>$' + Math.round(baseline.totals.revenue_dollars).toLocaleString() + '</strong> <span style="color:var(--color-muted);font-size:.75rem">(' + baseline.totals.appointments + ')</span>' : '\u2014') + '</td>'
+      + '<td class="num">' + (current ? '<strong>$' + Math.round(current.totals.revenue_dollars).toLocaleString() + '</strong> <span style="color:var(--color-muted);font-size:.75rem">(' + current.totals.appointments + ')</span>' : '\u2014') + '</td>'
+      + '<td class="num">' + (totalGrowth != null ? '<span class="growth-up">+' + Math.round(totalGrowth * 100) + '%</span>' : '\u2014') + '</td>'
+      + '</tr>');
+
+    body.innerHTML = rows.join('');
+  }
+
+  function formatPeriodShort(p) {
+    function shortDate(iso) {
+      var d = new Date(iso + 'T00:00:00Z');
+      return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+    }
+    return shortDate(p.period_start) + ' \u2192 ' + shortDate(p.period_end);
+  }
+
+  // ── Striking distance ──────────────────────────────────────────
+  function renderStriking(data) {
+    var section = document.getElementById('striking');
+    var queries = (data.gsc && data.gsc.available) ? data.gsc.striking_distance : null;
+    if (!queries || queries.length === 0) {
+      section.classList.add('hidden');
+      var d = document.getElementById('strikingDivider');
+      if (d) d.classList.add('hidden');
+      var nav = document.getElementById('navStriking');
+      if (nav) nav.classList.add('hidden');
+      return;
+    }
+
+    var totalLift = queries.reduce(function(sum, q) { return sum + q.estimated_lift_clicks; }, 0);
+    var totalImps = queries.reduce(function(sum, q) { return sum + q.impressions; }, 0);
+
+    document.getElementById('strikingSummary').innerHTML =
+      '<strong>' + queries.length + ' queries</strong> are already ranking on page two with a combined ' + fmtNum(totalImps) + ' monthly impressions. Moving them into the top 10 would add an estimated <strong>' + fmtNum(totalLift) + ' organic clicks per month</strong>. That\u2019s work that begins the next phase with momentum already underway.';
+
+    var body = document.getElementById('strikingBody');
+    body.innerHTML = queries.map(function(q) {
+      return '<tr>'
+        + '<td class="truncate">' + escapeHtml(q.query) + '</td>'
+        + '<td class="num">#' + q.position.toFixed(1) + '</td>'
+        + '<td class="num">' + fmtNum(q.impressions) + '</td>'
+        + '<td class="num">+' + fmtNum(q.estimated_lift_clicks) + ' clicks</td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  // ── Deliverables ───────────────────────────────────────────────
+  var DELIVERABLE_TYPE_LABELS = {
+    report_config: 'Reporting setup',
+    gsc_setup: 'Search Console setup',
+    ga4_setup: 'GA4 setup',
+    gtm_setup: 'Tag Manager setup',
+    gbp_setup: 'Google Business Profile setup',
+    gbp_optimization: 'GBP optimization',
+    livedrive: 'Live drive deployment',
+    target_page: 'Target landing page',
+    surge_page: 'Surge content page',
+    faq_page: 'FAQ page',
+    location_page: 'Location page',
+    instant_page: 'Instant page',
+    bio_page: 'Bio page',
+    surge_entity: 'Entity hub page',
+    surge_sitewide: 'Site-wide content',
+    blog_post: 'Blog post',
+    social_profiles: 'Social profile build',
+    social_posts: 'Social posts',
+    press_release: 'Press release',
+    citations: 'Local citations',
+    neo_distribution: 'NEO distribution',
+    neo_images: 'NEO image set',
+    entity_veracity_hub: 'Entity veracity hub',
+    endorsement: 'Endorsement collection',
+    proposal: 'Strategy proposal',
+    audit_diagnosis: 'Audit diagnosis',
+    audit_action_plan: 'Audit action plan',
+    audit_progress: 'Audit progress tracker',
+    youtube_video: 'YouTube video'
+  };
+
+  function renderDeliverables(data) {
+    var d = data.deliverables;
+    var section = document.getElementById('shipped');
+    var content = document.getElementById('deliverablesContent');
+
+    if (!d || !d.available) {
+      section.classList.add('hidden');
+      var hr = document.getElementById('shippedDivider');
+      if (hr) hr.classList.add('hidden');
+      var nav = document.getElementById('navShipped');
+      if (nav) nav.classList.add('hidden');
+      return;
+    }
+
+    if (!d.by_category || d.by_category.length === 0 || d.total === 0) {
+      content.innerHTML = '<div class="insight"><h4>Year-one work summary coming soon</h4><p>We\u2019re consolidating the full deliverables history for this engagement. The categorized view will populate here once cataloguing is complete.</p></div>';
+      return;
+    }
+
+    content.innerHTML = '<div class="deliverables-grid">' + d.by_category.map(function(cat) {
+      // Roll up items: if there are >5, show a count; otherwise list types
+      var typeCounts = {};
+      cat.items.forEach(function(it) {
+        var label = DELIVERABLE_TYPE_LABELS[it.type] || it.type.replace(/_/g, ' ');
+        typeCounts[label] = (typeCounts[label] || 0) + 1;
+      });
+      var typeList = Object.keys(typeCounts).map(function(k) {
+        var c = typeCounts[k];
+        return c > 1 ? c + ' \u00D7 ' + k : k;
+      });
+      var listHtml = typeList.length <= 6
+        ? '<ul class="deliverable-cat-items">' + typeList.map(function(t) { return '<li>' + escapeHtml(t) + '</li>'; }).join('') + '</ul>'
+        : '<div class="deliverable-cat-items">' + typeList.slice(0, 5).map(escapeHtml).join(', ') + ', and more.</div>';
+
+      return '<div class="deliverable-cat">'
+        + '<div class="deliverable-cat-name">' + escapeHtml(cat.category) + '</div>'
+        + '<div class="deliverable-cat-count">' + cat.count + '</div>'
+        + listHtml
+        + '</div>';
+    }).join('') + '</div>';
+  }
+
+  // ── Next-period callout (data-driven from report_configs) ──────
+  // Renders the customizable "what's coming next" block. Heading + body
+  // come from report_configs.next_period_heading / next_period_body.
+  // Body is plain text with paragraphs separated by blank lines; each
+  // paragraph renders as a <p>. If either field is empty, the entire
+  // callout hides so non-configured clients see a clean page.
+  function renderNextPeriod(data) {
+    var np = data.next_period || {};
+    var callout = document.getElementById('year2Callout');
+    if (!callout) return;
+    if (!np.heading || !np.body) {
+      callout.classList.add('hidden');
+      return;
+    }
+    document.getElementById('year2Heading').textContent = np.heading;
+    var paragraphs = String(np.body)
+      .split(/\n\s*\n/)
+      .map(function(p) { return p.trim(); })
+      .filter(Boolean);
+    document.getElementById('year2Body').innerHTML = paragraphs.map(function(p) {
+      return '<p>' + escapeHtml(p) + '</p>';
+    }).join('');
+    callout.classList.remove('hidden');
+  }
+
+  // ── UI: theme, progress, nav, reveal ────────────────────────────
+  var themeBtn = document.getElementById('themeBtn');
+  themeBtn.addEventListener('click', function() {
+    var h = document.documentElement;
+    function apply() {
+      if (h.getAttribute('data-theme') === 'light') {
+        h.setAttribute('data-theme', 'dark');
+        themeBtn.innerHTML = '&#9728;&#65039;';
+        try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
+      } else {
+        h.setAttribute('data-theme', 'light');
+        themeBtn.innerHTML = '&#x1F319;';
+        try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
+      }
+      applyChartTheme();
+    }
+    if (document.startViewTransition) { document.startViewTransition(apply); } else { apply(); }
+  });
+
+  var progressBar = document.getElementById('progressBar');
+  function updateProgress() {
+    var scrollTop = window.scrollY;
+    var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    progressBar.style.width = (docHeight > 0 ? (scrollTop / docHeight) * 100 : 0) + '%';
+  }
+
+  var sections, navLinks;
+  function initSectionNav() {
+    sections = document.querySelectorAll('section[id]');
+    navLinks = document.querySelectorAll('.section-nav a');
+  }
+  function updateNav() {
+    if (!sections) return;
+    var current = '';
+    sections.forEach(function(s) {
+      if (s.offsetHeight > 0 && window.scrollY >= s.offsetTop - 200) current = s.id;
+    });
+    navLinks.forEach(function(l) {
+      l.classList.toggle('active', l.getAttribute('href') === '#' + current);
+    });
+  }
+  function checkReveal() {
+    document.querySelectorAll('.reveal').forEach(function(el) {
+      if (el.getBoundingClientRect().top < window.innerHeight * 0.88) el.classList.add('visible');
+    });
+  }
+  window.addEventListener('scroll', function() { updateProgress(); updateNav(); checkReveal(); });
+})();
+</script>
+</body>
+</html>
