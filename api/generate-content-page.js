@@ -7,6 +7,7 @@
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
 var sanitizer = require('./_lib/html-sanitizer');
+var monitor = require('./_lib/monitor');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -143,7 +144,11 @@ module.exports = async function handler(req, res) {
 
     if (!claudeResp.ok) {
       var errText = await claudeResp.text();
-      send({ step: 'error', message: 'Claude API error: ' + claudeResp.status, detail: errText.substring(0, 500) });
+      await monitor.logError('generate-content-page', new Error('Claude API non-2xx'), {
+        client_slug: clientSlug,
+        detail: { stage: 'claude_http', content_page_id: contentPageId, status: claudeResp.status, body: errText.substring(0, 500) }
+      });
+      send({ step: 'error', message: 'AI service error' });
       // Revert status
       await fetch(sb.url() + '/rest/v1/content_pages?id=eq.' + contentPageId, {
         method: 'PATCH',
@@ -165,7 +170,11 @@ module.exports = async function handler(req, res) {
     var html = extractHtml(responseText);
 
     if (!html || html.length < 200) {
-      send({ step: 'error', message: 'Generated HTML is too short or empty. Check response.', raw_preview: responseText.substring(0, 500) });
+      await monitor.logError('generate-content-page', new Error('Generated HTML too short'), {
+        client_slug: clientSlug,
+        detail: { stage: 'html_too_short', content_page_id: contentPageId, raw_length: responseText.length, preview: responseText.substring(0, 500) }
+      });
+      send({ step: 'error', message: 'Generated content was too short. Please retry.' });
       await fetch(sb.url() + '/rest/v1/content_pages?id=eq.' + contentPageId, {
         method: 'PATCH',
         headers: Object.assign({}, headers, { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
@@ -245,7 +254,8 @@ module.exports = async function handler(req, res) {
 
   } catch (err) {
     console.error('Content page generation error:', err);
-    try { send({ step: 'error', message: err.message }); } catch (e) { /* stream may be closed */ }
+    try { await monitor.logError('generate-content-page', err, { client_slug: clientSlug, detail: { stage: 'outer_catch', content_page_id: contentPageId } }); } catch (e3) {}
+    try { send({ step: 'error', message: 'Generation failed' }); } catch (e) { /* stream may be closed */ }
     return res.end();
   }
 };
@@ -500,3 +510,4 @@ function extractHtml(responseText) {
   // Last resort: return the whole thing
   return text;
 }
+
