@@ -385,12 +385,13 @@ section { padding: 4.5rem 0; }
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  // Strong dark navy in light mode, near-white in dark mode. Avoids the
-  // brittle getComputedStyle CSS-var lookup (which can resolve too late
-  // and leave Chart.js with its faded default color).
+  // Slightly muted navy in light mode, soft cream-gray in dark mode.
+  // Uses the design system's --color-body equivalents in each theme so the
+  // line reads as a "data accent" rather than a heading. Hardcoded to avoid
+  // CSS-var resolution races at chart paint time.
   function lineColor() {
     return document.documentElement.getAttribute('data-theme') === 'dark'
-      ? '#E8F5EF' : '#141C3A';
+      ? '#C8D8D0' : '#333F70';
   }
 
   // ── Natural-language hero narrative ─────────────────────────────
@@ -696,7 +697,9 @@ section { padding: 4.5rem 0; }
         pointStyle: 'rect',
         tension: 0.25,
         yAxisID: 'y1',
-        order: 1
+        // Higher order = drawn earlier = appears BEHIND the bars.
+        // Matches the GSC chart's natural stacking.
+        order: 10
       });
       document.getElementById('clicksLegend').classList.remove('hidden');
     }
