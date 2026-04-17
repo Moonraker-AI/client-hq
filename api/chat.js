@@ -2,6 +2,7 @@
 
 var auth = require('./_lib/auth');
 var monitor = require('./_lib/monitor');
+var sanitizer = require('./_lib/html-sanitizer');
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', 'https://clients.moonraker.ai');
@@ -136,9 +137,9 @@ module.exports.config = {
 
 
 function buildSystemPrompt(ctx) {
-  var page = ctx.page || 'unknown';
-  var tab = ctx.tab || null;
-  var clientSlug = ctx.clientSlug || null;
+  var page = sanitizer.sanitizeText(ctx.page || 'unknown', 200);
+  var tab = ctx.tab ? sanitizer.sanitizeText(ctx.tab, 200) : null;
+  var clientSlug = ctx.clientSlug ? sanitizer.sanitizeText(ctx.clientSlug, 200) : null;
   var clientData = ctx.clientData || null;
 
   var parts = [];
