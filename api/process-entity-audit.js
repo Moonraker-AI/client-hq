@@ -13,6 +13,7 @@ var monitor = require('./_lib/monitor');
 var gh = require('./_lib/github');
 var fetchT = require('./_lib/fetch-with-timeout');
 var sanitizer = require('./_lib/html-sanitizer');
+var jsonParser = require('./_lib/json-parser');
 
 // Apply any {{KEY}} replacements to a template HTML string. Kept as a
 // helper even though no templates here use placeholders today — keeps
@@ -227,13 +228,15 @@ ${surgeData}`;
 
     send({ step: 'claude_done', message: 'Analysis complete. Parsing results...' });
 
-    // Parse JSON from Claude's response (strip any markdown fences)
-    var cleanJson = rawText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    // Parse JSON from Claude's response using the M25/L11 bracket-tracking
+    // parser, which respects JSON string delimiters + backslash escapes so
+    // content inside strings (including stray backticks, braces, or brackets)
+    // is never confused for fence or structural markers.
     var parsed;
     try {
-      parsed = JSON.parse(cleanJson);
+      parsed = jsonParser.parseFenced(rawText);
     } catch (parseErr) {
-      send({ step: 'error', message: 'Failed to parse Claude response as JSON', raw: cleanJson.substring(0, 500) });
+      send({ step: 'error', message: 'Failed to parse Claude response as JSON', raw: rawText.substring(0, 500) });
       return res.end();
     }
 
