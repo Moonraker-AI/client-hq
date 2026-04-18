@@ -3696,7 +3696,15 @@
       h += '<span id="agentStatusText" style="font-size:.82rem;color:var(--color-info);font-weight:500;">Agent running...</span>';
       h += '</div>';
     } else if (ea.status === 'agent_error') {
-      h += '<button onclick="triggerAgentAudit()" style="padding:.5rem 1rem;background:var(--color-primary);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;">&#9889; Retry Automated Audit</button>';
+      // When retriable=false (surge_maintenance, credits_exhausted,
+      // surge_rejected, generic_exception) the standard Retry path
+      // would just fail against the same condition. Swap it for a
+      // Requeue button that routes through the auto-heal pipeline.
+      if (ea.agent_error_retriable === false) {
+        h += '<button onclick="window.requeueAudit(\'' + esc(ea.id) + '\', this)" style="padding:.5rem 1rem;background:var(--color-primary);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;">&#8635; Requeue</button>';
+      } else {
+        h += '<button onclick="triggerAgentAudit()" style="padding:.5rem 1rem;background:var(--color-primary);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;">&#9889; Retry Automated Audit</button>';
+      }
       h += '<button onclick="processSurgeAudit()" style="padding:.5rem 1rem;border:1px solid var(--color-info);color:var(--color-info);background:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;">&#128203; Paste Surge (Manual)</button>';
     } else if (ea.status === 'pending') {
       h += '<button onclick="triggerAgentAudit()" style="padding:.5rem 1rem;background:var(--color-primary);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;">&#9889; Run Automated Audit</button>';
@@ -3722,6 +3730,48 @@
     }
     h += '<button onclick="deleteEntityAudit()" style="padding:.5rem 1rem;border:1px solid var(--color-danger);color:var(--color-danger);background:rgba(239,68,68,.04);border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;margin-left:auto;">Delete Audit</button>';
     h += '</div>';
+
+    // ── Terminal-failure detail card (retriable=false agent_error rows) ──
+    // Renders a pill badge + readable error sentence + VPS debug path.
+    // Badge colors mirror admin/audits banner: red = blocked (surge_maintenance),
+    // amber = resource (credits_exhausted), gray = unknown/unreviewed
+    // (surge_rejected, generic_exception). Auto-heal handles the red/amber
+    // cases; gray requires human review.
+    if (ea.status === 'agent_error' && ea.agent_error_retriable === false) {
+      var errCode = ea.last_agent_error_code || 'unknown';
+      var errCodeLabels = {
+        surge_maintenance: 'Surge maintenance mode',
+        credits_exhausted: 'Surge credits exhausted',
+        surge_rejected: 'Surge silently rejected submission',
+        generic_exception: 'Unhandled agent error'
+      };
+      var errLabel = errCodeLabels[errCode] || errCode;
+      var badgeColors = {
+        surge_maintenance: { bg: 'rgba(239,68,68,.08)', text: 'var(--color-danger)', border: 'rgba(239,68,68,.18)' },
+        credits_exhausted: { bg: 'rgba(245,158,11,.1)', text: 'var(--color-warning)', border: 'rgba(245,158,11,.22)' }
+      };
+      var bc = badgeColors[errCode] || { bg: 'rgba(107,117,153,.08)', text: 'var(--color-muted)', border: 'var(--color-border)' };
+
+      h += '<div class="card" style="margin-bottom:1rem;padding:1rem 1.25rem;border-left:3px solid ' + bc.text + ';">';
+      h += '<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.55rem;flex-wrap:wrap;">';
+      h += '<span style="display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;background:' + bc.bg + ';color:' + bc.text + ';border:1px solid ' + bc.border + ';border-radius:999px;font-size:.72rem;font-weight:600;font-family:Outfit,sans-serif;">' + esc(errLabel) + '</span>';
+      if (ea.last_agent_error_at) {
+        var when = new Date(ea.last_agent_error_at);
+        var whenStr = when.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        h += '<span style="font-size:.72rem;color:var(--color-muted);font-family:Inter,sans-serif;">Failed ' + esc(whenStr) + '</span>';
+      }
+      h += '</div>';
+      if (ea.last_agent_error) {
+        h += '<p style="margin:0 0 .6rem;font-size:.85rem;color:var(--color-body);line-height:1.5;font-family:Inter,sans-serif;">' + esc(ea.last_agent_error) + '</p>';
+      }
+      if (ea.last_debug_path) {
+        h += '<div style="font-size:.72rem;color:var(--color-muted);margin-top:.35rem;font-family:Inter,sans-serif;">';
+        h += 'Debug evidence on VPS: ';
+        h += '<code style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.72rem;background:var(--color-bg);padding:.15rem .4rem;border-radius:4px;color:var(--color-heading);word-break:break-all;">' + esc(ea.last_debug_path) + '</code>';
+        h += '</div>';
+      }
+      h += '</div>';
+    }
 
     // Expandable audit delivery email preview
     if (isLeadOrProspect && ea.status === 'complete') {
@@ -4162,6 +4212,45 @@
 
   // ── Automated Agent Audit ──
   var _agentPollTimer = null;
+
+  // Manually requeue a terminally-failed (retriable=false) audit.
+  // Posts to /api/admin/requeue-audit which flips the row back to
+  // status=queued + agent_error_retriable=true. The existing 30-min
+  // process-audit-queue cron then dispatches it; no direct agent call.
+  window.requeueAudit = function(auditId, btn) {
+    if (!auditId) return;
+    if (!confirm('Requeue this audit? It will be picked up by the next queue run (within 30 minutes).')) return;
+
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '.6';
+      btn.style.cursor = 'wait';
+    }
+
+    fetch('/api/admin/requeue-audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ audit_id: auditId })
+    }).then(function(r) {
+      return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+    }).then(function(result) {
+      if (result.ok) {
+        if (state.entityAudit && state.entityAudit.id === auditId) {
+          state.entityAudit.status = 'queued';
+          state.entityAudit.agent_error_retriable = true;
+          state.entityAudit.agent_task_id = null;
+        }
+        toast('Audit requeued. The queue runner will dispatch it within 30 minutes.', 'success');
+        renderAudit();
+      } else {
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.style.cursor = ''; }
+        toast('Requeue failed: ' + ((result.data && result.data.error) || 'Unknown error'), 'error');
+      }
+    }).catch(function(e) {
+      if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.style.cursor = ''; }
+      toast('Requeue error: ' + e.message, 'error');
+    });
+  };
 
   window.triggerAgentAudit = function() {
     var ea = state.entityAudit;
