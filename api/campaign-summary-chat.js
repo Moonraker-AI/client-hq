@@ -241,6 +241,31 @@ function buildSystemPrompt(context) {
     }
   }
 
+  // GBP Performance (engagement actions from the business profile itself)
+  var gbpText = '';
+  var gbpP = data.gbp || {};
+  if (gbpP.available) {
+    gbpText = '\n\nGOOGLE BUSINESS PROFILE ENGAGEMENT (over the engagement window):\n'
+      + '- Total impressions: ' + (gbpP.impressions_total || 0).toLocaleString()
+        + ' (appeared in Google Maps + local search)\n'
+      + '- Website clicks from the listing: ' + (gbpP.website_clicks || 0).toLocaleString() + '\n'
+      + '- Phone calls tapped: ' + (gbpP.calls || 0).toLocaleString() + '\n'
+      + '- Direction requests tapped: ' + (gbpP.direction_requests || 0).toLocaleString() + '\n';
+    var br = gbpP.impressions_breakdown || {};
+    var mobileTotal  = (br.mobile_maps  || 0) + (br.mobile_search  || 0);
+    var desktopTotal = (br.desktop_maps || 0) + (br.desktop_search || 0);
+    var mapsTotal    = (br.desktop_maps || 0) + (br.mobile_maps    || 0);
+    var searchTotal  = (br.desktop_search || 0) + (br.mobile_search || 0);
+    if (mobileTotal || desktopTotal) {
+      gbpText += '- Device split: ' + mobileTotal.toLocaleString() + ' mobile, '
+        + desktopTotal.toLocaleString() + ' desktop\n';
+    }
+    if (mapsTotal || searchTotal) {
+      gbpText += '- Surface split: ' + mapsTotal.toLocaleString() + ' on Google Maps, '
+        + searchTotal.toLocaleString() + ' on Google Search\n';
+    }
+  }
+
   // Striking distance
   var strikingText = '';
   if (gsc.available && gsc.striking_distance && gsc.striking_distance.length > 0) {
@@ -297,7 +322,7 @@ IDENTITY & TONE:
 PRACTICE: ${practiceName}
 CLIENT: ${name}
 LOCATION: ${location}
-${windowText}${costText}${guaranteeText}${attributionText}${performanceText}${strikingText}${deliverablesText}${nextText}
+${windowText}${costText}${guaranteeText}${attributionText}${performanceText}${gbpText}${strikingText}${deliverablesText}${nextText}
 
 METRIC DEFINITIONS (use these to explain the data in plain language):
 - Attributed revenue: dollars the practice's own admin team tagged to a specific source (Google, ChatGPT, referral, etc.) based on patient self-report at intake. Typically undercounts.
@@ -308,6 +333,7 @@ METRIC DEFINITIONS (use these to explain the data in plain language):
 - Striking distance: search queries where the practice ranks on page 2 of Google (positions 11-20). These are the closest wins because they are already ranking, they just need a nudge into the top 10.
 - Average position: where the website ranks on Google. Lower is better (1 = top of page 1).
 - Impressions: how often the website appeared in search results, even if not clicked.
+- Google Business Profile engagement: direct actions taken from the practice's Google Maps / local search listing, including calls tapped, direction requests, and website clicks. Distinct from Google Search clicks: GBP engagement is people who found the listing in maps or the local pack, not by clicking a web search result.
 
 THE CORE MARKETING SYSTEM (what Moonraker delivered):
 Moonraker uses the CORE system, which has four pillars:
