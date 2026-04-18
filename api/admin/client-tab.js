@@ -129,20 +129,30 @@ module.exports = async function(req, res) {
         // Pull all periods for this contact, then all sources linked to
         // those periods in a second query. Downstream pullAttribution()
         // in api/campaign-summary.js uses the same shape.
-        var periods = await sb.query(
-          'client_attribution_periods?select=*&contact_id=eq.' + cid
-          + '&order=period_start.asc'
-        );
+        // Also include the sheet-sync config from report_configs so the UI
+        // can render the Connected-Sheet card.
+        var results = await Promise.all([
+          sb.query(
+            'client_attribution_periods?select=*&contact_id=eq.' + cid
+            + '&order=period_start.asc'
+          ),
+          sb.query(
+            'report_configs?select=attribution_sync&client_slug=eq.' + s + '&limit=1'
+          )
+        ]);
+        var periods = results[0] || [];
+        var syncConfigRow = (results[1] && results[1][0]) || null;
         var sources = [];
-        if (periods && periods.length > 0) {
+        if (periods.length > 0) {
           var pids = periods.map(function(p) { return p.id; }).join(',');
           sources = await sb.query(
             'client_attribution_sources?select=*&period_id=in.(' + pids + ')'
             + '&order=created_at.asc'
           );
         }
-        data.periods = periods || [];
+        data.periods = periods;
         data.sources = sources || [];
+        data.syncConfig = (syncConfigRow && syncConfigRow.attribution_sync) || null;
         break;
       }
 
