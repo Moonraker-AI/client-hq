@@ -138,6 +138,10 @@
     "api/probe-gbp.js": {
       "maxDuration": 120,
       "memory": 1024
+    },
+    "api/backfill-gbp-warehouse.js": {
+      "maxDuration": 300,
+      "memory": 1024
     }
   },
   "crons": [
