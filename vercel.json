@@ -134,6 +134,10 @@
     "api/campaign-summary-chat.js": {
       "maxDuration": 120,
       "memory": 1024
+    },
+    "api/probe-gbp.js": {
+      "maxDuration": 120,
+      "memory": 1024
     }
   },
   "crons": [
