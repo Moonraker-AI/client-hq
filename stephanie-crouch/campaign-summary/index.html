@@ -945,10 +945,22 @@ section { padding: 4.5rem 0; }
       kpiCard('Latest avg position', g.totals.position ? g.totals.position.toFixed(1) : '—', 'Across all queries the site ranks for')
     ].join('');
 
-    // Chart: impressions bars + position line (inverted)
+    // Chart: impressions bars + position line
     var labels = g.by_month.map(function(m) { return ymLabel(m.ym); });
     var imps = g.by_month.map(function(m) { return m.impressions; });
-    var pos = g.by_month.map(function(m) { return m.position || null; });
+    var rawPos = g.by_month.map(function(m) { return m.position || null; });
+    var observedMaxPos = rawPos.reduce(function(a, b) {
+      return b == null ? a : Math.max(a, b);
+    }, 0);
+    // Axis ceiling: padded above the worst observed position so there is
+    // visual breathing room above the line. Floor of 20 so early-month
+    // rankings don't get cramped against the top edge.
+    var posAxisCeiling = Math.max(20, Math.ceil((observedMaxPos || 20) * 1.1));
+    // Invert: plot (ceiling - actualPosition) on a normal axis so lower
+    // position numbers (better ranks) still appear at the top of the chart,
+    // but Chart.js's default animation engine can rise from the bottom
+    // naturally. See the y1 tick/tooltip callbacks for the inverse.
+    var pos = rawPos.map(function(v) { return v == null ? null : (posAxisCeiling - v); });
 
     var ctx = document.getElementById('gscChart').getContext('2d');
     if (gscChart) gscChart.destroy();
@@ -978,19 +990,7 @@ section { padding: 4.5rem 0; }
             pointHoverRadius: 5,
             pointStyle: 'rect',
             tension: 0.25,
-            yAxisID: 'y1',
-            // y1 is reversed (lower position = better rank), so Chart.js's
-            // default animation origin (scale zero, which sits at the TOP of
-            // a reversed axis) would drop the line down into place. Override
-            // to start each point at the visual bottom of the chart area so
-            // the line rises up, matching the bookings-chart direction.
-            animations: {
-              y: {
-                from: function(ctx) {
-                  return ctx.chart.chartArea ? ctx.chart.chartArea.bottom : undefined;
-                }
-              }
-            }
+            yAxisID: 'y1'
           }
         ]
       },
@@ -1003,7 +1003,11 @@ section { padding: 4.5rem 0; }
           tooltip: {
             callbacks: {
               label: function(c) {
-                if (c.dataset.label === 'Avg position') return 'Position: ' + c.parsed.y.toFixed(1);
+                if (c.dataset.label === 'Avg position') {
+                  // Invert for display: chart stores (ceiling - position)
+                  var actual = posAxisCeiling - c.parsed.y;
+                  return 'Position: ' + actual.toFixed(1);
+                }
                 return 'Impressions: ' + Math.round(c.parsed.y).toLocaleString();
               }
             }
@@ -1018,9 +1022,15 @@ section { padding: 4.5rem 0; }
             grid: { color: 'rgba(128,128,128,0.1)' }
           },
           y1: {
-            position: 'right', reverse: true, beginAtZero: false, suggestedMin: 1,
+            position: 'right', min: 0, max: posAxisCeiling,
             title: { display: true, text: 'Avg position (lower = better)', font: { size: 11 } },
-            ticks: { font: { size: 11 }, callback: function(v) { return v.toFixed(0); } },
+            ticks: {
+              font: { size: 11 },
+              callback: function(v) {
+                // Inverse: display the actual position, not the stored inverted value
+                return (posAxisCeiling - v).toFixed(0);
+              }
+            },
             grid: { display: false }
           }
         }
