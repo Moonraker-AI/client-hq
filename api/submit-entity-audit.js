@@ -182,7 +182,7 @@ module.exports = async function handler(req, res) {
                 '<p><strong>Contact:</strong> ' + firstName + ' ' + lastName + ' (' + email + ')</p>' +
                 '<p><strong>Practice:</strong> ' + brandQuery + '</p>' +
                 '<p><strong>Error:</strong> ' + agentError + '</p>' +
-                '<p><a href="https://clients.moonraker.ai/admin/clients#audit-' + audit.id + '">View in Admin</a></p>'
+                '<p><a href="https://clients.moonraker.ai/admin/clients">View in Admin</a></p>'
             })
           }, 10000);
         }
