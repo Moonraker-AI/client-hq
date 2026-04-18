@@ -57,12 +57,13 @@ function headers() {
 // paths (`.github/`, `vercel.json`, `package.json`, `README.md`, `CLAUDE.md`)
 // are already rejected by the slug regex (uppercase / dot / leading-dot).
 //
-// Known gaps still in scope for follow-up (tracked as M40):
-// `api/process-entity-audit.js` and `api/generate-proposal.js` issue raw
-// `fetch` / `fetchT` calls to the GitHub REST API directly, bypassing this
-// wrapper entirely. They use hard-coded section prefixes + DB-sourced
-// slugs so the live attack surface is narrow, but they are not protected
-// by this allowlist.
+// One intentional exemption (M40, 2026-04-19): `api/run-migration.js`
+// issues a read-only raw `fetch` against `migrations/<filename>.sql` and
+// stays outside this wrapper. It is CRON_SECRET-gated, read-only, and
+// the filename is already regex-validated at the caller as
+// `/^[a-zA-Z0-9_.-]+\.sql$/`. Expanding the write-path allowlist to
+// cover `migrations/` would weaken the "wrapper only writes where writes
+// happen" invariant for no security gain.
 var TEMPLATE_PREFIX = '_templates/';
 var SLUG_PREFIX_RE = /^([a-z0-9-]{1,60})\/.+/;
 var RESERVED_TOP_LEVEL = {
