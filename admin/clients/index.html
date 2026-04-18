@@ -1248,6 +1248,9 @@
 
       <!-- TAB: Attribution -->
       <div class="tab-panel" id="tab-attribution">
+        <!-- Sheet-connection card (rendered by JS) -->
+        <div id="attrSheetCard"></div>
+
         <div class="card">
           <div class="card-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
             <div>
@@ -1881,7 +1884,8 @@
           case 'attribution':
             state.attribution = {
               periods: data.periods || [],
-              sources: data.sources || []
+              sources: data.sources || [],
+              syncConfig: data.syncConfig || null
             };
             break;
         }
@@ -7319,6 +7323,9 @@
   }
 
   function renderAttribution() {
+    // Sheet-connection card always renders, regardless of whether there are periods
+    renderAttributionSyncCard();
+
     var list   = document.getElementById('attrPeriodsList');
     var empty  = document.getElementById('attrEmpty');
     var attr   = state.attribution || { periods: [], sources: [] };
@@ -7341,11 +7348,17 @@
 
     var html = periods.map(function(p) {
       var periodSources = byPeriod[p.id] || [];
-      var totalAppts   = periodSources.reduce(function(a,s){ return a + Number(s.appointment_count || 0); }, 0);
-      var totalRevenue = periodSources.reduce(function(a,s){ return a + Number(s.revenue_cents || 0); }, 0);
+      var totalAppts    = periodSources.reduce(function(a,s){ return a + Number(s.appointment_count || 0); }, 0);
+      var totalInquiries = periodSources.reduce(function(a,s){ return a + Number(s.inquiry_count || 0); }, 0);
+      var totalRevenue  = periodSources.reduce(function(a,s){ return a + Number(s.revenue_cents || 0); }, 0);
 
       var baselineBadge = p.is_baseline
         ? '<span style="display:inline-block;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:.15rem .5rem;border-radius:4px;background:var(--color-primary-subtle);color:var(--color-primary);margin-left:.5rem;">Baseline</span>'
+        : '';
+
+      var isSheetSourced = p.data_source && p.data_source.indexOf('sheet:') === 0;
+      var sheetBadge = isSheetSourced
+        ? '<span style="display:inline-block;font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:.15rem .5rem;border-radius:4px;background:var(--color-bg);color:var(--color-muted);margin-left:.4rem;" title="Synced from Google Sheet \u2014 manual edits will be overwritten on next sync">\u2630 Synced</span>'
         : '';
 
       var reportedLine = '';
@@ -7361,11 +7374,18 @@
         ? '<div style="font-size:.78rem;color:var(--color-muted);margin-top:.35rem;padding:.5rem .75rem;background:var(--color-bg);border-radius:6px;white-space:pre-wrap;">' + esc(p.notes) + '</div>'
         : '';
 
+      // Build sources table header — conditionally show Inquiries column only if any row has one
+      var hasInquiries = periodSources.some(function(s){ return Number(s.inquiry_count || 0) > 0; });
+
       var sourceRows = periodSources.map(function(s) {
+        var inquiriesCell = hasInquiries
+          ? '<td style="padding:.5rem .75rem;text-align:right;color:var(--color-muted);">' + Number(s.inquiry_count || 0).toLocaleString() + '</td>'
+          : '';
         return '<tr data-source-id="' + esc(s.id) + '">'
           + '<td style="padding:.5rem .75rem;font-weight:600;">' + esc(s.source_name) + '</td>'
           + '<td style="padding:.5rem .75rem;"><span style="font-size:.7rem;padding:.1rem .45rem;border-radius:4px;background:var(--color-bg);color:var(--color-muted);">' + esc(attrCategoryLabel(s.source_category)) + '</span></td>'
-          + '<td style="padding:.5rem .75rem;text-align:right;">' + Number(s.appointment_count || 0).toLocaleString() + '</td>'
+          + inquiriesCell
+          + '<td style="padding:.5rem .75rem;text-align:right;font-weight:600;">' + Number(s.appointment_count || 0).toLocaleString() + '</td>'
           + '<td style="padding:.5rem .75rem;text-align:right;font-variant-numeric:tabular-nums;">' + attrFmtDollars(s.revenue_cents) + '</td>'
           + '<td style="padding:.5rem .75rem;text-align:right;white-space:nowrap;">'
           +   '<button class="attr-icon-btn" title="Edit" onclick="openEditSourceModal(\'' + esc(s.id) + '\')">&#9998;</button>'
@@ -7374,12 +7394,17 @@
           + '</tr>';
       }).join('');
 
+      var inquiriesHeader = hasInquiries
+        ? '<th style="padding:.4rem .75rem;text-align:right;">Inquiries</th>'
+        : '';
+
       var sourcesTable = periodSources.length > 0
         ? '<table style="width:100%;border-collapse:collapse;margin-top:.5rem;font-size:.82rem;">'
         +   '<thead><tr style="color:var(--color-muted);font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;">'
         +     '<th style="padding:.4rem .75rem;text-align:left;">Source</th>'
         +     '<th style="padding:.4rem .75rem;text-align:left;">Category</th>'
-        +     '<th style="padding:.4rem .75rem;text-align:right;">Appts</th>'
+        +     inquiriesHeader
+        +     '<th style="padding:.4rem .75rem;text-align:right;">Bookings</th>'
         +     '<th style="padding:.4rem .75rem;text-align:right;">Revenue</th>'
         +     '<th style="padding:.4rem .75rem;"></th>'
         +   '</tr></thead>'
@@ -7387,16 +7412,26 @@
         + '</table>'
         : '<div style="padding:.75rem;color:var(--color-muted);font-size:.82rem;text-align:center;background:var(--color-bg);border-radius:6px;margin-top:.5rem;">No sources recorded for this period yet.</div>';
 
+      var totalsRhs = '<div style="font-size:1.1rem;font-weight:700;color:var(--color-heading);">' + totalAppts.toLocaleString() + ' bookings</div>';
+      if (totalInquiries > 0) {
+        totalsRhs += '<div style="font-size:.72rem;color:var(--color-muted);">' + totalInquiries.toLocaleString() + ' inquiries</div>';
+      }
+      if (totalRevenue > 0) {
+        totalsRhs = '<div style="font-size:1.1rem;font-weight:700;color:var(--color-heading);">' + attrFmtDollars(totalRevenue) + '</div>'
+          + '<div style="font-size:.72rem;color:var(--color-muted);">' + totalAppts.toLocaleString() + ' bookings'
+          + (totalInquiries > 0 ? ' \u00B7 ' + totalInquiries.toLocaleString() + ' inquiries' : '')
+          + '</div>';
+      }
+
       return '<div class="attr-period-card" data-period-id="' + esc(p.id) + '" style="border:1px solid var(--color-border);border-radius:10px;padding:1rem 1.1rem;margin-top:1rem;background:var(--color-surface);">'
         + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">'
         +   '<div style="flex:1;min-width:0;">'
-        +     '<div style="font-size:1rem;font-weight:600;color:var(--color-heading);">' + esc(p.period_label) + baselineBadge + '</div>'
+        +     '<div style="font-size:1rem;font-weight:600;color:var(--color-heading);">' + esc(p.period_label) + baselineBadge + sheetBadge + '</div>'
         +     '<div style="font-size:.8rem;color:var(--color-muted);margin-top:.15rem;">' + attrFmtDateRange(p.period_start, p.period_end) + '</div>'
         +     reportedLine
         +   '</div>'
         +   '<div style="text-align:right;white-space:nowrap;">'
-        +     '<div style="font-size:1.1rem;font-weight:700;color:var(--color-heading);">' + attrFmtDollars(totalRevenue) + '</div>'
-        +     '<div style="font-size:.72rem;color:var(--color-muted);">' + totalAppts.toLocaleString() + ' appts</div>'
+        +     totalsRhs
         +   '</div>'
         +   '<div style="display:flex;gap:.25rem;">'
         +     '<button class="attr-icon-btn" title="Edit period" onclick="openEditPeriodModal(\'' + esc(p.id) + '\')">&#9998;</button>'
@@ -7728,6 +7763,235 @@
     state.tabLoaded['attribution'] = false;
     ensureTabData('attribution');
   }
+
+  // ── Google Sheet connection card ────────────────────────────────
+  //
+  // Renders either:
+  //   (a) Not connected — "Connect a sheet" prompt
+  //   (b) Connected, never synced — URL + "Sync now" + disconnect
+  //   (c) Connected, last synced OK — URL + timestamp + row count + "Sync now"
+  //   (d) Connected, last sync failed — URL + red error banner + "Sync now" + "Reconfigure"
+
+  function renderAttributionSyncCard() {
+    var card = document.getElementById('attrSheetCard');
+    if (!card) return;
+    var cfg = (state.attribution && state.attribution.syncConfig) || {};
+    var hasConfig = cfg && cfg.sheet_id;
+
+    if (!hasConfig) {
+      card.innerHTML = '<div class="card" style="margin-bottom:1rem;">'
+        + '<div class="card-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">'
+        +   '<div>'
+        +     '<h3>Connect a Google Sheet</h3>'
+        +     '<p style="font-size:.78rem;color:var(--color-muted);margin:.25rem 0 0;max-width:60ch;line-height:1.5;">Pull attribution data automatically from the client\'s lead tracker sheet. We sync monthly, aggregating rows into bookings and inquiries per source.</p>'
+        +   '</div>'
+        +   '<button class="btn-sm" onclick="openSheetSetupModal()" style="padding:.35rem .85rem;font-size:.75rem;font-weight:600;border:1px solid var(--color-primary);background:var(--color-primary-subtle);color:var(--color-primary);border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap;">+ Connect Google Sheet</button>'
+        + '</div>'
+        + '</div>';
+      return;
+    }
+
+    // Connected state
+    var status = cfg.last_sync_status || 'never';
+    var statusBadge;
+    if (status === 'ok') {
+      statusBadge = '<span style="font-size:.68rem;font-weight:600;padding:.15rem .5rem;border-radius:4px;background:rgba(0,212,126,.12);color:#00b86c;">Healthy</span>';
+    } else if (status === 'error') {
+      statusBadge = '<span style="font-size:.68rem;font-weight:600;padding:.15rem .5rem;border-radius:4px;background:rgba(239,68,68,.12);color:var(--color-danger);">Last sync failed</span>';
+    } else {
+      statusBadge = '<span style="font-size:.68rem;font-weight:600;padding:.15rem .5rem;border-radius:4px;background:var(--color-bg);color:var(--color-muted);">Not synced yet</span>';
+    }
+    var rowsLine = (status === 'ok' && typeof cfg.last_sync_rows_touched === 'number')
+      ? ' \u00B7 ' + cfg.last_sync_rows_touched + ' rows'
+      : '';
+    var syncedLine = cfg.last_synced_at
+      ? 'Last synced ' + formatDateTime(cfg.last_synced_at) + rowsLine
+      : 'Never synced';
+    var errorBanner = (status === 'error' && cfg.last_sync_error)
+      ? '<div style="margin:.75rem 1rem 0;padding:.65rem .85rem;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:6px;font-size:.78rem;color:var(--color-danger);line-height:1.45;">' + esc(cfg.last_sync_error) + '</div>'
+      : '';
+
+    card.innerHTML = '<div class="card" style="margin-bottom:1rem;">'
+      + '<div class="card-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">'
+      +   '<div style="min-width:0;flex:1;">'
+      +     '<div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">'
+      +       '<h3 style="margin:0;">Connected sheet</h3>'
+      +       statusBadge
+      +     '</div>'
+      +     '<div style="margin-top:.35rem;font-size:.8rem;color:var(--color-heading);overflow:hidden;text-overflow:ellipsis;"><a href="' + esc(cfg.sheet_url) + '" target="_blank" rel="noopener" style="color:var(--color-primary);text-decoration:none;">' + esc(cfg.sheet_url) + '</a></div>'
+      +     '<div style="margin-top:.2rem;font-size:.72rem;color:var(--color-muted);">Tab: <strong>' + esc(cfg.tab_name || '(none)') + '</strong> \u00B7 ' + syncedLine + '</div>'
+      +   '</div>'
+      +   '<div style="display:flex;gap:.35rem;flex-wrap:wrap;">'
+      +     '<button class="btn-sm" onclick="triggerAttributionSync()" id="attrSyncNowBtn" style="padding:.35rem .85rem;font-size:.75rem;font-weight:600;border:none;background:var(--color-primary);color:#fff;border-radius:6px;cursor:pointer;font-family:inherit;">Sync now</button>'
+      +     '<button class="btn-sm attr-btn-secondary" onclick="openSheetSetupModal()">Reconfigure</button>'
+      +     '<button class="btn-sm attr-btn-secondary" onclick="disconnectSheet()" style="color:var(--color-danger);border-color:rgba(239,68,68,.3);">Disconnect</button>'
+      +   '</div>'
+      + '</div>'
+      + errorBanner
+      + '</div>';
+  }
+
+  // ── Sheet setup modal ──────────────────────────────────────────
+  // Flow:
+  //   Step 1: paste URL, click Test
+  //   Step 2 (on success): pick tab from detected list, click Save & sync
+  //   Any failure shows an inline error
+
+  function openSheetSetupModal() {
+    var existing = (state.attribution && state.attribution.syncConfig) || {};
+    var overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = '<div class="modal-box" style="width:640px;max-width:95vw;">'
+      + '<h2 class="modal-title">Connect Google Sheet</h2>'
+      + '<p class="modal-desc" style="font-size:.8rem;color:var(--color-muted);margin:0 0 1rem;">Share the sheet with <code style="padding:.1rem .3rem;background:var(--color-bg);border-radius:3px;font-size:.75rem;">reporting@moonraker-client-hq.iam.gserviceaccount.com</code> as <strong>Viewer</strong>, then paste the URL below.</p>'
+      + '<div class="modal-form-group"><label>Google Sheet URL *</label>'
+      +   '<input type="text" id="ss_url" placeholder="https://docs.google.com/spreadsheets/d/..." value="' + esc(existing.sheet_url || '') + '"></div>'
+      + '<div style="display:flex;gap:.5rem;margin-bottom:1rem;">'
+      +   '<button class="btn btn-ghost" id="ss_test_btn">Test connection</button>'
+      + '</div>'
+      + '<div id="ss_result"></div>'
+      + '<div class="modal-actions" style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem;">'
+      +   '<button class="btn btn-ghost" onclick="closeAttrModal()">Cancel</button>'
+      + '</div>'
+      + '</div>';
+    document.body.appendChild(overlay);
+    overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+    document.getElementById('ss_test_btn').onclick = _testSheetConnection;
+  }
+  window.openSheetSetupModal = openSheetSetupModal;
+
+  function _testSheetConnection() {
+    var url = document.getElementById('ss_url').value.trim();
+    if (!url) { toast('Paste a sheet URL first', 'error'); return; }
+    var btn = document.getElementById('ss_test_btn');
+    btn.disabled = true; btn.textContent = 'Testing...';
+    var result = document.getElementById('ss_result');
+    result.innerHTML = '';
+
+    fetch('/api/admin/attribution-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'test_connection', sheet_url: url })
+    }).then(function(r) {
+      return r.json().then(function(data) {
+        btn.disabled = false; btn.textContent = 'Test again';
+        if (!data.ok) {
+          result.innerHTML = '<div style="padding:.75rem;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:6px;color:var(--color-danger);font-size:.82rem;line-height:1.45;">' + esc(data.error || 'Connection failed') + '</div>';
+          return;
+        }
+        // Success — render tab picker
+        var tabsHtml = (data.tabs || []).map(function(t) {
+          return '<option value="' + esc(t.title) + '">' + esc(t.title) + ' (' + t.row_count + ' rows)</option>';
+        }).join('');
+        result.innerHTML =
+            '<div style="padding:.75rem;background:rgba(0,212,126,.08);border:1px solid rgba(0,212,126,.25);border-radius:6px;color:#00b86c;font-size:.82rem;margin-bottom:1rem;">'
+          +   '\u2713 Connected to <strong>' + esc(data.sheet_title || '(untitled)') + '</strong>'
+          + '</div>'
+          + '<div class="modal-form-group"><label>Which tab contains the lead tracker? *</label>'
+          +   '<select id="ss_tab">' + tabsHtml + '</select>'
+          +   '<p class="help" style="margin-top:.35rem;">Must have columns: <strong>Inquiry Date</strong>, <strong>Source</strong>, <strong>Status</strong>. "Source Notes" is optional.</p>'
+          + '</div>'
+          + '<input type="hidden" id="ss_sheet_id" value="' + esc(data.sheet_id) + '">'
+          + '<div style="display:flex;gap:.5rem;justify-content:flex-end;">'
+          +   '<button class="btn btn-primary" id="ss_save_btn">Save &amp; sync now</button>'
+          + '</div>';
+        document.getElementById('ss_save_btn').onclick = _saveAndSyncSheet;
+      });
+    }).catch(function(err) {
+      btn.disabled = false; btn.textContent = 'Test connection';
+      result.innerHTML = '<div style="padding:.75rem;background:rgba(239,68,68,.08);color:var(--color-danger);border-radius:6px;font-size:.82rem;">' + esc(err.message) + '</div>';
+    });
+  }
+
+  function _saveAndSyncSheet() {
+    var url = document.getElementById('ss_url').value.trim();
+    var sheetId = document.getElementById('ss_sheet_id').value;
+    var tabName = document.getElementById('ss_tab').value;
+    if (!tabName) { toast('Pick a tab', 'error'); return; }
+
+    var btn = document.getElementById('ss_save_btn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+
+    var slug = state.contact.slug;
+    fetch('/api/admin/attribution-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        action: 'save_config',
+        client_slug: slug,
+        config: {
+          enabled: true,
+          sheet_id: sheetId,
+          sheet_url: url,
+          tab_name: tabName,
+          format: 'lead_tracker'
+        }
+      })
+    }).then(function(r) { return r.json(); })
+      .then(function(saveData) {
+        if (saveData.error) throw new Error(saveData.error);
+        btn.textContent = 'Syncing...';
+        return fetch('/api/admin/attribution-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ action: 'sync_now', client_slug: slug })
+        });
+      }).then(function(r) { return r.json(); })
+      .then(function(syncData) {
+        if (syncData.error) throw new Error(syncData.error);
+        closeAttrModal();
+        reloadAttribution();
+        var r = syncData.result || {};
+        toast('Synced \u00B7 ' + (r.rows_processed || 0) + ' rows, ' + (r.periods_created || 0) + ' new periods, ' + (r.periods_updated || 0) + ' updated', 'success');
+      }).catch(function(err) {
+        btn.disabled = false; btn.textContent = 'Save & sync now';
+        toast('Error: ' + err.message, 'error');
+      });
+  }
+
+  function triggerAttributionSync() {
+    var slug = state.contact.slug;
+    var btn = document.getElementById('attrSyncNowBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Syncing...'; }
+    fetch('/api/admin/attribution-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'sync_now', client_slug: slug })
+    }).then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) throw new Error(data.error);
+        reloadAttribution();
+        var r = data.result || {};
+        toast('Synced \u00B7 ' + (r.rows_processed || 0) + ' rows', 'success');
+      }).catch(function(err) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Sync now'; }
+        toast('Error: ' + err.message, 'error');
+      });
+  }
+  window.triggerAttributionSync = triggerAttributionSync;
+
+  function disconnectSheet() {
+    if (!confirm('Disconnect the Google Sheet? Previously synced periods will remain but won\'t update anymore. You can reconnect anytime.')) return;
+    var slug = state.contact.slug;
+    fetch('/api/admin/attribution-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'disconnect', client_slug: slug })
+    }).then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) throw new Error(data.error);
+        reloadAttribution();
+        toast('Sheet disconnected', 'success');
+      }).catch(function(err) {
+        toast('Error: ' + err.message, 'error');
+      });
+  }
+  window.disconnectSheet = disconnectSheet;
 
   // ---- BILLING TAB ----
   function renderBilling(c) {
