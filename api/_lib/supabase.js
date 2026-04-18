@@ -7,6 +7,24 @@
 //   var contacts = await sb.query('contacts?slug=eq.anna-skomorovskaia&select=*&limit=1');
 //   await sb.mutate('contacts?id=eq.' + id, 'PATCH', { status: 'active' });
 //   await sb.mutate('deliverables', 'POST', { contact_id: id, title: 'Setup' }, 'return=representation');
+//
+// Error contract for thrown Supabase errors (M7, 2026-04-19):
+//   .status           HTTP status code from PostgREST.
+//   .detail           Raw PostgREST response body. Safe for server-side
+//                     logging via monitor.logError; NEVER echo to response
+//                     bodies (leaks schema info, column names, constraint
+//                     names, hint text).
+//   .supabaseMessage  The PostgREST `message` field, human-readable but may
+//                     still contain column names. Prefer `.detail` for
+//                     structured logging; prefer generic strings for
+//                     response bodies.
+//   .message          Generic 'Supabase query error' / 'Supabase mutate
+//                     error'. Safe to echo into 5xx response bodies (still
+//                     reveals the upstream is Supabase, which is a narrow
+//                     leak we accept in exchange for the consistency win).
+//                     Callers that branch on structured info should use
+//                     `.detail.code` / `.detail.constraint` / `.status` —
+//                     never pattern-match on `.message`.
 
 // Loud warning at module load if NEXT_PUBLIC_SUPABASE_URL is unset, so config
 // gaps surface in Vercel logs before any route hits url(). Mirrors the H9/H10
@@ -52,9 +70,10 @@ async function query(path, opts) {
   }, (opts && opts.timeoutMs) || 10000);
   var data = await resp.json();
   if (!resp.ok) {
-    var err = new Error('Supabase query error: ' + (data.message || JSON.stringify(data)));
+    var err = new Error('Supabase query error');
     err.status = resp.status;
     err.detail = data;
+    err.supabaseMessage = (data && data.message) || null;
     throw err;
   }
   return data;
@@ -73,9 +92,10 @@ async function mutate(path, method, body, prefer, timeoutMs) {
   if (resp.status === 204) return null;
   var data = await resp.json();
   if (!resp.ok) {
-    var err = new Error('Supabase mutate error: ' + (data.message || JSON.stringify(data)));
+    var err = new Error('Supabase mutate error');
     err.status = resp.status;
     err.detail = data;
+    err.supabaseMessage = (data && data.message) || null;
     throw err;
   }
   // Warn on PATCH that matched zero rows — likely a CHECK constraint silent failure
@@ -97,4 +117,3 @@ function isConfigured() {
 }
 
 module.exports = { url, key, headers, query, mutate, one, isConfigured };
-
