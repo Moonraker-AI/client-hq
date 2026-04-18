@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<script>window.__PAGE_TOKEN__ = "progress.YTM0YmFjNTItNGM5NS00ZGYwLWJiODktN2RhN2Y1M2UxYzUx.1808077042.E3X5XMSRa-i6ga5325Q_V1G7ONxvPqbb9zPA5OhirM8";</script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -309,12 +310,19 @@ section{padding:3.5rem 0}
     var next=task.status==='not_started'?'in_progress':task.status==='in_progress'?'complete':'not_started';
     task.status=next;
     renderTasks();
-    // Save to Supabase
+    // Save via page-token-gated endpoint (security audit H4). The anon PATCH
+    // policy that previously allowed direct /rest/v1/checklist_items writes
+    // was dropped; /api/progress-update verifies the token, binds the item
+    // to the token's contact, and PATCHes via service role.
     document.getElementById('saveStatus').textContent='Saving...';
-    fetch(SB+'/rest/v1/checklist_items?id=eq.'+taskId,{
-      method:'PATCH',
-      headers:Object.assign({},sbH(),{'Prefer':'return=minimal'}),
-      body:JSON.stringify({status:next,updated_at:new Date().toISOString(),completed_at:next==='complete'?new Date().toISOString():null})
+    fetch('/api/progress-update',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        page_token: window.__PAGE_TOKEN__ || '',
+        item_id: taskId,
+        status: next
+      })
     }).then(function(r){
       if(r.ok)document.getElementById('saveStatus').textContent='Saved: '+new Date().toLocaleTimeString();
       else throw new Error(r.status);
