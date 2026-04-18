@@ -29,6 +29,10 @@ BEGIN
     END IF;
 
     IF NEW.campaign_end IS NULL THEN
+      -- plan_type -> months mapping is also encoded in JS at
+      -- api/_lib/contract.js (deriveContractMonths) and in
+      -- migrations/2026-04-17-backfill-campaign-end.sql.
+      -- If you add a plan_type value, update all three sites.
       NEW.campaign_end := NEW.campaign_start + CASE COALESCE(NEW.plan_type, 'annual')
         WHEN 'quarterly' THEN INTERVAL '3 months'
         WHEN 'annual'    THEN INTERVAL '12 months'
