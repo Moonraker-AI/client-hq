@@ -337,7 +337,7 @@ module.exports = async function handler(req, res) {
   if (contact.website_url) {
     try {
       var wResp = await fetch(contact.website_url, {
-        headers: { 'User-Agent': 'Moonraker-Bot/1.0' },
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Moonraker/1.0; +https://moonraker.ai/bot)' },
         redirect: 'follow',
         signal: AbortSignal.timeout(8000)
       });
