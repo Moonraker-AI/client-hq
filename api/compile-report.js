@@ -25,6 +25,7 @@ var monitor = require('./_lib/monitor');
 var google = require('./_lib/google-delegated');
 var sanitizer = require('./_lib/html-sanitizer');
 var fetchT = require('./_lib/fetch-with-timeout');
+var gbp = require('./_lib/gbp');
 
 
 module.exports = async function handler(req, res) {
@@ -228,90 +229,25 @@ module.exports = async function handler(req, res) {
   });
 
   // --- 3b. GBP Performance API (calls, clicks, directions, impressions) ---
-  // DISABLED: API quota is zero pending Google approval (case 8-326800040416).
-  // Re-enable once quota is granted by removing the early return below.
+  // Quota confirmed open April 2026 (case 8-326800040416). Parser previously
+  // had a flat-vs-nested shape bug that silently returned zeros; helper now
+  // handles both shapes defensively.
   var gbpPerfFn = safe('gbp_performance', async function() {
-    warnings.push('GBP Performance: disabled pending API quota approval');
-    return null;
     if (!googleSA || !config.gbp_location_id) {
       warnings.push('GBP Performance: skipped (no service account or gbp_location_id configured)');
       return null;
     }
-    var gbpToken;
-    try {
-      gbpToken = await google.getDelegatedAccessToken('support@moonraker.ai', 'https://www.googleapis.com/auth/business.manage');
-    } catch (tokenErr) {
-      warnings.push('GBP Performance: delegated token failed - ' + (tokenErr.message || String(tokenErr)));
+    var result = await gbp.fetchPerformance(config.gbp_location_id, range.start, range.end);
+    if (!result.available) {
+      warnings.push('GBP Performance: ' + (result.error || 'unavailable'));
       return null;
     }
-
-    var startDate = new Date(range.start + 'T00:00:00Z');
-    var endDate = new Date(range.end + 'T00:00:00Z');
-
-    var gbpUrl = 'https://businessprofileperformance.googleapis.com/v1/locations/' + config.gbp_location_id
-      + ':fetchMultiDailyMetricsTimeSeries'
-      + '?dailyMetrics=CALL_CLICKS'
-      + '&dailyMetrics=WEBSITE_CLICKS'
-      + '&dailyMetrics=BUSINESS_DIRECTION_REQUESTS'
-      + '&dailyMetrics=BUSINESS_IMPRESSIONS_DESKTOP_MAPS'
-      + '&dailyMetrics=BUSINESS_IMPRESSIONS_DESKTOP_SEARCH'
-      + '&dailyMetrics=BUSINESS_IMPRESSIONS_MOBILE_MAPS'
-      + '&dailyMetrics=BUSINESS_IMPRESSIONS_MOBILE_SEARCH'
-      + '&dailyRange.startDate.year=' + startDate.getUTCFullYear()
-      + '&dailyRange.startDate.month=' + (startDate.getUTCMonth() + 1)
-      + '&dailyRange.startDate.day=' + startDate.getUTCDate()
-      + '&dailyRange.endDate.year=' + endDate.getUTCFullYear()
-      + '&dailyRange.endDate.month=' + (endDate.getUTCMonth() + 1)
-      + '&dailyRange.endDate.day=' + endDate.getUTCDate();
-
-    var gbpResp = await fetchT(gbpUrl, {
-      headers: { 'Authorization': 'Bearer ' + gbpToken }
-    }, 15000);
-
-    if (!gbpResp.ok) {
-      var errText = await gbpResp.text();
-      throw new Error('GBP API ' + gbpResp.status + ': ' + errText.substring(0, 300));
-    }
-
-    var gbpResult = await gbpResp.json();
-    var timeSeries = gbpResult.multiDailyMetricTimeSeries || [];
-
-    function sumMetric(metricName) {
-      for (var i = 0; i < timeSeries.length; i++) {
-        var ts = timeSeries[i];
-        var dmt = ts.dailyMetricTimeSeries || {};
-        if (dmt.dailyMetric === metricName) {
-          var points = (dmt.timeSeries && dmt.timeSeries.datedValues) || [];
-          var total = 0;
-          for (var j = 0; j < points.length; j++) {
-            total += parseInt(points[j].value || 0);
-          }
-          return total;
-        }
-      }
-      return 0;
-    }
-
-    var calls = sumMetric('CALL_CLICKS');
-    var websiteClicks = sumMetric('WEBSITE_CLICKS');
-    var directionRequests = sumMetric('BUSINESS_DIRECTION_REQUESTS');
-    var impressionsDesktopMaps = sumMetric('BUSINESS_IMPRESSIONS_DESKTOP_MAPS');
-    var impressionsDesktopSearch = sumMetric('BUSINESS_IMPRESSIONS_DESKTOP_SEARCH');
-    var impressionsMobileMaps = sumMetric('BUSINESS_IMPRESSIONS_MOBILE_MAPS');
-    var impressionsMobileSearch = sumMetric('BUSINESS_IMPRESSIONS_MOBILE_SEARCH');
-    var impressionsTotal = impressionsDesktopMaps + impressionsDesktopSearch + impressionsMobileMaps + impressionsMobileSearch;
-
     return {
-      calls: calls,
-      website_clicks: websiteClicks,
-      direction_requests: directionRequests,
-      impressions_total: impressionsTotal,
-      impressions_breakdown: {
-        desktop_maps: impressionsDesktopMaps,
-        desktop_search: impressionsDesktopSearch,
-        mobile_maps: impressionsMobileMaps,
-        mobile_search: impressionsMobileSearch
-      }
+      calls:              result.calls,
+      website_clicks:     result.website_clicks,
+      direction_requests: result.direction_requests,
+      impressions_total:  result.impressions_total,
+      impressions_breakdown: result.impressions_breakdown
     };
   });
 
