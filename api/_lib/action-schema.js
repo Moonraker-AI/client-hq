@@ -84,21 +84,25 @@ var TABLES = {
   activity_log:            { read: true, write: true, delete: true },
   error_log:               { read: true, write: true, delete: true },
 
-  // ── Sensitive tables flagged for Session 6 tighten-up ─────────────
+  // ── Sensitive tables — Session 6 tighten-up (partial, 2026-04-18) ─────
   //
-  // These are listed permissively TODAY so this rollout is a no-op behavior
-  // change. Session 6 will flip them to locked-down:
-  //   signed_agreements      → { write: false, delete: false }
-  //   payments               → { write: false, delete: false }
-  //   workspace_credentials  → { require_role: 'owner' }
+  // M3 decision captured in docs/api-audit-2026-04.md:
+  //   signed_agreements → read-only. CSA rows flow in via the onboarding
+  //                       page-token path (onboarding.html + onboarding-action.js),
+  //                       not the admin UI. Admin dashboards read for display only.
+  //   payments          → read-only. Stripe webhook is the sole writer via a
+  //                       direct sb.mutate call; admin.js paths never create
+  //                       payment rows manually.
+  //   workspace_credentials → stays admin-writable. Scott writes encrypted Gmail
+  //                       credentials through the admin UI during workspace
+  //                       setup. If that workflow later moves to the page-token
+  //                       onboarding flow, tighten to require_role: 'owner'.
   //
-  // Rationale: signed legal docs and payment records shouldn't be editable
-  // by any admin path — those flow in via webhooks (Stripe) or client action
-  // (agreement signing). Workspace credentials are keys to client accounts;
-  // Chris-only write access limits blast radius of a compromised staff JWT.
-  signed_agreements:       { read: true, write: true, delete: true },
-  payments:                { read: true, write: true, delete: true },
-  workspace_credentials:   { read: true, write: true, delete: true }
+  // Both read:true because admin dashboards display signed agreements and
+  // payment history for support/debugging.
+  signed_agreements:       { read: true, write: false, delete: false },
+  payments:                { read: true, write: false, delete: false },
+  workspace_credentials:   { read: true, write: true,  delete: true  }
 };
 
 // Resolve a table entry. Unknown tables get permissive defaults — the caller
