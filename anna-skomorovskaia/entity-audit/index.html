@@ -350,7 +350,7 @@ section { padding: 4.5rem 0; }
   <div class="container">
     <h2>Overview</h2>
     <div class="card" style="margin-top:1.5rem;">
-      <p class="lead" id="summaryText">Loading summary...</p>
+      <div class="lead" id="summaryText">Loading summary...</div>
     </div>
     <div class="variance-box">
       <div class="variance-label">Variance Score</div>
@@ -667,7 +667,7 @@ section { padding: 4.5rem 0; }
     var scores = audit.scores || {};
     IS_PREMIUM = audit.audit_tier === 'premium';
     if (scores.summary) {
-      document.getElementById('summaryText').textContent=scores.summary;
+      document.getElementById('summaryText').innerHTML = sanitizeHtml(scores.summary);
     }
 
     // Variance
@@ -733,7 +733,7 @@ section { padding: 4.5rem 0; }
       if (IS_PREMIUM) {
         document.getElementById('rtpbaContent').innerHTML = sanitizeHtml(scores.rtpba);
       } else {
-        document.getElementById('rtpbaContent').innerHTML = '<div class="gated-wrap gated-rtpba" style="min-height:300px;"><div class="gated-blur">' + scores.rtpba + '</div>' +
+        document.getElementById('rtpbaContent').innerHTML = '<div class="gated-wrap gated-rtpba" style="min-height:300px;"><div class="gated-blur">' + sanitizeHtml(scores.rtpba) + '</div>' +
           '<div class="gated-overlay"><div class="gated-icon">&#128196;</div><h4>Ready-to-Publish Content</h4>' +
           '<p>Your complete, AI-optimized homepage content is ready. Upgrade to the Premium Audit to access the full Ready-to-Publish Best Answer for your practice.</p>' +
           '<a href="" class="gated-cta upgrade-link">Unlock Premium Audit</a></div></div>';
