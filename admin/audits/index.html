@@ -226,7 +226,11 @@
     </div>
     <p class="section-desc">All audits across leads and active clients. Click any row to manage in the client deep-dive.</p>
 
+    <div id="auditBlocksBanner" style="display:none;"></div>
+
     <div class="stat-grid" id="statGrid"></div>
+
+    <div id="codeFilterChip" style="display:none;margin:0 0 .85rem;"></div>
 
     <div class="sub-tabs" id="filterTabs">
       <button class="sub-tab active" data-filter="all">All<span class="tab-count" id="countAll"></span></button>
@@ -284,7 +288,7 @@
   var SB = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
   var SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
 
-  var state = { contacts: [], contactMap: {}, audits: [], tasks: {}, currentFilter: 'all' };
+  var state = { contacts: [], contactMap: {}, audits: [], tasks: {}, currentFilter: 'all', errorCodeFilter: null, blocksGroups: [] };
 
   function loadData() {
     var cacheKey = 'mr-cache-audits-dir';
@@ -332,6 +336,8 @@
       updateFilterCounts();
       renderStats();
       renderTable();
+      renderCodeFilterChip();
+      loadAuditBlocks();
       document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
 
       if (window.MoonrakerChat) {
@@ -347,7 +353,17 @@
     if (f === 'processing') return state.audits.filter(function(a) { return a.status === 'agent_running' || a.status === 'pending'; });
     if (f === 'ready_to_send') return state.audits.filter(function(a) { return a.status === 'complete'; });
     if (f === 'delivered') return state.audits.filter(function(a) { return a.status === 'delivered'; });
-    if (f === 'errors') return state.audits.filter(function(a) { return a.status === 'agent_error'; });
+    if (f === 'errors') {
+      var errs = state.audits.filter(function(a) { return a.status === 'agent_error'; });
+      if (state.errorCodeFilter) {
+        var wanted = state.errorCodeFilter;
+        errs = errs.filter(function(a) {
+          var code = a.last_agent_error_code || 'unknown';
+          return code === wanted;
+        });
+      }
+      return errs;
+    }
     return state.audits;
   }
 
@@ -553,10 +569,128 @@
     var btn = e.target.closest('.sub-tab');
     if (!btn) return;
     state.currentFilter = btn.dataset.filter;
+    // Switching tabs clears the secondary per-code filter set by the banner.
+    state.errorCodeFilter = null;
     document.querySelectorAll('#filterTabs .sub-tab').forEach(function(b) { b.classList.remove('active'); });
     btn.classList.add('active');
+    renderCodeFilterChip();
     renderTable();
   });
+
+  // ============================================================
+  // AUDIT BLOCKS BANNER + PER-CODE SECONDARY FILTER
+  // ============================================================
+  // Data source: /api/admin/audit-blocks — groups terminally-failed
+  // retriable=false rows by last_agent_error_code. Read-only drill-in:
+  // admin actions (requeue) live in the client deep-dive.
+  var CODE_COLORS = {
+    surge_maintenance: { text: 'var(--color-danger)', bg: 'rgba(239,68,68,.06)', border: 'rgba(239,68,68,.22)' },
+    credits_exhausted: { text: 'var(--color-warning)', bg: 'rgba(245,158,11,.06)', border: 'rgba(245,158,11,.22)' },
+    surge_rejected: { text: 'var(--color-muted)', bg: 'rgba(107,117,153,.06)', border: 'var(--color-border)' },
+    generic_exception: { text: 'var(--color-muted)', bg: 'rgba(107,117,153,.06)', border: 'var(--color-border)' }
+  };
+
+  function loadAuditBlocks() {
+    fetch('/api/admin/audit-blocks').then(function(r) { return r.json(); }).then(function(data) {
+      state.blocksGroups = (data && data.groups) ? data.groups : [];
+      renderAuditBlocksBanner();
+    }).catch(function() {
+      // Silent: banner is informational and a network blip should not break the page.
+    });
+  }
+
+  function renderAuditBlocksBanner() {
+    var el = document.getElementById('auditBlocksBanner');
+    if (!el) return;
+    var groups = state.blocksGroups || [];
+    if (groups.length === 0) { el.style.display = 'none'; el.innerHTML = ''; return; }
+
+    var h = '';
+    h += '<div class="card" style="margin-bottom:1rem;padding:1rem 1.25rem;border-left:3px solid var(--color-danger);">';
+    h += '<div style="display:flex;align-items:baseline;gap:.5rem;margin-bottom:.65rem;flex-wrap:wrap;">';
+    h += '<strong style="font-family:Outfit,sans-serif;font-size:.88rem;color:var(--color-heading);">Blocked audits</strong>';
+    h += '<span style="font-size:.75rem;color:var(--color-muted);">Terminal failures awaiting auto-heal or human review. Hourly cron reprobes Surge.</span>';
+    h += '</div>';
+
+    for (var i = 0; i < groups.length; i++) {
+      var g = groups[i];
+      var c = CODE_COLORS[g.code] || { text: 'var(--color-muted)', bg: 'rgba(107,117,153,.06)', border: 'var(--color-border)' };
+      var oldestRel = g.oldest ? relativeTimeBrief(g.oldest) : '';
+      var countTxt = g.count + (g.count === 1 ? ' audit' : ' audits');
+
+      h += '<div style="display:flex;align-items:center;gap:.6rem;padding:.55rem .65rem;border-top:' + (i > 0 ? '1px solid var(--color-border)' : 'none') + ';flex-wrap:wrap;">';
+      h += '<span style="display:inline-flex;align-items:center;gap:.3rem;padding:.18rem .55rem;background:' + c.bg + ';color:' + c.text + ';border:1px solid ' + c.border + ';border-radius:999px;font-size:.72rem;font-weight:600;font-family:Outfit,sans-serif;">' + esc(g.label) + '</span>';
+      h += '<span style="font-size:.82rem;color:var(--color-body);font-family:Inter,sans-serif;">blocking <strong>' + countTxt + '</strong>';
+      if (oldestRel) h += ' <span style="color:var(--color-muted);font-weight:400;">(oldest ' + esc(oldestRel) + ')</span>';
+      h += '</span>';
+      h += '<button onclick="window.applyCodeFilter(\'' + esc(g.code) + '\')" style="margin-left:auto;padding:.28rem .7rem;font-size:.72rem;font-weight:600;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-heading);border-radius:6px;cursor:pointer;font-family:Outfit,sans-serif;">View &#8250;</button>';
+      h += '</div>';
+    }
+
+    h += '</div>';
+
+    el.innerHTML = h;
+    el.style.display = 'block';
+  }
+
+  function renderCodeFilterChip() {
+    var el = document.getElementById('codeFilterChip');
+    if (!el) return;
+    var code = state.errorCodeFilter;
+    if (!code || state.currentFilter !== 'errors') { el.style.display = 'none'; el.innerHTML = ''; return; }
+
+    var labels = {
+      surge_maintenance: 'Surge maintenance mode',
+      credits_exhausted: 'Surge credits exhausted',
+      surge_rejected: 'Surge silently rejected submission',
+      generic_exception: 'Unhandled agent error'
+    };
+    var label = labels[code] || code;
+    var c = CODE_COLORS[code] || { text: 'var(--color-muted)', bg: 'rgba(107,117,153,.06)', border: 'var(--color-border)' };
+
+    var h = '';
+    h += '<div style="display:inline-flex;align-items:center;gap:.5rem;padding:.3rem .6rem .3rem .7rem;background:' + c.bg + ';border:1px solid ' + c.border + ';border-radius:999px;font-size:.78rem;color:' + c.text + ';font-family:Outfit,sans-serif;font-weight:500;">';
+    h += '<span>Filtered: ' + esc(label) + '</span>';
+    h += '<button onclick="window.clearCodeFilter()" aria-label="Clear code filter" style="background:none;border:none;color:' + c.text + ';cursor:pointer;font-size:1rem;line-height:1;padding:0 .1rem;font-family:inherit;">&times;</button>';
+    h += '</div>';
+
+    el.innerHTML = h;
+    el.style.display = 'block';
+  }
+
+  window.applyCodeFilter = function(code) {
+    state.currentFilter = 'errors';
+    state.errorCodeFilter = code;
+    document.querySelectorAll('#filterTabs .sub-tab').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.filter === 'errors');
+    });
+    renderCodeFilterChip();
+    renderTable();
+    // Scroll to the table top so the filtered result is visible
+    var tableEl = document.getElementById('eaTableWrap');
+    if (tableEl && tableEl.scrollIntoView) tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  window.clearCodeFilter = function() {
+    state.errorCodeFilter = null;
+    renderCodeFilterChip();
+    renderTable();
+  };
+
+  function relativeTimeBrief(iso) {
+    try {
+      var then = new Date(iso).getTime();
+      if (!then) return '';
+      var diff = Math.max(0, Date.now() - then);
+      var mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return mins + 'm ago';
+      var hrs = Math.floor(mins / 60);
+      if (hrs < 24) return hrs + 'h ago';
+      var days = Math.floor(hrs / 24);
+      return days + 'd ago';
+    } catch (e) { return ''; }
+  }
 
   // Entity table expand (future: quarterly audit comparison)
   var expandedEaId = null;
