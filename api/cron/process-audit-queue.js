@@ -132,6 +132,31 @@ module.exports = async function handler(req, res) {
     }
 
     // ============================================================
+    // STEP 0.5: Flip agent_error rows back to queued for retry.
+    // ============================================================
+    // 5-min backoff is a safety rail against a submit-time failure being
+    // immediately retried in the same cron tick that's about to dispatch;
+    // well below the cron interval so no real throttling happens in practice.
+    // Do NOT clear last_agent_error / last_agent_error_at when flipping —
+    // admins want to see "this row errored N minutes ago, now retrying."
+    var errorBackoffCutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    var errorRows = await sb.query(
+      'entity_audits?status=eq.agent_error' +
+      '&last_agent_error_at=lt.' + encodeURIComponent(errorBackoffCutoff) +
+      '&select=id'
+    );
+    var agentErrorRequeued = 0;
+    if (errorRows && errorRows.length > 0) {
+      for (var i = 0; i < errorRows.length; i++) {
+        await sb.mutate('entity_audits?id=eq.' + errorRows[i].id, 'PATCH', {
+          status: 'queued',
+          agent_task_id: null
+        }, 'return=minimal');
+        agentErrorRequeued++;
+      }
+    }
+
+    // ============================================================
     // STEP 1: Find the oldest queued audit and dispatch
     // ============================================================
     var queued = await sb.query(
@@ -146,6 +171,7 @@ module.exports = async function handler(req, res) {
         remaining: 0,
         stale_checked: staleChecked,
         stale_requeued: staleRequeued,
+        agent_error_requeued: agentErrorRequeued,
         requeue_reason: requeueReason,
         agent_active_tasks: agentActiveTasks
       });
@@ -158,6 +184,7 @@ module.exports = async function handler(req, res) {
         remaining: queued.length,
         stale_checked: staleChecked,
         stale_requeued: staleRequeued,
+        agent_error_requeued: agentErrorRequeued,
         requeue_reason: requeueReason
       });
     }
@@ -172,6 +199,7 @@ module.exports = async function handler(req, res) {
         remaining: remainAll ? remainAll.length : 0,
         stale_checked: staleChecked,
         stale_requeued: staleRequeued,
+        agent_error_requeued: agentErrorRequeued,
         agent_active_tasks: agentActiveTasks
       });
     }
@@ -203,9 +231,13 @@ module.exports = async function handler(req, res) {
     if (!agentResp.ok) {
       var errText = '';
       try { errText = await agentResp.text(); } catch (e) {}
-      // Mark as error so it doesn't block the queue
+      // Mark as error with detail so it doesn't block the queue and so STEP 0.5
+      // has the context it needs to backoff + retry.
       await sb.mutate('entity_audits?id=eq.' + audit.id, 'PATCH', {
-        status: 'agent_error'
+        status: 'agent_error',
+        last_agent_error: ('Agent returned ' + agentResp.status + ': ' +
+          errText.substring(0, 400)).substring(0, 500),
+        last_agent_error_at: new Date().toISOString()
       }, 'return=minimal');
       return res.status(200).json({
         error: 'Agent returned ' + agentResp.status,
@@ -213,7 +245,8 @@ module.exports = async function handler(req, res) {
         audit_id: audit.id,
         slug: audit.client_slug,
         stale_checked: staleChecked,
-        stale_requeued: staleRequeued
+        stale_requeued: staleRequeued,
+        agent_error_requeued: agentErrorRequeued
       });
     }
 
@@ -237,6 +270,7 @@ module.exports = async function handler(req, res) {
       remaining: remainCount,
       stale_checked: staleChecked,
       stale_requeued: staleRequeued,
+      agent_error_requeued: agentErrorRequeued,
       requeue_reason: requeueReason,
       agent_active_tasks: agentActiveTasks,
       message: 'Triggered audit for ' + audit.client_slug + '. ' + remainCount + ' remaining in queue.'
