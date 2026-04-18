@@ -350,7 +350,7 @@ section { padding: 4.5rem 0; }
   <div class="container">
     <h2>Overview</h2>
     <div class="card" style="margin-top:1.5rem;">
-      <p class="lead" id="summaryText">Loading summary...</p>
+      <div class="lead" id="summaryText">Loading summary...</div>
     </div>
     <div class="variance-box">
       <div class="variance-label">Variance Score</div>
@@ -667,7 +667,7 @@ section { padding: 4.5rem 0; }
     var scores = audit.scores || {};
     IS_PREMIUM = audit.audit_tier === 'premium';
     if (scores.summary) {
-      document.getElementById('summaryText').textContent = scores.summary;
+      document.getElementById('summaryText').innerHTML = sanitizeHtml(scores.summary);
     }
 
     // Variance
