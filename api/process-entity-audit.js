@@ -14,19 +14,18 @@ var gh = require('./_lib/github');
 var fetchT = require('./_lib/fetch-with-timeout');
 var sanitizer = require('./_lib/html-sanitizer');
 
-// Prepare GitHub Contents API file content: decode base64 input,
-// apply any {{KEY}} replacements, re-encode to base64. Matches the
-// pattern in generate-proposal.js:560 — keeps the structure ready for
-// placeholder substitution even though no templates use placeholders
-// today.
-function prepTemplate(base64Content, replacements) {
-  var raw = Buffer.from(base64Content, 'base64').toString('utf-8');
+// Apply any {{KEY}} replacements to a template HTML string. Kept as a
+// helper even though no templates here use placeholders today — keeps
+// the structure ready for future placeholder substitution (M40,
+// 2026-04-19: simplified to utf8 in/out now that callers go through
+// gh.readTemplate + gh.pushFile which handle base64 framing).
+function prepTemplate(html, replacements) {
   if (replacements) {
     Object.keys(replacements).forEach(function(key) {
-      raw = raw.split(key).join(String(replacements[key]));
+      html = html.split(key).join(String(replacements[key]));
     });
   }
-  return Buffer.from(raw, 'utf-8').toString('base64');
+  return html;
 }
 
 
@@ -38,10 +37,9 @@ module.exports = async function handler(req, res) {
 
 
   var anthropicKey = process.env.ANTHROPIC_API_KEY;
-  var ghToken = process.env.GITHUB_PAT;
 
   if (!anthropicKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
-  if (!ghToken) return res.status(500).json({ error: 'GITHUB_PAT not configured' });
+  if (!gh.isConfigured()) return res.status(500).json({ error: 'GITHUB_PAT not configured' });
   if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
 
   var body = req.body;
@@ -74,9 +72,6 @@ module.exports = async function handler(req, res) {
     res.write(JSON.stringify(obj) + '\n');
     if (typeof res.flush === 'function') res.flush();
   }
-
-  var REPO = 'Moonraker-AI/client-hq';
-  var BRANCH = 'main';
 
 
   try {
@@ -426,76 +421,39 @@ ${surgeData}`;
     // ============================================================
     send({ step: 'deploy', message: 'Deploying scorecard page...' });
 
-    var ghHeaders = {
-      'Authorization': 'Bearer ' + ghToken,
-      'Accept': 'application/vnd.github+json',
-      'Content-Type': 'application/json'
-    };
-
-    // Read the scorecard template
-    var tmplResp = await fetchT('https://api.github.com/repos/' + REPO + '/contents/_templates/entity-audit.html?ref=' + BRANCH, {
-      headers: ghHeaders
-    }, 15000);
     var githubDeployed = false;
     var checkoutDeployed = false;
     var suiteDeployed = false;
+    var scorecardReady = false; // template read succeeded (cascades to checkout + suite)
 
-    if (tmplResp.ok) {
-      var tmplData = await tmplResp.json();
-
-      // Check if destination exists
-      var destPath = slug + '/entity-audit/index.html';
-      var sha = null;
-      var checkResp = await fetchT('https://api.github.com/repos/' + REPO + '/contents/' + destPath + '?ref=' + BRANCH, {
-        headers: ghHeaders
-      }, 15000);
-      if (checkResp.ok) {
-        sha = (await checkResp.json()).sha;
+    // Scorecard page
+    try {
+      var scorecardHtml = prepTemplate(await gh.readTemplate('entity-audit.html'));
+      scorecardReady = true;
+      await gh.pushFile(slug + '/entity-audit/index.html', scorecardHtml, 'Deploy entity audit scorecard for ' + slug);
+      githubDeployed = true;
+    } catch (ghErr) {
+      if (!scorecardReady) {
+        send({ step: 'deploy_warning', message: 'Template not found, skipping GitHub deploy.' });
       }
+      monitor.logError('process-entity-audit', ghErr, {
+        client_slug: slug,
+        detail: { stage: 'deploy_scorecard' }
+      });
+    }
 
-      // Push the template as the scorecard page
-      var pushBody = {
-        message: 'Deploy entity audit scorecard for ' + slug,
-        content: prepTemplate(tmplData.content),
-        branch: BRANCH
-      };
-      if (sha) pushBody.sha = sha;
-
-      var pushResp = await fetchT('https://api.github.com/repos/' + REPO + '/contents/' + destPath, {
-        method: 'PUT',
-        headers: ghHeaders,
-        body: JSON.stringify(pushBody)
-      }, 30000);
-      githubDeployed = pushResp.ok;
-
-      // Deploy checkout page
+    if (scorecardReady) {
+      // Checkout page
       send({ step: 'deploy_checkout', message: 'Deploying checkout page...' });
-
-      var checkoutTmplResp = await fetchT('https://api.github.com/repos/' + REPO + '/contents/_templates/entity-audit-checkout.html?ref=' + BRANCH, {
-        headers: ghHeaders
-      }, 15000);
-      if (checkoutTmplResp.ok) {
-        var checkoutTmplData = await checkoutTmplResp.json();
-        var checkoutPath = slug + '/entity-audit-checkout/index.html';
-        var checkoutSha = null;
-        var checkoutCheck = await fetchT('https://api.github.com/repos/' + REPO + '/contents/' + checkoutPath + '?ref=' + BRANCH, {
-          headers: ghHeaders
-        }, 15000);
-        if (checkoutCheck.ok) {
-          checkoutSha = (await checkoutCheck.json()).sha;
-        }
-        var checkoutPush = {
-          message: 'Deploy entity audit checkout for ' + slug,
-          content: prepTemplate(checkoutTmplData.content),
-          branch: BRANCH
-        };
-        if (checkoutSha) checkoutPush.sha = checkoutSha;
-        var checkoutPushResp = await fetchT('https://api.github.com/repos/' + REPO + '/contents/' + checkoutPath, {
-          method: 'PUT',
-          headers: ghHeaders,
-          body: JSON.stringify(checkoutPush)
-        }, 30000);
-        checkoutDeployed = checkoutPushResp.ok;
+      try {
+        var checkoutHtml = prepTemplate(await gh.readTemplate('entity-audit-checkout.html'));
+        await gh.pushFile(slug + '/entity-audit-checkout/index.html', checkoutHtml, 'Deploy entity audit checkout for ' + slug);
+        checkoutDeployed = true;
+      } catch (ghErr) {
+        monitor.logError('process-entity-audit', ghErr, {
+          client_slug: slug,
+          detail: { stage: 'deploy_checkout' }
+        });
       }
 
       // ============================================================
@@ -513,46 +471,25 @@ ${surgeData}`;
         var suiteResults = [];
         for (var i = 0; i < suiteTemplates.length; i++) {
           var st = suiteTemplates[i];
-          // Small delay between GitHub pushes
+          // Small delay between GitHub pushes (secondary-rate-limit mitigation)
           if (i > 0) await new Promise(function(r) { setTimeout(r, 600); });
 
-          var stTmplResp = await fetchT('https://api.github.com/repos/' + REPO + '/contents/_templates/' + st.template + '?ref=' + BRANCH, {
-            headers: ghHeaders
-          }, 15000);
-          if (!stTmplResp.ok) {
-            suiteResults.push({ template: st.template, deployed: false, reason: 'template not found' });
-            continue;
+          try {
+            var stHtml = prepTemplate(await gh.readTemplate(st.template));
+            await gh.pushFile(st.dest, stHtml, 'Deploy audit ' + st.template.replace('.html', '') + ' for ' + slug);
+            suiteResults.push({ template: st.template, deployed: true });
+          } catch (ghErr) {
+            suiteResults.push({ template: st.template, deployed: false });
+            monitor.logError('process-entity-audit', ghErr, {
+              client_slug: slug,
+              detail: { stage: 'deploy_suite', template: st.template }
+            });
           }
-          var stTmplData = await stTmplResp.json();
-
-          var stSha = null;
-          var stCheck = await fetchT('https://api.github.com/repos/' + REPO + '/contents/' + st.dest + '?ref=' + BRANCH, {
-            headers: ghHeaders
-          }, 15000);
-          if (stCheck.ok) {
-            stSha = (await stCheck.json()).sha;
-          }
-
-          var stPush = {
-            message: 'Deploy audit ' + st.template.replace('.html', '') + ' for ' + slug,
-            content: prepTemplate(stTmplData.content),
-            branch: BRANCH
-          };
-          if (stSha) stPush.sha = stSha;
-
-          var stPushResp = await fetchT('https://api.github.com/repos/' + REPO + '/contents/' + st.dest, {
-            method: 'PUT',
-            headers: ghHeaders,
-            body: JSON.stringify(stPush)
-          }, 30000);
-          suiteResults.push({ template: st.template, deployed: stPushResp.ok });
         }
 
         suiteDeployed = suiteResults.every(function(r) { return r.deployed; });
         send({ step: 'deploy_suite_done', message: 'Audit suite: ' + suiteResults.filter(function(r) { return r.deployed; }).length + '/3 pages deployed.' });
       }
-    } else {
-      send({ step: 'deploy_warning', message: 'Template not found, skipping GitHub deploy.' });
     }
 
     // ============================================================
