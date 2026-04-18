@@ -104,6 +104,11 @@ section { padding: 4.5rem 0; }
 .kpi-delta.up { color: var(--color-success); background: rgba(0,212,126,.08); }
 .kpi-delta.down { color: var(--color-danger); background: rgba(239,68,68,.06); }
 
+/* GBP breakdown strip */
+.gbp-breakdown { margin-top: 1.5rem; }
+.gbp-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; padding: 1.25rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; font-size: .9375rem; color: var(--color-muted); }
+.gbp-split strong { color: var(--color-heading); font-family: 'Outfit', sans-serif; font-weight: 700; }
+
 /* Charts */
 .chart-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.75rem; margin: 1.5rem 0; }
 .chart-card-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
@@ -227,6 +232,7 @@ section { padding: 4.5rem 0; }
   <a href="#guarantee" id="navGuarantee"><span class="nav-dot"></span> Guarantee</a>
   <a href="#bookings" id="navBookings"><span class="nav-dot"></span> Bookings</a>
   <a href="#search" id="navSearch"><span class="nav-dot"></span> Search visibility</a>
+  <a href="#gbp" id="navGbp"><span class="nav-dot"></span> Business profile</a>
   <a href="#queries" id="navQueries"><span class="nav-dot"></span> Top queries</a>
   <a href="#striking" id="navStriking"><span class="nav-dot"></span> Striking distance</a>
   <a href="#shipped" id="navShipped"><span class="nav-dot"></span> What we shipped</a>
@@ -352,6 +358,18 @@ section { padding: 4.5rem 0; }
           <canvas id="gscChart" role="img" aria-label="Monthly impressions and average position trend from Google Search Console"></canvas>
         </div>
       </div>
+    </div>
+  </section>
+
+  <hr class="divider" id="gbpDivider">
+
+  <section id="gbp">
+    <div class="container reveal">
+      <div class="section-eyebrow">Google Business Profile</div>
+      <h2>Local presence &amp; direct engagement</h2>
+      <p class="section-intro">How often your practice appeared in Google Maps and local search results, and the direct actions people took from your listing.</p>
+      <div class="kpi-grid" id="gbpKpiGrid"></div>
+      <div class="gbp-breakdown" id="gbpBreakdown"></div>
     </div>
   </section>
 
@@ -728,6 +746,9 @@ section { padding: 4.5rem 0; }
     // ── GSC section ─────────────────────────────────────────────────
     renderGsc(data);
 
+    // ── Google Business Profile section ─────────────────────────────
+    renderGbp(data);
+
     // ── Queries section ─────────────────────────────────────────────
     renderQueries(data);
 
@@ -1079,6 +1100,41 @@ section { padding: 4.5rem 0; }
         + '<td class="num">' + (r.position ? r.position.toFixed(1) : '—') + '</td>'
         + '</tr>';
     }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--color-muted);padding:1.5rem">No page data yet</td></tr>';
+  }
+
+  // ── Google Business Profile section ─────────────────────────────
+  function renderGbp(data) {
+    var g = data.gbp;
+    var section = document.getElementById('gbp');
+    if (!g || !g.available) {
+      section.classList.add('hidden');
+      var d = document.getElementById('gbpDivider');
+      if (d) d.classList.add('hidden');
+      var nav = document.getElementById('navGbp');
+      if (nav) nav.classList.add('hidden');
+      return;
+    }
+
+    var fmt = function(n) { return (n || 0).toLocaleString(); };
+
+    document.getElementById('gbpKpiGrid').innerHTML =
+        '<div class="kpi-card"><div class="kpi-label">Total impressions</div><div class="kpi-value">' + fmt(g.impressions_total) + '</div><div class="kpi-context">across Google Maps and Search</div></div>'
+      + '<div class="kpi-card"><div class="kpi-label">Website clicks</div><div class="kpi-value">' + fmt(g.website_clicks) + '</div><div class="kpi-context">clicked through from your listing</div></div>'
+      + '<div class="kpi-card"><div class="kpi-label">Phone calls</div><div class="kpi-value">' + fmt(g.calls) + '</div><div class="kpi-context">tapped to call from the listing</div></div>'
+      + '<div class="kpi-card"><div class="kpi-label">Direction requests</div><div class="kpi-value">' + fmt(g.direction_requests) + '</div><div class="kpi-context">tapped for directions</div></div>';
+
+    var br = g.impressions_breakdown || {};
+    var mapsTotal    = (br.desktop_maps   || 0) + (br.mobile_maps   || 0);
+    var searchTotal  = (br.desktop_search || 0) + (br.mobile_search || 0);
+    var mobileTotal  = (br.mobile_maps    || 0) + (br.mobile_search || 0);
+    var desktopTotal = (br.desktop_maps   || 0) + (br.desktop_search || 0);
+
+    document.getElementById('gbpBreakdown').innerHTML =
+        '<div class="gbp-split">'
+      +   '<div><strong>' + fmt(mapsTotal)   + '</strong> impressions on Google Maps</div>'
+      +   '<div><strong>' + fmt(searchTotal) + '</strong> impressions in Google Search</div>'
+      +   '<div><strong>' + fmt(mobileTotal) + '</strong> on mobile &middot; <strong>' + fmt(desktopTotal) + '</strong> on desktop</div>'
+      + '</div>';
   }
 
   // ── Local visibility ────────────────────────────────────────────
