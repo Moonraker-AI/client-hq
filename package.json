@@ -1,6 +1,6 @@
 {
   "private": true,
-  "_deploy_trigger": 1776515487,
+  "_deploy_trigger": 1776515612,
   "description": "Moonraker Client HQ - Admin platform and client portal",
   "dependencies": {
     "pg": "^8.11.5"
