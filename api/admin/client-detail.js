@@ -38,7 +38,7 @@ module.exports = async function(req, res) {
       sb.mutate('rpc/get_tab_counts', 'POST', { p_contact_id: cid, p_slug: slug }),
 
       // Latest entity audit (all fields except surge_raw_data/surge_data which are huge)
-      sb.query('entity_audits?select=id,contact_id,client_slug,status,audit_tier,audit_date,audit_period,audit_scope,score_credibility,score_optimization,score_reputation,score_engagement,scores,variance_score,variance_label,cres_score,total_tasks,tasks_p1,tasks_p2,tasks_p3,tasks_moonraker,tasks_client,tasks_collaboration,cited_google_ai,cited_chatgpt,cited_claude,cited_perplexity,cited_bing,cited_youtube,cited_reddit,cited_meta,agent_task_id,geo_target,gbp_share_link,variance_from_previous,brand_query,homepage_url,loom_url,sent_at,sent_to,email_subject,stripe_payment_id,created_at,updated_at&contact_id=eq.' + cid + '&order=created_at.desc&limit=1'),
+      sb.query('entity_audits?select=id,contact_id,client_slug,status,agent_error_retriable,last_agent_error,last_agent_error_at,last_agent_error_code,last_debug_path,audit_tier,audit_date,audit_period,audit_scope,score_credibility,score_optimization,score_reputation,score_engagement,scores,variance_score,variance_label,cres_score,total_tasks,tasks_p1,tasks_p2,tasks_p3,tasks_moonraker,tasks_client,tasks_collaboration,cited_google_ai,cited_chatgpt,cited_claude,cited_perplexity,cited_bing,cited_youtube,cited_reddit,cited_meta,agent_task_id,geo_target,gbp_share_link,variance_from_previous,brand_query,homepage_url,loom_url,sent_at,sent_to,email_subject,stripe_payment_id,created_at,updated_at&contact_id=eq.' + cid + '&order=created_at.desc&limit=1'),
 
       // Performance guarantee
       sb.query('performance_guarantees?select=*&contact_id=eq.' + cid + '&limit=1'),
