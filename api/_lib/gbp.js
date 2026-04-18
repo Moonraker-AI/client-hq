@@ -126,10 +126,124 @@ async function fetchPerformance(locationId, startDate, endDate, opts) {
   return Object.assign({ available: true }, parsed);
 }
 
+// ── Daily-granular fetch for the warehouse ──────────────────────────
+//
+// Same HTTP call as fetchPerformance, but returns per-day rows instead
+// of summed totals. Callers upsert each row into gbp_daily.
+//
+// Returns { available: true, days: [{date: 'YYYY-MM-DD', calls, website_clicks,
+//   direction_requests, impressions_desktop_maps, impressions_desktop_search,
+//   impressions_mobile_maps, impressions_mobile_search}, ...] }
+// or { available: false, error } on failure.
+//
+// Note: Google's API hard-caps at ~18 months from today. Requesting longer
+// ranges silently returns only the most recent 18 months — no error. The
+// caller can clamp the window on its side if it needs guaranteed coverage.
+
+async function fetchPerformanceDaily(locationId, startDate, endDate, opts) {
+  opts = opts || {};
+  var mailbox = opts.mailbox || DEFAULT_MAILBOX;
+  var timeoutMs = opts.timeout_ms || 30000;
+
+  if (!locationId) {
+    return { available: false, error: 'No gbp_location_id configured' };
+  }
+
+  var token;
+  try {
+    token = await google.getDelegatedAccessToken(mailbox, GBP_SCOPE);
+  } catch (e) {
+    return { available: false, error: 'Delegated token failed: ' + (e.message || String(e)) };
+  }
+
+  var url = buildUrl(locationId, startDate, endDate);
+  var resp;
+  try {
+    resp = await fetchT(url, { headers: { 'Authorization': 'Bearer ' + token } }, timeoutMs);
+  } catch (ne) {
+    return { available: false, error: 'Network error: ' + (ne.message || String(ne)) };
+  }
+
+  var text = await resp.text();
+  var data = null;
+  try { data = JSON.parse(text); } catch (e2) {}
+
+  if (!resp.ok) {
+    var msg = (data && data.error && data.error.message) || text.slice(0, 300);
+    return { available: false, http_status: resp.status, error: msg };
+  }
+
+  return { available: true, days: parseDaily(data) };
+}
+
+// Convert the nested/flat-shape API response into a flat array of
+// per-date rows, one row per calendar day with all 7 metrics as columns.
+// Dates absent from the response (zero activity) are NOT emitted — callers
+// decide whether to fill gaps with zero rows.
+
+function parseDaily(data) {
+  var series = (data && data.multiDailyMetricTimeSeries) || [];
+  var byDate = {};                                  // iso -> row
+
+  function visit(metricEntries) {
+    for (var i = 0; i < metricEntries.length; i++) {
+      var m = metricEntries[i];
+      if (!m || !m.dailyMetric || !m.timeSeries) continue;
+      var points = m.timeSeries.datedValues || [];
+      for (var j = 0; j < points.length; j++) {
+        var p = points[j];
+        var d = p.date || {};
+        if (!d.year || !d.month || !d.day) continue;
+        var iso = d.year + '-'
+                + String(d.month).padStart(2, '0') + '-'
+                + String(d.day).padStart(2, '0');
+        if (!byDate[iso]) {
+          byDate[iso] = {
+            date:                       iso,
+            calls:                      0,
+            website_clicks:             0,
+            direction_requests:         0,
+            impressions_desktop_maps:   0,
+            impressions_desktop_search: 0,
+            impressions_mobile_maps:    0,
+            impressions_mobile_search:  0
+          };
+        }
+        var val = parseInt(p.value || 0, 10);
+        switch (m.dailyMetric) {
+          case 'CALL_CLICKS':                        byDate[iso].calls                      += val; break;
+          case 'WEBSITE_CLICKS':                     byDate[iso].website_clicks             += val; break;
+          case 'BUSINESS_DIRECTION_REQUESTS':        byDate[iso].direction_requests         += val; break;
+          case 'BUSINESS_IMPRESSIONS_DESKTOP_MAPS':  byDate[iso].impressions_desktop_maps   += val; break;
+          case 'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH':byDate[iso].impressions_desktop_search += val; break;
+          case 'BUSINESS_IMPRESSIONS_MOBILE_MAPS':   byDate[iso].impressions_mobile_maps    += val; break;
+          case 'BUSINESS_IMPRESSIONS_MOBILE_SEARCH': byDate[iso].impressions_mobile_search  += val; break;
+        }
+      }
+    }
+  }
+
+  for (var i = 0; i < series.length; i++) {
+    var entry = series[i] || {};
+    if (entry.dailyMetric && entry.timeSeries) {
+      // Shape A: flat
+      visit([entry]);
+    } else if (Array.isArray(entry.dailyMetricTimeSeries)) {
+      // Shape B: nested (live API)
+      visit(entry.dailyMetricTimeSeries);
+    }
+  }
+
+  // Sort oldest-to-newest for predictable insert order
+  return Object.keys(byDate).sort().map(function(k) { return byDate[k]; });
+}
+
 module.exports = {
   fetchPerformance: fetchPerformance,
+  fetchPerformanceDaily: fetchPerformanceDaily,
   // Exposed for probe-gbp.js / tests
   parseMetrics: parseMetrics,
+  parseDaily: parseDaily,
   buildUrl: buildUrl,
   GBP_SCOPE: GBP_SCOPE,
   DEFAULT_MAILBOX: DEFAULT_MAILBOX
