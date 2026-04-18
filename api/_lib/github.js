@@ -26,6 +26,51 @@ function headers() {
   };
 }
 
+// Allowlist for repo write targets (M4, 2026-04-19).
+//
+// Only two top-level prefixes are legitimate for this wrapper:
+//
+//   1. `_templates/<filename>` — shared page templates read by every
+//      deploy route (proposal.html, onboarding.html, endorsements.html,
+//      entity-audit.html, diagnosis.html, etc.). Flat directory, one
+//      level deep.
+//
+//   2. `<slug>/<anything>` — per-client deploy directory. `slug` is the
+//      production slug format (lowercase alphanumeric + dashes, 1-60
+//      chars — same shape enforced by `M27` in bootstrap-access). Inside
+//      a slug directory ANY subpath is allowed because:
+//        - the exact section set grows over time (current set includes
+//          proposal/, checkout/, onboarding/, index.html router, content/
+//          <pageSlug>/, endorsements/, entity-audit/, entity-audit-checkout/,
+//          audits/<diagnosis|action-plan|progress>/, campaign-summary/)
+//        - delete-client.js iterates every git-tree blob under `<slug>/`
+//          and deletes each; a tight section-allowlist would reject legacy
+//          files still present in the tree and leave orphans behind.
+//
+// The slug format check `[a-z0-9-]{1,60}` is one security boundary, but
+// several slug-shaped names are reserved top-level repo directories that
+// hold non-client content and must not be writable via this wrapper:
+//   - `admin/`, `assets/`, `docs/` — dashboard, shared assets, audit docs
+//   - `api/` — Vercel serverless function source (write here = RCE)
+//   - `agreement/`, `checkout/`, `entity-audit/` — shared landing pages
+// These are listed in RESERVED_TOP_LEVEL below. Repo-level non-slug-shaped
+// paths (`.github/`, `vercel.json`, `package.json`, `README.md`, `CLAUDE.md`)
+// are already rejected by the slug regex (uppercase / dot / leading-dot).
+//
+// Known gaps still in scope for follow-up (tracked as M40):
+// `api/process-entity-audit.js` and `api/generate-proposal.js` issue raw
+// `fetch` / `fetchT` calls to the GitHub REST API directly, bypassing this
+// wrapper entirely. They use hard-coded section prefixes + DB-sourced
+// slugs so the live attack surface is narrow, but they are not protected
+// by this allowlist.
+var TEMPLATE_PREFIX = '_templates/';
+var SLUG_PREFIX_RE = /^([a-z0-9-]{1,60})\/.+/;
+var RESERVED_TOP_LEVEL = {
+  'admin': 1, 'api': 1, 'assets': 1, 'docs': 1,
+  'agreement': 1, 'checkout': 1, 'entity-audit': 1,
+  'node_modules': 1, 'public': 1, 'scripts': 1, 'dist': 1, 'build': 1
+};
+
 function validatePath(p) {
   if (!p) throw new Error('Invalid path: empty');
   // Reject obvious traversal (`..`) and absolute paths
@@ -41,9 +86,13 @@ function validatePath(p) {
   // percent-encoding. A `%` in the input is almost certainly an attempt to
   // smuggle an encoded `..` / `/` / `\` past the raw-string checks above.
   if (p.indexOf('%') !== -1) throw new Error('Invalid path: encoded characters');
-  // Allow-prefix list is still TODO (M4 full resolution) — that requires
-  // enumerating every caller of pushFile/readFile/deleteFile. Tracked
-  // separately.
+
+  // Allowlist: `_templates/<filename>` or `<slug>/<anything>` where <slug>
+  // matches the production slug regex and is not a reserved top-level dir.
+  if (p.indexOf(TEMPLATE_PREFIX) === 0 && p.length > TEMPLATE_PREFIX.length) return;
+  var m = SLUG_PREFIX_RE.exec(p);
+  if (m && !RESERVED_TOP_LEVEL[m[1]]) return;
+  throw new Error('Invalid path: not in allowlist');
 }
 
 // Read a file from the repo. Returns { content: string, sha: string }.
