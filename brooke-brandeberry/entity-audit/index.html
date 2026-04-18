@@ -356,7 +356,7 @@ section { padding: 4.5rem 0; }
       <div class="variance-label">Variance Score</div>
       <div class="variance-score" id="varianceScore">--<span style="font-size:1.5rem;opacity:.5">/100</span></div>
       <div class="variance-label" id="varianceLabel" style="margin-top:.25rem;">Calculating...</div>
-      <p class="variance-desc" id="varianceDesc"></p>
+      <div class="variance-desc" id="varianceDesc"></div>
     </div>
     <div class="quick-wins" id="quickWins" style="display:none;">
       <h4>&#9889; Quick Wins</h4>
@@ -677,7 +677,7 @@ section { padding: 4.5rem 0; }
     vs.style.color = varianceColor(variance);
     document.getElementById('varianceLabel').textContent = varianceWord(variance);
     if (scores.variance_desc) {
-      document.getElementById('varianceDesc').textContent = scores.variance_desc;
+      document.getElementById('varianceDesc').innerHTML = sanitizeHtml(scores.variance_desc);
     }
 
     // Quick wins
