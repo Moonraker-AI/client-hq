@@ -27,6 +27,7 @@ var auth = require('./_lib/auth');
 var sb = require('./_lib/supabase');
 var monitor = require('./_lib/monitor');
 var google = require('./_lib/google-delegated');
+var contract = require('./_lib/contract');
 
 // ── Helpers ────────────────────────────────────────────────────────
 
@@ -36,17 +37,6 @@ function ymKey(d) {
 
 // ── Date helpers used in window calculation ──────────────────────────
 //
-// deriveContractMonths maps the contacts.plan_type enum to a month count.
-// "monthly" subscribers don't have a fixed end date, so we treat them as
-// 12-month default for reporting purposes (the API caps at today anyway).
-
-function deriveContractMonths(planType) {
-  if (planType === 'quarterly') return 3;
-  if (planType === 'annual') return 12;
-  if (planType === 'monthly') return 12;
-  return 12;
-}
-
 // addMonthsISO adds N months to a YYYY-MM-DD string and returns YYYY-MM-DD.
 // Handles month rollover correctly (e.g. Mar 31 + 1 month = Apr 30).
 
@@ -481,7 +471,9 @@ async function pullStrikingDistance(token, siteUrl, startDate, endDate) {
       .sort(function(a, b) { return b.impressions - a.impressions; })
       .slice(0, 12);
   } catch (e) {
-    console.error('[campaign-summary] striking distance error:', e);
+    monitor.logError('campaign-summary', e, {
+      detail: { stage: 'pull_striking_distance', site_url: siteUrl }
+    });
     return [];
   }
 }
@@ -767,7 +759,7 @@ module.exports = async function handler(req, res) {
     var contractStartISO = client.campaign_start || todayISO;
     if (contractStartISO > todayISO) contractStartISO = todayISO;
 
-    var contractMonths = deriveContractMonths(client.plan_type);
+    var contractMonths = contract.deriveContractMonths(client.plan_type);
     var contractEndISO = client.campaign_end || addMonthsISO(contractStartISO, contractMonths);
 
     // For data pulls and cost: cap contract end at today
