@@ -190,16 +190,35 @@ Items marked "won't fix" or "needs design":
 
 ---
 
-## Recommended next session
+## AUDIT FULLY CLOSED
 
-**The audit is fully wrapped.** Every Critical, Medium, Low, and Nit is closed (resolved or accepted-with-rationale). Every non-deferred High is closed. Zero open findings remain. H29 is the only remaining work, and it's unblocked — design is fully captured.
+**The audit is in its terminal state.** Every Critical, High, Medium, Low, and Nit is either resolved (shipped code + migration where applicable) or accepted-with-rationale (documented reasoning for non-action).
 
-**H29 implementation arc** (~3 focused sessions, whenever encryption-at-rest becomes a priority). Design locked in during the 2026-04-18 final-wrap session:
-1. Extend `_lib/crypto.js` `encryptFields` to operate on JSONB subtree targets with a `v2:` key-prefix rotation path.
-2. Wire write-path in `enrich-proposal.js` (encrypt sensitive subtrees before INSERT/UPDATE) + decrypt-path in `generate-proposal.js` (consume enrichment for Claude prompt context server-side) + extend `action.js` `SENSITIVE_FIELDS` to cover `proposals.enrichment_data` subtrees so admin-JWT reads continue to work correctly.
-3. Backfill migration (encrypt-in-place for existing rows) + lazy-on-write verification for any rows landing during the design-to-backfill window + staging verification + deploy.
+- **Critical:** 9/9 resolved
+- **High:** 36/36 resolved (H29 shipped its full implementation arc 2026-04-18)
+- **Medium:** 36 resolved + 5 accepted = 41 total
+- **Low:** 18 resolved + 11 accepted = 29 total
+- **Nit:** 5 resolved + 1 accepted = 6 total
+- **Total:** 121 findings. **104 resolved. 17 accepted. 0 open. 0 deferred.**
 
-No other code session is queued. The 17 accepted-with-rationale findings are explicitly documented as non-actions with rationale; the 5 project invariants (supabase.js error contract, github.js path allowlist, zero raw GitHub writes in live route code, zero routes leak upstream error detail, json-parser.parseFenced for all Claude-JSON extraction) are enforceable going forward. The audit docs read cleanly top-to-bottom — every C/H is resolved or deferred-with-design-captured; every M/L/N is resolved or accepted-with-rationale. Defensible resting state.
+**Project invariants now enforceable going forward** (earned across the audit's lifetime):
+1. `_lib/supabase.js` — generic error messages, never leaks schema/column/constraint detail on 5xx responses (M7, C2).
+2. `_lib/github.js` `validatePath` — allowlist enforces `_templates/<filename>` or `<slug>/<anything>` shape; no wrapper-bypass writes remain in live route code (M4, M40).
+3. Zero response-body leaks on 5xx — all routes use generic domain copy + `monitor.logError` for detail (L29).
+4. All GitHub writes flow through `gh.pushFile` with documented intentional exemptions (M40).
+5. `_lib/json-parser.js` `parseFenced` is the canonical path for extracting JSON from fenced Claude output at both known call sites (M25, L11).
+6. `_lib/crypto.js` supports v1/v2 dual-prefix rotation — new writes use the active version, decryption routes by prefix, rotation is a Vercel env-var + redeploy sequence with no mandatory ciphertext migration (H29).
+
+**Key rotation — how to do it when the time comes:**
+1. Generate a new 32-byte hex key: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+2. Add `CREDENTIALS_ENCRYPTION_KEY_V2` to Vercel env (all environments). Redeploy.
+3. Decryption now accepts both v1: and v2: prefixed ciphertext.
+4. Set `CREDENTIALS_ENCRYPTION_ACTIVE_VERSION=v2` in Vercel env. Redeploy.
+5. All new writes encrypt with v2; existing v1 ciphertext continues to decrypt.
+6. (Optional) Invoke a re-encrypt backfill endpoint (future work) to flip all v1 ciphertext to v2.
+7. Once no v1 ciphertext remains in the database, delete the old `CREDENTIALS_ENCRYPTION_KEY` env var.
+
+**No code sessions queued.** The docs read cleanly top-to-bottom: every finding has a Resolution or Decision block that explains what shipped (or why no action was taken). The audit instrument itself has served its purpose and can be archived.
 
 ## Executed prompt — Group G batch 1 (historical, for reference)
 
