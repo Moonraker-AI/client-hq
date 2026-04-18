@@ -23,6 +23,7 @@ var monitor = require('./_lib/monitor');
 var gh = require('./_lib/github');
 var pageToken = require('./_lib/page-token');
 var google = require('./_lib/google-delegated');
+var crypto = require('./_lib/crypto');
 
 // HTML-escape untrusted values before interpolating into deployed HTML.
 // Mirrors the shape used in email-template.js and newsletter-template.js.
@@ -61,6 +62,35 @@ module.exports = async function handler(req, res) {
 
   var slug = contact.slug;
   var enrichment = proposal.enrichment_data || {};
+
+  // H29: decrypt the _sensitive envelope if present. Post-H29 enrichment
+  // rows pack emails[]+calls[] inside enrichment_data._sensitive
+  // (v1/v2-prefixed ciphertext string). Legacy rows (pre-backfill) still
+  // have emails/calls as cleartext top-level arrays; both shapes work.
+  if (enrichment._sensitive) {
+    try {
+      var decrypted = crypto.decryptJSON(enrichment._sensitive);
+      if (decrypted && typeof decrypted === 'object') {
+        if (Array.isArray(decrypted.emails)) enrichment.emails = decrypted.emails;
+        if (Array.isArray(decrypted.calls)) enrichment.calls = decrypted.calls;
+      }
+    } catch (decErr) {
+      // Fail loud: Claude prompt context will be missing email/call history
+      // if decryption fails. Surface the error so we notice key misconfig.
+      try {
+        await monitor.logError('generate-proposal', decErr, {
+          client_slug: slug,
+          detail: { stage: 'decrypt_enrichment_sensitive', proposal_id: proposal.id }
+        });
+      } catch (_) { /* observability only */ }
+      // Continue with empty emails/calls rather than failing the whole
+      // proposal-generation; Claude will produce a reasonable proposal
+      // without the email/call context, just less personalized.
+      enrichment.emails = enrichment.emails || [];
+      enrichment.calls = enrichment.calls || [];
+    }
+  }
+
   var campaigns = proposal.campaign_lengths || ['annual'];
   var billings = proposal.billing_options || [];
   var customPricing = proposal.custom_pricing || null;
