@@ -22,7 +22,7 @@
 
 var nodeCrypto = require('crypto');
 
-var SCOPES = ['onboarding', 'proposal', 'content_preview', 'endorsement', 'report'];
+var SCOPES = ['onboarding', 'proposal', 'content_preview', 'endorsement', 'report', 'campaign_summary'];
 
 // Default token lifetime per scope (in seconds). Callers can override via
 // ttl_seconds in sign(). These are deliberately generous: pages are meant to
@@ -32,7 +32,8 @@ var DEFAULT_TTL = {
   proposal:         60 * 86400,
   content_preview:  30 * 86400,
   endorsement:     180 * 86400,
-  report:           30 * 86400
+  report:           30 * 86400,
+  campaign_summary: 365 * 86400
 };
 
 // Loud warning at module load if the secret is missing. Surfaces config

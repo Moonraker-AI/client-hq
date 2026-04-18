@@ -5205,11 +5205,48 @@
   window.saveCmsField = async function(field, value) {
     var c = state.contact;
     if (!c) return;
+    // CMS credentials now live on workspace_credentials (encrypted) instead of
+    // contacts (plaintext) per security audit C8. The action.js + crypto.js
+    // SENSITIVE_FIELDS pipeline handles encryption transparently for
+    // cms_username / cms_password / cms_app_password. cms_login_url is a URL,
+    // stored plaintext alongside.
     try {
-      var r = await fetch('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update_record', table: 'contacts', filters: { id: c.id }, data: { [field]: value } }) });
-      var res = await r.json();
-      if (!r.ok || !res.success) throw new Error(res.error || 'Save failed');
-      c[field] = value;
+      // Ensure we have the workspace_credentials row. state.workspace may not
+      // be populated if the user hasn't opened the profile tab yet — fetch
+      // lazily on first CMS write.
+      if (state.workspace === undefined) {
+        var loadResp = await fetch('/api/action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'read_records', table: 'workspace_credentials', filters: { contact_id: c.id }, limit: 1 })
+        });
+        var loadJson = await loadResp.json();
+        state.workspace = (loadJson.data && loadJson.data[0]) || null;
+      }
+      if (!state.workspace) {
+        // No row yet — create one with this field populated.
+        var createPayload = { contact_id: c.id };
+        createPayload[field] = value;
+        var createResp = await fetch('/api/action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create_record', table: 'workspace_credentials', data: createPayload })
+        });
+        var createJson = await createResp.json();
+        if (!createResp.ok || !createJson.success) throw new Error(createJson.error || 'Save failed');
+        state.workspace = Array.isArray(createJson.data) ? createJson.data[0] : createJson.data;
+      } else {
+        var updateData = {};
+        updateData[field] = value;
+        var updateResp = await fetch('/api/action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update_record', table: 'workspace_credentials', filters: { id: state.workspace.id }, data: updateData })
+        });
+        var updateJson = await updateResp.json();
+        if (!updateResp.ok || !updateJson.success) throw new Error(updateJson.error || 'Save failed');
+        // Mirror the locally-cached row (action.js decrypts returned data on
+        // reads, so the plaintext value we sent matches what subsequent reads
+        // will surface).
+        state.workspace[field] = value;
+      }
       toast('Saved', 'success');
     } catch(e) { toast('Failed to save: ' + e.message, 'error'); }
   };
@@ -5904,14 +5941,31 @@
       platformEl.textContent = plat ? (plat.charAt(0).toUpperCase() + plat.slice(1) + (c.website_builder ? ' + ' + c.website_builder.charAt(0).toUpperCase() + c.website_builder.slice(1) : '')) : 'No platform set';
       if (iconEl) iconEl.innerHTML = platformIcons[plat] || '&#127760;';
     }
-    var loginInput = document.getElementById('cmsLoginUrl');
-    if (loginInput) loginInput.value = c.cms_login_url || '';
-    var userInput = document.getElementById('cmsUsername');
-    if (userInput) userInput.value = c.cms_username || '';
-    var passInput = document.getElementById('cmsPassword');
-    if (passInput) passInput.value = c.cms_password || '';
-    var appPwInput = document.getElementById('cmsAppPassword');
-    if (appPwInput) appPwInput.value = c.cms_app_password || '';
+    // CMS credentials source of truth is workspace_credentials (encrypted).
+    // Lazy-load on first render if the row hasn't been fetched yet; populate
+    // the inputs when it arrives. If there's no row, inputs render blank.
+    function applyCmsInputs(ws) {
+      var loginInput = document.getElementById('cmsLoginUrl');
+      if (loginInput) loginInput.value = (ws && ws.cms_login_url) || '';
+      var userInput = document.getElementById('cmsUsername');
+      if (userInput) userInput.value = (ws && ws.cms_username) || '';
+      var passInput = document.getElementById('cmsPassword');
+      if (passInput) passInput.value = (ws && ws.cms_password) || '';
+      var appPwInput = document.getElementById('cmsAppPassword');
+      if (appPwInput) appPwInput.value = (ws && ws.cms_app_password) || '';
+    }
+    if (state.workspace !== undefined) {
+      applyCmsInputs(state.workspace);
+    } else {
+      applyCmsInputs(null);
+      fetch('/api/action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'read_records', table: 'workspace_credentials', filters: { contact_id: c.id }, limit: 1 })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        state.workspace = (d && d.data && d.data[0]) || null;
+        applyCmsInputs(state.workspace);
+      }).catch(function() {});
+    }
     // App Password only for WordPress
     var pwGroup = document.getElementById('cmsAppPasswordGroup');
     if (pwGroup) pwGroup.style.display = (plat === 'wordpress') ? 'flex' : 'none';

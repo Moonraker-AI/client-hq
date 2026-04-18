@@ -296,12 +296,17 @@
           context = config.buildContext(messages);
         }
 
+        // page_token (HMAC scoped token emitted by the deploy step) rides along
+        // on every chat call so the server can verify the bearer came from a
+        // page we deployed. Endpoints that don't require a token ignore it;
+        // endpoints that do (e.g. /api/campaign-summary-chat) reject without.
         var resp = await fetch(config.apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: messages,
-            context: context
+            context: context,
+            page_token: (typeof window !== 'undefined' && window.__PAGE_TOKEN__) || null
           })
         });
 

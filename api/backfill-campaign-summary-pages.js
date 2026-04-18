@@ -32,6 +32,7 @@ var sb = require('./_lib/supabase');
 var monitor = require('./_lib/monitor');
 var gh = require('./_lib/github');
 var auth = require('./_lib/auth');
+var pageToken = require('./_lib/page-token');
 
 function sleep(ms) {
   return new Promise(function(r) { setTimeout(r, ms); });
@@ -57,10 +58,11 @@ module.exports = async function handler(req, res) {
     // 1. Pull template once
     var template = await gh.readTemplate('campaign-summary.html');
 
-    // 2. List active/onboarding/prospect clients with a slug
+    // 2. List active/onboarding/prospect clients with a slug + id.
+    //    id is needed to sign a scope='campaign_summary' page token per client.
     var contacts = await sb.query(
       'contacts?status=in.(active,onboarding,prospect)'
-      + '&select=slug'
+      + '&select=id,slug'
       + '&slug=not.is.null'
       + '&order=slug.asc'
     );
@@ -93,9 +95,30 @@ module.exports = async function handler(req, res) {
           continue;
         }
 
+        // Sign a scope='campaign_summary' page token bound to this contact.
+        // Baked into the HTML as window.__PAGE_TOKEN__ and sent with every
+        // call to /api/campaign-summary and /api/campaign-summary-chat,
+        // both of which verify + bind to the contact_id from the token.
+        // 365-day TTL (see page-token DEFAULT_TTL).
+        var signedToken;
+        try {
+          signedToken = pageToken.sign({ scope: 'campaign_summary', contact_id: c.id });
+        } catch (e) {
+          // Config error (PAGE_TOKEN_SECRET missing) or validation — skip this
+          // client, log, and continue. Don't deploy a broken page.
+          failed++;
+          monitor.logError('backfill-campaign-summary-pages', e, {
+            client_slug: c.slug,
+            detail: { stage: 'sign_token' }
+          });
+          results.push({ slug: c.slug, status: 'failed', error: 'Token sign failed' });
+          continue;
+        }
+        var html = template.split('{{PAGE_TOKEN}}').join(signedToken);
+
         await gh.pushFile(
           destPath,
-          template,
+          html,
           (existingSha ? 'Update' : 'Backfill') + ' campaign-summary for ' + c.slug,
           existingSha
         );

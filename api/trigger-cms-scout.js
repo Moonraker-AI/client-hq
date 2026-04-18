@@ -12,6 +12,7 @@
 var sb = require('./_lib/supabase');
 var monitor = require('./_lib/monitor');
 var auth = require('./_lib/auth');
+var crypt = require('./_lib/crypto');
 
 module.exports = async function(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -31,9 +32,22 @@ module.exports = async function(req, res) {
 
   try {
     // Fetch contact
-    var contact = await sb.one('contacts?id=eq.' + body.contact_id + '&select=id,slug,website_url,website_platform,cms_login_url,cms_username,cms_password,cms_app_password,practice_name');
+    var contact = await sb.one('contacts?id=eq.' + body.contact_id + '&select=id,slug,website_url,website_platform,practice_name');
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
     if (!contact.website_url) return res.status(400).json({ error: 'Website URL is required' });
+
+    // Fetch encrypted CMS credentials from workspace_credentials.
+    // Per security audit C8: CMS creds were migrated from contacts (plaintext)
+    // to workspace_credentials (encrypted via _lib/crypto SENSITIVE_FIELDS).
+    // Row may not exist if admin hasn't entered creds — scout falls back to public-only.
+    var wsRow = await sb.one('workspace_credentials?contact_id=eq.' + contact.id
+      + '&select=cms_login_url,cms_username,cms_password,cms_app_password&limit=1');
+    var creds = {
+      cms_login_url:    (wsRow && wsRow.cms_login_url) || '',
+      cms_username:     wsRow && wsRow.cms_username     ? crypt.decrypt(wsRow.cms_username)     : '',
+      cms_password:     wsRow && wsRow.cms_password     ? crypt.decrypt(wsRow.cms_password)     : '',
+      cms_app_password: wsRow && wsRow.cms_app_password ? crypt.decrypt(wsRow.cms_app_password) : ''
+    };
 
     var platform = (contact.website_platform || '').toLowerCase();
     var agentEndpoint = '';
@@ -42,11 +56,11 @@ module.exports = async function(req, res) {
     // ── Build platform-specific payload ──────────────────────────
     if (platform === 'wordpress') {
       agentEndpoint = '/tasks/wp-scout';
-      var adminUrl = contact.cms_login_url || (contact.website_url.replace(/\/$/, '') + '/wp-admin');
+      var adminUrl = creds.cms_login_url || (contact.website_url.replace(/\/$/, '') + '/wp-admin');
       payload = {
         wp_admin_url: adminUrl,
-        wp_username: contact.cms_username || '',
-        wp_password: contact.cms_app_password || contact.cms_password || '',
+        wp_username: creds.cms_username || '',
+        wp_password: creds.cms_app_password || creds.cms_password || '',
         client_slug: contact.slug,
         callback_url: CLIENT_HQ_URL + '/api/ingest-cms-scout'
       };
@@ -65,9 +79,9 @@ module.exports = async function(req, res) {
         callback_url: CLIENT_HQ_URL + '/api/ingest-cms-scout'
       };
       // Add SQ credentials if available
-      if (contact.cms_username && contact.cms_password) {
-        payload.sq_email = contact.cms_username;
-        payload.sq_password = contact.cms_password;
+      if (creds.cms_username && creds.cms_password) {
+        payload.sq_email = creds.cms_username;
+        payload.sq_password = creds.cms_password;
       }
 
     } else if (platform === 'wix') {

@@ -29,6 +29,7 @@ var monitor = require('./_lib/monitor');
 var google = require('./_lib/google-delegated');
 var contract = require('./_lib/contract');
 var gbp = require('./_lib/gbp');
+var pageToken = require('./_lib/page-token');
 
 // ── Helpers ────────────────────────────────────────────────────────
 
@@ -731,12 +732,30 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  // Allow public read of the campaign summary (per-slug page is public-link;
-  // matches how /[slug]/reports works). If we later want to gate it, add auth here.
   var slug = (req.query && req.query.client) || (req.body && req.body.client);
   if (!slug) {
     res.status(400).json({ error: 'client slug required' });
     return;
+  }
+
+  // Page-token gate (security audit C11).
+  // The campaign-summary page is public-link but previously returned the
+  // client's revenue + cost + performance to anyone who knew the slug. A
+  // page-token bound to scope='campaign_summary' and the contact_id makes
+  // the link itself the secret, matching the /reports / /proposal pattern.
+  var submittedToken = (req.query && req.query.pt)
+    || (req.body && (req.body.pt || req.body.page_token))
+    || '';
+  var tokenData;
+  try {
+    tokenData = pageToken.verify(submittedToken, 'campaign_summary');
+  } catch (e) {
+    // Thrown only when PAGE_TOKEN_SECRET is not configured — config error, 500.
+    console.error('[campaign-summary] page-token verify threw:', e.message);
+    return res.status(500).json({ error: 'Page token service unavailable' });
+  }
+  if (!tokenData) {
+    return res.status(401).json({ error: 'Invalid or expired page token' });
   }
 
   var t0 = Date.now();
@@ -750,6 +769,12 @@ module.exports = async function handler(req, res) {
       return;
     }
     var client = clients[0];
+
+    // Bind token to the resolved contact_id. Prevents a token signed for one
+    // client from being replayed against another client's summary.
+    if (tokenData.contact_id !== client.id) {
+      return res.status(403).json({ error: 'Token does not match client' });
+    }
 
     // 2. Load report_config
     var configs = await sb.query('report_configs?client_slug=eq.' + encodeURIComponent(slug)

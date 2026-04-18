@@ -199,7 +199,16 @@ function isConfigured() {
 }
 
 // The fields that should be encrypted for workspace_credentials.
-var SENSITIVE_FIELDS = ['gmail_password', 'app_password', 'authenticator_secret_key', 'qr_code_image'];
+// cms_login_url is NOT included — it's a plaintext URL (e.g. /wp-admin), not a secret.
+var SENSITIVE_FIELDS = [
+  'gmail_password',
+  'app_password',
+  'authenticator_secret_key',
+  'qr_code_image',
+  'cms_username',
+  'cms_password',
+  'cms_app_password'
+];
 
 module.exports = {
   encrypt: encrypt,

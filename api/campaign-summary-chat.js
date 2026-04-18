@@ -5,15 +5,19 @@
 // queries, deliverables by category, and next-period plan.
 // Raw byte pipe streaming (proven pattern from report-chat / agreement-chat).
 //
-// POST { messages: [...], context: { slug, data } }
+// POST { messages: [...], context: { slug, data }, page_token }
 //
-// Auth posture matches /api/campaign-summary (GET): origin validation +
-// per-IP rate limit. No page-token because the underlying data endpoint is
-// public-read (link-gated).
+// Auth posture (security audit C11):
+//   1. Origin validation — blocks cross-origin abuse (Anthropic API budget).
+//   2. Page-token verify under scope='campaign_summary' — binds the caller
+//      to a legitimate campaign-summary page we deployed and rate-limits
+//      token replay separately from IP buckets.
+//   3. Per-IP rate limit (20/min) — defense in depth against bucket abuse.
 //
-// ENV VARS: ANTHROPIC_API_KEY
+// ENV VARS: ANTHROPIC_API_KEY, PAGE_TOKEN_SECRET
 
 var rateLimit = require('./_lib/rate-limit');
+var pageToken = require('./_lib/page-token');
 
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -30,6 +34,23 @@ module.exports = async function handler(req, res) {
   var origin = req.headers.origin || '';
   if (origin && origin !== 'https://clients.moonraker.ai') {
     return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  // Page-token verify: the chat re-uses the scope='campaign_summary' token
+  // emitted into the page at deploy time. A missing or expired token means
+  // the request isn't coming from a legitimate campaign-summary page we
+  // deployed. Protects Anthropic API budget independently of the origin
+  // header, which is trivially spoofable by server-side callers.
+  var submittedToken = (req.body && (req.body.page_token || req.body.pt)) || '';
+  var tokenData;
+  try {
+    tokenData = pageToken.verify(submittedToken, 'campaign_summary');
+  } catch (e) {
+    console.error('[campaign-summary-chat] page-token verify threw:', e.message);
+    return res.status(500).json({ error: 'Page token service unavailable' });
+  }
+  if (!tokenData) {
+    return res.status(401).json({ error: 'Invalid or expired page token' });
   }
 
   // Rate limit: 20 req/min per IP (protects Anthropic API credits)
