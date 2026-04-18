@@ -1,11 +1,12 @@
-// api/_admin/run-migration.js
+// api/run-migration.js
 // Run a SQL migration file from migrations/ in the repo against the
 // connected Postgres database.
 //
-// Reusable for any future migration. Auth-gated by CRON_SECRET.
+// Reusable for any future migration. CRON_SECRET-gated (strict — admin
+// JWTs cannot invoke this).
 //
 // Usage:
-//   POST /api/_admin/run-migration
+//   POST /api/run-migration
 //   Authorization: Bearer <CRON_SECRET>
 //   Body: { "migration": "2026-04-17-attribution-tables.sql", "dry_run": false }
 //
@@ -17,30 +18,37 @@
 //     verification: [{table, count} ...]   // sample queries to confirm
 //   }
 //
-// Security:
-//   - Fails closed if CRON_SECRET env var is missing
-//   - Fails closed if migration filename has any path-traversal characters
-//   - Migration file must exist at /migrations/<name>.sql in the repo
-//   - Runs the file in a single transaction (BEGIN/COMMIT) so partial
-//     failures don't leave the schema in an inconsistent state
+// ──────────────────────────────────────────────────────────────────
+// SECURITY MODEL
+// ──────────────────────────────────────────────────────────────────
+// This endpoint executes arbitrary SQL fetched from migrations/ in the
+// repo as service_role (non-pooled connection). The trust model is:
+//
+//   - Only CRON_SECRET holders can invoke. Admin JWTs CANNOT invoke
+//     (see requireCronSecret in _lib/auth.js — this is deliberately
+//     distinct from requireAdminOrInternal). A compromised admin
+//     browser session must not be able to run arbitrary SQL.
+//   - Only SQL committed to main/migrations/ can be executed.
+//     Filename is regex-validated at /^[a-zA-Z0-9_.-]+\.sql$/ —
+//     no path traversal, no SQL in the request body.
+//   - Anyone who can push to main AND knows CRON_SECRET can deploy
+//     arbitrary SQL to production. That tier (repo write + Vercel
+//     env access) is already service_role-equivalent in our threat
+//     model.
+//
+// Do NOT loosen auth to accept admin JWTs. Do NOT accept SQL in the
+// request body. Do NOT remove the filename regex.
+// ──────────────────────────────────────────────────────────────────
 
-var nodeCrypto = require('crypto');
 var pg = require('pg');
+var auth = require('./_lib/auth');
 var monitor = require('./_lib/monitor');
-
-function constantTimeEqual(a, b) {
-  if (!a || !b) return false;
-  var bufA = Buffer.from(String(a));
-  var bufB = Buffer.from(String(b));
-  if (bufA.length !== bufB.length) return false;
-  return nodeCrypto.timingSafeEqual(bufA, bufB);
-}
 
 // Intentionally uses raw `fetch` against the GitHub REST API instead of
 // routing through `api/_lib/github.js` (M40, 2026-04-19). Three reasons:
 //   1. CRON_SECRET-gated handler with no user-input reachability
 //   2. Read-only — no writes, no upsert SHA dance, no write-path surface
-//   3. Filename already regex-validated at the caller (L80 below) as
+//   3. Filename already regex-validated at the caller as
 //      /^[a-zA-Z0-9_.-]+\.sql$/ — stricter than `validatePath`'s
 //      allowlist would be, and `migrations/` is not a wrapper-managed
 //      prefix (no other code writes there). Expanding the wrapper's
@@ -70,18 +78,9 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  // Auth
-  var expected = process.env.CRON_SECRET;
-  if (!expected) {
-    res.status(500).json({ error: 'CRON_SECRET not configured' });
-    return;
-  }
-  var authHeader = req.headers['authorization'] || '';
-  var match = authHeader.match(/^Bearer\s+(.+)$/);
-  if (!match || !constantTimeEqual(match[1], expected)) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
+  // Strict CRON_SECRET auth — admin JWTs explicitly cannot invoke this
+  var user = await auth.requireCronSecret(req, res);
+  if (!user) return;
 
   var body = req.body || {};
   var migration = String(body.migration || '');
@@ -119,37 +118,49 @@ module.exports = async function handler(req, res) {
     });
     await client.connect();
 
-    var result;
-    try {
-      // Run as a single transaction. The migration file may contain
-      // its own BEGIN/COMMIT inside DO blocks, but pg can handle nested
-      // savepoints if needed. We use a top-level transaction so that any
-      // failure rolls back the whole file.
-      await client.query('BEGIN');
-      result = await client.query(sql);
-      await client.query('COMMIT');
-    } catch (e) {
-      await client.query('ROLLBACK').catch(function() {});
-      await client.end();
-      throw e;
-    }
-
-    // Verification queries: row counts on tables the migration may have
-    // created or seeded. Lookup gracefully — these may not exist.
     var verification = [];
-    for (var table of ['client_attribution_periods', 'client_attribution_sources']) {
+    try {
+      // ── Run the migration in a transaction ───────────────────
+      // The migration file may contain its own BEGIN/COMMIT inside DO
+      // blocks; pg handles nested savepoints. The top-level transaction
+      // ensures any failure rolls back the whole file.
       try {
-        var r = await client.query('SELECT COUNT(*)::int AS c FROM ' + table);
-        verification.push({ table: table, count: r.rows[0].c });
+        await client.query('BEGIN');
+        await client.query(sql);
+        await client.query('COMMIT');
       } catch (e) {
-        monitor.logError('run-migration', e, {
-          detail: { stage: 'verify_table', table: table, migration: migration }
-        });
-        verification.push({ table: table, error: 'Verification failed' });
+        await client.query('ROLLBACK').catch(function() {});
+        throw e;
       }
+
+      // ── Verification (read-only, outside migration txn) ──────
+      for (var table of ['client_attribution_periods', 'client_attribution_sources']) {
+        try {
+          var r = await client.query('SELECT COUNT(*)::int AS c FROM ' + table);
+          verification.push({ table: table, count: r.rows[0].c });
+        } catch (e) {
+          monitor.logError('run-migration', e, {
+            detail: { stage: 'verify_table', table: table, migration: migration }
+          });
+          verification.push({ table: table, error: 'Verification failed' });
+        }
+      }
+    } finally {
+      // Always release the connection, even if BEGIN itself threw
+      await client.end().catch(function() {});
     }
 
-    await client.end();
+    // Audit trail: record the successful migration run for ops visibility.
+    // Uses severity 'warning' (closest match in the existing error_log
+    // CHECK constraint — 'info' is not yet an accepted value). Non-blocking.
+    monitor.warn('run-migration', 'Migration applied: ' + migration, {
+      detail: {
+        stage: 'migration_applied',
+        migration: migration,
+        duration_ms: Date.now() - t0,
+        verification: verification
+      }
+    });
 
     res.status(200).json({
       migration: migration,
