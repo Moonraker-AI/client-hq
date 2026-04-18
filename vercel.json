@@ -116,6 +116,9 @@
     "api/seed-batch-audits.js": {
       "maxDuration": 120
     },
+    "api/cron/check-surge-blocks.js": {
+      "maxDuration": 120
+    },
     "api/cron/process-queue.js": {
       "maxDuration": 300,
       "memory": 1024
@@ -149,6 +152,10 @@
     {
       "path": "/api/cron/process-audit-queue",
       "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/check-surge-blocks",
+      "schedule": "0 * * * *"
     },
     {
       "path": "/api/cron/process-scheduled-sends",
