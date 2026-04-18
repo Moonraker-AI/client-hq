@@ -153,7 +153,7 @@ module.exports = async function handler(req, res) {
             'gbp_daily?on_conflict=client_slug,date',
             'POST',
             chunk,
-            'resolution=merge-duplicates,return=minimal'
+            'resolution=merge-duplicates,return=representation'
           );
           upserted += chunk.length;
         }
