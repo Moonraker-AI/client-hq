@@ -978,7 +978,19 @@ section { padding: 4.5rem 0; }
             pointHoverRadius: 5,
             pointStyle: 'rect',
             tension: 0.25,
-            yAxisID: 'y1'
+            yAxisID: 'y1',
+            // y1 is reversed (lower position = better rank), so Chart.js's
+            // default animation origin (scale zero, which sits at the TOP of
+            // a reversed axis) would drop the line down into place. Override
+            // to start each point at the visual bottom of the chart area so
+            // the line rises up, matching the bookings-chart direction.
+            animations: {
+              y: {
+                from: function(ctx) {
+                  return ctx.chart.chartArea ? ctx.chart.chartArea.bottom : undefined;
+                }
+              }
+            }
           }
         ]
       },
