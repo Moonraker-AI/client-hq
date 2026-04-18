@@ -377,6 +377,8 @@ Also noted: a stray `var auth = require('./_lib/auth');` at line 182 inside the 
 3. Change detection logic in stripe-webhook.js to prefer `session.metadata.product` with a fallback to the current amount check for backward compat with any events already in flight.
 4. After observing metadata-based detection work for ~30 days, remove the amount fallback.
 
+**Current state (2026-04-19, Group J reconciliation):** Unchanged on `main` at L136 (`isEntityAudit = amountTotal === 200000 || amountTotal === 207000`). Group H territory — blocked on Stripe Dashboard-side metadata addition. When that lands, code change is ~10 lines (prefer `session.metadata.product`, keep amount fallback for 30 days, then drop). No work possible this session.
+
 ### M2. `api/_lib/auth.js:199-204, 253-259` — `last_login_at` updated every request ✅ RESOLVED
 Every authenticated API call PATCHes `admin_profiles`. 29+ admin routes × 3-5 calls/page = PATCH/second during normal use. Update only on actual login, or throttle to >60s since last update.
 
@@ -385,10 +387,18 @@ Every authenticated API call PATCHes `admin_profiles`. 29+ admin routes × 3-5 c
 ### M3. `api/action.js:24` — 40+ tables allowlisted with no action granularity
 `signed_agreements`, `payments`, `workspace_credentials`, `settings`, `error_log` all mutable. Shape allowlist as `{ table, actions: ['read','create'] }`. `signed_agreements` and `payments` read-only via this endpoint. `workspace_credentials` requires elevated role.
 
-### M4. `api/_lib/github.js:30` — path validation too permissive
+**Current state (2026-04-19, Group J reconciliation):** Architecture half is in place post-Phase 4 S5: `api/_lib/action-schema.js` defines a per-table `{ read, write, delete, require_role }` manifest that `api/action.js:49` consults via `schema.check(table, action, user.role)`. Unknown actions are already 403'd. What is **not** in place is the three specific sensitive-table tightenings the finding asked for — `signed_agreements`/`payments`/`workspace_credentials` are all still listed permissively in the manifest, and the in-file comment explicitly calls this out: "These are listed permissively TODAY so this rollout is a no-op behavior change. Session 6 will flip them to locked-down." The flip itself is 3 lines but has product/workflow implications: `workspace_credentials` switching to `require_role: 'owner'` blocks Scott (admin, not owner) from writing that table via the admin UI, and no one has audited whether his onboarding workflow currently relies on those writes. Staying (c) — product decision belongs with the Session 6 tightening batch, not a reconciliation sweep.
+
+### M4. `api/_lib/github.js:30` — path validation too permissive 🔶 PARTIAL
 Doesn't reject backslashes, null bytes, URL-encoded traversal, no allowed-prefix list. Any caller passing user-derived paths to `pushFile` is write-to-api vulnerability → Vercel auto-deploy RCE.
 
-### M5. `api/newsletter-webhook.js` — optional signature verification (see H11).
+**Partial resolution (2026-04-19, commit `b36c231c`, Group J):** `validatePath` now rejects backslash (Windows-style separator the GitHub API treats as literal, so `a\..\b` could previously smuggle past the `..` check on POSIX), null byte, and any `%` character (blocks all URL-encoded traversal — `%2e%2e`, `%2f`, `%5c` — in one rule, since legitimate repo paths are ASCII letters/digits/dashes/underscores/dots/slashes and never need percent-encoding). Three-for-one rule set; each rejection throws `Invalid path: <reason>` with no message leak. Verified against 9 boundary cases before push (`normal/path/file.html`, `_templates/proposal.html` accepted; `../evil`, `/abs`, `a\b`, `a\0b`, `a%2e%2eb`, empty, `test%20file` rejected).
+
+**Current state on the allow-prefix half (still open):** The finding also asks for "no allowed-prefix list" — restrict `pushFile`/`readFile`/`deleteFile` to an explicit allowlist like `_templates/`, `<client-slug>/proposal/`, `<client-slug>/report/`, etc. Enumerating the full set of legitimate prefixes requires grepping every caller across the repo (at least 10+ files) and confirming no dynamic prefix construction. That caller enumeration is more than a reconciliation sweep can produce confidently. Follow-up session should: (1) grep every `gh.pushFile(` / `gh.readFile(` / `gh.deleteFile(` / `gh.fileSha(` call, (2) produce the prefix allowlist, (3) land the `startsWith` check. The defensive-reject half shipped today closes the specific attack vectors named in the finding (backslash, null, URL-encoding); the allowlist is additional layered defense, not the primary fix.
+
+### M5. `api/newsletter-webhook.js` — optional signature verification (see H11). ✅ RESOLVED
+
+**Resolution (2026-04-19, Group J reconciliation, doc-only, via `b9b8f47` in C6+H11):** Verified on current main — `api/newsletter-webhook.js:56-125` now makes signature verification mandatory: missing `RESEND_WEBHOOK_SECRET` returns 500 at L57-61; raw body is read via `readRawBody` into a `Buffer` (not `JSON.stringify(req.body)`) at L63-69; timestamp validated as finite number and within a 5-minute window at L82-91; secret decoded from `whsec_<base64>` at L96; HMAC computed over `svix_id . svix_timestamp . raw_body_utf8` at L93+L101; signatures compared via `crypto.timingSafeEqual` with length guard at L108-109. Nothing "optional" about it anymore. Doc-only reconciliation.
 
 ### M6. `api/_lib/monitor.js:85` — critical alert HTML uses string concat with `route`, `slug` unescaped ✅ RESOLVED
 Low risk (recipients trusted) but inconsistent. Escape everything.
@@ -397,6 +407,8 @@ Low risk (recipients trusted) but inconsistent. Escape everything.
 
 ### M7. `api/_lib/supabase.js:45, 66` — error detail may include raw PostgREST response body in thrown messages
 Callers doing `return res.status(500).json({ error: err.message })` leak schema info, column names, constraints. Grep each catch.
+
+**Current state (2026-04-19, Group J reconciliation):** `supabase.js:55` and `:76` still construct the thrown error message as `'Supabase query error: ' + (data.message || JSON.stringify(data))` — data is the raw PostgREST error body which can contain column names, constraint names, hint text. Group A closed the specific High-tier response leaks (H28, H33, H34, H35, M13, M26-err-leak-half) that were visible to unauthenticated or semi-trusted clients, but a repo-wide grep for `error: err.message` / `error: e.message` / `detail: err.message` still surfaces 40+ sites across `api/*.js` and `api/admin/*.js` where an `err.message` from this module can still end up in a response body. Most remaining sites are admin-JWT-gated (narrower exposure), but a systematic "pattern 7" sweep — either (a) update `supabase.js` to strip PostgREST detail from `err.message` while keeping `err.detail` attached for server-side logging, or (b) walk every catch that echoes `err.message` to a 5xx response body — is its own dedicated session, not a reconciliation-sweep deliverable. Leaving (c) for a future pattern-7 batch.
 
 ### M8. `api/stripe-webhook.js:172-175` — `err.message` in response body ✅ RESOLVED
 Remove `detail: err.message`.
@@ -441,8 +453,10 @@ Template reads, destination checks, pushes, Claude API call on line 197. Hung fe
 
 **Resolution (2026-04-17, commits `0d2c56d` + `2512c46`, Group B.2):** Biggest single file in B.2 — 19 `fetch` sites, split into two commits for safer rollback. **5a (`0d2c56d`):** 6 Supabase direct-REST sites migrated to `sb.*` helpers — `auditResp`/`contactResp` (L70/L80) → `sb.one`; `prevAuditResp` (L271) → `sb.query`; `updateResp` PATCH with `return=minimal` (L331) → `sb.mutate` inside a try/catch that maps the thrown error onto the original `send({step:'error'}) + res.end()` path; checklist DELETE (L357) wrapped in `try { … } catch (_e) {}` to preserve raw `fetch`'s prior silent-on-HTTP-error semantics (`sb.mutate` throws on 4xx/5xx where raw `fetch` did not); checklist POST bulk insert (L409) with success `send()` in the try body and warning `send()` in the catch — mirrors the original `if (!ok) / else` pair. The non-transactional DELETE+INSERT pattern at L357+L409 is intentionally preserved (M18 + M19 tracked under Group E). **5b (`2512c46`):** 13 external calls wrapped at tiered timeouts — Claude (L197) 60s; 3 GitHub template reads and 3 file-exists checks 15s each; 3 GitHub PUTs 30s each (large HTML payloads); internal POST to `/api/send-audit-email` (L571) 30s; 2 Resend notifications (premium-review L592 + quarterly L636) 15s each. Grep verification: `grep -cE '\\bfetch\\(' process-entity-audit.js` → 0.
 
-### M17. `api/process-entity-audit.js` — 15+ inlined Supabase fetches bypass `_lib/supabase.js`
+### M17. `api/process-entity-audit.js` — 15+ inlined Supabase fetches bypass `_lib/supabase.js` ✅ RESOLVED
 Biggest holdout of consistency pattern.
+
+**Resolution (2026-04-19, Group J reconciliation, doc-only, via `0d2c56d` + `2512c46` in Group B.2 M16):** Verified on current main — spec grep `grep -rn "fetch(sb.url()\|fetch.*rest/v1" api/process-entity-audit.js` returns zero. A broader `grep -cE "\bfetch\(" api/process-entity-audit.js` also returns zero — no bare fetch anywhere. All 7 Supabase touch points now go through `sb.query`/`sb.one`/`sb.mutate`. Group B.2 M16 closed this incidentally while landing the AbortController work on the same file. Doc-only reconciliation.
 
 ### M18. `api/process-entity-audit.js:388` — composite checklist_items ID uses first 8 hex chars ✅ RESOLVED
 Birthday collision around 65K audits. Use full UUID or index-based synthetic id.
@@ -454,6 +468,8 @@ Birthday collision around 65K audits. Use full UUID or index-based synthetic id.
 ### M19. `api/process-entity-audit.js:568-582` — webhook race with auto-send email
 Stripe webhook upgrading `audit_tier` to premium can race with agent callback auto-sending free scorecard. Free email goes out → webhook flips to premium → premium Loom flow never triggers.
 
+**Current state (2026-04-19, Group J reconciliation):** Unchanged. Current main has the exact race embodied in the branching at `api/process-entity-audit.js:564` (`contact.status === 'lead' && !contact.lost && audit.audit_tier === 'free'` → auto-send path) and L594 (same predicate but `=== 'premium'` → notify-team path). Neither branch coordinates with the other's possible in-flight state. Product-decision item: what's the desired behavior when Stripe payment-session.completed arrives after the free-tier email already went out — hold and refund, upgrade and continue, refund and offer manual upgrade? Code shape depends on which the answer is. Flagged as product-gated in `post-phase-4-status.md`'s "What's not in the groupings" section.
+
 ### M20. `api/newsletter-unsubscribe.js:17-22` — PATCH-zero-rows oracle ✅ RESOLVED
 UUID-format-but-nonexistent SID triggers PATCH warning in logs.
 
@@ -461,6 +477,8 @@ UUID-format-but-nonexistent SID triggers PATCH warning in logs.
 
 ### M21. `_lib/google-drive.js:109, 157` — Drive query injection if `folderId` attacker-controlled
 Unescaped in `q = "'" + folderId + "' in parents"`. Current caller uses admin-written `contact.drive_folder_id`, so requires admin JWT compromise.
+
+**Current state (2026-04-19, Group J reconciliation):** Unchanged — both concat sites at L109 (`listFiles`) and L157 (`findFile`) still read `q = "'" + folderId + "' in parents"` with no escaping. The file is on the explicit scope fence — Group J's session prompt reaffirms "Do NOT touch `_lib/google-drive.js`; tracked separately as N6 / Session Group style." Attacker would need to compromise an admin JWT and write a malformed `drive_folder_id` to a `contacts` row first, which is a narrow path. Fix belongs with a dedicated `google-drive.js` hardening session: escape single quotes in folderId before the concat, or switch to explicit query builder shape. Note only; no edit.
 
 ### M22. `_lib/newsletter-template.js:141` — `subscriberId` in unsub URL not encoded ✅ RESOLVED
 Trivial in practice (UUID) but brittle for future test strings.
@@ -470,11 +488,17 @@ Trivial in practice (UUID) but brittle for future test strings.
 ### M23. `api/generate-proposal.js:598` — hardcoded Drive `CLIENTS_FOLDER_ID`
 Infrastructure identifier in source.
 
+**Current state (2026-04-19, Group J reconciliation):** Now at L700 on current main (line number shifted post-Group-E-and-D work; `var CLIENTS_FOLDER_ID = '1dymrrowTe1szsOJJPf45x4qDUit6J5jB';` consumed at L718). The literal is the Google Drive ID of the shared clients folder — not a secret (anyone with access to our Workspace can see it), but infrastructure identity that shouldn't live in source. Clean fix is env var (`DRIVE_CLIENTS_FOLDER_ID`) + module-load warning on absence + fail-closed on the call path. Multi-step if done right: env var added to Vercel, code change lands, we verify the new Drive-folder-create path works for one test client, then backfill existing rows if any code reads this anywhere else (repo grep shows only generate-proposal uses it). Not a sweep-session shape. Leaving (c).
+
 ### M24. `api/compile-report.js:206-209` — GSC auto-correct writes without admin approval
 Silently PATCHes `report_configs.gsc_property` when configured value fails. No banner in UI. Transient Google 403 could re-point client's config to wrong property variant permanently.
 
+**Current state (2026-04-19, Group J reconciliation):** Unchanged — `compile-report.js:188-200` still self-heals: on 403/404 from GSC, calls `resolveGscProperty(token, config.gsc_property)` and, if the returned value differs, PATCHes `report_configs?client_slug=eq.<slug>` with the corrected property, updates the in-memory config, and retries the query. A `warnings.push('GSC: auto-corrected property from X to Y')` fires but no admin banner, no approval gate. Product-gated: the auto-heal behavior may be intentional (property variants like `sc-domain:foo.com` vs `https://www.foo.com/` drift when GSC settings change client-side), but the failure mode is real — a transient 403 from GSC during a permissions hiccup could persistently rewrite the property to an empty or wrong value. Fix options are (a) require explicit admin confirmation before the PATCH lands, (b) keep auto-heal but add a cooling-off check (don't overwrite unless the new property returns data), (c) log the change to `activity_log` so admins can audit reverts. All three are product calls, not security-audit calls. Note only.
+
 ### M25. `api/compile-report.js:1138` — markdown fence strip corrupts JSON with nested fences
 Same as process-entity-audit.js:226 bug. Extract to helper.
+
+**Current state (2026-04-19, Group J reconciliation):** Line number has shifted — pattern is now at `compile-report.js:1003`: `text = text.replace(/` + "`" + `json/g, '').replace(/` + "`" + `/g, '').trim();`. Same class of bug as L11 (process-entity-audit) — a nested code fence inside a string value in Claude's JSON output would get stripped in the middle of the string, corrupting the parse. L11's Current state note (Group I) parked this pending a shared find-first-brace / bracket-tracking parser helper that would close both sites in one commit. M25 stays (c) cross-referenced with L11 — whichever session lands the shared parser also closes M25.
 
 ### M26. `api/chat.js:175-177, 126` — prompt injection surface + error leak ✅ RESOLVED
 `page`, `tab`, `clientSlug` interpolated unsanitized. `err.message` leaked in 500.
@@ -483,39 +507,61 @@ Same as process-entity-audit.js:226 bug. Extract to helper.
 
 **Resolution — prompt-injection half (2026-04-17, commit `49f088a`, Group D):** Added `var sanitizer = require('./_lib/html-sanitizer');` alongside existing `auth`/`monitor` requires. In `buildSystemPrompt` (L138), wrapped all three user-controlled ctx fields at the source (L139-141): `page = sanitizer.sanitizeText(ctx.page || 'unknown', 200)`, `tab = ctx.tab ? sanitizer.sanitizeText(ctx.tab, 200) : null`, `clientSlug = ctx.clientSlug ? sanitizer.sanitizeText(ctx.clientSlug, 200) : null`. Source-level sanitization covers both the L177-179 ctx_str interpolations (`Page: ... | Tab: ... | Client: ...`) and the L183-184 `dataLabel` interpolation (`Live Data for ${clientSlug}`) in one edit. The mode-dispatch `page.includes('/admin/...')` branches at L162-174 still work correctly — `sanitizeText` preserves slashes, alphanumerics, and path structure; it only strips HTML tags, entities, control chars, and excess whitespace, none of which appear in legitimate page paths. `chat.js` is admin-only (`requireAdmin` at L18); this fix is defense-in-depth against admin-JWT-compromise scenarios rather than a public surface.
 
-### M27. `api/bootstrap-access.js:55, 66, 436, 459` — `clientSlug` unencoded in PostgREST URLs
+### M27. `api/bootstrap-access.js:55, 66, 436, 459` — `clientSlug` unencoded in PostgREST URLs ✅ RESOLVED
 Line 38 only checks truthiness. Validate as `^[a-z0-9-]{1,60}$`.
 
-### M28. `api/bootstrap-access.js:459` — compound deliverables PATCH filter built by concat
+**Resolution (2026-04-19, commit `d626fcc8`, Group J):** Added `/^[a-z0-9-]{1,60}$/` regex validation immediately after the truthiness check at L41. 400 returned with `'Invalid client_slug format'` on mismatch. Single-point validation means every downstream concat site (`sb.one('contacts?slug=eq.' + clientSlug)` at L58, `sb.one('report_configs?client_slug=eq.' + clientSlug)` at L68, `sb.mutate('report_configs', 'POST', { client_slug: clientSlug })` at L70, and the response-body echoes at L219/L303/L402/L467/L550) are safe by construction — a value outside the allowlist format simply cannot reach them. Slug format chosen to match existing production slugs (lowercase kebab-case, the shape produced by the onboarding-form's `slugify()`). No existing clients would be rejected by this check.
+
+**Sister finding closed in same commit:** M28 below — the compound deliverables PATCH filter. See M28's Resolution.
+
+### M28. `api/bootstrap-access.js:459` — compound deliverables PATCH filter built by concat ✅ RESOLVED
 Currently safe (static values) but pattern invites future injection.
+
+**Resolution (2026-04-19, commit `d626fcc8`, Group J):** Bundled with M27 in the same commit since both touch `bootstrap-access.js` and both are defensive-input-handling for PostgREST concat. The compound filter at L504 (now L518 post-edit) wraps `contact.id` and `upd.type` in `encodeURIComponent`: `'deliverables?contact_id=eq.' + encodeURIComponent(contact.id) + '&deliverable_type=eq.' + encodeURIComponent(upd.type) + '&status=neq.delivered'`. Neither value is request-controlled today — `contact.id` is a UUID loaded from `sb.one('contacts?slug=...')`, `upd.type` is one of four hardcoded strings (`localfalcon_setup`/`gbp_service_account`/`ga4_setup`/`gtm_setup`). Encoding costs nothing on ASCII values. The purpose of the change is to make the pattern safe-by-default so a future edit that copies the site and swaps in a request-controlled value (e.g. `body.deliverable_type` from a client UI) doesn't introduce a filter-injection regression. Inline comment added explaining the rationale so the next reader understands why encoding is present on values that look trusted.
 
 ### M29. `api/chat.js:130-132` — 120s maxDuration may not cover heavy context
 Sonnet 4.6 + 8192 max_tokens + dumped DB = potentially slow. Monitor.
+
+**Current state (2026-04-19, Group J reconciliation):** `vercel.json` still shows `"api/chat.js": { "maxDuration": 120 }` on current main. Post-Group-D prompt-caching work on `chat.js` (Group G batch 2's H23 `052f2245` — 2-block system-prompt array with `cache_control: ephemeral` on the static prefix) should reduce the hot-path time-to-first-token meaningfully, which actually pulls toward leaving 120s alone rather than bumping it. No real-world timeout reports surfaced since the audit was written. Increasing maxDuration without telemetry is a guess; decreasing it has no business value. Hold until a concrete user report shows a timeout, at which point the fix is either "bump to 300s like the other Opus routes in vercel.json" or "investigate the context-dump bloat and keep 120." Note only.
 
 ### M30. `api/generate-proposal.js:79-81, 273-275, 543-547, 549-557, 563-569` — 5+ fire-and-forget PATCHes ✅ RESOLVED
 `.catch(function(){})` swallows errors silently. If final PATCH (549) fails, proposal sits in `generating` forever.
 
 **Resolution (2026-04-17, commit `4d0fa27`, Group E):** Four in-scope serverless-side sites converted from `await fetch(...).catch(function(){})` to `await sb.mutate(...)` in try/catch — L90 (`status='generating'`), L284 (error-branch `status='review'` + notes), L594 (`contacts.checkout_options`), L605 (final `proposals` finalize with `status='ready'`, urls, content). The post-H26 `results` pattern already in the file is matched: non-critical sites push to `results.{status_update_error, checkout_options_error, finalize_error}`; the three most material sites (L90, L284, L605) additionally route through `monitor.logError('generate-proposal', err, { client_slug: slug, detail: { stage, proposal_id } })` with stage tags `set_status_generating`, `record_generation_failure`, `finalize_proposal`. The L605 finalize is the audit-flagged "stuck in generating forever" site — it's now the one that surfaces both as an admin-visible `results.finalize_error` and in `error_log`. No 500 returns added to the success path; all failures tracked via the existing `res.status(200).json({ ..., results })` shape at L739. One fire-and-forget site at L515 left intentionally alone: it's inside the backtick `trackingScript` template literal injected into the deployed proposal HTML as a `<script>`, so it's browser-side code, not a serverless handler invocation. **Scope note:** `api/generate-proposal.js` still uses raw `fetch(sb.url() + '/rest/v1/...')` for two reads at L62 (proposal load) and L80 (practice_type load). These are instances of the pattern already tracked as **L1** — left alone rather than folded in here, since M30's scope is explicitly the fire-and-forget PATCHes.
 
-### M31. `api/seed-content-pages.js:21, 23` — `require('./_lib/supabase')` imported twice
+### M31. `api/seed-content-pages.js:21, 23` — `require('./_lib/supabase')` imported twice ✅ RESOLVED
 Harmless but indicates careless editing.
+
+**Resolution (2026-04-19, Group J reconciliation, doc-only, via `bbf19a7` in Group B.3):** Verified on current main — `seed-content-pages.js` has a single `var sb = require('./_lib/supabase');` at L21 and `var auth = require('./_lib/auth');` at L22. The duplicate was collapsed during Group B.3's inline-Supabase-fetch migration on this file; Group B.3's commit message for `bbf19a7` explicitly noted "also collapsed a pre-existing duplicate `var sb = require()`." Doc-only reconciliation.
 
 ### M32. `api/enrich-proposal.js:74-78` — personal email regex misses common domains
 Missing `aol`, `me.com`, `live.com`, `fastmail`, etc. Not anchored: `gmail.foo.com` matches.
 
-### M33. `api/digest.js:44, 47, 50` — date strings unvalidated
+**Current state (2026-04-19, Group J reconciliation):** Same class of finding as L19. Regex at `enrich-proposal.js:73` unchanged: `/gmail|yahoo|hotmail|outlook|protonmail|icloud/i`. Misses `aol`, `live`, `msn`, `gmx`, `zoho`, `fastmail`, `hey.com`, `duck.com`, `me.com`, `mail.ru`, `yandex`, `qq`, `163`. Not anchored, so `gmail.foo.com` matches (false positive, narrows enrichment). Only consequence of a miss: a personal-email host ends up as `searchDomain` for Gmail/Fathom enrichment, widening search noise; no security exposure. Fix is ≤3 lines of regex additions plus anchoring (`/^(?:mail\.)?(?:gmail|yahoo|hotmail|outlook|protonmail|icloud|aol|live|msn|fastmail|me|duck|hey|gmx|zoho|yandex|mail\.ru|qq|163)\./i` or equivalent) but low-value without telemetry on actual miss rate — same reason L19 stayed open in Group I. Cross-referenced with L19's Current state note; whichever session audits the enrichment funnel closes both together.
+
+### M33. `api/digest.js:44, 47, 50` — date strings unvalidated ✅ RESOLVED
 Validate as `^\d{4}-\d{2}-\d{2}$` before concat into filter.
 
-### M34. `api/newsletter-generate.js:13` — Pexels key fallback silent
+**Resolution (2026-04-19, commit `180665ae`, Group J):** Added `ISO_DATE = /^\d{4}-\d{2}-\d{2}$/` check immediately after the required-fields block. Both `body.from` and `body.to` are validated; mismatch returns 400 `'from and to must be YYYY-MM-DD'`. Single validation gate means every downstream concat site (`fromStart = from + 'T00:00:00Z'`, `toEnd = to + 'T23:59:59Z'`, four PostgREST `&created_at=gte.<value>` concatenations across L58/L61/L64/elsewhere, and date-range derivations at L49-55) is safe. Endpoint is admin-JWT-gated so exploit surface was narrow, but the defensive-input-at-entry pattern is consistent with H32/M9/M12/M27 from Groups F and J. Seven boundary cases verified pre-push (valid: `2026-04-18`, `1999-12-31`; rejected: `2026-4-18` single-digit month, `2026-04-18T00:00:00Z` pre-suffixed, injection attempt `2026-04-18&created_at=lt.2000-01-01`, empty, `foo`, `null`).
+
+### M34. `api/newsletter-generate.js:13` — Pexels key fallback silent ✅ RESOLVED
 If unset, every `searchPexelsImage` returns null; newsletter generation proceeds with placeholder images. No admin signal.
+
+**Resolution (2026-04-19, commit `1d8fd43f`, Group J):** Added module-load warning mirroring the H9/H10 shape, but fails **open** rather than closed: `if (!process.env.PEXELS_API_KEY) console.error('[newsletter-generate] WARNING: PEXELS_API_KEY is not set. Stories will render without images.');` surfaces immediately in Vercel function logs at cold-start. Chose fail-open deliberately — Pexels image lookup is best-effort enrichment and newsletter generation must still succeed even without images (placeholder images are already the graceful-degradation path). Module-load warning satisfies the finding's core concern ("no admin signal") without introducing a new 500 path that would surprise anyone whose workflow previously relied on the silent degrade. Alternative considered: `monitor.logError` per invocation. Rejected — would spam `error_log` at newsletter-generation rate without adding actionable signal beyond the cold-start warning.
 
 ### M35. `api/generate-content-page.js:199, 206` — PATCH + POST no transaction
 If PATCH succeeds but POST version fails, HTML saved without version record.
 
-### M36. `api/seed-content-pages.js` uses arrow functions
+**Current state (2026-04-19, Group J reconciliation):** Line numbers shifted — pattern is now at L223 (`sb.mutate('content_pages?id=eq.' + contentPageId, 'PATCH', updateData, 'return=minimal')`) followed by L226 (`sb.mutate('content_page_versions', 'POST', { content_page_id, html, change_summary: 'Initial generation via Pagemaster', ... })`). Neither call is upsertable on a unique constraint (the POST appends a version row; each generation produces a new row), so Group E's `resolution=merge-duplicates` pattern does not apply. True atomicity needs a Postgres function that wraps both in a single transaction. Less invasive fix: reorder to POST-first-then-PATCH so a version-insert failure prevents the HTML save, and wrap the PATCH in try/catch that logs an orphaned-version warning if it fails after the version row landed. Both options are multi-step (DB migration for the function, or careful reordering that must consider the streaming NDJSON `send()` progress events). Not a sweep-session shape. Leaving (c) for a dedicated transaction-consistency session if the failure mode is observed in practice.
+
+### M36. `api/seed-content-pages.js` uses arrow functions ✅ RESOLVED
 Inconsistent with project's ES5 style.
 
+**Resolution (2026-04-19, Group J reconciliation, doc-only, via `bbf19a7` in Group B.3):** Verified on current main — `grep -cE "=>" api/seed-content-pages.js` returns 0. `grep -cE "function\s*\(" api/seed-content-pages.js` returns 3, all ES5 function-expression shape consistent with the rest of the repo. The B.3 sb-helper migration on this file rewrote the affected sections and collapsed the last arrow-function holdouts. Doc-only reconciliation.
+
 ### M37. `api/send-audit-email.js:131` — auto-schedule doesn't check contact status
+
+**Current state (2026-04-19, Group J reconciliation):** Unchanged. `send-audit-email.js:137` guards the auto-schedule block with only `if (!existingFus || existingFus.length === 0)` — existence of prior followups for this audit, not `contact.status`. Existing pattern means a contact whose status flipped to `lost`, `onboarding`, or `active` after audit submission but before the email send still gets the full followup sequence queued. Product-decision item: when a contact upgrades status mid-flight, should pending followups be cancelled, paused for review, or let run? Currently runs. Flagged in `post-phase-4-status.md`'s "What's not in the groupings" alongside M19 and M39.
 
 ### M38. `client_sites` RLS missing `authenticated_admin_full` policy ✅ RESOLVED
 **Discovered during H9 rotation UI smoke test (2026-04-17).** `client_sites` had RLS enabled with only one policy: `anon_read_client_sites` (`roles={anon}`, `USING (true)`). Every other public table (`contacts`, `content_pages`, `tracked_keywords`, `bio_materials`, `neo_images`, …) has an additional `authenticated_admin_full` policy using `is_admin()`. `shared/admin-auth.js` installs a fetch interceptor that upgrades the `Authorization` header from the anon key to the user's admin JWT on direct Supabase REST calls, so the admin UI queries `client_sites` as role `authenticated` — which had no matching policy, returning empty.
@@ -532,10 +578,11 @@ create policy authenticated_admin_full
   with check (is_admin());
 ```
 UI smoke test confirmed the Website Hosting card now renders the moonraker site correctly. A broader sweep for other tables with this pattern missing is a candidate follow-up.
-Follow-up sequence scheduled even if contact has since flipped to `lost`/`onboarding`/`active`.
 
 ### M39. `api/submit-entity-audit.js:70-77` — email pre-check is TOCTOU-racy with no DB-level unique constraint
 **Discovered 2026-04-18 during Group F M9 work.** While verifying constraint names for M9's slug TOCTOU fix via `pg_constraint`, only `contacts_slug_key UNIQUE (slug)` was present — `email` has no unique constraint. The surviving `byEmail` pre-check at L76-83 (kept when the slug pre-check was removed) is therefore racy in the same way M9's slug pre-check was: two concurrent submissions with the same email pass the check, both insert, and the DB accepts both (two duplicate-email rows already exist in production, confirming the race has fired in practice or a prior bug allowed it). The cleanest fix is `CREATE UNIQUE INDEX contacts_email_key ON contacts (lower(email)) WHERE email IS NOT NULL;` with a data cleanup first, but this has product implications: at least one real scenario (one therapist onboarding two sibling practices under one contact email) needs a decision on whether that's intentional. Parking for a product discussion rather than adding a constraint that might require unplanned rework.
+
+**Current state (2026-04-19, Group J reconciliation):** Re-verified. `submit-entity-audit.js:76-83` still has the `byEmail` pre-check; `contacts` still has no DB-level unique constraint on email (only `contacts_slug_key`). The product-decision block from 2026-04-18 still applies unchanged. No code edit this session — flagged alongside M19 and M37 as the three Medium-tier product-decision items in `post-phase-4-status.md`.
 
 ---
 
@@ -579,7 +626,7 @@ Retry-with-refreshed-keys block is cut-and-paste. Extract helper.
 
 **Current state (2026-04-18, Group I reconciliation):** The `nodeCrypto.verify(...)` call is duplicated at L103-108 and L116-121; extracting an inner `tryVerify(pubKey)` helper is ~5 lines. Not landed in this reconciliation sweep because the JWT verification path is the admin-auth critical path — a byte-identical refactor should be its own scoped commit with explicit verification against the H1/M2 batch rather than bundled with a cleanup session.
 
-### L6. `api/submit-entity-audit.js` — agent error swallowed, no requeue
+### L6. `api/submit-entity-audit.js` — agent error swallowed, no requeue ✅ RESOLVED
 Memory says `process-audit-queue.js` handles this. Verify.
 
 **Current state (2026-04-18, Group I reconciliation):** Verification shows the gap is real, not resolved. `submit-entity-audit.js:112` inserts rows with `status='pending'` and flips to `'agent_running'` only on successful agent trigger (L149); on agent failure, status stays at `'pending'` forever, and `cron/process-audit-queue.js:138` only picks up `status='queued'`. Team notification email at L170-184 is the sole fallback — and the admin URL fragment in that email is itself broken (see L9).
@@ -595,6 +642,15 @@ Implementation shape (planned for Group J as a mandatory pre-task):
 - **`cron/process-audit-queue.js`:** new step 0.5 flips `agent_error → queued` where `last_agent_error_at < now() - 5 minutes`; existing task-dispatch-failure PATCH at the cron's L207 also populates the detail columns.
 
 Backoff choice (5 min) is a safety rail against same-tick self-retries and an operator window to manually stop a retry loop on a specific audit, well below the 30-min cron interval so it's meaningless as a throttle. Admin UI surfacing of `last_agent_error` is a separate follow-up (will be filed as M40 during Group J if the session wants to track it). **Queued for Group J as a mandatory pre-task** before the Medium classify sweep begins.
+
+**Resolution (2026-04-19, Group J pre-task):** Three-part fix landed as specified.
+1. **Migration `entity_audits_last_agent_error`** — added `last_agent_error TEXT` and `last_agent_error_at TIMESTAMPTZ` columns; partial index `idx_entity_audits_agent_error ON (last_agent_error_at) WHERE status = 'agent_error'`. Verified via `information_schema.columns` (both columns present with correct types) and `pg_indexes` (index created with correct predicate).
+2. **`api/submit-entity-audit.js`** — commit `7f5103a4`. Inside the `if (!agentTriggered && agentError)` branch, added a PATCH to flip the row to `status='agent_error'` with `last_agent_error` (capped at 500 chars via `String(agentError || 'Unknown error').substring(0, 500)`) and `last_agent_error_at` (`new Date().toISOString()`). Wrapped in try/catch so a PATCH failure logs (`[submit-entity-audit] agent_error flip failed`) without re-throwing past the existing notification branch. Email copy updated: subject `Entity Audit Agent Error (auto-retrying) - <brandQuery>`, p1 body `"A new entity audit was submitted; the agent errored on first try. Cron will auto-retry every 30 min until it succeeds."`. `<strong>Error:</strong>` line and admin href preserved unchanged (L9 fragment-scroll concern is orthogonal and harmless under the new FYI semantics).
+3. **`api/cron/process-audit-queue.js`** — commit `a985b05b`. Added new **STEP 0.5** between existing Step 0 (stale `agent_running` requeue) and Step 1 (pick oldest queued): queries `entity_audits?status=eq.agent_error&last_agent_error_at=lt.<now-5min>&select=id`, PATCHes each to `status='queued'` with `agent_task_id=null`, counts into `agentErrorRequeued`. `last_agent_error` and `last_agent_error_at` are **not** cleared on flip — admins retain "this row errored N minutes ago, now retrying" visibility. Updated the existing dispatch-failure PATCH (formerly status-only) to also populate both error columns with `'Agent returned ' + status + ': ' + errText.substring(0, 400)` capped at 500 chars. `agent_error_requeued` counter added to all 5 response sites (no-queue early exit, agent-unreachable early exit, agent-busy early exit, dispatch-failure return, dispatch-success return — one more than the spec's "three sites" but the spec said "alongside `staleRequeued`," and `staleRequeued` is present at all 5, so consistency won).
+
+**Backfill:** `SELECT id, client_slug, created_at FROM entity_audits WHERE status = 'pending' AND created_at < '2026-04-19'` at migration time returned **0 rows** — no pre-L6 lost audits existed at the moment the fix landed, so no `UPDATE ... SET status='queued'` was run. The recovery surface was empty.
+
+**Post-landing verification:** both commits READY on first Vercel build. On next cron runs, `agent_error_requeued` in the response JSON should bounce up on real failures and back to 0 after successful retries. Admin UI surfacing of `last_agent_error` intentionally **not** shipped as part of L6 — filed separately (no M40 in this session since the two rows the feature would show are empty so there's nothing to render yet; add when first real agent_error row lands and an admin needs to see it).
 
 ### L7. `api/report-chat.js:62, 68` — retry logic duplicated between catch and 529 handler
 
@@ -835,11 +891,11 @@ _(Brought forward from Phase 7 since Chris chose "ship now" over "wait for traff
 
 - **Critical:** 9 total (C1–C9). **Resolved: 9 ✅** (all).
 - **High:** 36 total (H1–H36). **Resolved: 35** (H1, H2, H3, H4, H5, H6, H7, H8, H9, H10, H11, H12, H13, H14, H15, H16, H17, H18, H19, H20, H21, H22, H23, H24, H25, H26, H27, H28, H30, H31, H32, H33, H34, H35, H36). **Open: 1** (H29, deferred on design). **All non-deferred Highs closed.**
-- **Medium:** 39 total (M1–M39; M39 added by Group F). **Resolved: 17** (M2, M6, M8, M9, M10, M11, M12, M13, M14, M15, M16, M18, M20, M22, M26, M30, M38; several more likely closed via Phase 4 action-schema work — needs verification sweep). **Open: ~22.**
-- **Low:** 28 total (L1–L28). **Resolved: 13** (L1, L8, L10, L12, L14, L16, L17, L18, L20, L22, L26, L27-documented-only, L28). **Open: 15** (L2, L3, L4, L5, L6, L7, L9, L11, L13, L15, L19, L21, L23, L24, L25).
+- **Medium:** 39 total (M1–M39; M39 added by Group F). **Resolved: 25** (M2, M5, M6, M8, M9, M10, M11, M12, M13, M14, M15, M16, M17, M18, M20, M22, M26, M27, M28, M30, M31, M33, M34, M36, M38). **Partial: 1** (M4 — 🔶 defensive-reject half shipped `b36c231c`, allow-prefix half still open). **Open: 13** (M1, M3, M4-partial-half, M7, M19, M21, M23, M24, M25, M29, M32, M35, M37, M39).
+- **Low:** 28 total (L1–L28). **Resolved: 14** (L1, L6, L8, L10, L12, L14, L16, L17, L18, L20, L22, L26, L27-documented-only, L28). **Open: 14** (L2, L3, L4, L5, L7, L9, L11, L13, L15, L19, L21, L23, L24, L25).
 - **Nit:** 6 total (N1–N6). **Resolved: 5** (N1, N2, N3, N4, N6). **Open: 1** (N5).
 
-**Total: 118 findings. Resolved: ≥79. Open: ≤39.**
+**Total: 118 findings. Resolved: ≥89 (with M4 partial). Open: ≤29.**
 
 ### Resolution log
 | Finding | Commit / Session | Date |
@@ -912,6 +968,15 @@ _(Brought forward from Phase 7 since Chris chose "ship now" over "wait for traff
 | N1 | doc-only reconciliation — concern obsolete after H4/H7 made `query()` throw on non-ok; error shape never reaches `one()` (Group I) | 2026-04-18 |
 | N2 | doc-only reconciliation — closed via `5263aa5` (C2 + M8 rewrite); current parse at stripe-webhook.js:56-63 uses indexOf+substring (Group I) | 2026-04-18 |
 | N6 | doc-only reconciliation — closed via Group B.1 H21 commits (`7adedb6` helper + 5 migration commits) and H36 (`221bfbc`); all 8 duplicates gone (Group I) | 2026-04-18 |
+| L6 | migration `entity_audits_last_agent_error` (new columns + partial index) + `7f5103a4` (submit-entity-audit — agent-failure flip to `agent_error` with detail, FYI email copy) + `a985b05b` (cron/process-audit-queue — STEP 0.5 flips `agent_error`→`queued` with 5-min backoff, dispatch-failure PATCH populates error columns, `agent_error_requeued` counter across all 5 return sites). Backfill: 0 pre-L6 pending rows at migration time. Group J mandatory pre-task. | 2026-04-19 |
+| M4 (partial 🔶) | `b36c231c` (github.js — `validatePath` rejects backslash, null byte, %-encoding; 9 boundary cases verified). Allow-prefix-list half stays open pending caller enumeration sweep. Group J. | 2026-04-19 |
+| M27 + M28 | `d626fcc8` (bootstrap-access — `/^[a-z0-9-]{1,60}$/` regex validation on client_slug at entry so every downstream concat site is safe; compound deliverables PATCH filter wraps `contact.id` and `upd.type` in `encodeURIComponent` as safe-by-default defense-in-depth). Group J. | 2026-04-19 |
+| M33 | `180665ae` (digest.js — ISO date regex `/^\d{4}-\d{2}-\d{2}$/` on `from`/`to` before any PostgREST concat; 7 boundary cases verified including the explicit injection probe). Group J. | 2026-04-19 |
+| M34 | `1d8fd43f` (newsletter-generate.js — module-load warning on missing `PEXELS_API_KEY`, fails open since Pexels is best-effort enrichment; mirrors H9/H10 shape). Group J. | 2026-04-19 |
+| M5 | doc-only reconciliation — verified via `b9b8f47` (H11): signature verification mandatory, raw body read as `Buffer`, 5-min window, `crypto.timingSafeEqual` with length guard (Group J) | 2026-04-19 |
+| M17 | doc-only reconciliation — verified zero inline Supabase fetches and zero bare `fetch(` in `api/process-entity-audit.js`; closed via `0d2c56d` + `2512c46` (M16 in Group B.2). Group J. | 2026-04-19 |
+| M31 | doc-only reconciliation — verified single `require('./_lib/supabase')` at L21; closed via `bbf19a7` (Group B.3 seed-content-pages) which collapsed the duplicate. Group J. | 2026-04-19 |
+| M36 | doc-only reconciliation — verified zero arrow functions; 3 ES5 `function(...)` declarations. Same commit `bbf19a7` (Group B.3) rewrote the affected sections. Group J. | 2026-04-19 |
 
 Audit was performed across five sessions reading ~11,000 lines of API route code, the eight `_lib/` modules, relevant templates, and git history for secret leakage. Unread in detail: chat system prompt bodies (low-risk content), several `send-*-email.js` / `trigger-*` / `ingest-*` routes (expected to follow already-catalogued patterns), most `api/admin/*` read-only dashboard routes. The audit is considered comprehensive for Critical and High findings; Medium/Low/Nit counts would grow modestly with further reading.
 
