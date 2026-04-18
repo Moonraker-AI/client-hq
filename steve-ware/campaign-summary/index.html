@@ -694,6 +694,7 @@ section { padding: 4.5rem 0; }
   // ── Render ──────────────────────────────────────────────────────
   function render(data) {
     _currentData = data;
+    window.__CAMPAIGN_SUMMARY_CONTEXT = { slug: CLIENT_SLUG, data: data };
     document.getElementById('loadingState').classList.add('hidden');
     document.getElementById('content').classList.remove('hidden');
 
@@ -1427,5 +1428,6 @@ section { padding: 4.5rem 0; }
   window.addEventListener('scroll', function() { updateProgress(); updateNav(); checkReveal(); });
 })();
 </script>
+<script src="/shared/campaign-summary-chatbot.js"></script>
 </body>
 </html>
