@@ -151,6 +151,10 @@
       "maxDuration": 300,
       "memory": 1024
     },
+    "api/cron/backfill-gbp-daily.js": {
+      "maxDuration": 300,
+      "memory": 1024
+    },
     "api/admin/attribution-sync.js": {
       "maxDuration": 120,
       "memory": 1024
@@ -200,6 +204,10 @@
     {
       "path": "/api/cron/sync-attribution-sheets",
       "schedule": "0 9 1 * *"
+    },
+    {
+      "path": "/api/cron/backfill-gbp-daily",
+      "schedule": "0 9 * * *"
     }
   ]
 }
