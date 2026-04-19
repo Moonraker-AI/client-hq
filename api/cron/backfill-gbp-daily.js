@@ -20,6 +20,7 @@
 // logic in one place (the non-cron file) avoids drift.
 
 var auth = require('../_lib/auth');
+var monitor = require('../_lib/monitor');
 var upstream = require('../backfill-gbp-warehouse');
 
 module.exports = async function handler(req, res) {
@@ -30,5 +31,18 @@ module.exports = async function handler(req, res) {
   // empty body, so synthesize the shape the handler wants before delegating.
   req.method = 'POST';
   req.body = Object.assign({}, req.body || {}, { all: true });
-  return upstream(req, res);
+
+  // Wrap the upstream call so any unhandled throw gets logged to the
+  // error_log table (audit M7). Without this, the delegate pattern
+  // surfaces errors only in ephemeral Vercel logs.
+  try {
+    return await upstream(req, res);
+  } catch (err) {
+    monitor.logError('cron/backfill-gbp-daily', err, {
+      detail: { stage: 'delegate_to_backfill_gbp_warehouse' }
+    });
+    if (!res.headersSent) {
+      return res.status(500).json({ error: 'backfill-gbp-daily failed' });
+    }
+  }
 };

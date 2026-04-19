@@ -16,7 +16,13 @@ var sheets = require('../_lib/google-sheets');
 var syncLib = require('../admin/attribution-sync');
 
 module.exports = async function handler(req, res) {
-  if (!auth.requireCronSecret(req, res)) return;
+  // Auth normalized to requireAdminOrInternal for consistency with the other
+  // 10 cron routes (cron audit M5). Previous requireCronSecret is reserved
+  // for routes with DDL / bulk-push superpowers (run-migration, backfill-
+  // campaign-summary-pages); sync-attribution-sheets just reads Google
+  // Sheets and updates report_configs, safe for admins to invoke manually.
+  var user = await auth.requireAdminOrInternal(req, res);
+  if (!user) return;
 
   var startedAt = Date.now();
   var summary = {
