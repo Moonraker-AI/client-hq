@@ -20,6 +20,11 @@ var monitor = require('../_lib/monitor');
 // (only used when the agent IS actively processing something)
 var STALE_THRESHOLD_HOURS = 2;
 
+// How long a 'dispatching' row can sit before we assume the cron crashed
+// between the atomic claim and agent dispatch. 2 minutes comfortably covers
+// network round-trip + agent accept latency.
+var DISPATCHING_STALE_MS = 2 * 60 * 1000;
+
 module.exports = async function handler(req, res) {
   // Auth: admin JWT, CRON_SECRET, or AGENT_API_KEY (timing-safe)
   var user = await auth.requireAdminOrInternal(req, res);
@@ -58,6 +63,27 @@ module.exports = async function handler(req, res) {
     } catch (e) {
       // Agent unreachable
       agentHealthy = false;
+    }
+
+    // Requeue stale 'dispatching' rows — these result from a cron invocation
+    // crashing between claim_next_audit() (which flipped queued → dispatching)
+    // and the agent POST. Anything sitting in dispatching longer than 2 min
+    // is stuck; flip it back to queued so the next cron picks it up.
+    var dispatchingStaleCutoff = new Date(Date.now() - DISPATCHING_STALE_MS).toISOString();
+    var staleDispatching = await sb.query(
+      'entity_audits?status=eq.dispatching' +
+      '&updated_at=lt.' + encodeURIComponent(dispatchingStaleCutoff) +
+      '&select=id,client_slug,updated_at'
+    );
+    var dispatchingRequeued = 0;
+    if (staleDispatching && staleDispatching.length > 0) {
+      for (var di = 0; di < staleDispatching.length; di++) {
+        await sb.mutate('entity_audits?id=eq.' + staleDispatching[di].id, 'PATCH', {
+          status: 'queued',
+          agent_task_id: null
+        }, 'return=minimal');
+        dispatchingRequeued++;
+      }
     }
 
     // Get all agent_running audits from Supabase
@@ -162,41 +188,45 @@ module.exports = async function handler(req, res) {
     }
 
     // ============================================================
-    // STEP 1: Find the oldest queued audit and dispatch
+    // STEP 1: Claim the oldest queued audit atomically and dispatch
     // ============================================================
-    var queued = await sb.query(
-      'entity_audits?status=eq.queued' +
-      '&select=id,contact_id,client_slug,brand_query,homepage_url,geo_target,gbp_share_link' +
-      '&order=created_at.asc&limit=1'
-    );
 
-    if (!queued || queued.length === 0) {
+    // Pre-flight: check queued count before claiming. Lets us return an
+    // accurate response when the agent is unreachable/busy without actually
+    // flipping a row to dispatching.
+    var queuedPreview = await sb.query('entity_audits?status=eq.queued&select=id&limit=1');
+    var hasQueued = queuedPreview && queuedPreview.length > 0;
+
+    if (!hasQueued) {
       return res.status(200).json({
         message: 'No queued audits.',
         remaining: 0,
         stale_checked: staleChecked,
         stale_requeued: staleRequeued,
+        dispatching_requeued: dispatchingRequeued,
         agent_error_requeued: agentErrorRequeued,
         requeue_reason: requeueReason,
         agent_active_tasks: agentActiveTasks
       });
     }
 
-    // Don't dispatch if agent is unreachable
+    // Don't dispatch if agent is unreachable (no claim either — leave row queued)
     if (!agentHealthy) {
+      var remainUnreach = await sb.query('entity_audits?status=eq.queued&select=id');
       return res.status(200).json({
         message: 'Agent unreachable, skipping dispatch.',
-        remaining: queued.length,
+        remaining: remainUnreach ? remainUnreach.length : 0,
         stale_checked: staleChecked,
         stale_requeued: staleRequeued,
+        dispatching_requeued: dispatchingRequeued,
         agent_error_requeued: agentErrorRequeued,
         requeue_reason: requeueReason
       });
     }
 
     // Don't dispatch if agent already has active tasks (enforce one-at-a-time).
-    // Re-check: agentActiveTasks reflects the count BEFORE our requeue, but if we
-    // requeued tasks in Step 0 and the agent truly has 0, this won't block.
+    // agentActiveTasks reflects the count BEFORE our Step 0 requeue, but if we
+    // requeued tasks and the agent truly has 0, this won't block.
     if (agentActiveTasks > 0) {
       var remainAll = await sb.query('entity_audits?status=eq.queued&select=id');
       return res.status(200).json({
@@ -204,12 +234,30 @@ module.exports = async function handler(req, res) {
         remaining: remainAll ? remainAll.length : 0,
         stale_checked: staleChecked,
         stale_requeued: staleRequeued,
+        dispatching_requeued: dispatchingRequeued,
         agent_error_requeued: agentErrorRequeued,
         agent_active_tasks: agentActiveTasks
       });
     }
 
-    var audit = queued[0];
+    // Atomic claim via RPC. Flips queued → dispatching and returns the row.
+    // SKIP LOCKED prevents two concurrent cron invocations from claiming the
+    // same row. If another invocation beat us to the last row, claimed is
+    // empty and we exit cleanly without dispatching.
+    var claimed = await sb.mutate('rpc/claim_next_audit', 'POST', {});
+
+    if (!claimed || !Array.isArray(claimed) || claimed.length === 0) {
+      return res.status(200).json({
+        message: 'Queued row claimed by another invocation.',
+        remaining: 0,
+        stale_checked: staleChecked,
+        stale_requeued: staleRequeued,
+        dispatching_requeued: dispatchingRequeued,
+        agent_error_requeued: agentErrorRequeued
+      });
+    }
+
+    var audit = claimed[0];
 
     // Get contact details for the agent
     var contact = await sb.one('contacts?id=eq.' + audit.contact_id + '&select=city,state_province,website_url&limit=1');
@@ -236,8 +284,8 @@ module.exports = async function handler(req, res) {
     if (!agentResp.ok) {
       var errText = '';
       try { errText = await agentResp.text(); } catch (e) {}
-      // Mark as error with detail so it doesn't block the queue and so STEP 0.5
-      // has the context it needs to backoff + retry.
+      // Mark as error with detail so it doesn't block the queue and so the
+      // Step 0.5 agent_error requeue path can back off and retry.
       await sb.mutate('entity_audits?id=eq.' + audit.id, 'PATCH', {
         status: 'agent_error',
         last_agent_error: ('Agent returned ' + agentResp.status + ': ' +
@@ -251,13 +299,14 @@ module.exports = async function handler(req, res) {
         slug: audit.client_slug,
         stale_checked: staleChecked,
         stale_requeued: staleRequeued,
+        dispatching_requeued: dispatchingRequeued,
         agent_error_requeued: agentErrorRequeued
       });
     }
 
     var agentResult = await agentResp.json();
 
-    // Update audit status
+    // Agent accepted — flip dispatching → agent_running with the real task_id.
     await sb.mutate('entity_audits?id=eq.' + audit.id, 'PATCH', {
       status: 'agent_running',
       agent_task_id: agentResult.task_id
@@ -275,6 +324,7 @@ module.exports = async function handler(req, res) {
       remaining: remainCount,
       stale_checked: staleChecked,
       stale_requeued: staleRequeued,
+      dispatching_requeued: dispatchingRequeued,
       agent_error_requeued: agentErrorRequeued,
       requeue_reason: requeueReason,
       agent_active_tasks: agentActiveTasks,

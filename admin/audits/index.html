@@ -114,6 +114,7 @@
 .tag-pending { background: rgba(107,117,153,.08); color: var(--color-muted); }
 .tag-queued { background: rgba(107,117,153,.08); color: var(--color-muted); }
 .tag-agent_running { background: rgba(59,130,246,.08); color: var(--color-info); }
+.tag-dispatching { background: rgba(59,130,246,.08); color: var(--color-info); }
 .tag-agent_error { background: rgba(239,68,68,.08); color: var(--color-danger); }
 .tag-processing { background: rgba(59,130,246,.08); color: var(--color-info); }
 .tag-complete { background: rgba(245,158,11,.1); color: var(--color-warning); }
@@ -350,7 +351,7 @@
     if (f === 'all') return state.audits;
     if (f === 'needs_audit') return []; // special case, rendered separately
     if (f === 'queued') return state.audits.filter(function(a) { return a.status === 'queued'; });
-    if (f === 'processing') return state.audits.filter(function(a) { return a.status === 'agent_running' || a.status === 'pending'; });
+    if (f === 'processing') return state.audits.filter(function(a) { return a.status === 'agent_running' || a.status === 'dispatching' || a.status === 'pending'; });
     if (f === 'ready_to_send') return state.audits.filter(function(a) { return a.status === 'complete'; });
     if (f === 'delivered') return state.audits.filter(function(a) { return a.status === 'delivered'; });
     if (f === 'errors') {
@@ -370,7 +371,7 @@
   function updateFilterCounts() {
     var a = state.audits;
     var queued = a.filter(function(x) { return x.status === 'queued'; }).length;
-    var processing = a.filter(function(x) { return x.status === 'agent_running' || x.status === 'pending'; }).length;
+    var processing = a.filter(function(x) { return x.status === 'agent_running' || x.status === 'dispatching' || x.status === 'pending'; }).length;
     var readyToSend = a.filter(function(x) { return x.status === 'complete'; }).length;
     var delivered = a.filter(function(x) { return x.status === 'delivered'; }).length;
     var errors = a.filter(function(x) { return x.status === 'agent_error'; }).length;
@@ -464,7 +465,7 @@
 
       // Status styling
       var statusTag = '<span class="tag tag-' + (c.status || 'lead') + '">' + (c.status || 'unknown') + '</span>';
-      var auditStatusLabels = { pending: 'pending', queued: 'queued', agent_running: 'processing', agent_error: 'error', complete: 'complete', delivered: 'delivered' };
+      var auditStatusLabels = { pending: 'pending', queued: 'queued', dispatching: 'dispatching', agent_running: 'processing', agent_error: 'error', complete: 'complete', delivered: 'delivered' };
       var auditLabel = auditStatusLabels[ea.status] || ea.status;
       var auditTag = '<span class="tag tag-' + ea.status + '">' + auditLabel + '</span>';
       if (ea.audit_tier === 'premium' && c.status !== 'active' && c.status !== 'onboarding') {
