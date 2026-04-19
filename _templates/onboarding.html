@@ -3,6 +3,7 @@
 <script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Onboarding - Moonraker</title>
 <style>
@@ -944,7 +945,8 @@ strong { font-weight: 600; color: var(--color-heading); }
 <div class="footer-bar" id="footerBar">Confidential &middot; &copy; 2026 Moonraker AI &middot; moonraker.ai</div>
 
 <script src="https://msg.moonraker.ai/js/form_embed.js" type="text/javascript"></script>
-<script>window.__PAGE_TOKEN__ = "{{PAGE_TOKEN}}";</script>
+<script>window.__MR_PAGE_SCOPE__ = 'onboarding';</script>
+<script src="/shared/page-token.js" defer></script>
 <script>
 (function() {
   'use strict';
@@ -1017,12 +1019,13 @@ strong { font-weight: 600; color: var(--color-heading); }
     return fetch('/api/onboarding-action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify({
         action: action,
         table: table,
         filters: filters || undefined,
-        data: data,
-        page_token: window.__PAGE_TOKEN__ || null
+        data: data
+        // page_token no longer in body — cookie-backed via /api/page-token/request
       })
     }).then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); });
   }
@@ -1076,7 +1079,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     sbPatch('onboarding_steps', 'contact_id=eq.' + contact.id + '&step_key=eq.' + stepKey,
       { status: 'complete', completed_at: new Date().toISOString() }
     ).then(function() {
-      console.log('Step saved:', stepKey);
+      /* step saved */
     }).catch(function(err) {
       console.error('Failed to save step:', err);
     });
@@ -1506,7 +1509,7 @@ strong { font-weight: 600; color: var(--color-heading); }
           var el = document.getElementById(id);
           if (el) el.value = dirs[id];
         });
-      } catch(e) { console.log('Could not parse directory data'); }
+      } catch(e) { console.error('Could not parse directory data', e); }
     }
 
     // Step 8: Drive folder link
@@ -1994,7 +1997,28 @@ strong { font-weight: 600; color: var(--color-heading); }
   // ============================================================
   // INIT
   // ============================================================
+  // Strip dangerous Unicode control chars (bidi overrides, zero-width joiners, etc.)
+  // that can visually misrepresent saved content downstream.
+  function stripControlChars(s) {
+    if (typeof s !== 'string') return s;
+    return s.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '');
+  }
+  function applyTextareaGuards() {
+    var nodes = document.querySelectorAll('textarea, input[type="text"], input[type="url"], input[type="email"], input[type="tel"]');
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (!el.hasAttribute('maxlength')) {
+        el.setAttribute('maxlength', el.tagName === 'TEXTAREA' ? '8000' : '500');
+      }
+      el.addEventListener('blur', function(e) {
+        var clean = stripControlChars(e.target.value);
+        if (clean !== e.target.value) e.target.value = clean;
+      });
+    }
+  }
+
   function init() {
+    applyTextareaGuards();
     sbFetch('contacts', 'slug=eq.' + CLIENT_SLUG + '&select=*&limit=1')
       .then(function(contacts) {
         if (!contacts || contacts.length === 0) {
@@ -2117,8 +2141,27 @@ strong { font-weight: 600; color: var(--color-heading); }
           try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
         }
       }
-      function doToggle() { apply(); if (window.clearSignatureCanvas) clearSignatureCanvas(); }
-      if (document.startViewTransition) { document.startViewTransition(doToggle); } else { doToggle(); }
+      // Preserve signature canvas across theme toggle: snapshot pixels, clear, restore.
+      function doToggle() {
+        var sigCanvas = document.getElementById('sigCanvas');
+        var sigContainer = document.getElementById('sigCanvasContainer');
+        var hadDrawing = (typeof sigHasDrawn !== 'undefined') && sigHasDrawn && sigCanvas;
+        var snapshot = null;
+        if (hadDrawing) {
+          try { snapshot = sigCanvas.getContext('2d').getImageData(0, 0, sigCanvas.width, sigCanvas.height); } catch(_) {}
+        }
+        apply();
+        if (hadDrawing && snapshot) {
+          try { sigCanvas.getContext('2d').putImageData(snapshot, 0, 0); if (sigContainer) sigContainer.classList.add('has-signature'); } catch(_) {}
+        } else if (window.clearSignatureCanvas) {
+          clearSignatureCanvas();
+        }
+      }
+      if (typeof document.startViewTransition === 'function') {
+        document.startViewTransition(doToggle);
+      } else {
+        doToggle();
+      }
     });
   }
 
@@ -2126,6 +2169,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 })();
 </script>
 <script src="/shared/csa-content.js"></script>
+<script src="/shared/offline-banner.js" defer></script>
 </body>
 </html>
 

@@ -40,21 +40,10 @@ module.exports = async function handler(req, res) {
     }
     var contact = contactRows[0];
 
-    // 2. Mint an endorsement-scoped token (180-day TTL by default).
-    var token = pageToken.sign({
-      scope:      'endorsement',
-      contact_id: contact.id
-    });
-
-    // 3. Read the template, substitute, push.
+    // Post-C6: endorsement pages no longer carry baked-in tokens. The deployed
+    // template calls /api/page-token/request on load to mint a cookie. Deploy
+    // the template byte-for-byte.
     var html = await gh.readTemplate('endorsements.html');
-    if (html.indexOf('{{PAGE_TOKEN}}') === -1) {
-      return res.status(500).json({
-        error: 'Template has no {{PAGE_TOKEN}} placeholder — cannot deploy without token binding'
-      });
-    }
-    html = html.replace(/\{\{PAGE_TOKEN\}\}/g, token);
-
     var destPath = slug + '/endorsements/index.html';
     await gh.pushFile(destPath, html, 'Deploy endorsement page for ' + slug);
 
@@ -62,8 +51,7 @@ module.exports = async function handler(req, res) {
       success: true,
       url:  'https://clients.moonraker.ai/' + slug + '/endorsements/',
       path: destPath,
-      // Return the token expiry so the admin UI can show "expires in X days"
-      token_exp: pageToken.verify(token, 'endorsement').exp
+      contact_id: contact.id
     });
   } catch (err) {
     monitor.logError('deploy-endorsement-page', err, {

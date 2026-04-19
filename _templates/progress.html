@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
-<script>window.__PAGE_TOKEN__ = "{{PAGE_TOKEN}}";</script>
+<script>window.__MR_PAGE_SCOPE__ = 'progress';</script>
+<script src="/shared/page-token.js" defer></script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -315,11 +316,13 @@ section{padding:3.5rem 0}
     // was dropped; /api/progress-update verifies the token, binds the item
     // to the token's contact, and PATCHes via service role.
     document.getElementById('saveStatus').textContent='Saving...';
+    (window.mrPageToken && window.mrPageToken.ready ? window.mrPageToken.ready() : Promise.resolve())
+      .catch(function(){ /* surface as HTTP error below */ });
     fetch('/api/progress-update',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
+      credentials: 'same-origin',
       body:JSON.stringify({
-        page_token: window.__PAGE_TOKEN__ || '',
         item_id: taskId,
         status: next
       })
@@ -352,5 +355,6 @@ section{padding:3.5rem 0}
   window.addEventListener('scroll',onScroll);
   setTimeout(function(){onScroll()},100);})();
 </script>
+<script src="/shared/offline-banner.js" defer></script>
 </body>
 </html>

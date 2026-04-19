@@ -71,7 +71,7 @@ module.exports = async function handler(req, res) {
   var body = req.body || {};
 
   // ── 1. Verify page token ─────────────────────────────────────────
-  var submittedToken = body.page_token;
+  var submittedToken = pageToken.getTokenFromRequest(req, 'endorsement');
   if (!submittedToken) {
     return res.status(403).json({ error: 'Page token required' });
   }

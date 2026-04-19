@@ -3,6 +3,7 @@
 <script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Moonraker x Sky Therapies: Monthly Campaign Report</title>
 <style>
@@ -1245,12 +1246,14 @@ section { padding: 4.5rem 0; }
       authToken = stored.access_token;
     } catch(e) {}
     if (!authToken) { alert('Admin session not found. Please log in at /admin first.'); if (btn) { btn.textContent = '\u2713 Approve & Publish'; btn.disabled = false; } return; }
+    var published = false;
     fetch('/api/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
       body: JSON.stringify({ action: 'update_record', table: 'report_snapshots', filters: { id: currentSnap.id }, data: { report_status: 'published', updated_at: new Date().toISOString() } })
     }).then(function(r) { return r.json(); }).then(function(res) {
       if (res.success) {
+        published = true;
         currentSnap.report_status = 'published';
         var banner = document.getElementById('adminBanner');
         if (banner) {
@@ -1259,11 +1262,12 @@ section { padding: 4.5rem 0; }
         }
       } else {
         alert('Failed to publish: ' + JSON.stringify(res));
-        if (btn) { btn.textContent = '✓ Approve & Publish'; btn.disabled = false; }
       }
     }).catch(function(err) {
       alert('Error: ' + err);
-      if (btn) { btn.textContent = '✓ Approve & Publish'; btn.disabled = false; }
+    }).finally(function() {
+      // Restore unless banner was replaced on successful publish (button no longer in DOM).
+      if (!published && btn) { btn.textContent = '\u2713 Approve & Publish'; btn.disabled = false; }
     });
   };
 
@@ -1271,6 +1275,7 @@ section { padding: 4.5rem 0; }
   init();
 })();
 </script>
+<script src="/shared/offline-banner.js" defer></script>
 </body>
 </html>
 

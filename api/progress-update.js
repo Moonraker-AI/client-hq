@@ -56,7 +56,7 @@ module.exports = async function handler(req, res) {
   }
 
   var body = req.body || {};
-  var submittedToken = body.page_token || body.pt || '';
+  var submittedToken = pageToken.getTokenFromRequest(req, 'progress') || '';
   var itemId = (body.item_id || '').toString().trim();
   var nextStatus = (body.status || '').toString();
 

@@ -168,10 +168,90 @@ function isConfigured() {
   return !!process.env.PAGE_TOKEN_SECRET;
 }
 
+// ── Cookie helpers (C6: HttpOnly cookie exchange) ─────────────────
+//
+// Clean cutover from `window.__PAGE_TOKEN__` baked into HTML to an HttpOnly
+// cookie set by /api/page-token/request. Each scope has its own cookie and is
+// path-scoped to the client slug so one contact's token can't be sent to a
+// different client's page.
+
+function cookieName(scope) {
+  return 'mr_pt_' + scope;
+}
+
+// Parse a single named cookie out of a request's Cookie header.
+// Does NOT URL-decode (tokens are already b64url-safe) — avoids the classic
+// "percent-encoded signature fails verification" bug.
+function readCookie(req, name) {
+  if (!req || !req.headers) return null;
+  var header = req.headers.cookie || '';
+  if (!header) return null;
+  var prefix = name + '=';
+  var parts = header.split(';');
+  for (var i = 0; i < parts.length; i++) {
+    var p = parts[i].trim();
+    if (p.indexOf(prefix) === 0) return p.substring(prefix.length);
+  }
+  return null;
+}
+
+// Build a Set-Cookie header value. Express/Vercel's res.setHeader doesn't
+// uppercase cookie attributes — follow the HTTP spec casing for readability.
+// Path-scope to /<slug> so cross-client leakage is impossible even with
+// SameSite relaxed settings.
+function buildSetCookie(scope, slug, token, opts) {
+  opts = opts || {};
+  var ttl = opts.ttl_seconds || DEFAULT_TTL[scope] || 86400;
+  var secure = opts.secure !== false;  // default true; tests can disable
+  var path = '/' + String(slug || '').replace(/^\/+/, '').replace(/\/+$/, '');
+  if (!path || path === '/') path = '/';
+  var parts = [
+    cookieName(scope) + '=' + token,
+    'Path=' + path,
+    'Max-Age=' + ttl,
+    'HttpOnly',
+    'SameSite=Lax'
+  ];
+  if (secure) parts.push('Secure');
+  return parts.join('; ');
+}
+
+function buildClearCookie(scope, slug) {
+  var path = '/' + String(slug || '').replace(/^\/+/, '').replace(/\/+$/, '');
+  if (!path || path === '/') path = '/';
+  return cookieName(scope) + '=; Path=' + path + '; Max-Age=0; HttpOnly; SameSite=Lax; Secure';
+}
+
+// Pull the most likely token for `expectedScope` out of a request. Looks at
+// (in order): cookie, request body.page_token, body.token, Authorization
+// header. Returns string or null. Does NOT verify — call verify() with the
+// result.
+function getTokenFromRequest(req, expectedScope) {
+  // 1. Preferred: cookie (new path)
+  var fromCookie = readCookie(req, cookieName(expectedScope));
+  if (fromCookie) return fromCookie;
+  // 2. Legacy: page_token in JSON body (deployed pages still POST it)
+  if (req && req.body) {
+    if (typeof req.body.page_token === 'string' && req.body.page_token) return req.body.page_token;
+    if (typeof req.body.token === 'string' && req.body.token) return req.body.token;
+  }
+  // 3. Authorization: Bearer <token>
+  if (req && req.headers) {
+    var h = req.headers.authorization || req.headers.Authorization || '';
+    if (h.indexOf('Bearer ') === 0) return h.substring(7);
+  }
+  return null;
+}
+
 module.exports = {
   sign: sign,
   verify: verify,
   isConfigured: isConfigured,
   SCOPES: SCOPES,
-  DEFAULT_TTL: DEFAULT_TTL
+  DEFAULT_TTL: DEFAULT_TTL,
+  cookieName: cookieName,
+  readCookie: readCookie,
+  buildSetCookie: buildSetCookie,
+  buildClearCookie: buildClearCookie,
+  getTokenFromRequest: getTokenFromRequest
 };

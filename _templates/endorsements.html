@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<script>window.__MR_PAGE_SCOPE__ = 'endorsement';</script>
+<script src="/shared/page-token.js" defer></script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -270,12 +272,17 @@ select.form-input { cursor: pointer; }
 (function() {
   'use strict';
 
-  // PAGE_TOKEN is substituted at deploy time by api/deploy-endorsement-page.js.
+  // PAGE_TOKEN (body field) is no longer used — endorsement submissions now
+  // ride on the HttpOnly cookie set by /api/page-token/request (see
+  // shared/page-token.js). The constant below is retained as an empty string
+  // for any straggler callers; remove once the legacy deployed copies are
+  // regenerated via scripts/regenerate-client-pages.js.
   // It's an endorsement-scoped HMAC signed token that binds this page to the
   // client's contact_id and authorizes submission to /api/submit-endorsement.
   // If you see the literal placeholder string below, this page was not
   // deployed through the proper route — redeploy via the admin panel.
-  var PAGE_TOKEN = '{{PAGE_TOKEN}}';
+  var PAGE_TOKEN = '';
+  window.__MR_PAGE_SCOPE__ = 'endorsement';
 
   var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
   var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
@@ -377,7 +384,11 @@ select.form-input { cursor: pointer; }
       var linkKeys = Object.keys(links);
       if (linkKeys.length > 0) {
         html += '<div class="endorser-links">';
-        linkKeys.forEach(function(k) { if (links[k]) html += '<a href="' + esc(links[k]) + '" target="_blank" rel="noopener" class="endorser-link">' + (linkLabels[k] || k) + ' &#8599;</a>'; });
+        linkKeys.forEach(function(k) {
+          if (!links[k]) return;
+          try { var u = new URL(links[k]); if (u.protocol !== 'http:' && u.protocol !== 'https:') return; } catch(_) { return; }
+          html += '<a href="' + esc(links[k]) + '" target="_blank" rel="noopener noreferrer" class="endorser-link">' + (linkLabels[k] || k) + ' &#8599;</a>';
+        });
         html += '</div>';
       }
       html += '</div>';
@@ -410,7 +421,6 @@ select.form-input { cursor: pointer; }
     }
 
     var data = {
-      page_token: PAGE_TOKEN,
       bio_material_id: bioMaterialId,
       endorser_name: name,
       endorser_title: document.getElementById('endorserTitle').value.trim() || null,
@@ -440,11 +450,16 @@ select.form-input { cursor: pointer; }
     btn.disabled = true;
     btn.textContent = 'Submitting...';
 
-    fetch('/api/submit-endorsement', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    }).then(function(r) {
+    (window.mrPageToken && window.mrPageToken.ready ? window.mrPageToken.ready() : Promise.resolve())
+      .catch(function() { /* server returns 401 below if cookie missing */ })
+      .then(function() {
+        return fetch('/api/submit-endorsement', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(data)
+        });
+      }).then(function(r) {
       return r.json().then(function(body) { return { ok: r.ok, status: r.status, body: body }; });
     }).then(function(result) {
       btn.disabled = false;
@@ -472,7 +487,8 @@ select.form-input { cursor: pointer; }
         // Reload endorsements list
         fetch(SB_URL + '/rest/v1/endorsements?contact_id=eq.' + contactId + '&order=created_at.desc', { headers: sbHeaders() })
           .then(function(r) { return r.json(); })
-          .then(function(endorsements) { renderEndorsements(endorsements || []); });
+          .then(function(endorsements) { renderEndorsements(endorsements || []); })
+          .catch(function(e) { console.error('[endorsements reload failed]', e); });
       } else {
         var msg = (result.body && result.body.error) || 'Something went wrong. Please try again.';
         if (result.status === 429) {
@@ -510,5 +526,6 @@ select.form-input { cursor: pointer; }
   if (t === 'dark') document.getElementById('themeIcon').innerHTML = '&#9728;';
 })();
 </script>
+<script src="/shared/offline-banner.js" defer></script>
 </body>
 </html>

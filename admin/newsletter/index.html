@@ -3,6 +3,7 @@
 <script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="/assets/logo.png">
 <title>Newsletter - Moonraker Admin</title>
@@ -720,7 +721,7 @@ body.sub-bulk-visible #tab-subscribers.active { padding-bottom: 96px; }
       <h3 style="font-size:1rem;">Email Preview</h3>
       <button class="btn btn-sm btn-secondary" onclick="closePreview()">Close</button>
     </div>
-    <iframe class="preview-frame" id="previewFrame"></iframe>
+    <iframe class="preview-frame" id="previewFrame" sandbox="allow-same-origin"></iframe>
   </div>
 </div>
 
@@ -885,7 +886,7 @@ body.sub-bulk-visible #tab-subscribers.active { padding-bottom: 96px; }
 .ramp-arrow { font-size:.65rem; color:var(--color-muted); }
 </style>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 // ---- Config ----
@@ -2262,6 +2263,10 @@ async function sendTest() {
   if (!email) { toast('Enter a test email address', 'error'); return; }
   if (!currentEditionId) { toast('Save as draft first', 'error'); return; }
 
+  var actionBtn = document.getElementById('sendActionBtn');
+  if (actionBtn && actionBtn.disabled) return;
+  if (actionBtn) { actionBtn.disabled = true; actionBtn.dataset.origText = actionBtn.textContent; actionBtn.textContent = 'Sending...'; }
+
   // Save draft first
   try {
     var data = gatherContent();
@@ -2286,6 +2291,8 @@ async function sendTest() {
     toast('Test sent to ' + email + ' (CC: chris@moonraker.ai)');
   } catch (e) {
     toast('Test send failed: ' + e.message, 'error');
+  } finally {
+    if (actionBtn) { actionBtn.disabled = false; if (actionBtn.dataset.origText) actionBtn.textContent = actionBtn.dataset.origText; }
   }
 }
 window.sendTest = sendTest;
@@ -2297,6 +2304,10 @@ async function scheduleNewsletter() {
   // Convert local datetime to UTC ISO string
   var scheduled = new Date(dt);
   if (scheduled <= new Date()) { toast('Schedule time must be in the future', 'error'); return; }
+
+  var actionBtn = document.getElementById('sendActionBtn');
+  if (actionBtn && actionBtn.disabled) return;
+  if (actionBtn) { actionBtn.disabled = true; actionBtn.dataset.origText = actionBtn.textContent; actionBtn.textContent = 'Scheduling...'; }
 
   document.getElementById('sendModal').classList.remove('open');
 
@@ -2311,6 +2322,8 @@ async function scheduleNewsletter() {
     loadEditions();
   } catch (e) {
     toast('Failed to schedule: ' + e.message, 'error');
+  } finally {
+    if (actionBtn) { actionBtn.disabled = false; if (actionBtn.dataset.origText) actionBtn.textContent = actionBtn.dataset.origText; }
   }
 }
 window.scheduleNewsletter = scheduleNewsletter;
@@ -2353,6 +2366,9 @@ async function deleteEdition(editionId, editionNum) {
 window.deleteEdition = deleteEdition;
 
 async function executeSend() {
+  var actionBtn = document.getElementById('sendActionBtn');
+  if (actionBtn && actionBtn.disabled) return;
+  if (actionBtn) { actionBtn.disabled = true; actionBtn.dataset.origText = actionBtn.textContent; actionBtn.textContent = 'Sending...'; }
   document.getElementById('sendModal').classList.remove('open');
   toast('Sending newsletter... This will take a moment.');
   try {
@@ -2372,6 +2388,8 @@ async function executeSend() {
     loadEditions();
   } catch (e) {
     toast('Send failed: ' + e.message, 'error');
+  } finally {
+    if (actionBtn) { actionBtn.disabled = false; if (actionBtn.dataset.origText) actionBtn.textContent = actionBtn.dataset.origText; }
   }
 }
 window.executeSend = executeSend;

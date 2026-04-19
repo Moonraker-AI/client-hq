@@ -3,6 +3,7 @@
 <script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Premium Entity Audit - Moonraker</title>
 <style>
@@ -140,10 +141,8 @@ strong{font-weight:600;color:var(--color-heading)}
   var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
   var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
 
-  var LINKS = {
-    ach: 'https://buy.stripe.com/3cIdR87co3Z711Wfip5wI0V',
-    cc:  'https://buy.stripe.com/7sY4gyaoAgLT9ys7PX5wI0W'
-  };
+  // Pricing keyed by tier_key ('premium_ach' | 'premium_cc'). Populated from /api/pricing.
+  var pricingByKey = {};
 
   var pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
   var CLIENT_SLUG = pathParts[0] || '';
@@ -159,14 +158,27 @@ strong{font-weight:600;color:var(--color-heading)}
     // Set back link
     document.getElementById('backLink').href = '/' + CLIENT_SLUG + '/entity-audit';
 
-    fetch(SB_URL + '/rest/v1/contacts?slug=eq.' + CLIENT_SLUG + '&select=id,slug,first_name,last_name,practice_name,email&limit=1', {
-      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON }
-    }).then(function(r) { return r.json(); }).then(function(contacts) {
+    // Parallel: contact + pricing
+    Promise.all([
+      fetch(SB_URL + '/rest/v1/contacts?slug=eq.' + CLIENT_SLUG + '&select=id,slug,first_name,last_name,practice_name,email&limit=1', {
+        headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON }
+      }).then(function(r) { return r.json(); }),
+      fetch('/api/pricing?product=entity_audit_premium').then(function(r) { return r.json(); })
+    ]).then(function(results) {
+      var contacts = results[0];
+      var pricing = results[1];
       if (!contacts || contacts.length === 0) {
         document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">No account found.</p>';
         return;
       }
       contact = contacts[0];
+      if (pricing && pricing.tiers) {
+        pricing.tiers.forEach(function(t) { pricingByKey[t.tier_key] = t; });
+      }
+      if (Object.keys(pricingByKey).length === 0) {
+        document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">Pricing unavailable. Please contact support@moonraker.ai.</p>';
+        return;
+      }
       var displayName = contact.practice_name || ((contact.first_name || '') + ' ' + (contact.last_name || '')).trim();
       document.title = 'Premium Entity Audit - ' + displayName + ' - Moonraker';
       document.getElementById('headerName').textContent = displayName;
@@ -184,23 +196,38 @@ strong{font-weight:600;color:var(--color-heading)}
     var btn = document.querySelector('.method-btn[data-method="' + method + '"]');
     if (btn) btn.classList.add('selected');
 
+    var tierKey = 'premium_' + method;
+    var tier = pricingByKey[tierKey];
+    if (!tier) return;
     var isCC = method === 'cc';
-    document.getElementById('priceAmount').innerHTML = '<span class="currency">$</span>' + (isCC ? '2,070' : '2,000');
+    document.getElementById('priceAmount').innerHTML = '<span class="currency">$</span>' + tier.amount_display;
     document.getElementById('priceFee').textContent = isCC ? 'Includes 3.5% credit card processing fee' : 'No processing fee with bank transfer';
     document.getElementById('priceFee').style.color = isCC ? 'var(--color-warning)' : 'var(--color-success)';
     document.getElementById('priceSection').classList.remove('hidden');
   };
 
-  window.goToCheckout = function() {
+  window.goToCheckout = async function() {
     if (!currentMethod) return;
-    var url = LINKS[currentMethod];
-    if (!url) { alert('Payment option not available. Please contact support@moonraker.ai.'); return; }
-    var params = [];
-    if (CLIENT_SLUG) params.push('client_reference_id=' + encodeURIComponent(CLIENT_SLUG));
-    if (contact && contact.email) params.push('prefilled_email=' + encodeURIComponent(contact.email));
-    if (params.length > 0) url += (url.indexOf('?') === -1 ? '?' : '&') + params.join('&');
-    try { localStorage.setItem('moonraker-checkout-slug', CLIENT_SLUG); localStorage.setItem('moonraker-checkout-type', 'entity-audit'); } catch(e) {}
-    window.location.href = url;
+    var tierKey = 'premium_' + currentMethod;
+    if (!pricingByKey[tierKey]) { alert('Payment option not available. Please contact support@moonraker.ai.'); return; }
+    var cta = document.getElementById('checkoutBtn');
+    if (cta && cta.disabled) return;
+    if (cta) { cta.disabled = true; cta.dataset.origText = cta.innerHTML; cta.textContent = 'Redirecting to payment...'; }
+    try {
+      var resp = await fetch('/api/checkout/create-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: CLIENT_SLUG, product: 'entity_audit_premium', tier_key: tierKey })
+      });
+      var data = await resp.json();
+      if (!resp.ok || !data.url) throw new Error((data && data.error) || 'Unable to create checkout session');
+      try { localStorage.setItem('moonraker-checkout-slug', CLIENT_SLUG); localStorage.setItem('moonraker-checkout-type', 'entity-audit'); } catch(_) {}
+      window.location.href = data.url;
+    } catch (err) {
+      console.error('[entity-audit checkout] create-session failed:', err);
+      alert('Could not start checkout: ' + (err.message || err) + '\n\nPlease try again or email support@moonraker.ai.');
+      if (cta) { cta.disabled = false; if (cta.dataset.origText) cta.innerHTML = cta.dataset.origText; }
+    }
   };
 
   // Theme toggle
@@ -220,5 +247,6 @@ strong{font-weight:600;color:var(--color-heading)}
   init();
 })();
 </script>
+<script src="/shared/offline-banner.js" defer></script>
 </body>
 </html>

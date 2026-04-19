@@ -118,6 +118,13 @@ module.exports = async function handler(req, res) {
   var slug = session.client_reference_id || (session.metadata && session.metadata.slug) || '';
   var amountTotal = session.amount_total || 0;
   var paymentStatus = session.payment_status || '';
+  // Populated by /api/checkout/create-session. Accept both the historical
+  // 'core_marketing_system' value and the newer 'core_marketing' key used by
+  // the pricing_tiers table so legacy payment links and new Checkout Sessions
+  // route the same way. Empty when the buyer used a pre-existing buy.stripe.com
+  // link that wasn't tagged with metadata.
+  var metadataProduct = (session.metadata && session.metadata.product) || '';
+  if (metadataProduct === 'core_marketing') metadataProduct = 'core_marketing_system';
 
   if (!slug) {
     console.log('Stripe webhook: no slug found in session', session.id);

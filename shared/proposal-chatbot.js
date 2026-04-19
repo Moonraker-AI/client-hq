@@ -49,8 +49,8 @@
         if (!pageContent) pageContent = extractPageContent();
         return {
           page_content: pageContent,
-          slug: getSlug(),
-          page_token: window.__PAGE_TOKEN__ || null
+          slug: getSlug()
+          // page_token removed — cookie-backed auth via /api/page-token/request
         };
       }
     });

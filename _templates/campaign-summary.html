@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
-<script>window.__PAGE_TOKEN__ = "{{PAGE_TOKEN}}";</script>
+<script>window.__MR_PAGE_SCOPE__ = 'campaign_summary';</script>
+<script src="/shared/page-token.js" defer></script>
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Campaign Summary | Moonraker</title>
 <style>
@@ -694,11 +696,16 @@ section { padding: 4.5rem 0; }
   }
 
   // ── Data load ────────────────────────────────────────────────────
-  // pt= carries the scope='campaign_summary' page token baked into this file
-  // at deploy time. The endpoint verifies + binds to the resolved contact_id.
-  var PAGE_TOKEN = (typeof window !== 'undefined' && window.__PAGE_TOKEN__) || '';
-  fetch('/api/campaign-summary?client=' + encodeURIComponent(CLIENT_SLUG)
-    + '&pt=' + encodeURIComponent(PAGE_TOKEN))
+  // Auth rides along via the HttpOnly cookie set by /api/page-token/request
+  // (see shared/page-token.js). Wait for the initial mint before fetching so
+  // the server-side verify has a cookie to read.
+  (window.mrPageToken && window.mrPageToken.ready ? window.mrPageToken.ready() : Promise.resolve())
+    .catch(function() { /* surface as HTTP error below */ })
+    .then(function() {
+      return fetch('/api/campaign-summary?client=' + encodeURIComponent(CLIENT_SLUG), {
+        credentials: 'same-origin'
+      });
+    })
     .then(function(r) {
       if (!r.ok) return r.json().then(function(j) { throw new Error(j.error || ('HTTP ' + r.status)); });
       return r.json();
@@ -1512,5 +1519,6 @@ section { padding: 4.5rem 0; }
 })();
 </script>
 <script src="/shared/campaign-summary-chatbot.js"></script>
+<script src="/shared/offline-banner.js" defer></script>
 </body>
 </html>

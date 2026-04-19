@@ -296,17 +296,20 @@
           context = config.buildContext(messages);
         }
 
-        // page_token (HMAC scoped token emitted by the deploy step) rides along
-        // on every chat call so the server can verify the bearer came from a
-        // page we deployed. Endpoints that don't require a token ignore it;
-        // endpoints that do (e.g. /api/campaign-summary-chat) reject without.
+        // Auth ride-along is now handled by the HttpOnly page-token cookie set
+        // during /api/page-token/request (see shared/page-token.js). Wait for
+        // that initial mint to complete before the first chat request so the
+        // server side of the verify has a cookie to read.
+        if (window.mrPageToken && window.mrPageToken.ready) {
+          try { await window.mrPageToken.ready(); } catch (_) { /* server will 403 */ }
+        }
         var resp = await fetch(config.apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
           body: JSON.stringify({
             messages: messages,
-            context: context,
-            page_token: (typeof window !== 'undefined' && window.__PAGE_TOKEN__) || null
+            context: context
           })
         });
 

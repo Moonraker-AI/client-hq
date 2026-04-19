@@ -688,8 +688,11 @@
     h = h.replace(/\*(.*?)\*/g, '<em>$1</em>');
     h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
     h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(m, label, url) {
-      if (/^(javascript|data|vbscript):/i.test(url.replace(/&#?\w+;/g, ''))) return label;
-      return '<a href="' + url + '" target="_blank">' + label + '</a>';
+      try {
+        var u = new URL(url, location.href);
+        if (u.protocol !== 'http:' && u.protocol !== 'https:' && u.protocol !== 'mailto:') return label;
+      } catch(_) { return label; }
+      return '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + label + '</a>';
     });
     return h;
   }
@@ -1077,6 +1080,26 @@
   var typewriterTimer = null;
   var TYPEWRITER_SPEED = 8; // ms per character - very fast but smooth
 
+  // While streaming, avoid slicing mid-markdown-token (e.g. mid `**`, mid `[label](url)`).
+  // Find a safe render boundary at or before `idx`.
+  function safeStreamBoundary(full, idx) {
+    if (idx >= full.length) return idx;
+    var slice = full.slice(0, idx);
+    // Unclosed markdown link: ` [label]( ... ` with no matching `)` yet.
+    var lastOpenParen = slice.lastIndexOf('](');
+    if (lastOpenParen !== -1 && slice.lastIndexOf(')') < lastOpenParen) {
+      var lastBracket = slice.lastIndexOf('[');
+      if (lastBracket !== -1) return lastBracket;
+    }
+    // Unclosed code span: odd count of backticks.
+    var backticks = (slice.match(/`/g) || []).length;
+    if (backticks % 2 === 1) { var lastBt = slice.lastIndexOf('`'); if (lastBt !== -1) return lastBt; }
+    // Odd count of `**` pairs → last `*` is mid-bold.
+    var starPairs = (slice.match(/\*\*/g) || []).length;
+    if (starPairs % 2 === 1) { var lastPair = slice.lastIndexOf('**'); if (lastPair !== -1) return lastPair; }
+    return idx;
+  }
+
   function startTypewriter() {
     if (typewriterTimer) return;
     typewriterTimer = setInterval(function() {
@@ -1084,8 +1107,12 @@
       if (displayedText.length < currentStreamText.length) {
         // Reveal multiple chars per tick for speed (up to 4)
         var charsToAdd = Math.min(4, currentStreamText.length - displayedText.length);
-        displayedText = currentStreamText.substring(0, displayedText.length + charsToAdd);
-        renderStreamContent();
+        var nextIdx = displayedText.length + charsToAdd;
+        if (isStreaming) nextIdx = safeStreamBoundary(currentStreamText, nextIdx);
+        if (nextIdx > displayedText.length) {
+          displayedText = currentStreamText.substring(0, nextIdx);
+          renderStreamContent();
+        }
       } else if (!isStreaming) {
         // Streaming done and caught up
         clearInterval(typewriterTimer);

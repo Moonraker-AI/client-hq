@@ -743,8 +743,8 @@ module.exports = async function handler(req, res) {
   // client's revenue + cost + performance to anyone who knew the slug. A
   // page-token bound to scope='campaign_summary' and the contact_id makes
   // the link itself the secret, matching the /reports / /proposal pattern.
-  var submittedToken = (req.query && req.query.pt)
-    || (req.body && (req.body.pt || req.body.page_token))
+  var submittedToken = pageToken.getTokenFromRequest(req, 'campaign_summary')
+    || (req.query && req.query.pt)
     || '';
   var tokenData;
   try {

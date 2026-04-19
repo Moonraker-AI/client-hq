@@ -21,7 +21,8 @@ var ALLOWED_TABLES = [
   'proposal_followups','audit_followups','workspace_credentials','social_platforms',
   'directory_listings','content_pages','content_page_versions','content_chat_messages',
   'design_specs','neo_images','endorsements','error_log','newsletters','newsletter_subscribers',
-  'newsletter_sends','content_audit_batches','newsletter_stories','client_sites','site_deployments'
+  'newsletter_sends','content_audit_batches','newsletter_stories','client_sites','site_deployments',
+  'pricing_tiers'
 ];
 
 module.exports = async function handler(req, res) {

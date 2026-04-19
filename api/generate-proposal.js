@@ -482,18 +482,11 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
   // Replace template variables
   var html = templateHtml;
 
-  // Sign a scope=proposal page token bound to this contact_id.
-  // The token is baked into the HTML as window.__PAGE_TOKEN__ and sent with
-  // every message the prospect chatbot sends to /api/proposal-chat, which
-  // verifies it before hitting Anthropic. 60-day TTL (see page-token DEFAULT_TTL).
+  // Post-C6: proposal page no longer carries a baked-in token. It calls
+  // /api/page-token/request on load to mint a scope='proposal' HttpOnly cookie
+  // bound to the contact matching the URL slug. Kept as empty string for the
+  // {{PAGE_TOKEN}} replacement map below (which is a no-op now).
   var signedPageToken = '';
-  try {
-    signedPageToken = pageToken.sign({ scope: 'proposal', contact_id: contact.id });
-  } catch (e) {
-    // Config error (PAGE_TOKEN_SECRET missing) or validation error — fail the
-    // generate rather than deploy a broken proposal page.
-    return res.status(500).json({ error: 'Failed to sign page token: ' + e.message });
-  }
 
   var replacements = {
     '{{PRACTICE_NAME}}': practiceName,

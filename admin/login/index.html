@@ -3,6 +3,7 @@
 <script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="/assets/logo.png">
 <title>Sign In - Moonraker Client HQ</title>
@@ -256,6 +257,17 @@ async function handleLogin() {
       btn.textContent = 'Sign in';
       return;
     }
+
+    // Sync session cookie (C3: HttpOnly mr_admin_sess) before leaving the
+    // page so /admin lands with the cookie already in the jar.
+    try {
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ access_token: session.access_token })
+      });
+    } catch (e) { console.error('[login] session cookie sync failed:', e && e.message); }
 
     // Check if password change required
     if (profiles[0].must_change_password) {

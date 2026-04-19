@@ -135,8 +135,31 @@ async function verifyJwt(token) {
 }
 
 // ── Token extraction ──────────────────────────────────────────────
+//
+// Priority:
+//   1. mr_admin_sess HttpOnly cookie (preferred, set by POST /api/auth/session)
+//   2. Authorization: Bearer <token>  (fallback for CRON_SECRET, AGENT_API_KEY,
+//      non-browser admin tooling and the migration window while legacy admin
+//      tabs still carry the old header-injection code)
+
+var ADMIN_COOKIE = 'mr_admin_sess';
+
+function readCookie(req, name) {
+  if (!req || !req.headers) return null;
+  var header = req.headers.cookie || '';
+  if (!header) return null;
+  var prefix = name + '=';
+  var parts = header.split(';');
+  for (var i = 0; i < parts.length; i++) {
+    var p = parts[i].trim();
+    if (p.indexOf(prefix) === 0) return p.substring(prefix.length);
+  }
+  return null;
+}
 
 function extractToken(req) {
+  var cookieToken = readCookie(req, ADMIN_COOKIE);
+  if (cookieToken) return cookieToken;
   var auth = req.headers.authorization || req.headers.Authorization || '';
   if (auth.startsWith('Bearer ')) {
     var token = auth.slice(7).trim();

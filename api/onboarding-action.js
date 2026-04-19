@@ -28,7 +28,7 @@ module.exports = async function handler(req, res) {
     var table = body.table;
     var filters = body.filters;
     var data = body.data;
-    var submittedToken = body.page_token;
+    var submittedToken = pageToken.getTokenFromRequest(req, 'onboarding');
 
     if (!action || !table) return res.status(400).json({ error: 'action and table required' });
 

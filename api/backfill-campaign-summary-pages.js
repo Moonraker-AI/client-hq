@@ -95,26 +95,10 @@ module.exports = async function handler(req, res) {
           continue;
         }
 
-        // Sign a scope='campaign_summary' page token bound to this contact.
-        // Baked into the HTML as window.__PAGE_TOKEN__ and sent with every
-        // call to /api/campaign-summary and /api/campaign-summary-chat,
-        // both of which verify + bind to the contact_id from the token.
-        // 365-day TTL (see page-token DEFAULT_TTL).
-        var signedToken;
-        try {
-          signedToken = pageToken.sign({ scope: 'campaign_summary', contact_id: c.id });
-        } catch (e) {
-          // Config error (PAGE_TOKEN_SECRET missing) or validation — skip this
-          // client, log, and continue. Don't deploy a broken page.
-          failed++;
-          monitor.logError('backfill-campaign-summary-pages', e, {
-            client_slug: c.slug,
-            detail: { stage: 'sign_token' }
-          });
-          results.push({ slug: c.slug, status: 'failed', error: 'Token sign failed' });
-          continue;
-        }
-        var html = template.split('{{PAGE_TOKEN}}').join(signedToken);
+        // Post-C6: no per-page token substitution. The deployed template calls
+        // /api/page-token/request on load to mint a scope='campaign_summary'
+        // cookie bound to the contact matching the URL slug.
+        var html = template;
 
         await gh.pushFile(
           destPath,

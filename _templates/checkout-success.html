@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment Confirmed - Moonraker</title>
+<link rel="icon" type="image/png" href="/assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="light"] { --bg: #F8FAFC; --surface: #FFFFFF; --border: #E2E8F0; --heading: #0F172A; --body: #334155; --muted: #64748B; --primary: #00D47E; --primary-hover: #00b86c; --success-bg: rgba(0,212,126,.08); }
+  :root[data-theme="dark"]  { --bg: #0A1510; --surface: #12211B; --border: #1F3328; --heading: #E8F5EF; --body: #C9D9D1; --muted: #7A8F83; --primary: #00D47E; --primary-hover: #00F089; --success-bg: rgba(0,212,126,.14); }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font-family: Inter, -apple-system, sans-serif; background: var(--bg); color: var(--body); display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+  .card { max-width: 560px; width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem 2rem; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,.04); }
+  .logo { width: 56px; height: 56px; margin: 0 auto 1.25rem; display: block; }
+  .check-circle { width: 72px; height: 72px; margin: 0 auto 1.25rem; border-radius: 50%; background: var(--success-bg); display: flex; align-items: center; justify-content: center; }
+  .check-circle svg { width: 36px; height: 36px; stroke: var(--primary); fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  h1 { font-family: Outfit, sans-serif; font-size: 1.65rem; font-weight: 700; color: var(--heading); margin: 0 0 .5rem; line-height: 1.2; }
+  .subtitle { color: var(--body); font-size: 1rem; line-height: 1.55; margin: 0 0 1.5rem; }
+  .order-box { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; margin: 0 0 1.75rem; text-align: left; }
+  .order-row { display: flex; justify-content: space-between; font-size: .88rem; padding: .35rem 0; }
+  .order-row + .order-row { border-top: 1px solid var(--border); }
+  .order-row .label { color: var(--muted); }
+  .order-row .value { color: var(--heading); font-weight: 500; font-family: 'Outfit', sans-serif; }
+  .next-steps { text-align: left; margin: 0 0 1.75rem; }
+  .next-steps h3 { font-family: Outfit, sans-serif; font-size: 1rem; color: var(--heading); margin: 0 0 .75rem; font-weight: 600; }
+  .next-steps ol { margin: 0; padding-left: 1.25rem; }
+  .next-steps li { color: var(--body); font-size: .92rem; line-height: 1.6; margin-bottom: .35rem; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; background: var(--primary); color: #0A1510; text-decoration: none; font-family: Outfit, sans-serif; font-weight: 600; padding: .85rem 1.75rem; border-radius: 10px; font-size: 1rem; transition: all .15s ease; border: none; cursor: pointer; min-height: 44px; }
+  .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+  .btn.secondary { background: transparent; color: var(--body); border: 1px solid var(--border); margin-top: .6rem; }
+  .btn.secondary:hover { color: var(--heading); border-color: var(--primary); background: transparent; transform: none; }
+  .muted-note { color: var(--muted); font-size: .82rem; margin-top: 1.5rem; }
+  .muted-note a { color: var(--primary); text-decoration: none; }
+  @media (max-width: 520px) {
+    .card { padding: 2rem 1.25rem; }
+    h1 { font-size: 1.4rem; }
+    .subtitle { font-size: .95rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <img class="logo" src="/assets/logo.png" alt="Moonraker">
+  <div class="check-circle">
+    <svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>
+  </div>
+  <h1>Payment confirmed</h1>
+  <p class="subtitle" id="subtitle">Welcome aboard. We just received your payment and your campaign is officially underway.</p>
+
+  <div class="order-box" id="orderBox" style="display:none;">
+    <div class="order-row"><span class="label">Tier</span><span class="value" id="tierName">-</span></div>
+    <div class="order-row" id="sessionRow" style="display:none;"><span class="label">Stripe reference</span><span class="value" id="sessionId">-</span></div>
+  </div>
+
+  <div class="next-steps" id="coreNext" style="display:none;">
+    <h3>What happens next</h3>
+    <ol>
+      <li>Your onboarding dashboard is now unlocked.</li>
+      <li>Sign your Client Service Agreement and book your intro call with Scott.</li>
+      <li>Tell us a bit about your practice so we can hit the ground running.</li>
+    </ol>
+  </div>
+
+  <div class="next-steps" id="auditNext" style="display:none;">
+    <h3>What happens next</h3>
+    <ol>
+      <li>Our team records a personalized Loom video walking through your audit findings.</li>
+      <li>You'll receive an email within 48-72 hours when it's ready.</li>
+      <li>Your scorecard page is upgraded with the Loom embed and deployable schema files.</li>
+    </ol>
+  </div>
+
+  <a id="primaryCta" class="btn" href="#">Continue</a>
+  <br>
+  <a id="secondaryCta" class="btn secondary" href="#" style="display:none;">View your dashboard</a>
+
+  <p class="muted-note">Need help? Email <a href="mailto:support@moonraker.ai">support@moonraker.ai</a></p>
+</div>
+
+<script>
+(function() {
+  var pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
+  var CLIENT_SLUG = pathParts[0] || '';
+  var params = new URLSearchParams(window.location.search);
+  var sessionId = params.get('session_id') || '';
+  var tierKey = params.get('tier') || '';
+
+  var isEntityAudit = /premium/.test(tierKey);
+
+  if (sessionId) {
+    document.getElementById('sessionId').textContent = sessionId.slice(0, 18) + (sessionId.length > 18 ? '...' : '');
+    document.getElementById('sessionRow').style.display = 'flex';
+  }
+  if (tierKey) {
+    document.getElementById('tierName').textContent = tierKey.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+    document.getElementById('orderBox').style.display = 'block';
+  }
+
+  if (isEntityAudit) {
+    document.getElementById('subtitle').textContent = 'Your premium entity audit is being prepared. You\'ll receive your personalized walkthrough within 48-72 hours.';
+    document.getElementById('auditNext').style.display = 'block';
+    document.getElementById('primaryCta').textContent = 'Back to your scorecard';
+    document.getElementById('primaryCta').href = '/' + CLIENT_SLUG + '/entity-audit';
+  } else {
+    document.getElementById('coreNext').style.display = 'block';
+    document.getElementById('primaryCta').textContent = 'Start Onboarding \u2192';
+    document.getElementById('primaryCta').href = '/' + CLIENT_SLUG + '/onboarding';
+    document.getElementById('secondaryCta').textContent = 'View your dashboard';
+    document.getElementById('secondaryCta').href = '/' + CLIENT_SLUG;
+    document.getElementById('secondaryCta').style.display = 'inline-flex';
+  }
+})();
+</script>
+<script src="/shared/offline-banner.js" defer></script>
+</body>
+</html>

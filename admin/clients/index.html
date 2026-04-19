@@ -3,6 +3,7 @@
 <script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="/assets/logo.png">
 <title>Clients - Moonraker Admin</title>
@@ -831,7 +832,7 @@
     <a href="/admin/system"><span class="nav-icon"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l2.5 2.5"/></svg></span><span class="nav-label">Cron Health</span></a>
   </nav>
   <div class="sidebar-footer">
-    <button onclick="adminAuth.signOut()" class="footer-icon" title="Sign out"><svg viewBox="0 0 16 16"><path d="M6 1.5H3.5a1 1 0 00-1 1v11a1 1 0 001 1H6"/><path d="M10.5 11.5L14 8l-3.5-3.5"/><path d="M14 8H6"/></svg></button>
+    <button onclick="adminAuth.signOut()" class="footer-icon" title="Sign out" aria-label="Sign out"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 1.5H3.5a1 1 0 00-1 1v11a1 1 0 001 1H6"/><path d="M10.5 11.5L14 8l-3.5-3.5"/><path d="M14 8H6"/></svg></button>
     <div class="footer-right">
       <button class="collapse-btn" id="collapseBtn" aria-label="Collapse sidebar"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M10 3L5 8l5 5"/></svg></button>
       <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme"><span class="theme-icon">&#x1F319;</span></button>
@@ -1292,7 +1293,7 @@
 </div>
 
 <!-- TOAST -->
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 (function() {
@@ -1300,6 +1301,20 @@
 
   var SB = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
   var SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
+
+  // Managed pollers: auto-clear when tab hidden or navigated away to avoid background DDoS.
+  var _managedPollers = new Set();
+  function mkInterval(fn, ms) {
+    var id = setInterval(fn, ms);
+    _managedPollers.add(id);
+    return id;
+  }
+  function _clearAllPollers() {
+    _managedPollers.forEach(function(id) { clearInterval(id); });
+    _managedPollers.clear();
+  }
+  window.addEventListener('pagehide', _clearAllPollers);
+  document.addEventListener('visibilitychange', function() { if (document.hidden) _clearAllPollers(); });
 
   var params = new URLSearchParams(window.location.search);
   var slug = params.get('slug');
@@ -1897,7 +1912,7 @@
             .then(function(afus) {
               state.auditFollowups = afus || [];
               renderEntityAudit();
-            }).catch(function() {});
+            }).catch(function(e) { console.error('[audit_followups fetch failed]', e); });
         }
       }).catch(function(e) {
         console.error('[ensureTabData] Error loading tab=' + tabName + ':', e);
@@ -3417,7 +3432,7 @@
     }).then(function(r) { return r.json(); }).then(function(batches) {
       var batch = batches && batches[0];
       if (batch && (batch.status === 'agent_running' || batch.status === 'processing' || batch.status === 'queued')) {
-        area.innerHTML = '<span style="font-size:.82rem;color:#3B82F6;font-weight:500;">Batch audit in progress (' + batch.pages_extracted + '/' + batch.pages_total + ' pages)</span>';
+        area.innerHTML = '<span style="font-size:.82rem;color:var(--color-info);font-weight:500;">Batch audit in progress (' + batch.pages_extracted + '/' + batch.pages_total + ' pages)</span>';
       } else if (batch && batch.status === 'complete') {
         area.innerHTML = '<span style="font-size:.82rem;color:#00b86c;font-weight:500;">Batch audit complete (' + batch.pages_processed + '/' + batch.pages_total + ' pages)</span>' +
           ' <button class="btn btn-ghost btn-sm" style="font-size:.75rem;margin-left:.5rem;" onclick="triggerBatchFromIntroCall()">Re-run</button>';
@@ -3755,7 +3770,7 @@
           h += '<span><strong style="color:var(--color-heading);">Subject:</strong> ' + esc(f.subject) + '</span>';
           h += '</div>';
           var escaped = (f.body_html || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-          h += '<iframe srcdoc="' + escaped + '" style="width:100%;min-height:400px;border:none;display:block;" onload="this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'"></iframe>';
+          h += '<iframe sandbox="allow-same-origin" srcdoc="' + escaped + '" style="width:100%;min-height:400px;border:none;display:block;" onload="try{this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'}catch(_){}"></iframe>';
           h += '</div>';
           h += '</div>';
         });
@@ -3838,7 +3853,7 @@
       document.getElementById('auditStats').innerHTML =
         '<div class="stat-mini"><div class="stat-label">Total Tasks</div><div class="stat-value">' + tasks.length + '</div><div class="stat-sub">' + pct + '% complete</div></div>' +
         '<div class="stat-mini"><div class="stat-label">Not Started</div><div class="stat-value">' + tns + '</div></div>' +
-        '<div class="stat-mini"><div class="stat-label">In Progress</div><div class="stat-value" style="color:#3B82F6;">' + tip + '</div></div>' +
+        '<div class="stat-mini"><div class="stat-label">In Progress</div><div class="stat-value" style="color:var(--color-info);">' + tip + '</div></div>' +
         '<div class="stat-mini"><div class="stat-label">Internal Review</div><div class="stat-value" style="color:#8B5CF6;">' + tir + '</div></div>' +
         '<div class="stat-mini"><div class="stat-label">Waiting on Client</div><div class="stat-value" style="color:#D97706;">' + twc + '</div></div>' +
         '<div class="stat-mini"><div class="stat-label">Complete</div><div class="stat-value" style="color:var(--color-success);">' + tc + '</div></div>';
@@ -3909,7 +3924,7 @@
       fetch('/api/action', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'update_record', table: 'contacts', filters: { id: c.id }, data: contactUpdates })
-      }).catch(function() {});
+      }).catch(function(e) { console.error('[contact geo update failed]', e); toast('Failed to save location updates', 'error'); });
     }
 
     fetch('/api/action', {
@@ -4026,7 +4041,7 @@
     fetch('/api/action', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'update_record', table: 'entity_audits', filters: { id: auditId }, data: { status: 'processing', updated_at: new Date().toISOString() } })
-    }).catch(function() {});
+    }).catch(function(e) { console.error('[entity_audits status=processing failed]', e); toast('Failed to mark audit as processing', 'error'); });
 
     // Close modal after a brief confirmation
     if (state.entityAudit) state.entityAudit.status = 'processing';
@@ -4068,7 +4083,7 @@
                     toast('Surge audit processed. Scorecard deployed.', 'success');
                   }
                 }
-              }).catch(function() {});
+              }).catch(function(e) { console.error('[entity_audits poll fetch failed]', e); });
             return;
           }
 
@@ -4187,7 +4202,7 @@
   function startAgentPoll(taskId) {
     if (_agentPollTimer) clearInterval(_agentPollTimer);
 
-    _agentPollTimer = setInterval(function() {
+    _agentPollTimer = mkInterval(function() {
       fetch('/api/poll-agent?task_id=' + taskId)
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -4384,7 +4399,7 @@
     if (afus.length === 0) { toast('No follow-ups found', 'error'); return; }
     var w = window.open('', '_blank');
     w.document.write('<html><head><title>Audit Follow-up Sequence</title>');
-    w.document.write('<style>body{margin:0;padding:2rem;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1E2A5E;}.email-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:2rem;overflow:hidden;}.email-header{padding:1rem 1.5rem;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;}.email-meta{font-size:.85rem;color:#6B7599;}.email-meta strong{color:#1E2A5E;}.email-num{font-size:.75rem;font-weight:600;padding:.25rem .75rem;border-radius:99px;display:inline-block;}.status-draft{background:rgba(245,158,11,.1);color:#F59E0B;}.status-pending{background:rgba(59,130,246,.08);color:#3B82F6;}.status-sent{background:rgba(0,212,126,.1);color:#00D47E;}.status-cancelled{background:rgba(107,117,153,.1);color:#6B7599;}.status-failed{background:rgba(239,68,68,.1);color:#EF4444;}</style></head><body>');
+    w.document.write('<style>body{margin:0;padding:2rem;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1E2A5E;}.email-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:2rem;overflow:hidden;}.email-header{padding:1rem 1.5rem;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;}.email-meta{font-size:.85rem;color:#6B7599;}.email-meta strong{color:#1E2A5E;}.email-num{font-size:.75rem;font-weight:600;padding:.25rem .75rem;border-radius:99px;display:inline-block;}.status-draft{background:rgba(245,158,11,.1);color:var(--color-warning);}.status-pending{background:rgba(59,130,246,.08);color:var(--color-info);}.status-sent{background:rgba(0,212,126,.1);color:var(--color-primary);}.status-cancelled{background:rgba(107,117,153,.1);color:#6B7599;}.status-failed{background:rgba(239,68,68,.1);color:var(--color-danger);}</style></head><body>');
     w.document.write('<h1 style="font-size:1.3rem;margin:0 0 .25rem;">Audit Follow-up Sequence (' + afus.length + ' emails)</h1>');
     w.document.write('<p style="color:#6B7599;font-size:.85rem;margin-bottom:1.5rem;">From: audits@clients.moonraker.ai &middot; Reply-to: scott@moonraker.ai</p>');
     afus.forEach(function(fu) {
@@ -4393,7 +4408,7 @@
       if (fu.sent_at) schedStr = 'Sent ' + new Date(fu.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       w.document.write('<div class="email-card"><div class="email-header"><div><span class="email-num status-' + fu.status + '">Email ' + fu.sequence_number + ' &middot; ' + statusLabel + '</span><span class="email-meta" style="margin-left:.75rem;">' + schedStr + '</span></div><div class="email-meta"><strong>Subject:</strong> ' + esc(fu.subject || '(no subject)') + '</div></div>');
       var escaped = (fu.body_html || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-      w.document.write('<div style="padding:0;"><iframe srcdoc="' + escaped + '" style="width:100%;min-height:500px;border:none;" onload="this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'"></iframe></div></div>');
+      w.document.write('<div style="padding:0;"><iframe sandbox="allow-same-origin" srcdoc="' + escaped + '" style="width:100%;min-height:500px;border:none;" onload="try{this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'}catch(_){}"></iframe></div></div>');
     });
     w.document.write('</body></html>');
     w.document.close();
@@ -4494,7 +4509,7 @@
           record_label: label || null
         }
       })
-    }).catch(function() {}); // silent fail
+    }).catch(function(e) { console.error('[audit_log write failed]', e); });
   }
 
   window.setTaskStatus = function setTaskStatus(taskId, newStatus, evt) {
@@ -5169,7 +5184,7 @@
   window.pollScoutResult = function(slug, taskId) {
     var attempts = 0;
     var maxAttempts = 24;
-    var interval = setInterval(async function() {
+    var interval = mkInterval(async function() {
       attempts++;
       if (attempts > maxAttempts) { clearInterval(interval); return; }
       try {
@@ -5599,7 +5614,7 @@
   };
 
   window.pollContentAudit = function(cpId, taskId) {
-    var pollInterval = setInterval(function() {
+    var pollInterval = mkInterval(function() {
       fetch('/api/poll-agent?task_id=' + taskId)
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -5624,7 +5639,7 @@
               if (statusEl) statusEl.textContent = 'Failed: ' + (data.message || '');
             }
           }
-        }).catch(function() {});
+        }).catch(function(e) { console.error('[audit poll failed]', e); });
     }, 15000);
   };
 
@@ -5822,7 +5837,7 @@
       }).then(function(r) { return r.json(); }).then(function(d) {
         state.workspace = (d && d.data && d.data[0]) || null;
         applyCmsInputs(state.workspace);
-      }).catch(function() {});
+      }).catch(function(e) { console.error('[workspace_credentials fetch failed]', e); });
     }
     // App Password only for WordPress
     var pwGroup = document.getElementById('cmsAppPasswordGroup');
@@ -5884,12 +5899,12 @@
       if (spec && spec.capture_status === 'capturing') {
         sHtml += '<div style="display:flex;align-items:center;gap:.5rem;padding:.6rem .8rem;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:8px;margin-bottom:.75rem;">';
         sHtml += '<div class="spinner"></div>';
-        sHtml += '<span style="font-size:.82rem;color:#3B82F6;font-weight:500;">Capturing website assets (screenshots, CSS, content)...</span>';
+        sHtml += '<span style="font-size:.82rem;color:var(--color-info);font-weight:500;">Capturing website assets (screenshots, CSS, content)...</span>';
         sHtml += '</div>';
         // Poll for completion
         if (!window._specCapturePoll) {
           var _specPollFails = 0;
-          window._specCapturePoll = setInterval(function() {
+          window._specCapturePoll = mkInterval(function() {
             fetch(SB + '/rest/v1/design_specs?contact_id=eq.' + c.id + '&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) {
               if (!r.ok) throw new Error(r.status);
               return r.json();
@@ -6268,7 +6283,7 @@
       // Poll for updates every 30s while active
       if (!window._batchPollTimer) {
         var _batchPollFails = 0;
-        window._batchPollTimer = setInterval(function() {
+        window._batchPollTimer = mkInterval(function() {
           fetch(SB + '/rest/v1/content_audit_batches?select=*&client_slug=eq.' + state.contact.slug + '&order=created_at.desc&limit=5', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) {
             if (!r.ok) throw new Error(r.status);
             return r.json();
@@ -6329,7 +6344,7 @@
       badge.style.color = '#EF4444';
       if (triggerBtn) { triggerBtn.style.display = 'inline-flex'; triggerBtn.textContent = 'Retry Batch Audit'; }
 
-      contentEl.innerHTML = '<p style="font-size:.82rem;color:#EF4444;">' + esc(lastBatch.error_message || 'Batch audit failed.') + '</p>';
+      contentEl.innerHTML = '<p style="font-size:.82rem;color:var(--color-danger);">' + esc(lastBatch.error_message || 'Batch audit failed.') + '</p>';
 
     } else {
       // No batches yet
@@ -6489,7 +6504,7 @@
 
     document.getElementById('rptOverview').innerHTML =
       '<div class="stat-mini"><div class="stat-label">Data Streams</div><div class="stat-value" style="font-size:1rem;">' +
-        '<span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;margin-right:.35rem;' + (gscOk ? 'background:rgba(0,212,126,.1);color:#00b86c' : 'background:rgba(239,68,68,.1);color:#EF4444') + ';">GSC</span>' +
+        '<span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;margin-right:.35rem;' + (gscOk ? 'background:rgba(0,212,126,.1);color:#00b86c' : 'background:rgba(239,68,68,.1);color:var(--color-danger)') + ';">GSC</span>' +
         '<span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;margin-right:.35rem;' + (lfOk ? 'background:rgba(0,212,126,.1);color:#00b86c' : 'background:rgba(245,158,11,.1);color:#D97706') + ';">GBP</span>' +
         '<span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;background:rgba(0,212,126,.1);color:#00b86c;">AI</span>' +
       '</div></div>' +
@@ -6636,7 +6651,7 @@
         var kwHtml = '<div style="display:flex;flex-wrap:wrap;gap:.35rem;">';
         kws.forEach(function(kw) {
           kwHtml += '<span style="display:inline-flex;align-items:center;gap:.25rem;font-size:.78rem;padding:.2rem .5rem;border-radius:5px;background:var(--color-bg);border:1px solid var(--color-border);color:var(--color-heading);font-weight:500;">';
-          kwHtml += '<span style="font-size:.6rem;font-weight:700;padding:.05rem .2rem;border-radius:3px;background:' + (kw.priority === 1 ? 'rgba(0,212,126,.1);color:#00b86c' : 'rgba(59,130,246,.1);color:#3B82F6') + ';">P' + (kw.priority || 1) + '</span>';
+          kwHtml += '<span style="font-size:.6rem;font-weight:700;padding:.05rem .2rem;border-radius:3px;background:' + (kw.priority === 1 ? 'rgba(0,212,126,.1);color:#00b86c' : 'rgba(59,130,246,.1);color:var(--color-info)') + ';">P' + (kw.priority || 1) + '</span>';
           kwHtml += esc(kw.keyword) + '</span>';
         });
         kwHtml += '</div>';
@@ -7059,11 +7074,11 @@
         iframe.contentDocument.close();
       } else {
         document.getElementById('emailMeta').textContent = 'Error: ' + (res.error || 'Unknown error');
-        document.getElementById('emailPreviewFrame').innerHTML = '<div style="padding:2rem;text-align:center;color:#EF4444;">' + esc(res.error || JSON.stringify(res)) + '</div>';
+        document.getElementById('emailPreviewFrame').innerHTML = '<div style="padding:2rem;text-align:center;color:var(--color-danger);">' + esc(res.error || JSON.stringify(res)) + '</div>';
       }
     }).catch(function(err) {
       document.getElementById('emailMeta').textContent = 'Error loading preview';
-      document.getElementById('emailPreviewFrame').innerHTML = '<div style="padding:2rem;text-align:center;color:#EF4444;">' + esc(err.message || 'Network error') + '</div>';
+      document.getElementById('emailPreviewFrame').innerHTML = '<div style="padding:2rem;text-align:center;color:var(--color-danger);">' + esc(err.message || 'Network error') + '</div>';
     });
   };
 
@@ -8022,7 +8037,7 @@
     if (proposal.sent_at) h += '<span style="font-size:.78rem;color:var(--color-muted);">Sent ' + new Date(proposal.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>';
     if (proposal.proposal_url) h += '<a href="' + esc(proposal.proposal_url) + '?preview=true" target="_blank" style="font-size:.78rem;color:var(--color-primary);">Preview &#8599;</a>';
     h += '<div style="flex:1;"></div>';
-    h += '<button class="prop-delete" title="Delete proposal" onclick="window._deleteProposal(\'' + proposal.id + '\')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button>';
+    h += '<button class="prop-delete" title="Delete proposal" aria-label="Delete proposal" onclick="window._deleteProposal(\'' + proposal.id + '\')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8"/></svg></button>';
     h += '</div>';
 
     // Enrichment pills (if enriched)
@@ -8176,7 +8191,7 @@
           h += '<span><strong style="color:var(--color-heading);">Subject:</strong> ' + esc(f.subject) + '</span>';
           h += '</div>';
           var pfuEscaped = (f.body_html || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-          h += '<iframe srcdoc="' + pfuEscaped + '" style="width:100%;min-height:400px;border:none;display:block;" onload="this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'"></iframe>';
+          h += '<iframe sandbox="allow-same-origin" srcdoc="' + pfuEscaped + '" style="width:100%;min-height:400px;border:none;display:block;" onload="try{this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'}catch(_){}"></iframe>';
           h += '</div>';
           h += '</div>';
         });
@@ -8434,13 +8449,12 @@
             '<span><strong style="color:var(--color-heading);">Reply-to:</strong> ' + esc(data.reply_to) + '</span>' +
             '<span><strong style="color:var(--color-heading);">Subject:</strong> ' + esc(data.subject) + '</span>';
           var iframe = document.createElement('iframe');
+          iframe.setAttribute('sandbox', 'allow-same-origin');
           iframe.style.cssText = 'width:100%;min-height:500px;border:none;display:block;';
-          iframe.onload = function() { iframe.style.height = iframe.contentDocument.body.scrollHeight + 20 + 'px'; };
+          iframe.onload = function() { try { iframe.style.height = iframe.contentDocument.body.scrollHeight + 20 + 'px'; } catch(_) {} };
+          iframe.srcdoc = String(data.body_html || '');
           document.getElementById('propEmailBody').innerHTML = '';
           document.getElementById('propEmailBody').appendChild(iframe);
-          iframe.contentDocument.open();
-          iframe.contentDocument.write(data.body_html);
-          iframe.contentDocument.close();
           panel.setAttribute('data-loaded', '1');
         } else {
           document.getElementById('propEmailMeta').innerHTML = '<span style="color:var(--color-danger);">Error: ' + esc(data.error || 'Unknown') + '</span>';
@@ -8462,17 +8476,18 @@
   };
 
   window._previewEmail = async function(proposalId) {
-    // Legacy: opens in new tab (fallback)
+    // Legacy: opens in new tab (fallback). Body rendered inside sandboxed iframe (scripts denied).
     try {
       var resp = await fetch('/api/send-proposal-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proposal_id: proposalId, preview_only: true }) });
       var data = await resp.json();
       if (data.ok) {
         var w = window.open('', '_blank');
+        var srcdoc = String(data.body_html || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         w.document.write('<html><head><title>Email Preview</title></head><body>');
         w.document.write('<div style="padding:1rem;background:#f5f5f5;font-family:sans-serif;font-size:14px;margin-bottom:1rem;">');
-        w.document.write('<strong>To:</strong> ' + data.to + '<br><strong>From:</strong> ' + data.from + '<br><strong>Reply-To:</strong> ' + data.reply_to + '<br><strong>CC:</strong> ' + data.cc + '<br><strong>Subject:</strong> ' + data.subject);
+        w.document.write('<strong>To:</strong> ' + esc(data.to) + '<br><strong>From:</strong> ' + esc(data.from) + '<br><strong>Reply-To:</strong> ' + esc(data.reply_to) + '<br><strong>CC:</strong> ' + esc(data.cc) + '<br><strong>Subject:</strong> ' + esc(data.subject));
         w.document.write('</div>');
-        w.document.write(data.body_html);
+        w.document.write('<iframe sandbox="allow-same-origin" style="width:100%;height:80vh;border:1px solid #ddd;" srcdoc="' + srcdoc + '"></iframe>');
         w.document.write('</body></html>');
         w.document.close();
       } else { toast('Preview failed: ' + (data.error || 'Unknown'), 'error'); }
@@ -8547,7 +8562,7 @@
     if (fus.length === 0) { toast('No follow-ups found', 'error'); return; }
     var w = window.open('', '_blank');
     w.document.write('<html><head><title>Follow-up Sequence Preview</title>');
-    w.document.write('<style>body{margin:0;padding:2rem;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1E2A5E;}.email-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:2rem;overflow:hidden;}.email-header{padding:1rem 1.5rem;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;}.email-meta{font-size:.85rem;color:#6B7599;}.email-meta strong{color:#1E2A5E;}.email-num{font-size:.75rem;font-weight:600;padding:.25rem .75rem;border-radius:99px;display:inline-block;}.status-draft{background:rgba(245,158,11,.1);color:#F59E0B;}.status-pending{background:rgba(59,130,246,.08);color:#3B82F6;}.status-sent{background:rgba(0,212,126,.1);color:#00D47E;}.status-cancelled{background:rgba(107,117,153,.1);color:#6B7599;}</style></head><body>');
+    w.document.write('<style>body{margin:0;padding:2rem;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1E2A5E;}.email-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:2rem;overflow:hidden;}.email-header{padding:1rem 1.5rem;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;}.email-meta{font-size:.85rem;color:#6B7599;}.email-meta strong{color:#1E2A5E;}.email-num{font-size:.75rem;font-weight:600;padding:.25rem .75rem;border-radius:99px;display:inline-block;}.status-draft{background:rgba(245,158,11,.1);color:var(--color-warning);}.status-pending{background:rgba(59,130,246,.08);color:var(--color-info);}.status-sent{background:rgba(0,212,126,.1);color:var(--color-primary);}.status-cancelled{background:rgba(107,117,153,.1);color:#6B7599;}</style></head><body>');
     w.document.write('<h1 style="font-size:1.3rem;margin:0 0 .25rem;">Follow-up Sequence (' + fus.length + ' emails)</h1>');
     w.document.write('<p style="color:#6B7599;font-size:.85rem;margin-bottom:1.5rem;">From: proposals@clients.moonraker.ai</p>');
     fus.forEach(function(fu) {
@@ -8556,7 +8571,7 @@
       if (fu.sent_at) schedStr = 'Sent ' + new Date(fu.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       w.document.write('<div class="email-card"><div class="email-header"><div><span class="email-num status-' + fu.status + '">Email ' + fu.sequence_number + ' &middot; ' + statusLabel + '</span><span class="email-meta" style="margin-left:.75rem;">' + schedStr + '</span></div><div class="email-meta"><strong>Subject:</strong> ' + esc(fu.subject || '(no subject)') + '</div></div>');
       var escaped = (fu.body_html || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-      w.document.write('<div style="padding:0;"><iframe srcdoc="' + escaped + '" style="width:100%;min-height:500px;border:none;" onload="this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'"></iframe></div></div>');
+      w.document.write('<div style="padding:0;"><iframe sandbox="allow-same-origin" srcdoc="' + escaped + '" style="width:100%;min-height:500px;border:none;" onload="try{this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'}catch(_){}"></iframe></div></div>');
     });
     w.document.write('</body></html>');
     w.document.close();

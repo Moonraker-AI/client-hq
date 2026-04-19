@@ -41,7 +41,7 @@ module.exports = async function handler(req, res) {
   // the request isn't coming from a legitimate campaign-summary page we
   // deployed. Protects Anthropic API budget independently of the origin
   // header, which is trivially spoofable by server-side callers.
-  var submittedToken = (req.body && (req.body.page_token || req.body.pt)) || '';
+  var submittedToken = pageToken.getTokenFromRequest(req, 'campaign_summary') || '';
   var tokenData;
   try {
     tokenData = pageToken.verify(submittedToken, 'campaign_summary');

@@ -3,6 +3,7 @@
 <script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Get Started - Moonraker</title>
 <style>
@@ -182,42 +183,32 @@ strong{font-weight:600;color:var(--color-heading)}
   var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
   var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
 
-  var LINKS = {
-    annual_upfront_ach:      'https://buy.stripe.com/28EfZgbsE9jrfWQ7PX5wI0K',
-    annual_upfront_cc:       'https://buy.stripe.com/dRm14m7co1QZfWQc6d5wI0P',
-    annual_quarterly_ach:    'https://buy.stripe.com/4gM9ASeEQ0MVh0U8U15wI0L',
-    annual_quarterly_cc:     'https://buy.stripe.com/7sY9AS8gs2V33a43zH5wI0Q',
-    annual_monthly_ach:      'https://buy.stripe.com/3cI00ieEQfHPaCw7PX5wI0N',
-    annual_monthly_cc:       'https://buy.stripe.com/eVqfZg7coanv11W5HP5wI0S',
-    quarterly_upfront_ach:   'https://buy.stripe.com/7sY00i2W8cvDbGA7PX5wI0M',
-    quarterly_upfront_cc:    'https://buy.stripe.com/cNi9ASaoA1QZ6mg6LT5wI0R',
-    quarterly_monthly_ach:   'https://buy.stripe.com/3cI00ieEQfHPaCw7PX5wI0N',
-    quarterly_monthly_cc:    'https://buy.stripe.com/eVqfZg7coanv11W5HP5wI0S',
-    monthly_ach:             'https://buy.stripe.com/3cI00ieEQfHPaCw7PX5wI0N',
-    monthly_cc:              'https://buy.stripe.com/eVqfZg7coanv11W5HP5wI0S'
-  };
+  // Pricing is fetched from /api/pricing?product=core_marketing on init().
+  // Keyed by tier_key (e.g. 'annual_upfront_ach'). See pricing_tiers table.
+  var pricingByKey = {};
 
-  var PRICING = {
-    annual_upfront:   { ach:'20,000',    cc:'20,700',    period:'',         detail:'One-time payment for 12 months' },
-    annual_quarterly: { ach:'5,000',     cc:'5,175',     period:'/quarter', detail:'4 quarterly payments over 12 months' },
-    annual_monthly:   { ach:'1,667',     cc:'1,725.35',  period:'/month',   detail:'12 monthly payments' },
-    quarterly_upfront:{ ach:'5,000',     cc:'5,175',     period:'',         detail:'One-time payment for 3 months' },
-    quarterly_monthly:{ ach:'1,667',     cc:'1,725.35',  period:'/month',   detail:'3 monthly payments' },
-    monthly:          { ach:'1,667',     cc:'1,725.35',  period:'/month',   detail:'Billed monthly, cancel anytime in writing' }
-  };
-
+  // Static UI structure — defines which billing options appear for each term.
+  // Prices / descriptions are populated from pricingByKey on first render.
   var BILLING_OPTIONS = {
     annual: [
-      { key:'annual_upfront',   title:'Pay Upfront',      desc:'$20,000 one-time',      badge:null },
-      { key:'annual_quarterly', title:'Quarterly Billing', desc:'$5,000 x 4 payments',   badge:null },
-      { key:'annual_monthly',   title:'Monthly Billing',   desc:'$1,667 x 12 payments',  badge:null }
+      { key:'annual_upfront',   title:'Pay Upfront',       count: 1 },
+      { key:'annual_quarterly', title:'Quarterly Billing', count: 4 },
+      { key:'annual_monthly',   title:'Monthly Billing',   count: 12 }
     ],
     quarterly: [
-      { key:'quarterly_upfront',  title:'Pay Upfront',     desc:'$5,000 one-time',       badge:null },
-      { key:'quarterly_monthly',  title:'Monthly Billing', desc:'$1,667 x 3 payments',   badge:null }
+      { key:'quarterly_upfront', title:'Pay Upfront',      count: 1 },
+      { key:'quarterly_monthly', title:'Monthly Billing',  count: 3 }
     ],
     monthly: []
   };
+
+  // Build the small "$X × N payments" sub-label using ACH price from pricing map.
+  function billingDesc(billingKey, count) {
+    var achTier = pricingByKey[billingKey + '_ach'];
+    if (!achTier) return '';
+    if (count === 1) return '$' + achTier.amount_display + ' one-time';
+    return '$' + achTier.amount_display + ' \u00d7 ' + count + ' payments';
+  }
 
   var pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
   var CLIENT_SLUG = pathParts[0] || '';
@@ -229,11 +220,25 @@ strong{font-weight:600;color:var(--color-heading)}
 
   function init() {
     if (!CLIENT_SLUG) { document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">No client specified.</p>'; return; }
-    fetch(SB_URL + '/rest/v1/contacts?slug=eq.' + CLIENT_SLUG + '&select=*&limit=1', {
-      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON }
-    }).then(function(r) { return r.json(); }).then(function(contacts) {
+    // Parallel-fetch contact + pricing so the page doesn't serialize two round-trips.
+    Promise.all([
+      fetch(SB_URL + '/rest/v1/contacts?slug=eq.' + CLIENT_SLUG + '&select=*&limit=1', {
+        headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON }
+      }).then(function(r) { return r.json(); }),
+      fetch('/api/pricing?product=core_marketing').then(function(r) { return r.json(); })
+    ]).then(function(results) {
+      var contacts = results[0];
+      var pricing = results[1];
       if (!contacts || contacts.length === 0) { document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">No account found.</p>'; return; }
       contact = contacts[0];
+      if (pricing && pricing.tiers) {
+        pricing.tiers.forEach(function(t) { pricingByKey[t.tier_key] = t; });
+      }
+      if (Object.keys(pricingByKey).length === 0) {
+        document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">Pricing unavailable. Please contact support@moonraker.ai.</p>';
+        return;
+      }
+
       var displayName = contact.practice_name || ((contact.first_name || '') + ' ' + (contact.last_name || '')).trim();
       document.title = 'Get Started - ' + displayName + ' - Moonraker';
       document.getElementById('headerName').textContent = displayName;
@@ -298,8 +303,7 @@ strong{font-weight:600;color:var(--color-heading)}
     var html = '';
     options.forEach(function(opt) {
       html += '<div class="option-card" data-billing="' + opt.key + '" onclick="selectBilling(\'' + opt.key + '\')">';
-      if (opt.badge) html += '<div class="card-badge">' + opt.badge + '</div>';
-      html += '<div class="card-title">' + opt.title + '</div><div class="card-desc">' + opt.desc + '</div></div>';
+      html += '<div class="card-title">' + opt.title + '</div><div class="card-desc">' + billingDesc(opt.key, opt.count) + '</div></div>';
     });
     var bg = document.getElementById('billingOptions');
     bg.innerHTML = html;
@@ -325,28 +329,39 @@ strong{font-weight:600;color:var(--color-heading)}
     document.querySelectorAll('.method-btn').forEach(function(c) { c.classList.remove('selected'); });
     var btn = document.querySelector('.method-btn[data-method="' + method + '"]');
     if (btn) btn.classList.add('selected');
-    var p = PRICING[currentBilling];
-    if (!p) return;
+    var tierKey = (currentBilling || '') + '_' + method;
+    var tier = pricingByKey[tierKey];
+    if (!tier) return;
     var isCC = method === 'cc';
-    var amt = isCC ? p.cc : p.ach;
-    document.getElementById('priceAmount').innerHTML = '<span class="currency">$</span>' + amt + (p.period ? '<span class="period">' + p.period + '</span>' : '');
-    document.getElementById('priceDetail').textContent = p.detail;
+    document.getElementById('priceAmount').innerHTML = '<span class="currency">$</span>' + tier.amount_display + (tier.period ? '<span class="period">' + tier.period + '</span>' : '');
+    document.getElementById('priceDetail').textContent = tier.detail;
     document.getElementById('priceFee').textContent = isCC ? 'Includes 3.5% credit card processing fee' : 'No processing fee with bank transfer';
     document.getElementById('priceFee').style.color = isCC ? 'var(--color-warning)' : 'var(--color-success)';
     document.getElementById('priceSection').classList.remove('hidden');
   };
 
-  window.goToCheckout = function() {
+  window.goToCheckout = async function() {
     if (!currentBilling || !currentMethod) return;
-    var linkKey = currentBilling + '_' + currentMethod;
-    var url = LINKS[linkKey];
-    if (!url) { alert('Payment option not available. Please contact support@moonraker.ai.'); return; }
-    var params = [];
-    if (CLIENT_SLUG) params.push('client_reference_id=' + encodeURIComponent(CLIENT_SLUG));
-    if (contact && contact.email) params.push('prefilled_email=' + encodeURIComponent(contact.email));
-    if (params.length > 0) url += (url.indexOf('?') === -1 ? '?' : '&') + params.join('&');
-    try { localStorage.setItem('moonraker-checkout-slug', CLIENT_SLUG); } catch(e) {}
-    window.location.href = url;
+    var tierKey = currentBilling + '_' + currentMethod;
+    if (!pricingByKey[tierKey]) { alert('Payment option not available. Please contact support@moonraker.ai.'); return; }
+    var cta = document.getElementById('checkoutBtn');
+    if (cta && cta.disabled) return;
+    if (cta) { cta.disabled = true; cta.dataset.origText = cta.innerHTML; cta.textContent = 'Redirecting to payment...'; }
+    try {
+      var resp = await fetch('/api/checkout/create-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: CLIENT_SLUG, product: 'core_marketing', tier_key: tierKey })
+      });
+      var data = await resp.json();
+      if (!resp.ok || !data.url) throw new Error((data && data.error) || 'Unable to create checkout session');
+      try { localStorage.setItem('moonraker-checkout-slug', CLIENT_SLUG); } catch(_) {}
+      window.location.href = data.url;
+    } catch (err) {
+      console.error('[checkout] create-session failed:', err);
+      alert('Could not start checkout: ' + (err.message || err) + '\n\nPlease try again or email support@moonraker.ai.');
+      if (cta) { cta.disabled = false; if (cta.dataset.origText) cta.innerHTML = cta.dataset.origText; }
+    }
   };
 
   var themeBtn = document.getElementById('themeBtn');
@@ -365,5 +380,6 @@ strong{font-weight:600;color:var(--color-heading)}
   init();
 })();
 </script>
+<script src="/shared/offline-banner.js" defer></script>
 </body>
 </html>
