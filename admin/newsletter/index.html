@@ -962,11 +962,29 @@ function renderEditions() {
 
   container.className = '';
   container.innerHTML = editions.map(function(ed) {
-    var statusTag = ed.status === 'sent' ? '<span class="tag tag-success">Sent</span>'
-      : ed.status === 'scheduled' ? '<span class="tag tag-info">Scheduled</span>'
-      : ed.status === 'sending' ? '<span class="tag tag-warning">Sending</span>'
-      : ed.status === 'failed' ? '<span class="tag tag-danger">Failed</span>'
-      : '<span class="tag tag-muted">Draft</span>';
+    var statusTag;
+    if (ed.status === 'sent') {
+      statusTag = '<span class="tag tag-success">Sent</span>';
+    } else if (ed.status === 'scheduled') {
+      statusTag = '<span class="tag tag-info">Scheduled</span>';
+    } else if (ed.status === 'sending') {
+      statusTag = '<span class="tag tag-warning">Sending</span>';
+    } else if (ed.status === 'failed') {
+      // Show retry state alongside the Failed tag so admins can tell a
+      // transient retrying-send apart from an exhausted send that needs
+      // human intervention. Matches the retry schema added with cron audit H3.
+      var attempt = ed.send_attempt_count || 0;
+      var exhausted = ed.send_retriable === false;
+      var label = exhausted
+        ? 'Failed (exhausted)'
+        : 'Failed (' + attempt + '/3)';
+      var errTitle = ed.last_send_error
+        ? String(ed.last_send_error).replace(/"/g, '&quot;').substring(0, 300)
+        : '';
+      statusTag = '<span class="tag tag-danger" title="' + errTitle + '">' + label + '</span>';
+    } else {
+      statusTag = '<span class="tag tag-muted">Draft</span>';
+    }
 
     var schedHtml = '';
     if (ed.status === 'scheduled' && ed.scheduled_at) {

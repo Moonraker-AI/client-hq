@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="/assets/logo.png">
+<title>System Health - Moonraker Admin</title>
+<link rel="stylesheet" href="/assets/admin-base.css">
+<style>
+  .container { margin: 0 auto; padding: 0 2rem; max-width: 1200px; }
+  @media (max-width: 768px) { .container { padding: 0 1rem; } }
+
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .status-dot.green { background: var(--color-success); }
+  .status-dot.yellow { background: var(--color-warning); }
+  .status-dot.red { background: var(--color-danger); }
+  .status-dot.gray { background: var(--color-muted); }
+
+  .tag { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .6rem; border-radius: 6px; font-size: .72rem; font-weight: 500; }
+  .tag-success { background: rgba(0,212,126,.1); color: var(--color-success); }
+  .tag-danger  { background: rgba(239,68,68,.1); color: var(--color-danger); }
+  .tag-warning { background: rgba(245,158,11,.1); color: var(--color-warning); }
+  .tag-muted   { background: rgba(107,117,153,.1); color: var(--color-muted); }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem 1.25rem; }
+  .stat-label { font-size: .72rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: .04em; }
+  .stat-value { font-family: 'Outfit', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--color-body); margin-top: .2rem; }
+
+  table.cron { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; overflow: hidden; }
+  table.cron th, table.cron td { padding: .75rem 1rem; text-align: left; font-size: .85rem; border-bottom: 1px solid var(--color-border); }
+  table.cron th { background: var(--color-bg); color: var(--color-muted); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+  table.cron tr:last-child td { border-bottom: none; }
+  table.cron td.mono { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: .78rem; color: var(--color-muted); }
+
+  .error-detail { font-family: 'JetBrains Mono', monospace; font-size: .72rem; color: var(--color-danger); white-space: pre-wrap; word-break: break-word; }
+
+  .section-header { display: flex; align-items: baseline; gap: .75rem; margin: 2rem 0 1rem; }
+  .section-header h2 { font-size: 1.05rem; font-weight: 600; }
+  .section-desc { font-size: .82rem; color: var(--color-muted); margin: 0 0 1rem; }
+
+  .refresh-btn { background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-body); padding: .5rem 1rem; border-radius: 8px; font-size: .8rem; cursor: pointer; }
+  .refresh-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="/shared/admin-auth.js"></script>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="/assets/logo.png" alt="Moonraker">
+    <span>Client HQ</span>
+    <button class="sidebar-close" id="sidebarClose" aria-label="Close menu">&times;</button>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="/admin"><span class="nav-icon"><svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg></span><span class="nav-label">Dashboard</span></a>
+    <a href="/admin/clients"><span class="nav-icon"><svg viewBox="0 0 16 16"><circle cx="8" cy="4.5" r="2.5"/><path d="M2.5 15c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5"/></svg></span><span class="nav-label">Clients</span></a>
+    <div class="nav-section">Workflows</div>
+    <a href="/admin/proposals"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M3 2h7l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M10 2v3h3"/><path d="M5 9h6M5 12h4"/></svg></span><span class="nav-label">Proposals</span></a>
+    <a href="/admin/onboarding"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M8 1v10M4.5 7.5L8 11l3.5-3.5"/><path d="M2.5 13.5h11"/></svg></span><span class="nav-label">Onboarding</span></a>
+    <a href="/admin/audits"><span class="nav-icon"><svg viewBox="0 0 16 16"><circle cx="6.5" cy="6.5" r="4"/><path d="M14.5 14.5l-4-4"/></svg></span><span class="nav-label">Audits</span></a>
+    <a href="/admin/deliverables"><span class="nav-icon"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5.5 8l2 2 3.5-3.5"/></svg></span><span class="nav-label">Deliverables</span></a>
+    <a href="/admin/reports"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M2 14V6l3.5-2v10"/><path d="M6.25 14V4.5l3.5-2v11.5"/><path d="M10.5 14V3l3.5-2v13"/></svg></span><span class="nav-label">Reports</span></a>
+    <div class="nav-section">Marketing</div>
+    <a href="/admin/newsletter"><span class="nav-icon"><svg viewBox="0 0 16 16"><path d="M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M1 4l7 5 7-5"/></svg></span><span class="nav-label">Newsletter</span></a>
+    <div class="nav-section">System</div>
+    <a href="/admin/system" class="active"><span class="nav-icon"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l2.5 2.5"/></svg></span><span class="nav-label">Cron Health</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <button onclick="adminAuth.signOut()" class="footer-icon" title="Sign out"><svg viewBox="0 0 16 16"><path d="M6 1.5H3.5a1 1 0 00-1 1v11a1 1 0 001 1H6"/><path d="M10.5 11.5L14 8l-3.5-3.5"/><path d="M14 8H6"/></svg></button>
+    <div class="footer-right">
+      <button class="collapse-btn" id="collapseBtn" aria-label="Collapse sidebar"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M10 3L5 8l5 5"/></svg></button>
+      <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme"><span class="theme-icon">&#x1F319;</span></button>
+    </div>
+  </div>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="main">
+  <div class="topbar">
+    <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">&#9776;</button>
+    <div style="flex:1;"></div>
+    <div class="topbar-right">
+      <span style="font-size:.78rem;color:var(--color-muted);" id="lastRefresh"></span>
+      <button class="refresh-btn" onclick="loadHealth()">Refresh</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="container">
+      <div class="section-header"><h2>Cron Health</h2></div>
+      <p class="section-desc">Per-cron status from the <code>cron_runs</code> audit table. A cron is marked stale when no successful run has completed within its expected interval plus tolerance (same rule as the heartbeat cron that alerts chris@moonraker.ai).</p>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">Total Crons</div><div class="stat-value" id="sTotal">-</div></div>
+        <div class="stat-card"><div class="stat-label">Healthy</div><div class="stat-value" id="sHealthy" style="color:var(--color-success);">-</div></div>
+        <div class="stat-card"><div class="stat-label">Stale</div><div class="stat-value" id="sStale" style="color:var(--color-danger);">-</div></div>
+        <div class="stat-card"><div class="stat-label">Running Now</div><div class="stat-value" id="sRunning" style="color:var(--color-info);">-</div></div>
+      </div>
+
+      <table class="cron">
+        <thead>
+          <tr>
+            <th>Cron</th>
+            <th>Last Success</th>
+            <th>Gap</th>
+            <th>Queue</th>
+            <th>Oldest</th>
+            <th>Runs 24h</th>
+            <th>Errors 24h</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="cronTbody">
+          <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--color-muted);">Loading...</td></tr>
+        </tbody>
+      </table>
+
+      <div class="section-header"><h2>Currently Running</h2></div>
+      <p class="section-desc">Rows with status='running' — no <code>completed_at</code> yet. Persistent entries here indicate a cron hung or crashed mid-execution.</p>
+      <table class="cron">
+        <thead>
+          <tr>
+            <th>Cron</th>
+            <th>Started</th>
+            <th>Age</th>
+            <th>Queue at start</th>
+          </tr>
+        </thead>
+        <tbody id="runningTbody">
+          <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-muted);">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function fmtAge(sec) {
+  if (sec == null) return '—';
+  if (sec < 60) return sec + 's';
+  if (sec < 3600) return Math.floor(sec / 60) + 'm';
+  if (sec < 86400) return Math.floor(sec / 3600) + 'h ' + Math.floor((sec % 3600) / 60) + 'm';
+  return Math.floor(sec / 86400) + 'd';
+}
+
+function fmtTime(iso) {
+  if (!iso) return '—';
+  try {
+    var d = new Date(iso);
+    return d.toLocaleString();
+  } catch (e) { return iso; }
+}
+
+async function loadHealth() {
+  var resp = await fetch('/api/admin/cron-health');
+  if (!resp.ok) {
+    document.getElementById('cronTbody').innerHTML =
+      '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--color-danger);">Error loading: HTTP ' + resp.status + '</td></tr>';
+    return;
+  }
+  var data = await resp.json();
+
+  var total = data.summary.length;
+  var healthy = data.summary.filter(function(r) { return !r.stale; }).length;
+  var stale = data.summary.filter(function(r) { return r.stale; }).length;
+  var running = data.running.length;
+
+  document.getElementById('sTotal').textContent = total;
+  document.getElementById('sHealthy').textContent = healthy;
+  document.getElementById('sStale').textContent = stale;
+  document.getElementById('sRunning').textContent = running;
+
+  var tbody = document.getElementById('cronTbody');
+  tbody.innerHTML = data.summary.map(function(r) {
+    var statusTag = r.stale
+      ? '<span class="tag tag-danger"><span class="status-dot red"></span>Stale</span>'
+      : '<span class="tag tag-success"><span class="status-dot green"></span>Healthy</span>';
+    var errorCell = r.last_run_status === 'error'
+      ? '<div class="error-detail">' + esc((r.last_run_error || '').substring(0, 120)) + '</div>'
+      : '';
+    return '<tr>' +
+      '<td><strong>' + esc(r.cron_name) + '</strong>' + errorCell + '</td>' +
+      '<td class="mono">' + fmtTime(r.last_success_completed_at) + '</td>' +
+      '<td>' + fmtAge(r.gap_since_success_sec) + '</td>' +
+      '<td>' + (r.last_success_queue_depth != null ? r.last_success_queue_depth : '—') + '</td>' +
+      '<td>' + (r.last_success_oldest_age_sec != null ? fmtAge(r.last_success_oldest_age_sec) : '—') + '</td>' +
+      '<td>' + r.runs_24h + '</td>' +
+      '<td>' + (r.errors_24h > 0
+        ? '<span class="tag tag-danger">' + r.errors_24h + '</span>'
+        : '<span class="tag tag-muted">0</span>') + '</td>' +
+      '<td>' + statusTag + '</td>' +
+      '</tr>';
+  }).join('');
+
+  var rtbody = document.getElementById('runningTbody');
+  if (data.running.length === 0) {
+    rtbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-muted);">No crons currently running</td></tr>';
+  } else {
+    var now = Date.now();
+    rtbody.innerHTML = data.running.map(function(r) {
+      var ageSec = Math.floor((now - new Date(r.started_at).getTime()) / 1000);
+      return '<tr>' +
+        '<td><strong>' + esc(r.cron_name) + '</strong></td>' +
+        '<td class="mono">' + fmtTime(r.started_at) + '</td>' +
+        '<td>' + fmtAge(ageSec) + '</td>' +
+        '<td>' + (r.queue_depth != null ? r.queue_depth : '—') + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+adminAuth.ready(function() {
+  loadHealth();
+});
+</script>
+
+</body>
+</html>
