@@ -16,7 +16,7 @@ var pgFilter   = require('./_lib/postgrest-filter');
 var ALLOWED_TABLES = [
   'contacts','practice_details','onboarding_steps','deliverables','checklist_items',
   'report_snapshots','report_highlights','report_configs','bio_materials','signed_agreements',
-  'activity_log','settings','entity_audits','account_access','payments','scheduled_touchpoints',
+  'activity_log','settings','entity_audits','payments',
   'intro_call_steps','tracked_keywords','report_queue','performance_guarantees','proposals',
   'proposal_followups','audit_followups','workspace_credentials','social_platforms',
   'directory_listings','content_pages','content_page_versions','content_chat_messages',

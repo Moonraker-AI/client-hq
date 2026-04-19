@@ -38,7 +38,6 @@ var TABLES = {
   deliverables:            { read: true, write: true, delete: true },
   checklist_items:         { read: true, write: true, delete: true },
   performance_guarantees:  { read: true, write: true, delete: true },
-  scheduled_touchpoints:   { read: true, write: true, delete: true },
 
   // Reporting
   report_snapshots:        { read: true, write: true, delete: true },
@@ -75,7 +74,6 @@ var TABLES = {
 
   // Infra / config
   settings:                { read: true, write: true, delete: true },
-  account_access:          { read: true, write: true, delete: true },
   client_sites:            { read: true, write: true, delete: true },
   site_deployments:        { read: true, write: true, delete: true },
 

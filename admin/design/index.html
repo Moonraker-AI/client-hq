@@ -878,7 +878,7 @@ fetch('/api/action', {
         <tr><th style="width:30%;">Property</th><th>Details</th></tr>
         <tr><td>Actions</td><td><code>create_record</code>, <code>read_records</code>, <code>update_record</code>, <code>bulk_update</code>, <code>delete_record</code></td></tr>
         <tr><td>Filter syntax</td><td><code>{ column: value }</code> defaults to <code>eq.</code> operator. For other operators: <code>{ column: 'neq.value' }</code>, <code>{ column: 'in.(a,b,c)' }</code>, <code>{ column: 'is.null' }</code></td></tr>
-        <tr><td>Allowed tables</td><td><code>contacts</code>, <code>practice_details</code>, <code>onboarding_steps</code>, <code>deliverables</code>, <code>checklist_items</code>, <code>audit_scores</code>, <code>report_snapshots</code>, <code>report_highlights</code>, <code>report_configs</code>, <code>bio_materials</code>, <code>social_profiles</code>, <code>signed_agreements</code>, <code>activity_log</code>, <code>settings</code>, <code>entity_audits</code>, <code>account_access</code>, <code>payments</code>, <code>scheduled_touchpoints</code>, <code>intro_call_steps</code>, <code>tracked_keywords</code>, <code>report_queue</code></td></tr>
+        <tr><td>Allowed tables</td><td><code>contacts</code>, <code>practice_details</code>, <code>onboarding_steps</code>, <code>deliverables</code>, <code>checklist_items</code>, <code>report_snapshots</code>, <code>report_highlights</code>, <code>report_configs</code>, <code>bio_materials</code>, <code>signed_agreements</code>, <code>activity_log</code>, <code>settings</code>, <code>entity_audits</code>, <code>payments</code>, <code>intro_call_steps</code>, <code>tracked_keywords</code>, <code>report_queue</code></td></tr>
         <tr><td>Response format</td><td><code>{ success: true, action: 'created', data: [...] }</code> or <code>{ error: '...' }</code></td></tr>
         <tr><td>read_records extras</td><td>Accepts <code>select</code> (column list) and <code>limit</code> (default 50) in request body</td></tr>
       </table>
@@ -1096,12 +1096,9 @@ fetch('/api/action', {
     <div class="db-table"><div class="db-name">directory_listings</div><div>22 therapy directories per contact. Directory key, profile_url, status (not_listed/claimed/live/needs_update).</div></div>
     <div class="db-table"><div class="db-name">signed_agreements</div><div>Electronic CSA signatures. Signer name, signed_at timestamp, document HTML snapshot.</div></div>
     <div class="db-table"><div class="db-name">social_profiles</div><div>Legacy social platform profiles per contact. Superseded by social_platforms table.</div></div>
-    <div class="db-table"><div class="db-name">account_access</div><div>Third-party account access records. Platform, credentials, access level.</div></div>
     <div class="db-table"><div class="db-name">payments</div><div>Payment records linked to contacts. Stripe session/subscription IDs.</div></div>
-    <div class="db-table"><div class="db-name">scheduled_touchpoints</div><div>Scheduled check-ins and follow-ups.</div></div>
     <div class="db-table"><div class="db-name">activity_log</div><div>Admin activity tracking. Table, record ID, field, old/new values, timestamp.</div></div>
     <div class="db-table"><div class="db-name">settings</div><div>Global platform settings key-value store. Team digest config, etc.</div></div>
-    <div class="db-table"><div class="db-name">csa_template_sections</div><div>Client Service Agreement template sections for rendering in onboarding.</div></div>
   </div>
 </div>
 
