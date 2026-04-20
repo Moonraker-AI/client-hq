@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Performance Guarantee - Moonraker</title>
+<title>Performance Guarantee (Example) - Moonraker</title>
 <link rel="icon" type="image/png" href="/assets/logo.png">
 
 <style>
@@ -37,17 +37,16 @@ strong{font-weight:600;color:var(--color-heading)}
 .hero{padding:3rem 0 1.5rem;text-align:center}
 .hero .step-label{font-family:'Outfit',sans-serif;font-weight:700;font-size:.8125rem;letter-spacing:.06em;text-transform:uppercase;color:var(--color-primary);margin-bottom:.75rem}
 .hero h1{font-size:2rem;margin-bottom:.5rem;letter-spacing:-0.02em}
-.hero .subtitle{color:var(--color-muted);font-size:1rem;max-width:560px;margin:0 auto}
+.hero .subtitle{color:var(--color-muted);font-size:1rem;max-width:620px;margin:0 auto}
 
-.loading{text-align:center;padding:4rem 2rem}
-.loading .spinner{display:inline-block;width:28px;height:28px;border:3px solid var(--color-border);border-top-color:var(--color-primary);border-radius:50%;animation:spin 0.8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading p{margin-top:.75rem;color:var(--color-muted);font-size:.9rem}
+.example-notice{background:var(--color-primary-subtle);border:1px solid rgba(0,212,126,.25);border-radius:12px;padding:1.1rem 1.25rem;display:flex;align-items:flex-start;gap:.85rem;margin-bottom:1.25rem}
+.example-notice .icon{font-size:1.25rem;line-height:1;flex-shrink:0}
+.example-notice .msg{font-size:.875rem;line-height:1.55;color:var(--color-body)}
+.example-notice .msg strong{color:var(--color-heading)}
 
 .doc-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:2.5rem;margin-bottom:1.5rem;box-shadow:0 2px 12px rgba(20,28,58,.04)}
 @media (max-width:640px){.doc-card{padding:1.5rem}}
 
-/* Guarantee document prose styling (rendered into #guaranteeDocument) */
 .pg-doc h2{font-size:1.6rem;margin:0 0 1rem;color:var(--color-heading)}
 .pg-doc h3{font-size:1.1rem;margin:1.75rem 0 .6rem;color:var(--color-heading)}
 .pg-doc p{margin:0 0 1rem;font-size:.9375rem;line-height:1.7}
@@ -62,42 +61,8 @@ strong{font-weight:600;color:var(--color-heading)}
 .pg-numbers tr:last-child td{border-bottom:none}
 .pg-numbers tr.pg-row-emphasis td{background:var(--color-primary-subtle);color:var(--color-heading)}
 
-/* Signature block — mirrors onboarding.html */
-.signature-block{background:var(--color-surface-alt);border:1px solid var(--color-border);border-radius:14px;padding:2rem;margin-bottom:1.5rem}
-@media (max-width:640px){.signature-block{padding:1.5rem}}
-.signature-block h3{margin-bottom:.25rem;font-size:1.2rem}
-.signature-block .sub{color:var(--color-muted);font-size:.875rem;margin-bottom:1.25rem}
-.sig-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
-@media (max-width:600px){.sig-row{grid-template-columns:1fr}}
-.sig-field label{display:block;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--color-muted);margin-bottom:.35rem}
-.sig-field input{width:100%;font-family:'Inter',sans-serif;font-size:.9375rem;padding:.6rem .85rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);transition:border-color .2s}
-.sig-field input:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 3px rgba(0,212,126,.12)}
-.sig-field input[readonly]{background:var(--color-surface-alt);color:var(--color-muted)}
-.sig-consent{display:flex;align-items:flex-start;gap:.75rem;margin:1.25rem 0;font-size:.875rem}
-.sig-consent input[type="checkbox"]{margin-top:.3rem;width:18px;height:18px;accent-color:var(--color-primary);flex-shrink:0}
-.sig-canvas-wrap{margin:1.25rem 0}
-.sig-canvas-wrap label{display:block;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--color-muted);margin-bottom:.35rem}
-.sig-canvas-container{position:relative;border:1px solid var(--color-border);border-radius:8px;overflow:hidden;background:var(--color-surface)}
-.sig-canvas-container canvas{display:block;width:100%;cursor:crosshair;touch-action:none}
-.sig-canvas-placeholder{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;font-size:.875rem;color:#aaa;transition:opacity .2s}
-.sig-canvas-container.has-signature .sig-canvas-placeholder{opacity:0}
-.sig-canvas-actions{display:flex;justify-content:flex-end;margin-top:.5rem}
-.sig-canvas-actions button{font-family:'Inter',sans-serif;font-size:.75rem;font-weight:600;padding:.35rem .75rem;border:1px solid var(--color-border);border-radius:6px;background:var(--color-surface);color:var(--color-muted);cursor:pointer;transition:all .2s}
-.sig-canvas-actions button:hover{border-color:var(--color-primary);color:var(--color-primary)}
-
-.sign-btn{display:block;width:100%;background:var(--color-primary);color:#fff;font-family:'Outfit',sans-serif;font-weight:700;font-size:1.0625rem;padding:.95rem;border-radius:10px;border:none;cursor:pointer;transition:all .25s;margin-top:.5rem}
-.sign-btn:hover:not(:disabled){background:var(--color-primary-hover);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,212,126,.3)}
-.sign-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
-
-.success-card{background:var(--color-surface);border:1px solid rgba(0,212,126,.25);border-radius:14px;padding:2.5rem;text-align:center}
-.success-card .check{font-size:2.5rem;line-height:1;margin-bottom:.5rem}
-.success-card h2{color:var(--color-success);margin-bottom:.5rem;font-size:1.5rem}
-.success-card p{color:var(--color-body);font-size:.9375rem;line-height:1.65;margin-bottom:1rem}
-.success-card a.back-link{display:inline-block;margin-top:.5rem;font-size:.875rem;font-weight:600}
-
-.error-card{background:var(--color-surface);border:1px solid rgba(239,68,68,.25);border-radius:14px;padding:2rem;text-align:center}
-.error-card h3{color:var(--color-danger);margin-bottom:.5rem}
-.error-card p{color:var(--color-body);font-size:.9rem}
+.back-row{display:flex;justify-content:center;margin-top:.5rem}
+.back-row a{font-size:.875rem;font-weight:600;color:var(--color-primary)}
 
 .footer-bar{text-align:center;padding:2rem 1rem 3rem;font-size:.75rem;color:var(--color-muted)}
 </style>
@@ -110,116 +75,65 @@ strong{font-weight:600;color:var(--color-heading)}
   <div class="header-inner">
     <a href="/"><img src="/assets/logo.png" alt="Moonraker"></a>
     <div class="header-meta">
-      <p class="name" id="headerName">Performance Guarantee</p>
-      <p>Ready to Sign</p>
+      <p class="name">Performance Guarantee</p>
+      <p>Example Document</p>
     </div>
   </div>
 </div>
 
 <div class="container">
 
-  <!-- Loading -->
-  <div id="loadingState" class="loading">
-    <div class="spinner"></div>
-    <p>Loading your Performance Guarantee...</p>
+  <div class="hero">
+    <div class="step-label">Reference</div>
+    <h1>Performance Guarantee Example</h1>
+    <p class="subtitle">This is what your Signed Performance Guarantee will look like. The numbers below are illustrative only.</p>
   </div>
 
-  <!-- Main -->
-  <div id="mainContent" style="display:none;">
-    <div class="hero">
-      <div class="step-label">Ready to Sign</div>
-      <h1>Your Performance Guarantee</h1>
-      <p class="subtitle">Review the personalized benchmark below and sign to activate the guarantee.</p>
-    </div>
-
-    <!-- Document -->
-    <div class="doc-card">
-      <div id="guaranteeDocument"></div>
-    </div>
-
-    <!-- Signature -->
-    <div class="signature-block" id="signatureBlock">
-      <h3>Sign Below</h3>
-      <p class="sub">This signature accepts the benchmark and terms above and activates your Performance Guarantee.</p>
-      <div class="sig-row">
-        <div class="sig-field">
-          <label>Full Name</label>
-          <input type="text" id="sigName" placeholder="Your full name">
-        </div>
-        <div class="sig-field">
-          <label>Email</label>
-          <input type="email" id="sigEmail" placeholder="Your email address">
-        </div>
-      </div>
-      <div class="sig-row">
-        <div class="sig-field">
-          <label>Date</label>
-          <input type="text" id="sigDate" readonly>
-        </div>
-        <div class="sig-field"></div>
-      </div>
-      <div class="sig-consent">
-        <input type="checkbox" id="sigConsent">
-        <label for="sigConsent">I have read the Performance Guarantee above and accept the benchmark and terms. I understand this document is governed by the Client Service Agreement already in place between my practice and Moonraker.AI, LLC.</label>
-      </div>
-      <div class="sig-canvas-wrap">
-        <label>Your Signature</label>
-        <div class="sig-canvas-container" id="sigCanvasContainer">
-          <canvas id="sigCanvas" height="120"></canvas>
-          <span class="sig-canvas-placeholder">Draw your signature here</span>
-        </div>
-        <div class="sig-canvas-actions">
-          <button type="button" onclick="event.stopPropagation(); clearSignatureCanvas()">Clear</button>
-        </div>
-      </div>
-      <button class="sign-btn" id="signBtn" disabled onclick="signGuarantee()">Sign Performance Guarantee</button>
+  <div class="example-notice">
+    <div class="icon">&#8505;&#65039;</div>
+    <div class="msg">
+      <strong>This is a sample document.</strong> Your actual Performance Guarantee will use your own practice metrics, reviewed and finalized with Scott on your intro call. The structure, legal terms, and benchmark formula shown here are the same ones we will use for you.
     </div>
   </div>
 
-  <!-- Post-sign success -->
-  <div id="successContent" style="display:none;">
-    <div class="success-card">
-      <div class="check">&#10003;</div>
-      <h2>Your Performance Guarantee is signed</h2>
-      <p>We will email you a copy shortly. This page stays available if you need to reference the benchmark later.</p>
-      <a id="backToRouterLink" href="/" class="back-link">&larr; Back to your dashboard</a>
-    </div>
+  <div class="doc-card">
+    <div id="guaranteeDocument"></div>
   </div>
 
-  <!-- Error fallback -->
-  <div id="errorContent" style="display:none;">
-    <div class="error-card">
-      <h3>We couldn't load your Performance Guarantee</h3>
-      <p id="errorMessage">Please refresh the page. If the issue persists, reach out to <a href="mailto:support@moonraker.ai">support@moonraker.ai</a>.</p>
-    </div>
+  <div class="back-row">
+    <a href="/agreement">&larr; Review the full Client Service Agreement</a>
   </div>
 
 </div>
 
 <div class="footer-bar">Confidential &middot; &copy; 2026 Moonraker AI &middot; moonraker.ai</div>
 
-<!-- Page-token mint -->
-<script>window.__MR_PAGE_SCOPE__ = 'guarantee';</script>
-<script src="/shared/page-token.js" defer></script>
 <script src="/shared/guarantee-content.js" defer></script>
-
 <script>
 (function() {
   'use strict';
 
-  var pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
-  var CLIENT_SLUG = pathParts[0] || '';
-  var contact = null;
-  var pg = null;
-  var sigHasDrawn = false;
-
-  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
-  function safeSrc(url) {
-    if (!url || typeof url !== 'string') return '';
-    url = url.trim();
-    if (url.indexOf('https://') === 0 || url.indexOf('data:image/') === 0) return esc(url);
-    return '';
-  }
+  // Mock data chosen to match the example numbers approved during design.
+  // LTV $6,000 * conv .75 * att .85 = $3,825 value per call
+  // guarantee_calls = ceil($20,000 * 2 / $3,825) = 11
+  // total_benchmark = 4 * 12 + 11 = 59
+  var MOCK_CONTACT = {
+    first_name: 'Example',
+    last_name: 'Client',
+    practice_name: 'Example Therapy Group'
+  };
+  var MOCK_PG = {
+    status:                         'locked',
+    locked_at:                      new Date().toISOString(),
+    avg_client_ltv_cents:           600000,
+    conversion_rate:                0.75,
+    attendance_rate:                0.85,
+    current_monthly_organic_calls:  4,
+    investment_cents:               2000000,
+    value_per_call_cents:           382500,
+    guarantee_calls:                11,
+    total_benchmark:                59
+  };
 
   window.toggleTheme = function() {
     var curr = document.documentElement.getAttribute('data-theme') || 'light';
@@ -235,234 +149,26 @@ strong{font-weight:600;color:var(--color-heading)}
     }
   };
 
-  function showError(message) {
-    document.getElementById('loadingState').style.display = 'none';
-    document.getElementById('mainContent').style.display = 'none';
-    document.getElementById('successContent').style.display = 'none';
-    var el = document.getElementById('errorContent');
-    el.style.display = 'block';
-    if (message) document.getElementById('errorMessage').textContent = message;
-  }
-
-  // ── Signature canvas (mirrors onboarding.html, adapted for guarantee scope) ──
-  function initSignatureCanvas() {
-    var canvas = document.getElementById('sigCanvas');
-    var container = document.getElementById('sigCanvasContainer');
-    if (!canvas || !container) return;
-    var ctx = canvas.getContext('2d');
-    var drawing = false;
-    var lastX = 0, lastY = 0;
-    var initialized = false;
-
-    function setupCanvas() {
-      var w = container.offsetWidth;
-      if (!w) return;
-      var dpr = window.devicePixelRatio || 1;
-      canvas.width = w * dpr;
-      canvas.height = 120 * dpr;
-      canvas.style.height = '120px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      initialized = true;
-    }
-
-    if (window.ResizeObserver) {
-      var ro = new ResizeObserver(function(entries) {
-        for (var i = 0; i < entries.length; i++) {
-          if (entries[i].contentRect.width > 0 && !initialized) setupCanvas();
-        }
-      });
-      ro.observe(container);
-    }
-    window.addEventListener('resize', function() { initialized = false; setupCanvas(); sigHasDrawn = false; container.classList.remove('has-signature'); validateSignFields(); });
-    setupCanvas();
-
-    function getPos(e) {
-      var rect = canvas.getBoundingClientRect();
-      var t = e.touches ? e.touches[0] : e;
-      return { x: t.clientX - rect.left, y: t.clientY - rect.top };
-    }
-    function startDraw(e) {
-      if (!initialized) setupCanvas();
-      drawing = true;
-      var p = getPos(e); lastX = p.x; lastY = p.y;
-    }
-    function moveDraw(e) {
-      if (!drawing) return;
-      e.preventDefault();
-      var p = getPos(e);
-      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      ctx.strokeStyle = isDark ? '#E8F5EF' : '#111';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(lastX, lastY);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
-      lastX = p.x; lastY = p.y;
-      if (!sigHasDrawn) {
-        sigHasDrawn = true;
-        container.classList.add('has-signature');
-        validateSignFields();
+  function render() {
+    var tries = 0;
+    var id = setInterval(function() {
+      tries++;
+      if (typeof window.buildGuaranteeHtml === 'function') {
+        clearInterval(id);
+        document.getElementById('guaranteeDocument').innerHTML =
+          window.buildGuaranteeHtml(MOCK_PG, MOCK_CONTACT);
+      } else if (tries > 40) {
+        clearInterval(id);
+        document.getElementById('guaranteeDocument').innerHTML =
+          '<p style="color:var(--color-muted);">Failed to load the example document. Please refresh.</p>';
       }
-    }
-    function endDraw() { drawing = false; }
-
-    canvas.addEventListener('mousedown', startDraw);
-    canvas.addEventListener('mousemove', moveDraw);
-    canvas.addEventListener('mouseup', endDraw);
-    canvas.addEventListener('mouseleave', endDraw);
-    canvas.addEventListener('touchstart', startDraw, { passive: false });
-    canvas.addEventListener('touchmove', moveDraw, { passive: false });
-    canvas.addEventListener('touchend', endDraw);
-  }
-
-  window.clearSignatureCanvas = function() {
-    var canvas = document.getElementById('sigCanvas');
-    var container = document.getElementById('sigCanvasContainer');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    sigHasDrawn = false;
-    if (container) container.classList.remove('has-signature');
-    validateSignFields();
-  };
-
-  function getSignatureDataURL() {
-    if (!sigHasDrawn) return null;
-    var canvas = document.getElementById('sigCanvas');
-    if (!canvas) return null;
-    var exp = document.createElement('canvas');
-    var rect = document.getElementById('sigCanvasContainer').getBoundingClientRect();
-    exp.width = Math.round(rect.width);
-    exp.height = 120;
-    var ectx = exp.getContext('2d');
-    ectx.drawImage(canvas, 0, 0, exp.width, exp.height);
-    return exp.toDataURL('image/png');
-  }
-
-  window.validateSignFields = function() {
-    var sigName = document.getElementById('sigName');
-    var sigConsent = document.getElementById('sigConsent');
-    var signBtn = document.getElementById('signBtn');
-    if (!sigName || !sigConsent || !signBtn) return;
-    var nameOk = sigName.value.trim().length >= 2;
-    var consent = sigConsent.checked;
-    signBtn.disabled = !(consent && nameOk && sigHasDrawn);
-  };
-
-  window.signGuarantee = function() {
-    var btn = document.getElementById('signBtn');
-    btn.disabled = true;
-    btn.textContent = 'Signing\u2026';
-
-    var signerName = document.getElementById('sigName').value.trim();
-    var signerEmail = document.getElementById('sigEmail').value.trim();
-    var sigImage = getSignatureDataURL();
-    var consent = document.getElementById('sigConsent').checked;
-
-    fetch('/api/sign-guarantee', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({
-        signer_name: signerName,
-        signer_email: signerEmail,
-        signature_image: sigImage,
-        consent: !!consent
-      })
-    })
-    .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, status: r.status, data: data }; }); })
-    .then(function(result) {
-      if (!result.ok) {
-        btn.disabled = false;
-        btn.textContent = 'Sign Performance Guarantee';
-        var msg = (result.data && result.data.error) ? result.data.error : 'Signing failed. Please try again.';
-        alert(msg);
-        return;
-      }
-      document.getElementById('mainContent').style.display = 'none';
-      document.getElementById('successContent').style.display = 'block';
-      var backLink = document.getElementById('backToRouterLink');
-      if (backLink && CLIENT_SLUG) backLink.href = '/' + CLIENT_SLUG;
-    })
-    .catch(function() {
-      btn.disabled = false;
-      btn.textContent = 'Sign Performance Guarantee';
-      alert('Network error. Please try again.');
-    });
-  };
-
-  // ── Boot ─────────────────────────────────────────────────────────────────
-  function boot() {
-    if (!CLIENT_SLUG) { showError('This URL is missing a client identifier.'); return; }
-
-    var waitFor = function() {
-      if (window.mrPageToken && window.mrPageToken.ready) return window.mrPageToken.ready();
-      return new Promise(function(resolve, reject) {
-        var tries = 0;
-        var id = setInterval(function() {
-          tries++;
-          if (window.mrPageToken && window.mrPageToken.ready) {
-            clearInterval(id);
-            window.mrPageToken.ready().then(resolve).catch(reject);
-          } else if (tries > 50) {
-            clearInterval(id);
-            reject(new Error('page-token helper did not load'));
-          }
-        }, 80);
-      });
-    };
-
-    waitFor()
-      .then(function() {
-        return fetch('/api/guarantee-data', { method: 'GET', credentials: 'same-origin' });
-      })
-      .then(function(r) {
-        if (!r.ok) return r.json().then(function(j) { throw new Error((j && j.error) || ('HTTP ' + r.status)); });
-        return r.json();
-      })
-      .then(function(payload) {
-        contact = payload.contact || {};
-        pg = payload.guarantee || {};
-
-        document.title = 'Performance Guarantee - ' + (contact.practice_name || CLIENT_SLUG) + ' - Moonraker';
-        document.getElementById('headerName').textContent = contact.practice_name || 'Performance Guarantee';
-
-        window.renderGuarantee(pg, contact, { effectiveStartDate: pg.locked_at });
-
-        // Show main, init canvas + validators
-        document.getElementById('loadingState').style.display = 'none';
-        document.getElementById('mainContent').style.display = 'block';
-        initSignatureCanvas();
-
-        document.getElementById('sigConsent').addEventListener('change', validateSignFields);
-        document.getElementById('sigName').addEventListener('input', validateSignFields);
-
-        // If already signed, show success screen
-        if (payload.already_signed) {
-          document.getElementById('mainContent').style.display = 'none';
-          document.getElementById('successContent').style.display = 'block';
-          var backLink = document.getElementById('backToRouterLink');
-          if (backLink) backLink.href = '/' + CLIENT_SLUG;
-        }
-      })
-      .catch(function(err) {
-        var m = (err && err.message) || '';
-        if (m.indexOf('guarantee is not locked') !== -1) {
-          showError("Your Performance Guarantee isn't ready to sign yet. We will email you once it is.");
-        } else if (m.indexOf('token') !== -1 || m.indexOf('403') !== -1) {
-          showError('Your signing link has expired. Please reach out to Scott so we can re-send it.');
-        } else {
-          showError('Please refresh the page. If this keeps happening, email support@moonraker.ai.');
-        }
-      });
+    }, 80);
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
+    document.addEventListener('DOMContentLoaded', render);
   } else {
-    boot();
+    render();
   }
 })();
 </script>
