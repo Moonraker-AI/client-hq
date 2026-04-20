@@ -222,25 +222,13 @@ function buildClearCookie(scope, slug) {
   return cookieName(scope) + '=; Path=' + path + '; Max-Age=0; HttpOnly; SameSite=Lax; Secure';
 }
 
-// Pull the most likely token for `expectedScope` out of a request. Looks at
-// (in order): cookie, request body.page_token, body.token, Authorization
-// header. Returns string or null. Does NOT verify — call verify() with the
-// result.
+// Pull the most likely token for `expectedScope` out of a request. Cookie
+// is the only accepted path since C6 cutover — every client-facing page
+// mints its token via /api/page-token/request and the browser attaches it
+// to subsequent writes automatically. Returns string or null. Does NOT
+// verify — call verify() with the result.
 function getTokenFromRequest(req, expectedScope) {
-  // 1. Preferred: cookie (new path)
-  var fromCookie = readCookie(req, cookieName(expectedScope));
-  if (fromCookie) return fromCookie;
-  // 2. Legacy: page_token in JSON body (deployed pages still POST it)
-  if (req && req.body) {
-    if (typeof req.body.page_token === 'string' && req.body.page_token) return req.body.page_token;
-    if (typeof req.body.token === 'string' && req.body.token) return req.body.token;
-  }
-  // 3. Authorization: Bearer <token>
-  if (req && req.headers) {
-    var h = req.headers.authorization || req.headers.Authorization || '';
-    if (h.indexOf('Bearer ') === 0) return h.substring(7);
-  }
-  return null;
+  return readCookie(req, cookieName(expectedScope));
 }
 
 module.exports = {

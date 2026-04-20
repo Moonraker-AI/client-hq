@@ -63,7 +63,7 @@ module.exports = async function handler(req, res) {
   // chat request came from a legitimate proposal page we deployed, and binds
   // the request to a specific contact — we never trust a contact_id (or slug)
   // from the request body after this point.
-  var submittedToken = pageToken.getTokenFromRequest(req, 'proposal') || context.page_token;
+  var submittedToken = pageToken.getTokenFromRequest(req, 'proposal');
   if (!submittedToken) {
     return res.status(403).json({ error: 'Page token required' });
   }

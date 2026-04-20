@@ -480,9 +480,9 @@
       var coreHtml = '--';
       if (ea.score_credibility != null) {
         coreHtml = '<div class="mini-core">';
-        coreHtml += '<span class="mini-core-pill" style="background:rgba(0,212,126,.1);color:#00b86c;">C' + ea.score_credibility + '</span>';
-        coreHtml += '<span class="mini-core-pill" style="background:rgba(59,130,246,.08);color:#3B82F6;">O' + ea.score_optimization + '</span>';
-        coreHtml += '<span class="mini-core-pill" style="background:rgba(245,158,11,.08);color:#D97706;">R' + ea.score_reputation + '</span>';
+        coreHtml += '<span class="mini-core-pill" style="background:rgba(0,212,126,.1);color:var(--color-primary-hover);">C' + ea.score_credibility + '</span>';
+        coreHtml += '<span class="mini-core-pill" style="background:rgba(59,130,246,.08);color:var(--color-info);">O' + ea.score_optimization + '</span>';
+        coreHtml += '<span class="mini-core-pill" style="background:rgba(245,158,11,.08);color:var(--color-amber-deep);">R' + ea.score_reputation + '</span>';
         coreHtml += '<span class="mini-core-pill" style="background:rgba(139,92,246,.08);color:#8B5CF6;">E' + ea.score_engagement + '</span>';
         coreHtml += '</div>';
       }

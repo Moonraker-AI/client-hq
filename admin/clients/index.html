@@ -1542,15 +1542,7 @@
           t.setAttribute('role', 'tab');
           t.setAttribute('aria-selected', t.classList.contains('active') ? 'true' : 'false');
         });
-        rptFilterBar.addEventListener('click', function(e) {
-          var tab = e.target.closest('.filter-tab');
-          if (!tab) return;
-          rptFilterBar.querySelectorAll('.filter-tab').forEach(function(t) {
-            t.classList.remove('active');
-            t.setAttribute('aria-selected', 'false');
-          });
-          tab.classList.add('active');
-          tab.setAttribute('aria-selected', 'true');
+        wireFilterBar(rptFilterBar, function(tab) {
           state.rptFilter = tab.dataset.filter;
           renderReports(true);
         });
@@ -8734,15 +8726,42 @@
   // ============================================================
   // DIRECTORY FILTERS
   // ============================================================
-  document.getElementById('dirFilterBar').addEventListener('click', function(e) {
-    var tab = e.target.closest('.filter-tab');
-    if (!tab) return;
-    document.querySelectorAll('#dirFilterBar .filter-tab').forEach(function(t) {
-      t.classList.remove('active');
-      t.setAttribute('aria-selected', 'false');
+  // Shared tab activation + arrow-key navigation helper for any .filter-bar.
+  // Implements WAI-ARIA tablist keyboard behaviour: Left/Right to move between
+  // tabs (wrapping), Home/End to jump to first/last.
+  function wireFilterBar(bar, onActivate) {
+    function tabs() { return Array.prototype.slice.call(bar.querySelectorAll('.filter-tab')); }
+    function activate(tab) {
+      tabs().forEach(function(t) {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+        t.setAttribute('tabindex', '-1');
+      });
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+      tab.setAttribute('tabindex', '0');
+      tab.focus();
+      onActivate(tab);
+    }
+    // Initial tabindex — only the active tab is focusable via Tab.
+    tabs().forEach(function(t) { t.setAttribute('tabindex', t.classList.contains('active') ? '0' : '-1'); });
+    bar.addEventListener('click', function(e) {
+      var tab = e.target.closest('.filter-tab');
+      if (tab) activate(tab);
     });
-    tab.classList.add('active');
-    tab.setAttribute('aria-selected', 'true');
+    bar.addEventListener('keydown', function(e) {
+      var list = tabs();
+      var idx = list.indexOf(document.activeElement);
+      if (idx === -1) return;
+      var next = null;
+      if (e.key === 'ArrowRight') next = list[(idx + 1) % list.length];
+      else if (e.key === 'ArrowLeft') next = list[(idx - 1 + list.length) % list.length];
+      else if (e.key === 'Home') next = list[0];
+      else if (e.key === 'End') next = list[list.length - 1];
+      if (next) { e.preventDefault(); activate(next); }
+    });
+  }
+  wireFilterBar(document.getElementById('dirFilterBar'), function(tab) {
     state.filter = tab.dataset.filter;
     renderDirectory();
   });

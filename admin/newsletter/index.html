@@ -2057,13 +2057,13 @@ async function previewNewsletter() {
         var html = await resp.text();
         frame.srcdoc = html;
       } else {
-        frame.srcdoc = '<div style="padding:2rem;text-align:center;color:#EF4444;font-family:Inter,sans-serif;">Preview failed: ' + resp.status + '</div>';
+        frame.srcdoc = '<div style="padding:2rem;text-align:center;color:var(--color-danger);font-family:Inter,sans-serif;">Preview failed: ' + resp.status + '</div>';
       }
     } catch (e) {
-      frame.srcdoc = '<div style="padding:2rem;text-align:center;color:#EF4444;font-family:Inter,sans-serif;">Preview error: ' + e.message + '</div>';
+      frame.srcdoc = '<div style="padding:2rem;text-align:center;color:var(--color-danger);font-family:Inter,sans-serif;">Preview error: ' + e.message + '</div>';
     }
   } else {
-    frame.srcdoc = '<div style="padding:2rem;text-align:center;color:#6B7599;font-family:Inter,sans-serif;">Save as draft first to preview.</div>';
+    frame.srcdoc = '<div style="padding:2rem;text-align:center;color:var(--color-muted);font-family:Inter,sans-serif;">Save as draft first to preview.</div>';
   }
   document.getElementById('previewModal').classList.add('open');
 }
