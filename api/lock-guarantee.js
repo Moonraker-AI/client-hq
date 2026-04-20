@@ -2,12 +2,11 @@
 // Admin action: lock in a Performance Guarantee after the intro-call numbers
 // are finalized. Flips performance_guarantees.status from 'draft' to 'locked'.
 //
-// Scope boundary (3.3 build):
-//   This endpoint performs the status flip ONLY. The signing page deployment
-//   (to /<slug>/guarantee/index.html) and the "ready to sign" client email
-//   are deferred to 3.4 — the signing template and signing endpoint do not
-//   exist yet, and linking clients to a 404 would be worse than delaying
-//   their notification by a day. Stubs are marked // TODO (3.4) below.
+// Scope boundary (3.4 build):
+//   This endpoint performs the status flip + deploys the client-facing
+//   /<slug>/guarantee/index.html signing page. The "ready to sign" client
+//   email is deferred to 3.5 — we don't want to email a link to a page
+//   whose submit button 404s. Email-send stub is marked // TODO (3.5) below.
 //
 // Security:
 //   - Admin JWT only (auth.requireAdmin — no internal/agent access).
@@ -28,6 +27,7 @@
 var auth    = require('./_lib/auth');
 var sb      = require('./_lib/supabase');
 var monitor = require('./_lib/monitor');
+var gh      = require('./_lib/github');
 
 var REQUIRED_FIELDS = [
   'avg_client_ltv_cents',
@@ -38,6 +38,27 @@ var REQUIRED_FIELDS = [
   'guarantee_calls',
   'total_benchmark'
 ];
+
+// Deploy the signing page to {slug}/guarantee/index.html. Idempotent —
+// callers may invoke this on first-lock-in OR on a retry-lock (already-
+// locked branch) so a prior failed deploy can be recovered without any DB
+// state change.
+async function deployGuaranteePage(slug) {
+  if (!gh.isConfigured()) {
+    return { deployed: false, commit: null, error: 'github_not_configured' };
+  }
+  try {
+    var html = await gh.readTemplate('guarantee.html');
+    var result = await gh.pushFile(
+      slug + '/guarantee/index.html',
+      html,
+      'Deploy Performance Guarantee signing page for ' + slug
+    );
+    return { deployed: true, commit: result && result.commit ? String(result.commit).substring(0, 8) : null, error: null };
+  } catch (err) {
+    return { deployed: false, commit: null, error: (err && err.message) || 'unknown' };
+  }
+}
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
@@ -82,8 +103,16 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // 4. Idempotent: already locked
+    // 4. Idempotent: already locked. We still re-deploy the signing page so a
+    //    retry after a failed first deploy lands a working page.
     if (pg.status === 'locked') {
+      var reDeploy = await deployGuaranteePage(slug);
+      if (!reDeploy.deployed) {
+        await monitor.logError('lock-guarantee', new Error('deploy (already-locked) failed: ' + reDeploy.error), {
+          client_slug: slug,
+          detail: { actor: user && user.email, stage: 'deploy_already_locked' }
+        });
+      }
       return res.status(200).json({
         success: true,
         already_locked: true,
@@ -91,8 +120,9 @@ module.exports = async function handler(req, res) {
         guarantee_calls: pg.guarantee_calls,
         total_benchmark: pg.total_benchmark,
         slug: slug,
-        signing_page_deployed: false,   // 3.4
-        client_emailed: false            // 3.4
+        signing_page_deployed: reDeploy.deployed,
+        signing_page_commit: reDeploy.commit,
+        client_emailed: false   // TODO (3.5): send on signing-endpoint ship
       });
     }
 
@@ -116,11 +146,20 @@ module.exports = async function handler(req, res) {
       throw new Error('Lock transition did not apply (PATCH returned no row with status=locked)');
     }
 
-    // TODO (3.4): deploy _templates/guarantee.html -> {slug}/guarantee/index.html via gh.pushFile
-    //             mint pageToken.sign({ scope: 'guarantee', contact_id: contact.id })
-    //             send Resend email (notifications@clients.moonraker.ai) to contact.email
-    //             with CTA linking to https://clients.moonraker.ai/{slug}/guarantee?t=<token>
-    //             return signing_page_deployed=true, client_emailed=true
+    // 7. Deploy the signing page. Failure here is non-fatal — status is
+    //    already locked, and deployGuaranteePage() will re-run on a retry
+    //    through the already-locked branch.
+    var deploy = await deployGuaranteePage(slug);
+    if (!deploy.deployed) {
+      await monitor.logError('lock-guarantee', new Error('deploy after lock failed: ' + deploy.error), {
+        client_slug: slug,
+        detail: { actor: user && user.email, stage: 'deploy_post_lock' }
+      });
+    }
+
+    // TODO (3.5): send Resend email (notifications@clients.moonraker.ai) to contact.email
+    //             with CTA linking to https://clients.moonraker.ai/{slug}/guarantee
+    //             Gate on deploy.deployed and signing endpoint being live.
 
     return res.status(200).json({
       success: true,
@@ -129,8 +168,9 @@ module.exports = async function handler(req, res) {
       guarantee_calls: locked.guarantee_calls,
       total_benchmark: locked.total_benchmark,
       slug: slug,
-      signing_page_deployed: false,
-      client_emailed: false
+      signing_page_deployed: deploy.deployed,
+      signing_page_commit: deploy.commit,
+      client_emailed: false   // TODO (3.5)
     });
 
   } catch (err) {
