@@ -7919,9 +7919,9 @@
         '<p style="margin:.25rem 0 .75rem;font-size:.84rem;color:var(--color-muted);line-height:1.55;">' +
           'Share this link with the client so they can browse and purchase add-on services (additional service pages, press releases, NAP updates).' +
         '</p>' +
-        '<div style="display:flex;gap:.5rem;align-items:stretch;">' +
+        '<div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:stretch;">' +
           '<input type="text" readonly id="offersUrlInput" value="' + esc(offersUrl) + '" ' +
-            'style="flex:1;padding:.5rem .75rem;font-family:\'JetBrains Mono\',ui-monospace,monospace;font-size:.8125rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-bg);color:var(--color-body);" ' +
+            'style="flex:1 1 240px;min-width:0;padding:.5rem .75rem;font-family:\'JetBrains Mono\',ui-monospace,monospace;font-size:.8125rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-bg);color:var(--color-body);" ' +
             'onclick="this.select();">' +
           '<button class="btn btn-secondary" onclick="window.copyOffersLink()" style="white-space:nowrap;">Copy link</button>' +
           '<a class="btn btn-secondary" href="' + esc(offersUrl) + '" target="_blank" rel="noopener" style="white-space:nowrap;text-decoration:none;">Open</a>' +
