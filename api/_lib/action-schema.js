@@ -105,8 +105,7 @@ var TABLES = {
   // Pricing: editable via admin/system pricing section. Money-adjacent but
   // the admin tier is always internal staff, so read+write+delete is fine.
   // Tighten to require_role: 'owner' later if a non-trusted admin role appears.
-  pricing_tiers:           { read: true, write: true,  delete: true  },
-  pricing_config:          { read: true, write: true,  delete: false }
+  pricing_tiers:           { read: true, write: true,  delete: true  }
 };
 
 // Resolve a table entry. Unknown tables get permissive defaults — the caller
