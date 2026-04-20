@@ -1346,8 +1346,8 @@ strong { font-weight: 600; color: var(--color-heading); }
 
       // Update contact record
       apiAction('update_record', 'contacts',
-        { agreement_signed: true, agreement_signed_at: signedAt },
-        { id: contact.id });
+        { id: contact.id },
+        { agreement_signed: true, agreement_signed_at: signedAt });
 
       // Show signed state (keep agreement visible for reference)
       document.getElementById('csaAlreadySigned').style.display = 'block';
@@ -1544,7 +1544,7 @@ strong { font-weight: 600; color: var(--color-heading); }
       postal_code: document.getElementById('ci_postal_code').value.trim(),
       country: document.getElementById('ci_country').value.trim()
     };
-    return apiAction('update_record', 'contacts', data, { id: contact.id }).then(function() {
+    return apiAction('update_record', 'contacts', { id: contact.id }, data).then(function() {
       Object.assign(contact, data);
     });
   };
@@ -1620,7 +1620,7 @@ strong { font-weight: 600; color: var(--color-heading); }
 
     // Also update NPI on contact
     var npi = document.getElementById('bio_npi').value.trim();
-    if (npi) { apiAction('update_record', 'contacts', { npi_number: npi }, { id: contact.id }); }
+    if (npi) { apiAction('update_record', 'contacts', { id: contact.id }, { npi_number: npi }); }
 
     if (bioData) {
       delete data.contact_id;
@@ -1675,7 +1675,7 @@ strong { font-weight: 600; color: var(--color-heading); }
     socialData.platforms_to_omit = omit || null;
 
     // Save socials + omit to contacts
-    return apiAction('update_record', 'contacts', socialData, { id: contact.id }).then(function() {
+    return apiAction('update_record', 'contacts', { id: contact.id }, socialData).then(function() {
       Object.assign(contact, socialData);
 
       // Sync to social_platforms table via API
