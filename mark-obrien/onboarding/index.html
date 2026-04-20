@@ -973,17 +973,71 @@ body.contact-locked .autosave-status { display: none !important; }
         </div>
       </div>
 
-      <!-- Locked state (shown when status = locked) -->
-      <div id="pgLocked" style="display:none;">
-        <div style="background:rgba(0,212,126,.06);border:1px solid rgba(0,212,126,.2);border-radius:12px;padding:2rem;text-align:center;">
-          <div style="font-size:2.5rem;margin-bottom:.75rem;">&#9989;</div>
-          <h3 style="color:var(--color-primary);margin:0 0 .5rem;">Performance Guarantee Confirmed</h3>
-          <p style="font-size:1.125rem;margin:.75rem 0;">We will book you <strong id="pgLockedCalls">0</strong> organic consultation calls in 12 months or we will work for free until you get there.</p>
-          <p style="color:var(--color-muted);font-size:.875rem;margin:0;">Total 12-month benchmark: <strong id="pgLockedBenchmark">0</strong> organic calls</p>
+      <!-- Locked-unsigned state: frozen document + signature block. Shown when -->
+      <!-- performance_guarantees.status='locked' and no signed_performance_guarantees -->
+      <!-- row exists yet. Pattern mirrors CSA signing at Step 2. -->
+      <div id="pgLockedUnsigned" style="display:none;">
+        <div style="background:rgba(0,212,126,.06);border:1px solid rgba(0,212,126,.2);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:.85rem;">
+          <div style="font-size:1.35rem;line-height:1;flex-shrink:0;">&#128274;</div>
+          <div>
+            <strong style="display:block;color:var(--color-heading);margin-bottom:.2rem;">Your guarantee is ready to sign</strong>
+            <p style="margin:0;font-size:.875rem;color:var(--color-body);line-height:1.6;">Scott has locked in the numbers below. Review the document and sign to activate your Performance Guarantee.</p>
+          </div>
+        </div>
+
+        <div class="csa-box" id="pgDocumentCard">
+          <div id="pgDocument"></div>
+        </div>
+
+        <div class="signature-block" id="pgSignatureBlock">
+          <h3>Sign Below</h3>
+          <p style="color:var(--color-muted);font-size:.875rem;margin:-.25rem 0 1.25rem;">Your signature accepts the benchmark and terms above and activates your Performance Guarantee.</p>
+          <div class="sig-row">
+            <div class="sig-field">
+              <label>Full Name</label>
+              <input type="text" id="pgSigName" placeholder="Your full name">
+            </div>
+            <div class="sig-field">
+              <label>Email</label>
+              <input type="email" id="pgSigEmail" placeholder="Your email address">
+            </div>
+          </div>
+          <div class="sig-row">
+            <div class="sig-field">
+              <label>Date</label>
+              <input type="text" id="pgSigDate" readonly>
+            </div>
+            <div class="sig-field"></div>
+          </div>
+          <div class="sig-consent">
+            <input type="checkbox" id="pgSigConsent">
+            <label for="pgSigConsent">I have read the Performance Guarantee above and accept the benchmark and terms. I understand this document is governed by the Client Service Agreement already in place between my practice and Moonraker.AI, LLC.</label>
+          </div>
+          <div class="sig-canvas-wrap">
+            <label>Your Signature</label>
+            <div class="sig-canvas-container" id="pgSigCanvasContainer">
+              <canvas id="pgSigCanvas" height="120"></canvas>
+              <span class="sig-canvas-placeholder">Draw your signature here</span>
+            </div>
+            <div class="sig-canvas-actions">
+              <button type="button" onclick="event.stopPropagation(); clearPgSignatureCanvas()">Clear</button>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="pgSignBtn" disabled onclick="signGuarantee()">Sign Performance Guarantee</button>
         </div>
       </div>
 
-      <button class="btn btn-success" onclick="completeStep('performance_guarantee')" id="pgCompleteBtn" style="display:none;margin-top:1.5rem;">Complete Onboarding &#10003;</button>
+      <!-- Signed state: read-only confirmation + frozen document for reference. -->
+      <!-- Shown when a signed_performance_guarantees row exists for the contact. -->
+      <div id="pgSigned" style="display:none;">
+        <div class="status-signed" id="pgSignedBanner" style="margin-bottom:1.5rem;">
+          <h4>&#10003; Performance Guarantee Signed</h4>
+          <div id="pgSignedDetails" style="font-size:.875rem;"></div>
+        </div>
+        <div class="csa-box">
+          <div id="pgDocumentSigned"></div>
+        </div>
+      </div>
 
       <div class="step-actions">
         <button class="btn btn-outline" onclick="goToStep(7)">&#8592; Back</button>
@@ -1815,11 +1869,29 @@ body.contact-locked .autosave-status { display: none !important; }
           if (guaranteeData.investment_cents) document.getElementById('pgInvestment').value = Math.round(guaranteeData.investment_cents / 100);
 
           if (guaranteeData.status === 'locked') {
+            // Hide configurator; pg is frozen. Branch on whether the client has
+            // already signed. Signed row lookup uses anon key + scoped RLS
+            // policy anon_read_spg_scoped (allows SELECT for contacts whose
+            // status is onboarding/active).
             document.getElementById('pgConfigurator').style.display = 'none';
-            document.getElementById('pgLocked').style.display = 'block';
-            document.getElementById('pgLockedCalls').textContent = guaranteeData.guarantee_calls || 0;
-            document.getElementById('pgLockedBenchmark').textContent = guaranteeData.total_benchmark || 0;
-            document.getElementById('pgCompleteBtn').style.display = 'inline-flex';
+            sbFetch('signed_performance_guarantees',
+              'contact_id=eq.' + contact.id +
+              '&superseded_by=is.null' +
+              '&select=id,signer_name,signer_email,signed_at,signature_image' +
+              '&order=signed_at.desc&limit=1'
+            ).then(function(signedRows) {
+              var signedRow = (signedRows && signedRows.length > 0) ? signedRows[0] : null;
+              if (signedRow) {
+                renderPgSigned(signedRow);
+              } else {
+                renderPgLockedUnsigned();
+              }
+            }).catch(function() {
+              // If the signed lookup fails for any reason, fall back to the
+              // unsigned UI — worst case the client sees the sign form and
+              // the sign endpoint's duplicate-check handles re-submission.
+              renderPgLockedUnsigned();
+            });
           }
 
           recalcGuarantee();
@@ -2247,10 +2319,227 @@ body.contact-locked .autosave-status { display: none !important; }
     });
   }
 
+  // ============================================================
+  // PG SIGNING (mirrors CSA sig pattern; IDs are pg-prefixed to avoid clash)
+  // ============================================================
+  var pgSigHasDrawn = false;
+
+  function renderPgLockedUnsigned() {
+    if (typeof window.buildGuaranteeHtml !== 'function') {
+      // guarantee-content.js not loaded — retry briefly
+      return setTimeout(renderPgLockedUnsigned, 80);
+    }
+    var block = document.getElementById('pgLockedUnsigned');
+    if (!block) return;
+    block.style.display = 'block';
+
+    var docEl = document.getElementById('pgDocument');
+    if (docEl) {
+      docEl.innerHTML = window.buildGuaranteeHtml(
+        guaranteeData, contact, { effectiveStartDate: guaranteeData.locked_at }
+      );
+    }
+
+    // Prefill sig fields
+    var clientName = ((contact.first_name || '') + ' ' + (contact.last_name || '')).trim();
+    var sn = document.getElementById('pgSigName');  if (sn && !sn.value) sn.value = clientName;
+    var se = document.getElementById('pgSigEmail'); if (se && !se.value) se.value = contact.email || '';
+    var sd = document.getElementById('pgSigDate');  if (sd) sd.value = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    initPgSignatureCanvas();
+    document.getElementById('pgSigConsent').addEventListener('change', validatePgSignFields);
+    document.getElementById('pgSigName').addEventListener('input', validatePgSignFields);
+  }
+
+  function renderPgSigned(signedRow) {
+    if (typeof window.buildGuaranteeHtml !== 'function') {
+      return setTimeout(function() { renderPgSigned(signedRow); }, 80);
+    }
+    var block = document.getElementById('pgSigned');
+    if (!block) return;
+    block.style.display = 'block';
+
+    var signedAt = signedRow.signed_at ? new Date(signedRow.signed_at) : null;
+    var signedMsg = 'Signed by ' + esc(signedRow.signer_name || '') +
+      (signedAt ? ' on ' + signedAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '');
+    var sigImage = signedRow.signature_image;
+    var details = signedMsg + (sigImage && safeSrc(sigImage) ?
+      '<div class="sig-preview"><img src="' + safeSrc(sigImage) + '" alt="Signature"></div>' : '');
+    document.getElementById('pgSignedDetails').innerHTML = details;
+
+    var docEl = document.getElementById('pgDocumentSigned');
+    if (docEl) {
+      docEl.innerHTML = window.buildGuaranteeHtml(
+        guaranteeData, contact, { effectiveStartDate: guaranteeData.locked_at }
+      );
+    }
+
+    // If the step wasn't marked complete yet (it should be, but defensive),
+    // reflect it in the left-nav.
+    if (stepData['performance_guarantee'] !== 'complete') {
+      stepData['performance_guarantee'] = 'complete';
+      buildNav();
+    }
+  }
+
+  function initPgSignatureCanvas() {
+    var canvas = document.getElementById('pgSigCanvas');
+    var container = document.getElementById('pgSigCanvasContainer');
+    if (!canvas || !container) return;
+    var ctx = canvas.getContext('2d');
+    var drawing = false, lastX = 0, lastY = 0, initialized = false;
+
+    function setupCanvas() {
+      var w = container.offsetWidth;
+      if (!w) return;
+      var dpr = window.devicePixelRatio || 1;
+      canvas.width = w * dpr;
+      canvas.height = 120 * dpr;
+      canvas.style.height = '120px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      initialized = true;
+    }
+    if (window.ResizeObserver) {
+      var ro = new ResizeObserver(function(entries) {
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i].contentRect.width > 0 && !initialized) setupCanvas();
+        }
+      });
+      ro.observe(container);
+    }
+    window.addEventListener('resize', function() { initialized = false; setupCanvas(); pgSigHasDrawn = false; container.classList.remove('has-signature'); validatePgSignFields(); });
+    setupCanvas();
+
+    function getPos(e) {
+      var rect = canvas.getBoundingClientRect();
+      var t = e.touches ? e.touches[0] : e;
+      return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    }
+    function startDraw(e) {
+      if (!initialized) setupCanvas();
+      drawing = true;
+      var p = getPos(e); lastX = p.x; lastY = p.y;
+    }
+    function moveDraw(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      var p = getPos(e);
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      ctx.strokeStyle = isDark ? '#E8F5EF' : '#111';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      lastX = p.x; lastY = p.y;
+      if (!pgSigHasDrawn) {
+        pgSigHasDrawn = true;
+        container.classList.add('has-signature');
+        validatePgSignFields();
+      }
+    }
+    function endDraw() { drawing = false; }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', moveDraw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', moveDraw, { passive: false });
+    canvas.addEventListener('touchend', endDraw);
+  }
+
+  window.clearPgSignatureCanvas = function() {
+    var canvas = document.getElementById('pgSigCanvas');
+    var container = document.getElementById('pgSigCanvasContainer');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pgSigHasDrawn = false;
+    if (container) container.classList.remove('has-signature');
+    validatePgSignFields();
+  };
+
+  function getPgSignatureDataURL() {
+    if (!pgSigHasDrawn) return null;
+    var canvas = document.getElementById('pgSigCanvas');
+    if (!canvas) return null;
+    var exp = document.createElement('canvas');
+    var rect = document.getElementById('pgSigCanvasContainer').getBoundingClientRect();
+    exp.width = Math.round(rect.width);
+    exp.height = 120;
+    var ectx = exp.getContext('2d');
+    ectx.drawImage(canvas, 0, 0, exp.width, exp.height);
+    return exp.toDataURL('image/png');
+  }
+
+  window.validatePgSignFields = function() {
+    var sn = document.getElementById('pgSigName');
+    var sc = document.getElementById('pgSigConsent');
+    var btn = document.getElementById('pgSignBtn');
+    if (!sn || !sc || !btn) return;
+    var nameOk = sn.value.trim().length >= 2;
+    btn.disabled = !(sc.checked && nameOk && pgSigHasDrawn);
+  };
+
+  window.signGuarantee = function() {
+    var btn = document.getElementById('pgSignBtn');
+    btn.disabled = true;
+    btn.textContent = 'Signing\u2026';
+
+    var signerName = document.getElementById('pgSigName').value.trim();
+    var signerEmail = document.getElementById('pgSigEmail').value.trim();
+    var sigImage = getPgSignatureDataURL();
+    var consent = document.getElementById('pgSigConsent').checked;
+
+    fetch('/api/sign-guarantee', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        slug: (contact && contact.slug) || null,
+        signer_name: signerName,
+        signer_email: signerEmail,
+        signature_image: sigImage,
+        consent: !!consent
+      })
+    })
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, status: r.status, data: d }; }); })
+    .then(function(result) {
+      if (!result.ok) {
+        btn.disabled = false;
+        btn.textContent = 'Sign Performance Guarantee';
+        alert((result.data && result.data.error) || 'Signing failed. Please try again.');
+        return;
+      }
+      // Success: hide locked-unsigned, render signed view
+      document.getElementById('pgLockedUnsigned').style.display = 'none';
+      var signedRow = {
+        signer_name: signerName,
+        signer_email: signerEmail,
+        signed_at: new Date().toISOString(),
+        signature_image: sigImage
+      };
+      renderPgSigned(signedRow);
+      // Step completion is server-side (sign-guarantee marks the step complete),
+      // but reflect in nav immediately.
+      stepData['performance_guarantee'] = 'complete';
+      buildNav();
+    })
+    .catch(function() {
+      btn.disabled = false;
+      btn.textContent = 'Sign Performance Guarantee';
+      alert('Network error. Please try again.');
+    });
+  };
+
   init();
 })();
 </script>
 <script src="/shared/csa-content.js"></script>
+<script src="/shared/guarantee-content.js"></script>
 <script src="/shared/offline-banner.js" defer></script>
 </body>
 </html>
