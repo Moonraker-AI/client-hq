@@ -206,6 +206,17 @@ strong{font-weight:600;color:var(--color-heading)}
     document.getElementById('priceSection').classList.remove('hidden');
   };
 
+  function restoreCheckoutBtn() {
+    var cta = document.getElementById('checkoutBtn');
+    if (!cta) return;
+    cta.disabled = false;
+    if (cta.dataset.origText) cta.innerHTML = cta.dataset.origText;
+  }
+  // Back/forward cache: Safari + Chromium restore the page intact after
+  // the user hits Back from Stripe. Reset the CTA so a new selection can
+  // resubmit instead of hanging on the "Redirecting..." disabled state.
+  window.addEventListener('pageshow', function(e) { if (e.persisted) restoreCheckoutBtn(); });
+
   window.goToCheckout = async function() {
     if (!currentMethod) return;
     var tierKey = 'premium_' + currentMethod;
@@ -226,7 +237,7 @@ strong{font-weight:600;color:var(--color-heading)}
     } catch (err) {
       console.error('[entity-audit checkout] create-session failed:', err);
       alert('Could not start checkout: ' + (err.message || err) + '\n\nPlease try again or email support@moonraker.ai.');
-      if (cta) { cta.disabled = false; if (cta.dataset.origText) cta.innerHTML = cta.dataset.origText; }
+      restoreCheckoutBtn();
     }
   };
 

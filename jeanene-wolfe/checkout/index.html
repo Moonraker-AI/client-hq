@@ -340,6 +340,18 @@ strong{font-weight:600;color:var(--color-heading)}
     document.getElementById('priceSection').classList.remove('hidden');
   };
 
+  function restoreCheckoutBtn() {
+    var cta = document.getElementById('checkoutBtn');
+    if (!cta) return;
+    cta.disabled = false;
+    if (cta.dataset.origText) cta.innerHTML = cta.dataset.origText;
+  }
+  // Back/forward cache: Safari + Chromium restore the page intact after the
+  // user hits Back from Stripe. The button was left in the "Redirecting..."
+  // disabled state because neither success nor catch fired (we navigated
+  // away mid-flight). Reset on pageshow so a fresh selection can submit.
+  window.addEventListener('pageshow', function(e) { if (e.persisted) restoreCheckoutBtn(); });
+
   window.goToCheckout = async function() {
     if (!currentBilling || !currentMethod) return;
     var tierKey = currentBilling + '_' + currentMethod;
@@ -360,7 +372,7 @@ strong{font-weight:600;color:var(--color-heading)}
     } catch (err) {
       console.error('[checkout] create-session failed:', err);
       alert('Could not start checkout: ' + (err.message || err) + '\n\nPlease try again or email support@moonraker.ai.');
-      if (cta) { cta.disabled = false; if (cta.dataset.origText) cta.innerHTML = cta.dataset.origText; }
+      restoreCheckoutBtn();
     }
   };
 
