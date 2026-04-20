@@ -7944,21 +7944,14 @@
         var missingKeys = requiredKeys.filter(function(k) { return pg[k] == null; });
         var actionHtml = '';
         if (pg.status === 'locked') {
-          var signingUrl = contact.slug ? ('https://clients.moonraker.ai/' + encodeURIComponent(contact.slug) + '/guarantee') : '';
           actionHtml = '<div style="padding:1.25rem;border-top:1px solid var(--color-border);display:flex;flex-direction:column;gap:.75rem;">'
             + '<div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">'
               + '<span style="color:var(--color-success);font-size:1.05rem;">&#128274;</span>'
               + '<strong style="color:var(--color-heading);">Guarantee locked</strong>'
               + (pg.locked_at ? '<span style="color:var(--color-muted);font-size:.8125rem;">on ' + new Date(pg.locked_at).toLocaleDateString() + '</span>' : '')
             + '</div>'
-            + (signingUrl
-                ? '<div style="font-size:.8125rem;line-height:1.55;">'
-                  + '<span style="color:var(--color-muted);">Signing page: </span>'
-                  + '<a href="' + signingUrl + '" target="_blank" rel="noopener" style="color:var(--color-primary);font-weight:600;">/' + esc(contact.slug) + '/guarantee &#8599;</a>'
-                + '</div>'
-                : '')
             + '<p style="margin:0;font-size:.8125rem;color:var(--color-muted);line-height:1.55;">'
-              + 'Numbers are frozen and the client cannot revise their draft. The client email invitation will send in a future release.'
+              + 'Numbers are frozen. The client will see a signature block at Step 9 of their onboarding and can sign there. A signed copy will be snapshotted for this record once they do.'
             + '</p>'
             + '</div>';
         } else if (!isAnnual) {
@@ -7973,7 +7966,7 @@
           actionHtml = '<div style="padding:1.25rem;border-top:1px solid var(--color-border);display:flex;flex-direction:column;gap:.75rem;align-items:flex-start;">'
             + '<button class="btn btn-primary" id="lockGuaranteeBtn" onclick="window.lockGuarantee()" style="background:var(--color-primary);color:#fff;border:none;padding:.6rem 1.25rem;border-radius:8px;font-weight:600;cursor:pointer;font-size:.875rem;">Lock In Guarantee &#10003;</button>'
             + '<p style="margin:0;font-size:.8125rem;color:var(--color-muted);line-height:1.55;">'
-              + 'Freezes these numbers and deploys the client-facing signing page. The client email invitation will send in a future release.'
+              + 'Freezes these numbers. The client will sign the guarantee at Step 9 of their onboarding (same pattern as the CSA). Their email invitation ships in a future release.'
             + '</p>'
             + '</div>';
         }
