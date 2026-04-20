@@ -41,13 +41,18 @@ module.exports = async function(req, res) {
     // to workspace_credentials (encrypted via _lib/crypto SENSITIVE_FIELDS).
     // Row may not exist if admin hasn't entered creds — scout falls back to public-only.
     var wsRow = await sb.one('workspace_credentials?contact_id=eq.' + contact.id
-      + '&select=cms_login_url,cms_username,cms_password,cms_app_password&limit=1');
+      + '&select=id,cms_login_url,cms_username,cms_password,cms_app_password&limit=1');
     var creds = {
       cms_login_url:    (wsRow && wsRow.cms_login_url) || '',
       cms_username:     wsRow && wsRow.cms_username     ? crypt.decrypt(wsRow.cms_username)     : '',
       cms_password:     wsRow && wsRow.cms_password     ? crypt.decrypt(wsRow.cms_password)     : '',
       cms_app_password: wsRow && wsRow.cms_app_password ? crypt.decrypt(wsRow.cms_app_password) : ''
     };
+    // workspace_credentials.id keys the agent's persistent Chromium profile
+    // dir at /data/profiles/<credential_id>. One row per site+platform pair,
+    // so multi-site clients (e.g. Kelly Chisholm's two WP sites) naturally
+    // get two profiles. Null when admin hasn't entered creds yet.
+    var credentialId = wsRow && wsRow.id ? wsRow.id : null;
 
     var platform = (contact.website_platform || '').toLowerCase();
     var agentEndpoint = '';
@@ -70,6 +75,10 @@ module.exports = async function(req, res) {
         payload.wp_username = payload.wp_username || 'agent';
         payload.wp_password = payload.wp_password || 'none';
       }
+      // Opt into Patchright + persistent Chromium profile when we have a
+      // credentials row. Agent accepts or ignores; unknown IDs create empty
+      // profile dirs that simply cache this run's session.
+      if (credentialId) payload.credential_id = credentialId;
 
     } else if (platform === 'squarespace') {
       agentEndpoint = '/tasks/sq-scout';
@@ -83,6 +92,11 @@ module.exports = async function(req, res) {
         payload.sq_email = creds.cms_username;
         payload.sq_password = creds.cms_password;
       }
+      // Opt into Patchright + persistent Chromium profile. SQSP's contributor
+      // model lets one Moonraker-admin login access many client sites; a
+      // shared credential row across clients is fine — the profile dir just
+      // caches that shared session.
+      if (credentialId) payload.credential_id = credentialId;
 
     } else if (platform === 'wix') {
       agentEndpoint = '/tasks/wix-scout';
