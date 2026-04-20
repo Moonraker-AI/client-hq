@@ -413,9 +413,9 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
   // Guarantee box
   var guaranteeBox = '';
   if (campaigns.includes('annual')) {
-    guaranteeBox = '<div class="guarantee-box"><h3>Performance Guarantee</h3><p>Our annual program includes a performance guarantee - we set a measurable consultation benchmark together using your historical data, and we continue working for free until you hit it. No other agency in this space offers this.</p></div>';
+    guaranteeBox = '<div class="guarantee-box"><h3>Performance Guarantee</h3><p>Our annual program includes a <a href="https://clients.moonraker.ai/guarantee" target="_blank" rel="noopener">performance guarantee</a> - we set a measurable consultation benchmark together using your historical data, and we continue working for free until you hit it. No other agency in this space offers this.</p></div>';
   } else if (campaigns.includes('quarterly')) {
-    guaranteeBox = '<div class="guarantee-box"><h3>Looking Ahead</h3><p>Our annual program includes a performance guarantee - we set a measurable consultation benchmark together and continue working for free until you hit it. While the 3-month engagement builds the foundation, many clients see enough momentum to transition to an annual program where the guarantee kicks in.</p><p>Everything we build in these 3 months is yours to keep, regardless of what you decide next.</p></div>';
+    guaranteeBox = '<div class="guarantee-box"><h3>Looking Ahead</h3><p>Our annual program includes a <a href="https://clients.moonraker.ai/guarantee" target="_blank" rel="noopener">performance guarantee</a> - we set a measurable consultation benchmark together and continue working for free until you hit it. While the 3-month engagement builds the foundation, many clients see enough momentum to transition to an annual program where the guarantee kicks in.</p><p>Everything we build in these 3 months is yours to keep, regardless of what you decide next.</p></div>';
   }
 
   // Build next steps HTML
