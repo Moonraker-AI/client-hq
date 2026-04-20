@@ -7926,7 +7926,7 @@
       { key: 'quarterly_monthly', label: 'Monthly ($1,667/mo)' }
     ],
     monthly: [
-      { key: 'monthly', label: 'Month-to-Month ($1,667/mo)' }
+      { key: 'monthly', label: 'Month-to-Month ($2,000/mo)' }
     ]
   };
 
@@ -7989,7 +7989,7 @@
       h += '<div class="prop-chip-group" id="propCampaignChips">';
       h += propChipHtml('annual', 'Annual - $20,000', true, 'campaign');
       h += propChipHtml('quarterly', '3 Months - $5,000', false, 'campaign');
-      h += propChipHtml('monthly', 'Month-to-Month - $1,667/mo', false, 'campaign');
+      h += propChipHtml('monthly', 'Month-to-Month - $2,000/mo', false, 'campaign');
       h += '</div></div>';
 
       // Billing
@@ -8068,7 +8068,7 @@
     h += '<div class="prop-chip-group" id="propCampaignChips">';
     h += propChipHtml('annual', 'Annual - $20,000', currentCampaigns.indexOf('annual') > -1, 'campaign');
     h += propChipHtml('quarterly', '3 Months - $5,000', currentCampaigns.indexOf('quarterly') > -1, 'campaign');
-    h += propChipHtml('monthly', 'Month-to-Month - $1,667/mo', currentCampaigns.indexOf('monthly') > -1, 'campaign');
+    h += propChipHtml('monthly', 'Month-to-Month - $2,000/mo', currentCampaigns.indexOf('monthly') > -1, 'campaign');
     h += '</div></div>';
 
     // Billing chips - will be populated by JS
