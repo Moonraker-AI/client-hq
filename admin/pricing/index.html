@@ -52,10 +52,15 @@
   .switch input:checked + .slider { background: var(--color-primary); }
   .switch input:checked + .slider::before { transform: translateX(18px); }
 
-  .save-btn { background: var(--color-primary); color: var(--color-navy); border: none; border-radius: 6px; padding: .35rem .75rem; font-size: .78rem; font-weight: 600; font-family: 'Outfit', sans-serif; cursor: pointer; min-height: 32px; transition: all .15s; }
+  /* Save button — hidden by default so clean rows don't display a button at all.
+     Becomes visible + amber the moment any input in the row is edited.
+     Using visibility keeps the column width stable so the layout doesn't shift
+     when a row transitions between clean and dirty. */
+  .save-btn { background: var(--color-warning); color: var(--color-navy); border: none; border-radius: 6px; padding: .35rem .75rem; font-size: .78rem; font-weight: 600; font-family: 'Outfit', sans-serif; cursor: pointer; min-height: 32px; transition: filter .15s; visibility: hidden; }
   .save-btn:hover { filter: brightness(1.08); }
-  .save-btn:disabled { opacity: .5; cursor: not-allowed; }
-  .save-btn.dirty { background: var(--color-warning); color: var(--color-navy); }
+  .save-btn.dirty { visibility: visible; }
+  .save-btn.saving { background: var(--color-muted); color: var(--color-surface); visibility: visible; cursor: wait; }
+  .save-btn.saved { background: var(--color-primary); color: var(--color-navy); visibility: visible; }
 
   .pricing-hint { font-size: .78rem; color: var(--color-muted); padding: .75rem 1rem; border-top: 1px solid var(--color-border); background: var(--color-bg); }
   .pricing-hint code { background: var(--color-surface); padding: .1rem .3rem; border-radius: 4px; font-size: .72rem; }
@@ -219,7 +224,7 @@ function renderPricing() {
         '<td class="col-period"><input type="text" data-field="period" value="' + esc(r.period || '') + '" placeholder="/month"></td>' +
         '<td class="col-detail"><input type="text" data-field="detail" value="' + esc(r.detail || '') + '" placeholder="Description shown under price"></td>' +
         '<td class="col-active"><label class="switch"><input type="checkbox" data-field="active"' + (r.active ? ' checked' : '') + '><span class="slider"></span></label></td>' +
-        '<td class="col-save"><button class="save-btn" onclick="savePricingRow(this)" disabled>Save</button></td>' +
+        '<td class="col-save"><button class="save-btn" onclick="savePricingRow(this)" title="Save (Esc to revert)">Save</button></td>' +
       '</tr>';
     });
     html += '</tbody></table>' +
@@ -229,14 +234,52 @@ function renderPricing() {
   });
   container.innerHTML = html;
 
-  // Wire dirty-state: any change enables Save, swap to warning color.
+  // Wire dirty-state + Esc-to-revert.
+  //
+  // Dirty: any input change shows the Save button (default is visibility:hidden).
+  // Revert: Esc inside any input on a dirty row restores original values
+  // from _pricingRows and hides the Save button. Silent — values visibly
+  // change back, no toast needed.
   container.querySelectorAll('tr[data-id]').forEach(function(tr) {
     var btn = tr.querySelector('.save-btn');
+    var id = tr.getAttribute('data-id');
+    var original = null;
+    for (var i = 0; i < _pricingRows.length; i++) {
+      if (_pricingRows[i].id === id) { original = _pricingRows[i]; break; }
+    }
+
+    function markDirty() {
+      btn.classList.add('dirty');
+      btn.classList.remove('saved', 'saving');
+      btn.textContent = 'Save';
+    }
+    function revert() {
+      if (!original) return;
+      tr.querySelectorAll('input[data-field]').forEach(function(inp) {
+        var f = inp.getAttribute('data-field');
+        if (f === 'amount_cents') {
+          inp.value = fmtDollars(original.amount_cents);
+        } else if (f === 'active') {
+          inp.checked = !!original.active;
+        } else {
+          inp.value = original[f] || '';
+        }
+        inp.style.borderColor = '';
+      });
+      btn.classList.remove('dirty', 'saving', 'saved');
+      btn.textContent = 'Save';
+      tr.className = original.active ? '' : 'inactive';
+    }
+
     tr.querySelectorAll('input[data-field]').forEach(function(inp) {
       var evtName = inp.type === 'checkbox' ? 'change' : 'input';
-      inp.addEventListener(evtName, function() {
-        btn.disabled = false;
-        btn.classList.add('dirty');
+      inp.addEventListener(evtName, markDirty);
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && btn.classList.contains('dirty')) {
+          e.preventDefault();
+          revert();
+          inp.blur();
+        }
       });
     });
   });
@@ -260,22 +303,28 @@ window.savePricingRow = async function(btn) {
       data[f] = inp.value;
     }
   });
-  if (!valid) { alert('Amount must be a positive number.'); return; }
-  btn.disabled = true;
-  btn.textContent = 'Saving...';
+  if (!valid) { toast('Amount must be a positive number.', 'error'); return; }
+  btn.classList.remove('dirty');
+  btn.classList.add('saving');
+  btn.textContent = 'Saving…';
   try {
     await apiAction('update_record', 'pricing_tiers', data, { id: id });
+    btn.classList.remove('saving');
+    btn.classList.add('saved');
     btn.textContent = 'Saved';
-    btn.classList.remove('dirty');
     for (var i = 0; i < _pricingRows.length; i++) {
       if (_pricingRows[i].id === id) { Object.assign(_pricingRows[i], data); break; }
     }
     tr.className = data.active === false ? 'inactive' : '';
-    setTimeout(function() { btn.textContent = 'Save'; btn.disabled = true; }, 1500);
+    setTimeout(function() {
+      btn.classList.remove('saved');
+      btn.textContent = 'Save';
+    }, 1500);
   } catch (e) {
+    btn.classList.remove('saving');
+    btn.classList.add('dirty');
     btn.textContent = 'Save';
-    btn.disabled = false;
-    alert('Save failed: ' + (e.message || e));
+    toast('Save failed: ' + (e.message || e), 'error');
   }
 };
 
