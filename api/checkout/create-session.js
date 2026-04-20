@@ -151,7 +151,7 @@ module.exports = async function handler(req, res) {
 
   var origin = (req.headers && (req.headers['x-forwarded-proto'] ? req.headers['x-forwarded-proto'] : 'https') + '://' +
                 (req.headers['x-forwarded-host'] || req.headers.host)) || 'https://clients.moonraker.ai';
-  var successUrl = origin + '/' + slug + '/checkout/success?session_id={CHECKOUT_SESSION_ID}&tier=' + encodeURIComponent(tier_key);
+  var successUrl = origin + '/' + slug + '/checkout/success?session_id={CHECKOUT_SESSION_ID}&tier=' + encodeURIComponent(tier_key) + '&product=' + encodeURIComponent(product);
   var cancelUrl  = origin + '/' + slug + '/checkout?canceled=1';
 
   // ── Preferred path: Stripe Checkout Session with inline price_data ──
