@@ -190,6 +190,20 @@ module.exports = async function handler(req, res) {
         practice_name: contact.practice_name || ''
       }
     };
+
+    // Payment-method lock. ACH-priced tiers (lower amount, advertised for
+    // bank transfer) must NOT accept cards, otherwise a prospect can bypass
+    // the 3.5% CC surcharge by paying the ACH amount with a card. CC-priced
+    // tiers should not offer ACH because the amount already includes the CC
+    // surcharge; ACH-paying that same amount would overcharge the client.
+    // Tiers with neither suffix (custom arrangements, legacy rows) leave the
+    // decision to Stripe's account-level defaults.
+    var lowerKey = tier_key.toLowerCase();
+    if (/_ach$/.test(lowerKey)) {
+      payload.payment_method_types = ['us_bank_account'];
+    } else if (/_cc$/.test(lowerKey)) {
+      payload.payment_method_types = ['card'];
+    }
     // Stripe requires subscription_data.metadata for subscription mode to get the
     // metadata onto the Subscription object itself, not just the Session.
     //
