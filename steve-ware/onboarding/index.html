@@ -1788,62 +1788,61 @@ strong { font-weight: 600; color: var(--color-heading); }
     var currentCalls = parseInt(document.getElementById('pgCurrentCalls').value) || 0;
     var investment = parseFloat(document.getElementById('pgInvestment').value) || 0;
 
-    var valuePerCall = ltv * conv * att;
-    var doubleInvestment = investment * 2;
-    var guaranteeCalls = Math.ceil(doubleInvestment / valuePerCall);
-    var totalBenchmark = (currentCalls * 12) + guaranteeCalls;
-
+    // Raw inputs only — server derives the benchmark math (single source of truth)
     var payload = {
-      contact_id: contact.id,
       avg_client_ltv_cents: Math.round(ltv * 100),
       conversion_rate: conv,
       attendance_rate: att,
       current_monthly_organic_calls: currentCalls,
-      investment_cents: Math.round(investment * 100),
-      value_per_call_cents: Math.round(valuePerCall * 100),
-      guarantee_calls: guaranteeCalls,
-      total_benchmark: totalBenchmark,
-      status: 'draft',
-      updated_at: new Date().toISOString()
+      investment_cents: Math.round(investment * 100)
     };
 
     var statusEl = document.getElementById('pgSaveStatus');
+    var btn = document.getElementById('pgSaveBtn');
     statusEl.textContent = 'Saving...';
     statusEl.style.color = 'var(--color-muted)';
+    btn.disabled = true;
 
-    var method, url;
-    if (guaranteeData && guaranteeData.id) {
-      method = 'PATCH';
-      url = SB_URL + '/rest/v1/performance_guarantees?id=eq.' + guaranteeData.id;
-    } else {
-      method = 'POST';
-      url = SB_URL + '/rest/v1/performance_guarantees';
-    }
-
-    fetch(url, {
-      method: method,
-      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    fetch('/api/save-guarantee-draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify(payload)
     })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      var row = Array.isArray(data) ? data[0] : data;
-      if (row && row.id) {
-        guaranteeData = row;
-        statusEl.textContent = 'Draft saved';
-        statusEl.style.color = 'var(--color-success)';
-        // Mark step in progress
-        sbPatch('onboarding_steps', 'contact_id=eq.' + contact.id + '&step_key=eq.performance_guarantee',
-          { status: 'in_progress', notes: 'Draft: ' + guaranteeCalls + ' calls / ' + totalBenchmark + ' benchmark' });
-        stepData['performance_guarantee'] = 'in_progress';
-        buildNav();
-        setTimeout(function() { statusEl.textContent = ''; }, 3000);
-      } else {
-        statusEl.textContent = 'Error saving';
+    .then(function(r) {
+      return r.json().then(function(data) { return { ok: r.ok, status: r.status, data: data }; });
+    })
+    .then(function(result) {
+      btn.disabled = false;
+      if (!result.ok) {
+        statusEl.textContent = (result.data && result.data.error) || 'Error saving';
         statusEl.style.color = 'var(--color-danger)';
+        return;
       }
+      var d = result.data;
+      // Cache saved row so subsequent saves can render the locked state if needed
+      guaranteeData = Object.assign(guaranteeData || {}, {
+        id: d.guarantee.id,
+        status: d.guarantee.status,
+        guarantee_calls: d.guarantee.guarantee_calls,
+        total_benchmark: d.guarantee.total_benchmark
+      });
+      // Sync sidebar nav with server's authoritative step status
+      if (d.step_status) {
+        stepData['performance_guarantee'] = d.step_status;
+        buildNav();
+      }
+      // Plan-specific success copy
+      if (d.plan_tier_effective === 'annual') {
+        statusEl.textContent = 'Your draft is saved \u2014 Scott will finalize on your intro call';
+      } else {
+        statusEl.textContent = 'Draft saved. The guarantee activates when you upgrade to an annual plan.';
+      }
+      statusEl.style.color = 'var(--color-success)';
+      setTimeout(function() { statusEl.textContent = ''; }, 6000);
     })
     .catch(function() {
+      btn.disabled = false;
       statusEl.textContent = 'Error saving';
       statusEl.style.color = 'var(--color-danger)';
     });
