@@ -60,7 +60,7 @@
     },
     {
       "source": "/:slug/offers",
-      "destination": "/_templates/offers.html"
+      "destination": "/_templates/offers"
     }
   ],
   "functions": {
