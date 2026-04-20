@@ -33,12 +33,17 @@ var PRICE_DEFAULTS = {
   quarterly_upfront_ach:      500000,
   quarterly_monthly_ach:      166700,
   monthly_ach:                200000,
-  additional_service_page:     30000,
-  additional_press_release:    30000,
-  content_edit_republish:      30000,  // legacy alias — kept so any older page with a stale reference still resolves
-  nap_update:                  30000,
-  paid_strategy_call:          15000,
-  standalone_website_page:     60000
+  additional_service_page_ach:     30000,
+  additional_service_page_cc:      31050,
+  additional_press_release_ach:    30000,
+  additional_press_release_cc:     31050,
+  nap_update_ach:                  30000,
+  nap_update_cc:                   31050,
+  // Legacy aliases — kept so any older page with a stale reference still resolves
+  additional_service_page:         30000,
+  additional_press_release:        30000,
+  content_edit_republish:          30000,
+  nap_update:                      30000
 };
 var CONFIG_DEFAULTS = { cc_surcharge_pct: 3.5 };
 
@@ -238,11 +243,9 @@ window.buildCSAHtml = function(contactParam, pricingParam) {
     html += '<h4>Additional Services & Add-ons</h4>' +
       '<p>The following add-on services are available outside the base CORE Marketing Campaign and are billed separately. Availability notes indicate which are restricted to active Clients versus available to anyone.</p>' +
       '<ul>' +
-      '<li><strong>Additional Service Page:</strong> ' + P.price('additional_service_page') + ' per page, beyond the 5 included in the CORE Marketing Campaign. Available to active Clients.</li>' +
-      '<li><strong>Additional Press Release:</strong> ' + P.price('additional_press_release') + ' per release. Available to anyone, including prospects and former Clients.</li>' +
-      '<li><strong>NAP Update (Name, Address, or Phone change with citation rebuild):</strong> ' + P.price('nap_update') + ' per change. Update your practice contact info across your website, local directories, and citation data aggregators.</li>' +
-      '<li><strong>Paid Strategy Call:</strong> ' + P.price('paid_strategy_call') + ' for a one-hour session with Scott Pope. Available to anyone.</li>' +
-      '<li><strong>Standalone Website:</strong> ' + P.price('standalone_website_page') + ' per page, including sitemap planning, design, copywriting, Surge audit for each page, and deployment on Moonraker\'s hosting infrastructure. Does not include ongoing marketing.</li>' +
+      '<li><strong>Additional Service Page:</strong> ' + P.price('additional_service_page_ach') + ' per page, beyond the 5 included in the CORE Marketing Campaign.</li>' +
+      '<li><strong>Additional Press Release:</strong> ' + P.price('additional_press_release_ach') + ' per release.</li>' +
+      '<li><strong>NAP Update (Name, Address, or Phone change with citation rebuild):</strong> ' + P.price('nap_update_ach') + ' per change. Update your practice contact info across your website, local directories, and citation data aggregators.</li>' +
       '</ul>' +
       '<p>Add-ons purchased by active Clients do not alter the Client\'s plan, commitment terms, or Performance Guarantee. Additional pages purchased as add-ons are built to completion but are not added to the Client\'s tracked keyword set or ongoing reporting scope unless explicitly agreed in writing. Excessive revision requests or work orders outside the Agreement may incur additional fees.</p>';
 
@@ -270,7 +273,7 @@ window.buildCSAHtml = function(contactParam, pricingParam) {
       '<li>1 location page</li>' +
       '<li>Google Business Profile optimization</li>' +
       '<li>Citation audit and listings management via BrightLocal (15 citations + data aggregators)</li>' +
-      '<li>Press release syndication across 500+ national and international news outlets (1 included, additional at ' + P.price('additional_press_release') + ' each)</li>' +
+      '<li>Press release syndication across 500+ national and international news outlets (1 included, additional at ' + P.price('additional_press_release_ach') + ' each)</li>' +
       '<li>Entity Veracity Hub deployment to establish a verified knowledge base for your practice</li>' +
       '<li>LiveDrive local signal deployment</li>' +
       '<li>Rising Tide social profile buildout and optimization across up to 9 platforms (YouTube, LinkedIn, Facebook, Instagram, Quora, Pinterest, TikTok, X, and Google Business Profile)</li>' +
