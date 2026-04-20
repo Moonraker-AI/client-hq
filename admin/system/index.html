@@ -25,9 +25,21 @@
 
   .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
   @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
-  .stat-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem 1.25rem; }
+  .stat-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1rem 1.25rem; transition: border-color .2s; }
   .stat-label { font-size: .72rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: .04em; }
-  .stat-value { font-family: 'Outfit', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--color-body); margin-top: .2rem; }
+  .stat-value { font-family: 'Outfit', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--color-body); margin-top: .2rem; line-height: 1.1; }
+  .stat-sub { font-size: .7rem; color: var(--color-muted); margin-top: .3rem; }
+
+  /* Severity coloring on the Unfinished card — visual cue that the zombie
+     population is worth investigating. Mirrors the tint ladder used on the
+     Unfinished Runs rows below. */
+  .stat-card.sev-good  { border-color: rgba(0,212,126,.35); }
+  .stat-card.sev-good  .stat-value { color: var(--color-success); }
+  .stat-card.sev-info  .stat-value { color: var(--color-info); }
+  .stat-card.sev-warn  { border-color: rgba(245,158,11,.45); background: rgba(245,158,11,.04); }
+  .stat-card.sev-warn  .stat-value { color: var(--color-warning); }
+  .stat-card.sev-bad   { border-color: rgba(239,68,68,.5);  background: rgba(239,68,68,.05); }
+  .stat-card.sev-bad   .stat-value { color: var(--color-danger); }
 
   table.cron { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; overflow: hidden; }
   table.cron th, table.cron td { padding: .75rem 1rem; text-align: left; font-size: .85rem; border-bottom: 1px solid var(--color-border); }
@@ -119,10 +131,10 @@
     <p class="section-desc">Per-cron status from the <code>cron_runs</code> audit table. A cron is marked stale when no successful run has completed within its expected interval plus tolerance (same rule as the heartbeat cron that alerts chris@moonraker.ai).</p>
 
     <div class="stat-grid">
-      <div class="stat-card"><div class="stat-label">Total Crons</div><div class="stat-value" id="sTotal">-</div></div>
-      <div class="stat-card"><div class="stat-label">Healthy</div><div class="stat-value" id="sHealthy" style="color:var(--color-success);">-</div></div>
-      <div class="stat-card"><div class="stat-label">Stale</div><div class="stat-value" id="sStale" style="color:var(--color-danger);">-</div></div>
-      <div class="stat-card"><div class="stat-label">Unfinished</div><div class="stat-value" id="sRunning" style="color:var(--color-info);">-</div></div>
+      <div class="stat-card"><div class="stat-label">Total Crons</div><div class="stat-value" id="sTotal">-</div><div class="stat-sub">all configured</div></div>
+      <div class="stat-card"><div class="stat-label">Healthy</div><div class="stat-value" id="sHealthy" style="color:var(--color-success);">-</div><div class="stat-sub">within tolerance</div></div>
+      <div class="stat-card"><div class="stat-label">Stale</div><div class="stat-value" id="sStale" style="color:var(--color-danger);">-</div><div class="stat-sub">overdue and alerting</div></div>
+      <div class="stat-card" id="runningCard"><div class="stat-label">Unfinished</div><div class="stat-value" id="sRunning" style="color:var(--color-info);">-</div><div class="stat-sub">incomplete runs</div></div>
     </div>
 
     <div class="table-scroll">
@@ -216,6 +228,17 @@ async function loadHealth() {
   document.getElementById('sHealthy').textContent = healthy;
   document.getElementById('sStale').textContent = stale;
   document.getElementById('sRunning').textContent = running;
+
+  // Severity color on the Unfinished card: 0 is healthy-green, 1-4 is info,
+  // 5-9 amber (worth investigating), 10+ red (definitely look now).
+  var rc = document.getElementById('runningCard');
+  if (rc) {
+    rc.classList.remove('sev-good', 'sev-info', 'sev-warn', 'sev-bad');
+    if (running === 0)       rc.classList.add('sev-good');
+    else if (running < 5)    rc.classList.add('sev-info');
+    else if (running < 10)   rc.classList.add('sev-warn');
+    else                     rc.classList.add('sev-bad');
+  }
 
   var tbody = document.getElementById('cronTbody');
   tbody.innerHTML = data.summary.map(function(r) {
