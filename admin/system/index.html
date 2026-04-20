@@ -115,7 +115,6 @@
   <div class="content" style="padding: 2rem;">
     <div class="section-header">
       <h2>Cron Health</h2>
-      <button class="refresh-btn" onclick="loadHealth()">Refresh</button>
     </div>
     <p class="section-desc">Per-cron status from the <code>cron_runs</code> audit table. A cron is marked stale when no successful run has completed within its expected interval plus tolerance (same rule as the heartbeat cron that alerts chris@moonraker.ai).</p>
 
@@ -123,7 +122,7 @@
       <div class="stat-card"><div class="stat-label">Total Crons</div><div class="stat-value" id="sTotal">-</div></div>
       <div class="stat-card"><div class="stat-label">Healthy</div><div class="stat-value" id="sHealthy" style="color:var(--color-success);">-</div></div>
       <div class="stat-card"><div class="stat-label">Stale</div><div class="stat-value" id="sStale" style="color:var(--color-danger);">-</div></div>
-      <div class="stat-card"><div class="stat-label">Running Now</div><div class="stat-value" id="sRunning" style="color:var(--color-info);">-</div></div>
+      <div class="stat-card"><div class="stat-label">Unfinished</div><div class="stat-value" id="sRunning" style="color:var(--color-info);">-</div></div>
     </div>
 
     <div class="table-scroll">
