@@ -115,9 +115,16 @@
   <div class="content" style="padding: 2rem;">
     <div class="section-header">
       <h2>Pricing</h2>
-      <button class="refresh-btn" onclick="loadPricing()">Refresh</button>
     </div>
     <p class="section-desc">Single source of truth for checkout prices. The checkout and entity-audit-checkout pages fetch these at page load, and <code>/api/checkout/create-session</code> builds a Stripe Checkout Session inline from the <code>Amount</code> value — no pre-existing Stripe Price required. Edit a value here and it takes effect on the next checkout.</p>
+
+    <datalist id="period-options">
+      <option value="/month">
+      <option value="/quarter">
+      <option value="/year">
+      <option value="/audit">
+      <option value="one-time">
+    </datalist>
 
     <div id="pricingContainer">
       <div style="padding:2rem;text-align:center;color:var(--color-muted);">Loading pricing...</div>
@@ -221,7 +228,7 @@ function renderPricing() {
       html += '<tr data-id="' + esc(r.id) + '" class="' + (r.active ? '' : 'inactive') + '">' +
         '<td><span class="tier-name">' + esc(r.display_name) + '</span><span class="tier-key">' + esc(r.tier_key) + '</span></td>' +
         '<td class="col-amount"><input type="text" data-field="amount_cents" value="' + esc(fmtDollars(r.amount_cents)) + '" inputmode="decimal"></td>' +
-        '<td class="col-period"><input type="text" data-field="period" value="' + esc(r.period || '') + '" placeholder="/month"></td>' +
+        '<td class="col-period"><input type="text" data-field="period" list="period-options" value="' + esc(r.period || '') + '" placeholder="/month"></td>' +
         '<td class="col-detail"><input type="text" data-field="detail" value="' + esc(r.detail || '') + '" placeholder="Description shown under price"></td>' +
         '<td class="col-active"><label class="switch"><input type="checkbox" data-field="active"' + (r.active ? ' checked' : '') + '><span class="slider"></span></label></td>' +
         '<td class="col-save"><button class="save-btn" onclick="savePricingRow(this)" title="Save (Esc to revert)">Save</button></td>' +
@@ -248,10 +255,37 @@ function renderPricing() {
       if (_pricingRows[i].id === id) { original = _pricingRows[i]; break; }
     }
 
-    function markDirty() {
-      btn.classList.add('dirty');
-      btn.classList.remove('saved', 'saving');
-      btn.textContent = 'Save';
+    function readField(inp) {
+      var f = inp.getAttribute('data-field');
+      if (f === 'amount_cents') return parseDollars(inp.value);
+      if (f === 'active') return !!inp.checked;
+      return inp.value || '';
+    }
+    function readOriginal(f) {
+      if (!original) return null;
+      if (f === 'amount_cents') return original.amount_cents;
+      if (f === 'active') return !!original.active;
+      return original[f] || '';
+    }
+    function isDirty() {
+      if (!original) return false;
+      var dirty = false;
+      tr.querySelectorAll('input[data-field]').forEach(function(inp) {
+        if (dirty) return;
+        var f = inp.getAttribute('data-field');
+        if (readField(inp) !== readOriginal(f)) dirty = true;
+      });
+      return dirty;
+    }
+    function syncDirty() {
+      if (isDirty()) {
+        btn.classList.add('dirty');
+        btn.classList.remove('saved', 'saving');
+        btn.textContent = 'Save';
+      } else {
+        btn.classList.remove('dirty', 'saved', 'saving');
+        btn.textContent = 'Save';
+      }
     }
     function revert() {
       if (!original) return;
@@ -266,14 +300,13 @@ function renderPricing() {
         }
         inp.style.borderColor = '';
       });
-      btn.classList.remove('dirty', 'saving', 'saved');
-      btn.textContent = 'Save';
       tr.className = original.active ? '' : 'inactive';
+      syncDirty();
     }
 
     tr.querySelectorAll('input[data-field]').forEach(function(inp) {
       var evtName = inp.type === 'checkbox' ? 'change' : 'input';
-      inp.addEventListener(evtName, markDirty);
+      inp.addEventListener(evtName, syncDirty);
       inp.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && btn.classList.contains('dirty')) {
           e.preventDefault();
