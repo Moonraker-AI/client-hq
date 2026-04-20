@@ -45,10 +45,19 @@
 // ("the Client", "Per-location CORE Marketing Campaign") show as a reference.
 // This is the single source of truth — the same builder runs on onboarding.
 (function(){
-  function init(){
+  function render(pricing){
     var el = document.getElementById('csaDocument');
     if (el && typeof window.buildCSAHtml === 'function') {
-      el.innerHTML = window.buildCSAHtml({});
+      el.innerHTML = window.buildCSAHtml({}, pricing);
+    }
+  }
+  function init(){
+    // Fetch live pricing from pricing_tiers + pricing_config; fall through to
+    // defaults (baked into csa-content.js) if the API is slow or unreachable.
+    if (typeof window.loadCSAPricing === 'function') {
+      window.loadCSAPricing().then(render).catch(function(){ render(null); });
+    } else {
+      render(null);
     }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
