@@ -853,20 +853,36 @@ body.contact-locked .autosave-status { display: none !important; }
       <span class="step-badge">Step 9 of 9</span>
       <h1>Your SEO Performance Guarantee</h1>
 
-      <!-- Annual plan banner (shown when plan_tier/plan_type = 'annual') -->
-      <div id="pgBannerAnnual" style="display:none;">
-        <div style="background:rgba(0,212,126,.06);border:1px solid rgba(0,212,126,.2);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem;">
-          <h3 style="margin:0 0 .5rem;color:var(--color-primary);font-size:1.0625rem;">&#127919; Your guarantee activates on your intro call</h3>
-          <p style="color:var(--color-body);margin:0;font-size:.9375rem;line-height:1.7;">Fill in the numbers below and we will lock them in together with Scott. These drafts are non-binding until you sign the final Performance Guarantee.</p>
+      <!-- Non-annual notice (hidden by default, shown via JS) -->
+      <div id="pgNotAnnual" style="display:none;">
+        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:1.5rem;margin-bottom:2rem;">
+          <h3 style="margin:0 0 .75rem;color:var(--color-warning);">&#128274; Available with 12-Month Campaigns</h3>
+          <p style="color:var(--color-body);margin:0 0 .75rem;font-size:.9375rem;line-height:1.7;">The Performance Guarantee is available exclusively with our 12-Month Campaign. This is one of the key advantages of committing to a full year: if we do not hit your consultation call goal within 12 months, we continue working at no additional cost until we do. No other agency in this space offers this.</p>
+          <p style="color:var(--color-muted);margin:0;font-size:.875rem;">Interested in upgrading? Let Scott know on your intro call or reach out to <a href="mailto:scott@moonraker.ai">scott@moonraker.ai</a>.</p>
         </div>
       </div>
 
-      <!-- Explore banner (shown for flexible/monthly/quarterly/null plans) -->
-      <div id="pgBannerExplore" style="display:none;">
-        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:2rem;">
-          <h3 style="margin:0 0 .5rem;color:var(--color-warning);font-size:1.0625rem;">&#128161; Explore what a guarantee would look like</h3>
-          <p style="color:var(--color-body);margin:0 0 .75rem;font-size:.9375rem;line-height:1.7;">The Performance Guarantee only activates on annual plans. Try the numbers below to see what your personalized benchmark could be, and when you are ready, upgrade to lock it in.</p>
-          <a href="mailto:scott@moonraker.ai?subject=Upgrade%20to%20Annual" class="btn btn-outline" style="font-size:.875rem;padding:.5rem 1rem;display:inline-flex;">Upgrade to Annual &#8594;</a>
+      <!-- Pre-checkout teaser (shown when plan_type is null) -->
+      <div id="pgTeaser" style="display:none;">
+        <div style="background:rgba(0,212,126,.06);border:1px solid rgba(0,212,126,.2);border-radius:12px;padding:2rem;margin-bottom:2rem;">
+          <div style="font-size:2rem;margin-bottom:.75rem;">&#127919;</div>
+          <h3 style="color:var(--color-primary);margin:0 0 .75rem;">We Put Our Money Where Our Mouth Is</h3>
+          <p style="color:var(--color-body);font-size:.9375rem;line-height:1.7;margin:0 0 1rem;">When you choose our 12-Month Campaign, we set a measurable consultation call goal together based on your practice metrics. If we do not hit that goal within 12 months, we continue working for free until we do.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+            <div style="background:var(--color-surface);border-radius:10px;padding:1rem;text-align:center;">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--color-heading);font-family:'Outfit',sans-serif;">2x</div>
+              <div style="font-size:.75rem;color:var(--color-muted);margin-top:.25rem;">Your investment back in new client revenue</div>
+            </div>
+            <div style="background:var(--color-surface);border-radius:10px;padding:1rem;text-align:center;">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--color-heading);font-family:'Outfit',sans-serif;">12 mo</div>
+              <div style="font-size:.75rem;color:var(--color-muted);margin-top:.25rem;">To hit the goal or we keep working free</div>
+            </div>
+            <div style="background:var(--color-surface);border-radius:10px;padding:1rem;text-align:center;">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--color-heading);font-family:'Outfit',sans-serif;">Custom</div>
+              <div style="font-size:.75rem;color:var(--color-muted);margin-top:.25rem;">Goal tailored to your specific practice</div>
+            </div>
+          </div>
+          <p style="color:var(--color-muted);font-size:.875rem;margin:0;">Once you select your campaign length, this section will unlock so you can configure your personalized guarantee.</p>
         </div>
       </div>
 
@@ -1355,6 +1371,7 @@ body.contact-locked .autosave-status { display: none !important; }
       '<p style="margin:0;font-size:.8125rem;color:#666;">' + signerEmail + '</p>' +
       '<p style="margin:0;font-size:.8125rem;color:#666;">Signed: ' + new Date(signedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + '</p>' +
       '</div>';
+
     // Token-gated write via /api/onboarding-action. contact_id, ip_address,
     // and user_agent are forced/populated server-side from the verified
     // page-token and request headers; we must not send them in the body.
@@ -1381,8 +1398,8 @@ body.contact-locked .autosave-status { display: none !important; }
 
       // Update contact record
       apiAction('update_record', 'contacts',
-        { agreement_signed: true, agreement_signed_at: signedAt },
-        { id: contact.id });
+        { id: contact.id },
+        { agreement_signed: true, agreement_signed_at: signedAt });
 
       // Show signed state (keep agreement visible for reference)
       document.getElementById('csaAlreadySigned').style.display = 'block';
@@ -1579,7 +1596,7 @@ body.contact-locked .autosave-status { display: none !important; }
       postal_code: document.getElementById('ci_postal_code').value.trim(),
       country: document.getElementById('ci_country').value.trim()
     };
-    return apiAction('update_record', 'contacts', data, { id: contact.id }).then(function() {
+    return apiAction('update_record', 'contacts', { id: contact.id }, data).then(function() {
       Object.assign(contact, data);
     });
   };
@@ -1655,7 +1672,7 @@ body.contact-locked .autosave-status { display: none !important; }
 
     // Also update NPI on contact
     var npi = document.getElementById('bio_npi').value.trim();
-    if (npi) { apiAction('update_record', 'contacts', { npi_number: npi }, { id: contact.id }); }
+    if (npi) { apiAction('update_record', 'contacts', { id: contact.id }, { npi_number: npi }); }
 
     if (bioData) {
       delete data.contact_id;
@@ -1710,7 +1727,7 @@ body.contact-locked .autosave-status { display: none !important; }
     socialData.platforms_to_omit = omit || null;
 
     // Save socials + omit to contacts
-    return apiAction('update_record', 'contacts', socialData, { id: contact.id }).then(function() {
+    return apiAction('update_record', 'contacts', { id: contact.id }, socialData).then(function() {
       Object.assign(contact, socialData);
 
       // Sync to social_platforms table via API
@@ -1758,20 +1775,35 @@ body.contact-locked .autosave-status { display: none !important; }
   function loadGuaranteeData() {
     if (!contact) return;
 
-    // Unified: always show the configurator. Banner differentiates plan state.
-    var isAnnual = (contact.plan_tier === 'annual') || (contact.plan_type === 'annual');
+    // Three states based on plan_type
+    if (!contact.plan_type) {
+      // Pre-checkout: show teaser, hide configurator
+      document.getElementById('pgTeaser').style.display = 'block';
+      document.getElementById('pgConfigurator').style.display = 'none';
+      document.getElementById('pgNotAnnual').style.display = 'none';
+      document.getElementById('pgLocked').style.display = 'none';
+      return;
+    }
 
-    document.getElementById('pgBannerAnnual').style.display = isAnnual ? 'block' : 'none';
-    document.getElementById('pgBannerExplore').style.display = isAnnual ? 'none' : 'block';
-    document.getElementById('pgConfigurator').style.display = 'block';
-    document.getElementById('pgLocked').style.display = 'none';
+    if (contact.plan_type !== 'annual') {
+      // Quarterly/monthly: show lockout
+      document.getElementById('pgConfigurator').style.display = 'none';
+      document.getElementById('pgTeaser').style.display = 'none';
+      document.getElementById('pgNotAnnual').style.display = 'block';
+      document.getElementById('pgLocked').style.display = 'none';
+      return;
+    }
+
+    // Annual: show full configurator
+    document.getElementById('pgTeaser').style.display = 'none';
+    document.getElementById('pgNotAnnual').style.display = 'none';
 
     // Pre-fill investment if we know plan_amount_cents
     if (contact.plan_amount_cents) {
       document.getElementById('pgInvestment').value = Math.round(contact.plan_amount_cents / 100);
     }
 
-    // Load existing guarantee draft (any plan type may have one)
+    // Load existing guarantee draft
     sbFetch('performance_guarantees', 'contact_id=eq.' + contact.id + '&select=*&limit=1')
       .then(function(rows) {
         if (rows && rows.length > 0) {
@@ -1784,8 +1816,6 @@ body.contact-locked .autosave-status { display: none !important; }
 
           if (guaranteeData.status === 'locked') {
             document.getElementById('pgConfigurator').style.display = 'none';
-            document.getElementById('pgBannerAnnual').style.display = 'none';
-            document.getElementById('pgBannerExplore').style.display = 'none';
             document.getElementById('pgLocked').style.display = 'block';
             document.getElementById('pgLockedCalls').textContent = guaranteeData.guarantee_calls || 0;
             document.getElementById('pgLockedBenchmark').textContent = guaranteeData.total_benchmark || 0;
@@ -2120,8 +2150,19 @@ body.contact-locked .autosave-status { display: none !important; }
           document.getElementById('accessIssuePanel').style.display = 'none';
         }
 
-        // Render CSA
-        renderCSA(contact);
+        // Render CSA with live pricing. loadCSAPricing hydrates
+        // window._csaPricing; if the fetch fails (network, CORS, etc.), the
+        // CSA still renders with PRICE_DEFAULTS baked into csa-content.js so
+        // the onboarding flow is never blocked on pricing availability.
+        // Whatever prices end up in the rendered HTML are what get frozen
+        // into signed_agreements.document_html at signing time.
+        if (typeof window.loadCSAPricing === 'function') {
+          window.loadCSAPricing()
+            .then(function(p) { renderCSA(contact, p); })
+            .catch(function() { renderCSA(contact); });
+        } else {
+          renderCSA(contact);
+        }
         initSignatureCanvas();
 
         // Pre-fill all form fields
