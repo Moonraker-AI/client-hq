@@ -59,8 +59,8 @@
       "destination": "https://ofmmwcjhdrhvxxkhcuww.supabase.co/storage/v1/object/public/images/:slug/:path*"
     },
     {
-      "source": "/:slug/offers",
-      "destination": "/_templates/offers"
+      "source": "/:slug/add-ons",
+      "destination": "/_templates/add-ons"
     }
   ],
   "functions": {
