@@ -229,6 +229,51 @@ strong { font-weight: 600; color: var(--color-heading); }
 .additional-clinician.expanded .expand-arrow { transform: rotate(180deg); }
 .remove-clinician { font-size: .75rem; color: var(--color-danger); background: none; border: 1px solid rgba(239,68,68,.2); padding: .25rem .6rem; border-radius: 5px; cursor: pointer; font-family: inherit; }
 .remove-clinician:hover { background: rgba(239,68,68,.06); }
+
+/* ── Contact-locked state: shown when status not in (onboarding, active) or lost=true ── */
+body.contact-locked .main-content .btn-primary,
+body.contact-locked .main-content .btn-success,
+body.contact-locked .main-content .btn-danger,
+body.contact-locked .main-content button.remove-clinician,
+body.contact-locked #pgSaveBtn {
+  pointer-events: none;
+  opacity: 0.45;
+  cursor: not-allowed !important;
+}
+body.contact-locked .main-content input.form-input,
+body.contact-locked .main-content textarea,
+body.contact-locked .main-content select {
+  pointer-events: none;
+  opacity: 0.7;
+  background: var(--color-surface);
+}
+body.contact-locked .autosave-status { display: none !important; }
+.access-locked-banner {
+  margin: 0 0 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: rgba(245,158,11,.08);
+  border: 1px solid rgba(245,158,11,.25);
+  border-radius: 12px;
+}
+.access-locked-banner h3 {
+  margin: 0 0 .5rem;
+  color: var(--color-warning);
+  font-size: 1.0625rem;
+}
+.access-locked-banner p {
+  margin: 0 0 .75rem;
+  font-size: .9375rem;
+  line-height: 1.7;
+  color: var(--color-body);
+}
+.access-locked-banner p:last-child { margin-bottom: 0; }
+.access-locked-banner .btn-outline {
+  font-size: .875rem;
+  padding: .5rem 1rem;
+  display: inline-flex;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}
 </style>
 </head>
 <body>
@@ -263,6 +308,13 @@ strong { font-weight: 600; color: var(--color-heading); }
 
   <!-- MAIN -->
   <div class="main-content">
+
+    <!-- Access-locked banner (shown via JS for prospect / lost / lead) -->
+    <div id="accessLockedBanner" class="access-locked-banner" style="display:none;">
+      <h3>&#128274; This page is locked</h3>
+      <p id="accessLockedMessage">This page isn't available for your account right now.</p>
+      <a href="https://msg.moonraker.ai/widget/bookings/moonraker-free-strategy-call" target="_blank" rel="noopener" class="btn btn-outline">Schedule a call with Scott &#8594;</a>
+    </div>
 
     <!-- STEP 1: Confirm Info -->
     <div class="step-panel" data-step="confirm_info">
@@ -1998,6 +2050,22 @@ strong { font-weight: 600; color: var(--color-heading); }
         }
         contact = contacts[0];
 
+        // ── Access gate: match server-side allowlist (onboarding-action, save-guarantee-draft) ──
+        var ALLOWED_STATUSES = ['onboarding', 'active'];
+        contact._locked = !!contact.lost || ALLOWED_STATUSES.indexOf(contact.status) === -1;
+        if (contact._locked) {
+          document.body.classList.add('contact-locked');
+          var msgEl = document.getElementById('accessLockedMessage');
+          if (contact.status === 'prospect') {
+            msgEl.textContent = 'We\'ll unlock this page once your payment is processed. Until then, you can take a look around \u2014 nothing you enter will be saved.';
+          } else if (contact.lost) {
+            msgEl.textContent = 'This page is unavailable. Please reach out to support@moonraker.ai if you think this is a mistake.';
+          } else if (contact.status === 'lead') {
+            msgEl.textContent = 'This page becomes available once your engagement with Moonraker begins. Schedule a call with Scott to get started.';
+          }
+          document.getElementById('accessLockedBanner').style.display = 'block';
+        }
+
         document.title = 'Onboarding - ' + (contact.practice_name || CLIENT_SLUG) + ' - Moonraker';
         document.getElementById('headerName').textContent = contact.practice_name || 'Onboarding';
         document.getElementById('dashboardLink').href = '/' + CLIENT_SLUG;
@@ -2060,11 +2128,14 @@ strong { font-weight: 600; color: var(--color-heading); }
         // Pre-fill all form fields
         prefillForms();
 
-        // Wire up autosave on form steps (1.5s debounce)
-        setupAutosave('[data-step="confirm_info"]', saveConfirmInfo, 'ci_autosave', 1500);
-        setupAutosave('[data-step="practice_details"]', savePracticeDetails, 'pd_autosave', 1500);
-        setupAutosave('[data-step="bio_materials"]', saveBioMaterials, 'bio_autosave', 1500);
-        setupAutosave('[data-step="social_profiles"]', saveSocialProfiles, 'sp_autosave', 1500);
+        // Wire up autosave on form steps (1.5s debounce) — skip entirely when locked
+        // so we don't spam the server with writes that will 403.
+        if (!contact._locked) {
+          setupAutosave('[data-step="confirm_info"]', saveConfirmInfo, 'ci_autosave', 1500);
+          setupAutosave('[data-step="practice_details"]', savePracticeDetails, 'pd_autosave', 1500);
+          setupAutosave('[data-step="bio_materials"]', saveBioMaterials, 'bio_autosave', 1500);
+          setupAutosave('[data-step="social_profiles"]', saveSocialProfiles, 'sp_autosave', 1500);
+        }
 
         // Load performance guarantee data
         loadGuaranteeData();
