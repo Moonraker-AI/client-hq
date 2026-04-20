@@ -90,8 +90,10 @@
   var params = new URLSearchParams(window.location.search);
   var sessionId = params.get('session_id') || '';
   var tierKey = params.get('tier') || '';
+  var product = params.get('product') || '';
 
-  var isEntityAudit = /premium/.test(tierKey);
+  var isEntityAudit = product === 'entity_audit_premium' || /premium/.test(tierKey);
+  var isAddon = product === 'addons';
 
   if (sessionId) {
     document.getElementById('sessionId').textContent = sessionId.slice(0, 18) + (sessionId.length > 18 ? '...' : '');
@@ -107,6 +109,16 @@
     document.getElementById('auditNext').style.display = 'block';
     document.getElementById('primaryCta').textContent = 'Back to your scorecard';
     document.getElementById('primaryCta').href = '/' + CLIENT_SLUG + '/entity-audit';
+  } else if (isAddon) {
+    // Add-on purchase — no lifecycle change, no onboarding copy. Just
+    // confirm what was paid for and route back to their dashboard.
+    document.getElementById('subtitle').textContent = 'Thanks for your purchase. Our team has been notified and will be in touch shortly with the next steps.';
+    // No checklist shown for addons — the order box carries the relevant info.
+    document.getElementById('primaryCta').textContent = 'Back to your dashboard';
+    document.getElementById('primaryCta').href = '/' + CLIENT_SLUG;
+    document.getElementById('secondaryCta').textContent = 'Browse more offers';
+    document.getElementById('secondaryCta').href = '/' + CLIENT_SLUG + '/offers';
+    document.getElementById('secondaryCta').style.display = 'inline-flex';
   } else {
     document.getElementById('coreNext').style.display = 'block';
     document.getElementById('primaryCta').textContent = 'Start Onboarding \u2192';
