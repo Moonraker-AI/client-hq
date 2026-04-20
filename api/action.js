@@ -22,7 +22,8 @@ var ALLOWED_TABLES = [
   'directory_listings','content_pages','content_page_versions','content_chat_messages',
   'design_specs','neo_images','endorsements','error_log','newsletters','newsletter_subscribers',
   'newsletter_sends','content_audit_batches','newsletter_stories','client_sites','site_deployments',
-  'pricing_tiers'
+  'pricing_tiers',
+  'pricing_config'
 ];
 
 module.exports = async function handler(req, res) {
