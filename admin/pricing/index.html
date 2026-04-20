@@ -160,7 +160,6 @@ var PRODUCT_LABELS = {
 var PRODUCT_ORDER = ['core_marketing', 'entity_audit_premium', 'addons'];
 
 var _pricingRows = [];
-var _pricingConfig = [];
 
 async function apiAction(action, table, data, filters) {
   var resp = await fetch('/api/action', {
@@ -193,15 +192,6 @@ async function loadPricing() {
       if (a.product_key !== b.product_key) return a.product_key < b.product_key ? -1 : 1;
       return (a.sort_order || 0) - (b.sort_order || 0);
     });
-    // Config is non-fatal: if it fails, the page still renders without the config section.
-    try {
-      var cfgBody = await apiAction('read_records', 'pricing_config', null, null);
-      _pricingConfig = ((cfgBody && cfgBody.data) || []).sort(function(a, b) {
-        return (a.key || '').localeCompare(b.key || '');
-      });
-    } catch (_) {
-      _pricingConfig = [];
-    }
   } catch (e) {
     container.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--color-danger);">Failed to load pricing: ' + esc(e.message) + '</div>';
     return;
@@ -259,33 +249,6 @@ function renderPricing() {
       '<div class="pricing-hint">Editing an amount takes effect on the very next checkout. Stripe Checkout Sessions are built inline via <code>price_data</code>; no pre-existing Stripe Price needed.</div>' +
       '</div>';
   });
-
-  // ── Pricing config (rules, not tiers) ────────────────────────────
-  if (_pricingConfig.length > 0) {
-    html += '<div class="pricing-group">' +
-      '<div class="pricing-group-header"><h3>Pricing Rules</h3><span class="pricing-group-meta">global config &middot; table: <code>pricing_config</code></span></div>' +
-      '<div class="table-scroll">' +
-      '<table class="pricing">' +
-      '<thead><tr>' +
-        '<th>Key</th>' +
-        '<th class="col-amount">Value</th>' +
-        '<th class="col-period">Unit</th>' +
-        '<th>Description</th>' +
-        '<th class="col-save"></th>' +
-      '</tr></thead><tbody>';
-    _pricingConfig.forEach(function(c) {
-      html += '<tr data-config-key="' + esc(c.key) + '">' +
-        '<td><span class="tier-name">' + esc(c.key) + '</span></td>' +
-        '<td class="col-amount"><input type="text" data-field="value" value="' + esc(String(c.value)) + '" inputmode="decimal"></td>' +
-        '<td class="col-period"><input type="text" data-field="unit" value="' + esc(c.unit || '') + '" placeholder="%, USD, etc."></td>' +
-        '<td class="col-detail"><input type="text" data-field="description" value="' + esc(c.description || '') + '" placeholder="What this rule controls"></td>' +
-        '<td class="col-save"><button class="save-btn" onclick="saveConfigRow(this)" title="Save (Esc to revert)">Save</button></td>' +
-      '</tr>';
-    });
-    html += '</tbody></table></div>' +
-      '<div class="pricing-hint">Rules are informational. Changing <code>cc_surcharge_pct</code> here updates the CSA text but does NOT recompute <code>_cc</code> tier amounts — update those by hand when the rule changes.</div>' +
-      '</div>';
-  }
 
   container.innerHTML = html;
 
@@ -365,108 +328,8 @@ function renderPricing() {
     });
   });
 
-  // Config rows have the same Option C UX (hidden Save when clean, Esc to
-  // revert). Structurally similar but keyed by config key, not UUID, and
-  // posts to pricing_config instead of pricing_tiers.
-  container.querySelectorAll('tr[data-config-key]').forEach(function(tr) {
-    var btn = tr.querySelector('.save-btn');
-    var key = tr.getAttribute('data-config-key');
-    var original = null;
-    for (var i = 0; i < _pricingConfig.length; i++) {
-      if (_pricingConfig[i].key === key) { original = _pricingConfig[i]; break; }
-    }
-
-    function readField(inp) {
-      var f = inp.getAttribute('data-field');
-      if (f === 'value') {
-        var n = parseFloat(inp.value);
-        return isFinite(n) ? n : null;
-      }
-      return inp.value || '';
-    }
-    function readOriginal(f) {
-      if (!original) return null;
-      if (f === 'value') return Number(original.value);
-      return original[f] || '';
-    }
-    function isDirty() {
-      if (!original) return false;
-      var dirty = false;
-      tr.querySelectorAll('input[data-field]').forEach(function(inp) {
-        if (dirty) return;
-        var f = inp.getAttribute('data-field');
-        if (readField(inp) !== readOriginal(f)) dirty = true;
-      });
-      return dirty;
-    }
-    function syncDirty() {
-      if (isDirty()) {
-        btn.classList.add('dirty');
-        btn.classList.remove('saved', 'saving');
-        btn.textContent = 'Save';
-      } else {
-        btn.classList.remove('dirty', 'saved', 'saving');
-      }
-    }
-    function revert() {
-      if (!original) return;
-      tr.querySelectorAll('input[data-field]').forEach(function(inp) {
-        var f = inp.getAttribute('data-field');
-        inp.value = f === 'value' ? String(original.value) : (original[f] || '');
-        inp.style.borderColor = '';
-      });
-      syncDirty();
-    }
-
-    tr.querySelectorAll('input[data-field]').forEach(function(inp) {
-      inp.addEventListener('input', syncDirty);
-      inp.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && btn.classList.contains('dirty')) {
-          e.preventDefault();
-          revert();
-          inp.blur();
-        }
-      });
-    });
-  });
 }
 
-window.saveConfigRow = async function(btn) {
-  var tr = btn.closest('tr');
-  var key = tr.getAttribute('data-config-key');
-  var data = {};
-  var valid = true;
-  tr.querySelectorAll('input[data-field]').forEach(function(inp) {
-    var f = inp.getAttribute('data-field');
-    if (f === 'value') {
-      var n = parseFloat(inp.value);
-      if (!isFinite(n)) { valid = false; inp.style.borderColor = 'var(--color-danger)'; return; }
-      inp.style.borderColor = '';
-      data[f] = n;
-    } else {
-      data[f] = inp.value;
-    }
-  });
-  if (!valid) { toast('Value must be a number.', 'error'); return; }
-  btn.classList.remove('dirty');
-  btn.classList.add('saving');
-  btn.textContent = 'Saving…';
-  try {
-    await apiAction('update_record', 'pricing_config', data, { key: key });
-    btn.classList.remove('saving');
-    btn.classList.add('saved');
-    btn.textContent = 'Saved';
-    for (var i = 0; i < _pricingConfig.length; i++) {
-      if (_pricingConfig[i].key === key) { Object.assign(_pricingConfig[i], data); break; }
-    }
-    setTimeout(function() { btn.classList.remove('saved'); btn.textContent = 'Save'; }, 1500);
-  } catch (e) {
-    btn.classList.remove('saving');
-    btn.classList.add('dirty');
-    btn.textContent = 'Save';
-    toast('Save failed: ' + (e.message || e), 'error');
-  }
-};
 
 window.savePricingRow = async function(btn) {
   var tr = btn.closest('tr');
