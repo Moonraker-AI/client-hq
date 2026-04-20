@@ -9,8 +9,7 @@
 <title>System Health - Moonraker Admin</title>
 <link rel="stylesheet" href="/assets/admin-base.css">
 <style>
-  .container { margin: 0 auto; padding: 0 2rem; max-width: 1200px; }
-  @media (max-width: 768px) { .container { padding: 0 1rem; } }
+  /* page-level layout inherits from .content { padding: 2rem } in admin-base.css */
 
   .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
   .status-dot.green { background: var(--color-success); }
@@ -38,9 +37,10 @@
 
   .error-detail { font-family: 'JetBrains Mono', monospace; font-size: .72rem; color: var(--color-danger); white-space: pre-wrap; word-break: break-word; }
 
-  .section-header { display: flex; align-items: baseline; gap: .75rem; margin: 2rem 0 1rem; }
-  .section-header h2 { font-size: 1.05rem; font-weight: 600; }
-  .section-desc { font-size: .82rem; color: var(--color-muted); margin: 0 0 1rem; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .25rem; flex-wrap: wrap; gap: .75rem; }
+  .section-header h2 { font-size: 1.35rem; margin: 0; }
+  .section-header h3 { font-size: .95rem; margin: 0; font-weight: 700; font-family: 'Outfit', sans-serif; color: var(--color-heading); }
+  .section-desc { font-size: .82rem; color: var(--color-muted); margin-bottom: 1.25rem; }
 
   .refresh-btn { background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-body); padding: .5rem 1rem; border-radius: 8px; font-size: .8rem; cursor: pointer; min-height: 36px; }
   .refresh-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
@@ -97,59 +97,59 @@
     <div style="flex:1;"></div>
     <div class="topbar-right">
       <span style="font-size:.78rem;color:var(--color-muted);" id="lastRefresh"></span>
-      <button class="refresh-btn" onclick="loadHealth()">Refresh</button>
     </div>
   </div>
 
-  <div class="content">
-    <div class="container">
-      <div class="section-header"><h2>Cron Health</h2></div>
-      <p class="section-desc">Per-cron status from the <code>cron_runs</code> audit table. A cron is marked stale when no successful run has completed within its expected interval plus tolerance (same rule as the heartbeat cron that alerts chris@moonraker.ai).</p>
+  <div class="content" style="padding: 2rem;">
+    <div class="section-header">
+      <h2>Cron Health</h2>
+      <button class="refresh-btn" onclick="loadHealth()">Refresh</button>
+    </div>
+    <p class="section-desc">Per-cron status from the <code>cron_runs</code> audit table. A cron is marked stale when no successful run has completed within its expected interval plus tolerance (same rule as the heartbeat cron that alerts chris@moonraker.ai).</p>
 
-      <div class="stat-grid">
-        <div class="stat-card"><div class="stat-label">Total Crons</div><div class="stat-value" id="sTotal">-</div></div>
-        <div class="stat-card"><div class="stat-label">Healthy</div><div class="stat-value" id="sHealthy" style="color:var(--color-success);">-</div></div>
-        <div class="stat-card"><div class="stat-label">Stale</div><div class="stat-value" id="sStale" style="color:var(--color-danger);">-</div></div>
-        <div class="stat-card"><div class="stat-label">Running Now</div><div class="stat-value" id="sRunning" style="color:var(--color-info);">-</div></div>
-      </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Total Crons</div><div class="stat-value" id="sTotal">-</div></div>
+      <div class="stat-card"><div class="stat-label">Healthy</div><div class="stat-value" id="sHealthy" style="color:var(--color-success);">-</div></div>
+      <div class="stat-card"><div class="stat-label">Stale</div><div class="stat-value" id="sStale" style="color:var(--color-danger);">-</div></div>
+      <div class="stat-card"><div class="stat-label">Running Now</div><div class="stat-value" id="sRunning" style="color:var(--color-info);">-</div></div>
+    </div>
 
-      <div class="table-scroll">
-        <table class="cron">
-          <thead>
-            <tr>
-              <th>Cron</th>
-              <th>Last Success</th>
-              <th>Gap</th>
-              <th>Queue</th>
-              <th>Oldest</th>
-              <th>Runs 24h</th>
-              <th>Errors 24h</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="cronTbody">
-            <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--color-muted);">Loading...</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="table-scroll">
+      <table class="cron">
+        <thead>
+          <tr>
+            <th>Cron</th>
+            <th>Last Success</th>
+            <th>Gap</th>
+            <th>Queue</th>
+            <th>Oldest</th>
+            <th>Runs 24h</th>
+            <th>Errors 24h</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="cronTbody">
+          <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--color-muted);">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
 
-      <div class="section-header"><h2>Currently Running</h2></div>
-      <p class="section-desc">Rows with status='running' — no <code>completed_at</code> yet. Persistent entries here indicate a cron hung or crashed mid-execution.</p>
-      <div class="table-scroll">
-        <table class="cron">
-          <thead>
-            <tr>
-              <th>Cron</th>
-              <th>Started</th>
-              <th>Age</th>
-              <th>Queue at start</th>
-            </tr>
-          </thead>
-          <tbody id="runningTbody">
-            <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-muted);">—</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="section-header" style="margin-top:2.5rem;"><h3>Currently Running</h3></div>
+    <p class="section-desc">Rows with status='running' — no <code>completed_at</code> yet. Persistent entries here indicate a cron hung or crashed mid-execution.</p>
+    <div class="table-scroll">
+      <table class="cron">
+        <thead>
+          <tr>
+            <th>Cron</th>
+            <th>Started</th>
+            <th>Age</th>
+            <th>Queue at start</th>
+          </tr>
+        </thead>
+        <tbody id="runningTbody">
+          <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-muted);">—</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
