@@ -1355,9 +1355,10 @@ body.contact-locked .autosave-status { display: none !important; }
       '<p style="margin:0;font-size:.8125rem;color:#666;">' + signerEmail + '</p>' +
       '<p style="margin:0;font-size:.8125rem;color:#666;">Signed: ' + new Date(signedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + '</p>' +
       '</div>';
-
+    // Token-gated write via /api/onboarding-action. contact_id, ip_address,
+    // and user_agent are forced/populated server-side from the verified
+    // page-token and request headers; we must not send them in the body.
     var record = {
-      contact_id: contact.id,
       agreement_type: 'csa',
       agreement_version: '2026-04',
       document_html: docHTML + sigBlock,
@@ -1365,13 +1366,11 @@ body.contact-locked .autosave-status { display: none !important; }
       signer_email: signerEmail,
       signer_title: signerTitle,
       signed_at: signedAt,
-      ip_address: null,
-      user_agent: navigator.userAgent || null,
       signature_image: sigImage,
       plan_details: { plan_type: planType, amount_cents: planAmount, campaign_start: contact.campaign_start, campaign_end: contact.campaign_end }
     };
 
-    sbPost('signed_agreements', record).then(function() {
+    apiAction('create_record', 'signed_agreements', null, record).then(function() {
       // Mark step complete
       stepData['sign_agreement'] = 'complete';
       buildNav();
