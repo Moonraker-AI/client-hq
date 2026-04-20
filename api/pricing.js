@@ -63,9 +63,13 @@ module.exports = async function handler(req, res) {
 
   var product = String(req.query.product || '').trim();
 
-  // ── Unscoped mode: return every tier + config map ───────────────────
+  // ── Unscoped mode: return every tier ────────────────────────────────
+  // (pricing_config dropped 2026-04-20 — CC surcharge is locked at 3.5% and
+  // lives only in shared/csa-content.js CONFIG_DEFAULTS. The `config` field
+  // is preserved in the response shape for backward compat with callers
+  // that destructure it, but it's always empty.)
   if (!product) {
-    var rows, configRows;
+    var rows;
     try {
       rows = await sb.query(
         'pricing_tiers?active=eq.true&order=product_key.asc,sort_order.asc&select=' +
@@ -74,23 +78,11 @@ module.exports = async function handler(req, res) {
     } catch (e) {
       return res.status(500).json({ error: 'pricing fetch failed: ' + e.message });
     }
-    try {
-      configRows = await sb.query('pricing_config?select=key,value,unit,description');
-    } catch (_) {
-      configRows = []; // config table outage shouldn't block tier reads
-    }
-
-    var config = {};
-    (configRows || []).forEach(function(c) {
-      // value is NUMERIC in PG but comes back as string through PostgREST; coerce.
-      var n = Number(c.value);
-      config[c.key] = Number.isFinite(n) ? n : c.value;
-    });
 
     res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=60');
     return res.status(200).json({
       tiers: (rows || []).map(function(r) { return shapeTier(r, true); }),
-      config: config
+      config: {}
     });
   }
 
