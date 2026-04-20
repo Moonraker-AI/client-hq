@@ -16,6 +16,15 @@
 //
 // The cookie is sent automatically on same-origin fetches. Write endpoints read
 // it via pageToken.getTokenFromRequest(req, 'scope') on the server.
+//
+// Defense-in-depth: long-lived pages (onboarding can be open 90 days) may see
+// the page-token cookie expire between renders and actions. Templates SHOULD
+// route write fetches through window.mrPageToken.fetch(url, init), which is a
+// drop-in wrapper around fetch() that:
+//   1. Awaits the initial mint via .ready() before the first call.
+//   2. On a 401 response, calls .refresh() exactly once to re-mint the cookie,
+//      then retries the fetch exactly once.
+//   3. A second 401 is returned to the caller unchanged (no infinite loop).
 
 (function() {
   if (window.mrPageToken) return;
@@ -61,6 +70,32 @@
     refresh: function() {
       _readyPromise = scope ? requestCookie(scope) : Promise.reject(new Error('no scope'));
       return _readyPromise;
+    },
+    // Drop-in fetch wrapper with bounded one-shot 401 retry.
+    //
+    // Flow:
+    //   - Wait for ready() so the first write on a cold page is minted first.
+    //   - Always use credentials:'same-origin' so the cookie goes out.
+    //   - If the response is 401, call refresh() once, retry the fetch once.
+    //   - A second 401 returns to the caller unchanged (no infinite loop).
+    //
+    // Any error from ready() / refresh() is surfaced via the returned promise;
+    // callers can still show their own error UI. Non-401 responses are returned
+    // verbatim with no retry, so 4xx/5xx semantics are preserved.
+    fetch: function(url, init) {
+      var self = this;
+      var opts = Object.assign({ credentials: 'same-origin' }, init || {});
+      // Clone body so we can retry if it is a string/FormData (most writes are
+      // JSON strings — safe). If body is a ReadableStream, retry will fail on
+      // the 2nd call; callers should avoid streams when using this wrapper.
+      return self.ready().then(function() {
+        return fetch(url, opts);
+      }).then(function(resp) {
+        if (resp.status !== 401) return resp;
+        return self.refresh().then(function() {
+          return fetch(url, opts); // one retry, no further retries
+        });
+      });
     },
     scope: scope
   };
