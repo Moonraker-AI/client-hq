@@ -106,6 +106,7 @@ section { padding: 4.5rem 0; }
 .score-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
 .score-card.score-low::after { background: var(--color-danger); }
 .score-card.score-med::after { background: var(--color-warning); }
+.score-card.score-high::after { background: var(--color-success); }
 .ring-wrap { position: relative; width: 88px; height: 88px; margin: 0 auto 12px; }
 .ring-bg, .ring-fg { fill: none; stroke-width: 5; stroke-linecap: round; }
 .ring-bg { stroke: var(--color-border); }
@@ -116,6 +117,8 @@ section { padding: 4.5rem 0; }
 .score-low .score-val { color: var(--color-danger); }
 .score-med .ring-fg { stroke: var(--color-warning); }
 .score-med .score-val { color: var(--color-warning); }
+.score-high .ring-fg { stroke: var(--color-success); }
+.score-high .score-val { color: var(--color-success); }
 .score-label { font-size: .6875rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 2px; }
 .score-pillar { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .9375rem; color: var(--color-heading); }
 
@@ -315,22 +318,22 @@ section { padding: 4.5rem 0; }
     <h2>Your Current Digital Health</h2>
     <p style="margin-bottom:1rem;">Every gap below is an opportunity. We've scored your presence across the four pillars of the CORE framework, the same system Google and AI platforms use (whether they know it or not) to decide who gets recommended.</p>
     <div class="scorecard-grid">
-      <div class="score-card" data-hydrate-score="c"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target=""/></svg><div class="score-val"><span class="v">-</span><span>/10</span></div></div><div class="score-label">Pillar 1</div><div class="score-pillar">Credibility</div></div>
-      <div class="score-card" data-hydrate-score="o"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target=""/></svg><div class="score-val"><span class="v">-</span><span>/10</span></div></div><div class="score-label">Pillar 2</div><div class="score-pillar">Optimization</div></div>
-      <div class="score-card" data-hydrate-score="r"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target=""/></svg><div class="score-val"><span class="v">-</span><span>/10</span></div></div><div class="score-label">Pillar 3</div><div class="score-pillar">Reputation</div></div>
-      <div class="score-card" data-hydrate-score="e"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target=""/></svg><div class="score-val"><span class="v">-</span><span>/10</span></div></div><div class="score-label">Pillar 4</div><div class="score-pillar">Engagement</div></div>
+      <div class="score-card" data-hydrate-score="c"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target=""/></svg><div class="score-val"><span>/10</span></div></div><div class="score-label">Pillar 1</div><div class="score-pillar">Credibility</div></div>
+      <div class="score-card" data-hydrate-score="o"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target=""/></svg><div class="score-val"><span>/10</span></div></div><div class="score-label">Pillar 2</div><div class="score-pillar">Optimization</div></div>
+      <div class="score-card" data-hydrate-score="r"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target=""/></svg><div class="score-val"><span>/10</span></div></div><div class="score-label">Pillar 3</div><div class="score-pillar">Reputation</div></div>
+      <div class="score-card" data-hydrate-score="e"><div class="ring-wrap"><svg viewBox="0 0 100 100" width="88" height="88"><circle class="ring-bg" cx="50" cy="50" r="40"/><circle class="ring-fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="251.3" data-target=""/></svg><div class="score-val"><span>/10</span></div></div><div class="score-label">Pillar 4</div><div class="score-pillar">Engagement</div></div>
     </div>
 
-    <div class="collapsible"><button class="collapsible-toggle"><span>Credibility: Can You Prove You Exist?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner" data-hydrate-html="version.content.credibility_findings">
+    <div class="collapsible"><button class="collapsible-toggle"><span>Credibility: Can You Prove You Exist?<span data-hydrate-pillar-counts="credibility"></span></span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner" data-hydrate-html="version.content.credibility_findings">
     </div></div></div>
 
-    <div class="collapsible"><button class="collapsible-toggle"><span>Optimization: Can AI Understand What You Do?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner" data-hydrate-html="version.content.optimization_findings">
+    <div class="collapsible"><button class="collapsible-toggle"><span>Optimization: Can AI Understand What You Do?<span data-hydrate-pillar-counts="optimization"></span></span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner" data-hydrate-html="version.content.optimization_findings">
     </div></div></div>
 
-    <div class="collapsible"><button class="collapsible-toggle"><span>Reputation: Can You Prove You're Good?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner" data-hydrate-html="version.content.reputation_findings">
+    <div class="collapsible"><button class="collapsible-toggle"><span>Reputation: Can You Prove You're Good?<span data-hydrate-pillar-counts="reputation"></span></span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner" data-hydrate-html="version.content.reputation_findings">
     </div></div></div>
 
-    <div class="collapsible"><button class="collapsible-toggle"><span>Engagement: Is There a Path to Booking?</span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner" data-hydrate-html="version.content.engagement_findings">
+    <div class="collapsible"><button class="collapsible-toggle"><span>Engagement: Is There a Path to Booking?<span data-hydrate-pillar-counts="engagement"></span></span><span class="arrow">&#9660;</span></button><div class="collapsible-content"><div class="collapsible-content-inner" data-hydrate-html="version.content.engagement_findings">
     </div></div></div>
   </div>
 </section>
@@ -537,12 +540,43 @@ section { padding: 4.5rem 0; }
     document.querySelectorAll('[data-hydrate-score]').forEach(function(card) {
       var key = card.getAttribute('data-hydrate-score');
       var v = scores[key];
-      var vEl = card.querySelector('.score-val .v');
-      if (vEl) vEl.textContent = (v == null) ? '-' : String(v);
+      var scoreVal = card.querySelector('.score-val');
+      if (scoreVal) {
+        // Match the baked structure: number is a direct text node inside
+        // .score-val with "/10" in a span. The CSS .score-val span selector
+        // styles only the /10 (small + faded), leaving the number big and
+        // bold from the parent .score-val rule. Previously wrapping the
+        // number in <span class="v"> caused both to match the span selector.
+        var slashTen = scoreVal.querySelector('span');
+        if (slashTen) {
+          // Remove any existing nodes before the /10 span.
+          while (scoreVal.firstChild && scoreVal.firstChild !== slashTen) {
+            scoreVal.removeChild(scoreVal.firstChild);
+          }
+          scoreVal.insertBefore(document.createTextNode(v == null ? '-' : String(v)), slashTen);
+        }
+      }
       card.classList.remove('score-low', 'score-med', 'score-high');
       if (v != null) card.classList.add(scoreClass(v));
       var ring = card.querySelector('.ring-fg');
       if (ring) ring.setAttribute('data-target', String(scoreOffset(v)));
+    });
+  }
+
+  // Populate pillar-count badges inside each collapsible-toggle title.
+  // Matches the entity-audit template's inline-styled pattern so no new
+  // CSS is needed. Zero-count severities are omitted for a clean look.
+  function hydratePillarCounts(data) {
+    var counts = getPath(data, 'rendered.pillar_counts') || {};
+    document.querySelectorAll('[data-hydrate-pillar-counts]').forEach(function(el) {
+      var pillar = el.getAttribute('data-hydrate-pillar-counts');
+      var c = counts[pillar];
+      if (!c) { el.innerHTML = ''; return; }
+      var html = '';
+      if (c.critical > 0) html += '<span style="color:var(--color-danger);font-size:.8rem;margin-left:.5rem;">' + c.critical + ' critical</span>';
+      if (c.warning > 0)  html += '<span style="color:var(--color-warning);font-size:.8rem;margin-left:.5rem;">' + c.warning + ' warning</span>';
+      if (c.good > 0)     html += '<span style="color:var(--color-success);font-size:.8rem;margin-left:.5rem;">' + c.good + ' good</span>';
+      el.innerHTML = html;
     });
   }
 
@@ -647,6 +681,7 @@ section { padding: 4.5rem 0; }
       hydrateHtml(data);
       hydrateAttrs(data);
       hydrateScores(data);
+      hydratePillarCounts(data);
       hydrateNextSteps(data);
       wireResultsLightbox();
 

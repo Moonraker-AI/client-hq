@@ -272,6 +272,57 @@ function formatDateForProposal(iso) {
   }
 }
 
+// ─── Finding classification + sort ────────────────────────────────
+//
+// Each *_findings blob in proposal_content is a flat string of sibling
+// <div class="finding"><span class="finding-icon">ICON</span><div>...</div></div>
+// blocks. Two icon conventions are in the wild (checked across Margot,
+// Edward, Ray, Steve): emoji-based (current) and class-based (older).
+// The classifier accepts either signal. When neither is present we fall
+// back to 'warning' — the middle severity is the least-surprising default.
+//
+// Splitting uses a lookahead on the opening tag so each piece is a complete
+// <div class="finding">...</div>. Only works because findings are strictly
+// flat (no nesting). generate-proposal.js has always emitted them that way;
+// if that convention ever changes, update the split strategy here.
+
+var SEV_ORDER = { critical: 0, warning: 1, good: 2 };
+
+function classifyFinding(html) {
+  if (!html) return 'warning';
+  // Class-based (older conventions) — check first, more specific.
+  if (/finding-icon[^"]*(?:danger|critical)/i.test(html)) return 'critical';
+  if (/finding-icon[^"]*warning/i.test(html))             return 'warning';
+  if (/finding-icon[^"]*success/i.test(html))             return 'good';
+  // Emoji-based (current conventions).
+  //   \u274c ❌  |  \ud83d\udd34 🔴   → critical
+  //   \u26a0  ⚠   (with or without \ufe0f variation selector) → warning
+  //   \u2705 ✅  |  \u2714 ✔  |  \u2713 ✓   → good
+  if (html.indexOf('\u274c') !== -1 || html.indexOf('\ud83d\udd34') !== -1) return 'critical';
+  if (html.indexOf('\u26a0') !== -1)                                         return 'warning';
+  if (html.indexOf('\u2705') !== -1 || html.indexOf('\u2714') !== -1 || html.indexOf('\u2713') !== -1) return 'good';
+  return 'warning';
+}
+
+function analyzeAndSortFindings(blob) {
+  var empty = { html: '', critical: 0, warning: 0, good: 0 };
+  if (!blob || typeof blob !== 'string') return empty;
+  var parts = blob.split(/(?=<div class="finding"[^>]*>)/);
+  var findings = [];
+  for (var i = 0; i < parts.length; i++) {
+    if (parts[i].trim().length === 0) continue;
+    findings.push({ html: parts[i], sev: classifyFinding(parts[i]) });
+  }
+  findings.sort(function(a, b) { return SEV_ORDER[a.sev] - SEV_ORDER[b.sev]; });
+  var counts = { critical: 0, warning: 0, good: 0 };
+  var sortedHtml = '';
+  for (var j = 0; j < findings.length; j++) {
+    counts[findings[j].sev]++;
+    sortedHtml += findings[j].html;
+  }
+  return { html: sortedHtml, critical: counts.critical, warning: counts.warning, good: counts.good };
+}
+
 // ─── handler ───────────────────────────────────────────────────────
 
 module.exports = async function handler(req, res) {
@@ -386,6 +437,19 @@ module.exports = async function handler(req, res) {
   var tierPrices = await fetchTierPrices();
   var pCampaign  = primaryCampaign(campaigns);
 
+  // Sort findings by severity (critical → warning → good) and tally counts
+  // per pillar. The sorted HTML is mutated back into version.proposal_content
+  // in memory — the template's data-hydrate-html paths then serve sorted
+  // content without needing a new path. Counts go into rendered.pillar_counts
+  // for the collapsible-toggle badges.
+  var pillar_counts = {};
+  ['credibility','optimization','reputation','engagement'].forEach(function(p) {
+    var key = p + '_findings';
+    var result = analyzeAndSortFindings(version.proposal_content && version.proposal_content[key]);
+    if (version.proposal_content) version.proposal_content[key] = result.html;
+    pillar_counts[p] = { critical: result.critical, warning: result.warning, good: result.good };
+  });
+
   var rendered = {
     badge_text:            CAMPAIGN_DISPLAY[pCampaign] || CAMPAIGN_DISPLAY.annual,
     timeline_title:        'Your ' + (TIMELINE_LABEL[pCampaign] || TIMELINE_LABEL.annual) + ' Roadmap',
@@ -393,7 +457,8 @@ module.exports = async function handler(req, res) {
     date:                  formatDateForProposal(version.generated_at),
     investment_cards_html: buildInvestmentCardsHtml(slug, campaigns, proposal.custom_pricing, tierPrices),
     guarantee_box_html:    buildGuaranteeBoxHtml(campaigns),
-    results_section_html:  buildResultsSectionHtml(practiceType)
+    results_section_html:  buildResultsSectionHtml(practiceType),
+    pillar_counts:         pillar_counts
   };
 
   var safeContact = {
