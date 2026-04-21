@@ -14,6 +14,7 @@
 //            404 { error: "contact not found" }
 
 var sb = require('./_lib/supabase');
+var monitor = require('./_lib/monitor');
 
 // Everything client-facing templates currently read. No internal-only fields:
 // no drive_folder_id, no stripe_customer_id, no lost reason, no raw JSONB
@@ -68,7 +69,8 @@ module.exports = async function handler(req, res) {
   try {
     contact = await sb.one('contacts?slug=eq.' + encodeURIComponent(slug) + '&select=' + SAFE_COLUMNS + '&limit=1');
   } catch (e) {
-    return res.status(500).json({ error: 'lookup failed: ' + e.message });
+    await monitor.logError('public-contact', e, { client_slug: slug, detail: { stage: 'contact_lookup' } });
+    return res.status(500).json({ error: 'lookup failed' });
   }
   if (!contact) return res.status(404).json({ error: 'contact not found' });
 
