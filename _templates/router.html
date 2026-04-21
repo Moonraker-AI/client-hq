@@ -343,9 +343,6 @@ section { padding: 4.5rem 0; }
   // ============================================================
   // CONFIG
   // ============================================================
-  var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
-  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
-
   // Extract slug from URL path: /sky-therapies/ -> sky-therapies
   var pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
   var CLIENT_SLUG = pathParts[0] || '';
@@ -355,18 +352,6 @@ section { padding: 4.5rem 0; }
   if (!CLIENT_SLUG) {
     showError('No client specified in the URL.');
     return;
-  }
-
-  // ============================================================
-  // SUPABASE HELPERS
-  // ============================================================
-  function sbHeaders() {
-    return { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Accept': 'application/json' };
-  }
-
-  function sbFetch(table, query) {
-    return fetch(SB_URL + '/rest/v1/' + table + '?' + query, { headers: sbHeaders() })
-      .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); });
   }
 
   // ============================================================
@@ -446,7 +431,7 @@ section { padding: 4.5rem 0; }
   // ============================================================
   // RENDER: ACTIVE CLIENT MODE
   // ============================================================
-  function renderActive(contact, practiceDetails, onboardingSteps, deliverables, auditScores, taskStats) {
+  function renderActive(contact, onboardingSteps, deliverables, auditScores, taskStats) {
     // Page title
     document.title = 'Client HQ - ' + contact.practice_name + ' - Moonraker';
     document.getElementById('headerName').textContent = contact.practice_name;
@@ -717,35 +702,28 @@ section { padding: 4.5rem 0; }
   // MAIN INIT
   // ============================================================
   function init() {
-    // Fetch contact by slug
-    fetch('/api/public-contact?slug=' + encodeURIComponent(CLIENT_SLUG)).then(function(r){return r.json()}).then(function(b){return b&&b.contact?[b.contact]:[]})
-      .then(function(contacts) {
-        if (!contacts || contacts.length === 0) {
+    // One consolidated fetch: contact + onboarding steps + deliverables +
+    // latest entity audit + checklist items, all in one round trip. Service-
+    // role reads with column allowlists per table — replaces the prior five
+    // direct anon Supabase REST fetches (and drops an unused practice_details
+    // fetch in the process).
+    fetch('/api/public-client-hq-summary?slug=' + encodeURIComponent(CLIENT_SLUG))
+      .then(function(r) {
+        if (r.status === 404) return null; // signal: contact not found
+        if (!r.ok) throw new Error('summary fetch ' + r.status);
+        return r.json();
+      })
+      .then(function(data) {
+        if (!data) {
           showError('No account found for "' + CLIENT_SLUG + '". Please check the URL.');
           return;
         }
-        var contact = contacts[0];
-        var contactId = contact.id;
 
-        // Fetch all related data in parallel
-        return Promise.all([
-          Promise.resolve(contact),
-          sbFetch('practice_details', 'contact_id=eq.' + contactId + '&select=*&limit=1'),
-          sbFetch('onboarding_steps', 'contact_id=eq.' + contactId + '&select=*&order=sort_order'),
-          sbFetch('deliverables', 'contact_id=eq.' + contactId + '&select=*&order=delivered_at.desc'),
-          sbFetch('entity_audits', 'client_slug=eq.' + CLIENT_SLUG + '&select=*&order=audit_date.desc&limit=1'),
-          sbFetch('checklist_items', 'client_slug=eq.' + CLIENT_SLUG + '&select=status')
-        ]);
-      })
-      .then(function(results) {
-        if (!results) return; // contact not found already handled
-
-        var contact = results[0];
-        var practiceDetails = results[1] && results[1][0] ? results[1][0] : null;
-        var onboardingSteps = results[2] || [];
-        var deliverables = results[3] || [];
-        var auditScores = results[4] || [];
-        var taskRows = results[5] || [];
+        var contact = data.contact;
+        var onboardingSteps = data.onboarding_steps || [];
+        var deliverables = data.deliverables || [];
+        var auditScores = data.entity_audits || [];
+        var taskRows = data.checklist_items || [];
 
         // Compute task stats
         var taskStats = { total: taskRows.length, complete: 0, inProgress: 0 };
@@ -760,7 +738,7 @@ section { padding: 4.5rem 0; }
 
         // Route to the appropriate render mode
         if (contact.status === 'active') {
-          renderActive(contact, practiceDetails, onboardingSteps, deliverables, auditScores, taskStats);
+          renderActive(contact, onboardingSteps, deliverables, auditScores, taskStats);
         } else if (contact.status === 'onboarding') {
           renderOnboarding(contact, onboardingSteps);
         } else {
