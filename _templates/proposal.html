@@ -704,7 +704,19 @@ section { padding: 4.5rem 0; }
       }
     })
     .catch(function(err) {
-      showError(err && err.message ? err.message : 'Unable to load proposal.');
+      // 404 means this slug has no proposal on file. Most common cause is a
+      // client who moved past the proposal phase without a DB record (e.g.
+      // onboarded manually, referral that skipped the normal sales flow).
+      // Redirect to the client HQ router, which will either show their
+      // onboarding/reports/etc. links or a clean "no account found" error.
+      // 500s, network failures, and data integrity errors still surface the
+      // banner so we can catch real problems.
+      var msg = err && err.message ? err.message : '';
+      if (msg === 'This proposal could not be found.' && slug) {
+        window.location.replace('/' + encodeURIComponent(slug));
+        return;
+      }
+      showError(msg || 'Unable to load proposal.');
     });
 })();
 </script>

@@ -4,8 +4,8 @@
 // Two modes:
 //   GET /api/pricing?product=core_marketing
 //     → { product, tiers: [...] }
-//       Used by _templates/checkout.html, entity-audit-checkout.html, and
-//       shared/proposal-pricing-refresh.js. Single-product scoped, array of tiers.
+//       Used by _templates/checkout.html and entity-audit-checkout.html.
+//       Single-product scoped, array of tiers.
 //
 //   GET /api/pricing
 //     → { tiers: [...], config: { key: value, ... } }
