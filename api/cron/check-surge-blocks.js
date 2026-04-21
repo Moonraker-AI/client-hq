@@ -48,12 +48,31 @@ var AGENT_PROBE_TIMEOUT_MS = 30000;
 // slows down. 10 rows × 5s = 50s absolute worst case.
 var HEAL_PATCH_TIMEOUT_MS = 5000;
 
+// Returns { promise, cancel } so the caller can Promise.race() against the
+// promise AND clear the underlying Node timer once the work completes.
+// Without the cancel, the setTimeout keeps the event loop alive after the
+// HTTP response has been sent; Vercel's Fluid-compute then freezes/kills
+// the instance before the withTracking finally block's PATCH to cron_runs
+// commits, leaving cron_runs rows stuck in status='running' until
+// cleanup-stale-runs auto-expires them. .unref() is a second line of
+// defense in case the caller forgets to cancel.
 function budgetTimeout(ms, label) {
-  return new Promise(function(_, reject) {
-    setTimeout(function() {
+  var timer = null;
+  var promise = new Promise(function(_, reject) {
+    timer = setTimeout(function() {
       reject(new Error('Handler budget exceeded (' + ms + 'ms) at: ' + label));
     }, ms);
+    if (timer && typeof timer.unref === 'function') timer.unref();
   });
+  return {
+    promise: promise,
+    cancel: function() {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    }
+  };
 }
 
 var CODE_LABELS = {
@@ -81,7 +100,11 @@ async function handler(req, res) {
 
   // Global handler watchdog — guarantees we reject (and therefore run the
   // withTracking finally block) before Vercel's maxDuration SIGKILL lands.
-  var watchdog = budgetTimeout(HANDLER_BUDGET_MS, 'handler-global');
+  // IMPORTANT: must be cancelled in the outer finally below so the timer
+  // does not keep the Node event loop alive after we return, which would
+  // cause Vercel to terminate before cron_runs.finish() PATCH commits.
+  var watchdogHandle = budgetTimeout(HANDLER_BUDGET_MS, 'handler-global');
+  var watchdog = watchdogHandle.promise;
 
   try {
     // ── Step 1: Find healable blocked audits ──────────────────────
@@ -248,6 +271,11 @@ async function handler(req, res) {
       detail: { stage: 'handler' }
     }).catch(function() {});
     return res.status(500).json({ error: 'check-surge-blocks failed' });
+  } finally {
+    // Cancel the 90s watchdog timer so Node's event loop doesn't stay alive
+    // after we return. Critical: without this, Vercel terminates the
+    // instance before withTracking's finally block can PATCH cron_runs.
+    watchdogHandle.cancel();
   }
 }
 
