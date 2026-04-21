@@ -1515,6 +1515,7 @@
       // Initialize empty arrays for lazy-loaded tabs
       state.onboarding = [];
       state.tasks = [];
+      state.allChecklistItems = [];
       state.allAudits = [];
       state.deliverables = [];
       state.reportConfig = null;
@@ -1889,8 +1890,9 @@
 
           case 'audit':
             state.allAudits = data.audits || [];
-            state.tasks = data.checklistItems || [];
+            state.allChecklistItems = data.checklistItems || [];
             if (state.allAudits.length > 0) state.entityAudit = state.allAudits[0];
+            rescopeTasks();
             break;
 
           case 'reports':
@@ -3476,6 +3478,18 @@
     });
   };
 
+  // Derive state.tasks from state.allChecklistItems scoped to the
+  // currently-displayed entity audit. Without this scoping, the admin
+  // audit tab would render every historical audit's tasks underneath
+  // whichever audit header is showing, making a pending newly-launched
+  // audit appear to have the previous complete audit's task stats.
+  function rescopeTasks() {
+    var all = state.allChecklistItems || [];
+    var ea = state.entityAudit;
+    if (!ea || !ea.id) { state.tasks = all.slice(); return; }
+    state.tasks = all.filter(function(t) { return t.audit_id === ea.id; });
+  }
+
   // ---- AUDIT TAB ----
   function renderAudit() {
     var c = state.contact;
@@ -3952,6 +3966,7 @@
     }).then(function(r) { return r.json(); }).then(function(res) {
       if (res.success && res.data) {
         state.entityAudit = Array.isArray(res.data) ? res.data[0] : res.data;
+        rescopeTasks();
         renderAudit();
         toast('Entity audit created', 'success');
       } else {
@@ -4084,6 +4099,7 @@
               .then(function(audits) {
                 if (audits && audits[0]) {
                   state.entityAudit = audits[0];
+                  rescopeTasks();
                   renderAudit();
                   setTabCount('audit', 0);
                   if (audits[0].status === 'complete') {
@@ -4231,6 +4247,7 @@
               .then(function(audits) {
                 if (audits && audits[0]) {
                   state.entityAudit = audits[0];
+                  rescopeTasks();
                   renderAudit();
                   setTabCount('audit', 0);
                 }
