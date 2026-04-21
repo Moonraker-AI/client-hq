@@ -566,12 +566,12 @@ section { padding: 4.5rem 0; }
           var checkClass = s.status === 'complete' ? 'done' : (s.status === 'in_progress' ? 'active' : 'pending');
           var checkIcon = s.status === 'complete' ? '&#10003;' : (s.status === 'in_progress' ? '&#9679;' : '');
           var labelClass = s.status === 'complete' ? 'done-label' : '';
-          var note = s.notes ? '<span class="onboarding-step-note">' + s.notes + '</span>' : '';
-          var href = '/' + CLIENT_SLUG + '/onboarding#' + s.step_key;
+          var note = s.notes ? '<span class="onboarding-step-note">' + esc(s.notes) + '</span>' : '';
+          var href = '/' + CLIENT_SLUG + '/onboarding#' + encodeURIComponent(s.step_key || '');
           listHTML += '<li class="onboarding-item">' +
-            '<a href="' + href + '">' +
+            '<a href="' + esc(href) + '">' +
             '<div class="onboarding-check ' + checkClass + '">' + checkIcon + '</div>' +
-            '<span class="onboarding-step-label ' + labelClass + '">' + s.label + '</span>' + note +
+            '<span class="onboarding-step-label ' + labelClass + '">' + esc(s.label || '') + '</span>' + note +
             '</a></li>';
         });
         document.getElementById('onboardingList').innerHTML = listHTML;
@@ -582,12 +582,13 @@ section { padding: 4.5rem 0; }
     if (deliverables && deliverables.length > 0) {
       var dlHTML = '';
       deliverables.forEach(function(d) {
-        var link = d.page_url ? '<a href="' + d.page_url + '" class="deliverable-link" target="_blank">Open &#8599;</a>' : '';
+        var safeUrl = (typeof d.page_url === 'string' && /^https?:\/\//i.test(d.page_url)) ? d.page_url : '';
+        var link = safeUrl ? '<a href="' + esc(safeUrl) + '" class="deliverable-link" target="_blank" rel="noopener noreferrer">Open &#8599;</a>' : '';
         dlHTML += '<li class="deliverable-row">' +
           '<div class="deliverable-icon">' + getIcon(d.deliverable_type) + '</div>' +
           '<div class="deliverable-info">' +
-          '<div class="deliverable-title">' + d.title + '</div>' +
-          '<div class="deliverable-meta">' + (d.delivered_at ? 'Delivered ' + fmtDate(d.delivered_at) : d.status) + '</div>' +
+          '<div class="deliverable-title">' + esc(d.title || '') + '</div>' +
+          '<div class="deliverable-meta">' + (d.delivered_at ? 'Delivered ' + fmtDate(d.delivered_at) : esc(d.status || '')) + '</div>' +
           '</div>' + link + '</li>';
       });
       document.getElementById('deliverablesList').innerHTML = dlHTML;
@@ -638,12 +639,12 @@ section { padding: 4.5rem 0; }
         var checkClass = s.status === 'complete' ? 'done' : (s.status === 'in_progress' ? 'active' : 'pending');
         var checkIcon = s.status === 'complete' ? '&#10003;' : (s.status === 'in_progress' ? '&#9679;' : '');
         var labelClass = s.status === 'complete' ? 'done-label' : '';
-        var note = s.notes ? '<span class="onboarding-step-note">' + s.notes + '</span>' : '';
-        var href = '/' + CLIENT_SLUG + '/onboarding#' + s.step_key;
+        var note = s.notes ? '<span class="onboarding-step-note">' + esc(s.notes) + '</span>' : '';
+        var href = '/' + CLIENT_SLUG + '/onboarding#' + encodeURIComponent(s.step_key || '');
         listHTML += '<li class="onboarding-item">' +
-          '<a href="' + href + '">' +
+          '<a href="' + esc(href) + '">' +
           '<div class="onboarding-check ' + checkClass + '">' + checkIcon + '</div>' +
-          '<span class="onboarding-step-label ' + labelClass + '">' + s.label + '</span>' + note +
+          '<span class="onboarding-step-label ' + labelClass + '">' + esc(s.label || '') + '</span>' + note +
           '</a></li>';
       });
       document.getElementById('onboardingList').innerHTML = listHTML;
