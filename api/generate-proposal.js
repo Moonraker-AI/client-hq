@@ -1,36 +1,30 @@
 // /api/generate-proposal.js
-// Generates personalized proposal content using Anthropic API,
-// fills the proposal template, and deploys all client pages to GitHub.
+// Generates personalized proposal content using Anthropic API and stores
+// it as a new row in proposal_versions. The parent proposals row's
+// active_version_id pointer is repointed to the new version, and the prior
+// active version (if any) is retired with reason='regenerated'.
+//
+// Dynamic rendering takes over from here: /api/public-proposal reads the
+// active version and renders at request time. No HTML is baked to GitHub.
 //
 // POST { proposal_id }
 //
 // Flow:
 //   1. Load proposal + contact + enrichment from Supabase
-//   2. Read proposal template from GitHub
-//   3. Call Anthropic API to generate all content sections
-//   4. Fill template with generated content + view tracking
-//   5. Deploy proposal + checkout + onboarding + router to GitHub
-//   6. Update proposal record with URLs and status
-//   7. Convert lead to prospect + seed 9 onboarding steps
-//   8. Create Google Drive folder hierarchy (Creative, Docs, Optimization, Web Design)
+//   2. Build context and call Anthropic for generatedContent (JSON)
+//   3. Persist as a new proposal_versions row + repoint active_version_id
+//      + retire prior active (if any)
+//   4. Convert lead to prospect + seed 9 onboarding steps
+//   5. Create Google Drive folder hierarchy
 //
 // ENV VARS:
-//   SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, GITHUB_PAT, GOOGLE_SERVICE_ACCOUNT_JSON
+//   SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, GOOGLE_SERVICE_ACCOUNT_JSON
 
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
 var monitor = require('./_lib/monitor');
-var gh = require('./_lib/github');
-var pageToken = require('./_lib/page-token');
 var google = require('./_lib/google-delegated');
 var crypto = require('./_lib/crypto');
-
-// HTML-escape untrusted values before interpolating into deployed HTML.
-// Mirrors the shape used in email-template.js and newsletter-template.js.
-function esc(s) {
-  if (s === undefined || s === null) return '';
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -43,12 +37,11 @@ module.exports = async function handler(req, res) {
 
   if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
   if (!anthropicKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
-  if (!gh.isConfigured()) return res.status(500).json({ error: 'GITHUB_PAT not configured' });
 
   var proposalId = (req.body || {}).proposal_id;
   if (!proposalId) return res.status(400).json({ error: 'proposal_id required' });
 
-  var results = { generate: null, deploy: [] };
+  var results = { generate: null };
 
   // ─── 1. Load proposal + contact ───────────────────────────────
   var proposal, contact;
@@ -117,19 +110,7 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  // ─── 2. Read proposal template from GitHub ────────────────────
-  var templateHtml;
-  try {
-    templateHtml = await gh.readTemplate('proposal.html');
-  } catch (e) {
-    monitor.logError('generate-proposal', e, {
-      client_slug: slug,
-      detail: { stage: 'read_proposal_template' }
-    });
-    return res.status(500).json({ error: 'Failed to read proposal template' });
-  }
-
-  // ─── 3. Build context and call Anthropic ──────────────────────
+  // ─── 2. Build context and call Anthropic ──────────────────────
   var firstName = contact.first_name || '';
   var lastName = contact.last_name || '';
   var fullName = (firstName + ' ' + lastName).trim();
@@ -320,308 +301,31 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
     return res.status(500).json({ error: 'AI generation failed', details: e.message, results: results });
   }
 
-  // ─── 4. Fill template with generated content ──────────────────
-  var scores = generatedContent.scores || { c: 3, o: 3, r: 3, e: 3 };
-  function scoreClass(s) { return s <= 4 ? 'score-low' : s <= 7 ? 'score-med' : 'score-high'; }
-  function scoreOffset(s) { return Math.round(251.3 - (s / 10 * 251.3)); }
-  var today = new Date();
-  var dateStr = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-
-  // ─── Standardized investment features (hardcoded, not AI-generated) ───
-  var standardFeatures = '<li><span class="check">&#10003;</span> Comprehensive digital audit using our proprietary Surge platform</li>'
-    + '<li><span class="check">&#10003;</span> 5 dedicated service pages with custom HTML, schema markup, and targeted FAQs</li>'
-    + '<li><span class="check">&#10003;</span> Professional bio pages for each therapist at your practice</li>'
-    + '<li><span class="check">&#10003;</span> 1 location page to clearly establish where you serve</li>'
-    + '<li><span class="check">&#10003;</span> General FAQ page covering logistics, policies, and common client questions</li>'
-    + '<li><span class="check">&#10003;</span> Citation audit and listings via BrightLocal (15 citations + data aggregators)</li>'
-    + '<li><span class="check">&#10003;</span> Social profile buildout and optimization across 9 platforms</li>'
-    + '<li><span class="check">&#10003;</span> Entity Veracity Hub launch to verify and ground your practice online</li>'
-    + '<li><span class="check">&#10003;</span> YouTube channel setup with optimized playlist for your main specialty</li>'
-    + '<li><span class="check">&#10003;</span> Press release syndication across 500+ national and international news sites</li>'
-    + '<li><span class="check">&#10003;</span> NEO image creation and distribution to build authority across high-traffic platforms</li>'
-    + '<li><span class="check">&#10003;</span> Ongoing social posting across 4 platforms to reinforce your digital presence</li>'
-    + '<li><span class="check">&#10003;</span> Professional endorsement collection for clinician bio pages</li>'
-    + '<li><span class="check">&#10003;</span> Hero section and CTA optimization to convert visitors into consultation bookings</li>'
-    + '<li><span class="check">&#10003;</span> Monthly progress reports with visibility and engagement metrics</li>';
-  var guaranteeFeature = '<li><span class="check">&#10003;</span> <strong>12-month performance guarantee: if we don\'t hit our shared goal in 12 months, we continue working for free until you get there</strong></li>';
-
-  // Build investment cards for each selected campaign length.
-  // Pricing is pulled from pricing_tiers (upfront-ACH per cadence) so edits
-  // in /admin/pricing propagate into every new proposal without a code change.
-  // Runtime refresh for already-deployed proposals is handled by
-  // /shared/proposal-pricing-refresh.js.
-  function formatTierPrice(cents) {
-    if (typeof cents !== 'number') return '$—';
-    var d = cents / 100;
-    if (Number.isInteger(d)) return '$' + d.toLocaleString('en-US');
-    return '$' + d.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
-  var tierPriceByPlan = { annual: '$20,000', quarterly: '$5,000', monthly: '$2,000' };
-  try {
-    var pricingRows = await sb.query("pricing_tiers?product_key=eq.core_marketing&tier_key=in.(annual_upfront_ach,quarterly_upfront_ach,monthly_ach)&active=eq.true&select=tier_key,amount_cents");
-    var byKey = {};
-    (pricingRows || []).forEach(function(r) { byKey[r.tier_key] = r; });
-    if (byKey.annual_upfront_ach)    tierPriceByPlan.annual    = formatTierPrice(byKey.annual_upfront_ach.amount_cents);
-    if (byKey.quarterly_upfront_ach) tierPriceByPlan.quarterly = formatTierPrice(byKey.quarterly_upfront_ach.amount_cents);
-    if (byKey.monthly_ach)           tierPriceByPlan.monthly   = formatTierPrice(byKey.monthly_ach.amount_cents);
-  } catch (pricingErr) {
-    // Fall through to hardcoded defaults — proposal still renders, just with
-    // potentially-stale prices. /shared/proposal-pricing-refresh.js will
-    // overwrite on page load if the DB is reachable from the client.
-    console.error('[generate-proposal] pricing_tiers fetch failed, using defaults:', pricingErr.message);
-  }
-
-  var campaignInfo = {
-    annual:    { badge: '12-Month CORE Campaign',     price: tierPriceByPlan.annual,    period: '12-month campaign', desc: 'Full annual engagement with performance guarantee', recommended: true },
-    quarterly: { badge: '3-Month Growth Engagement',  price: tierPriceByPlan.quarterly, period: '3-month campaign',  desc: 'Foundation-building quarterly engagement' },
-    monthly:   { badge: 'Monthly CORE Engagement',    price: tierPriceByPlan.monthly,   period: 'per month',         desc: 'Flexible month-to-month engagement' }
-  };
-
-  var investmentCardsHtml = '<div class="investment-grid">';
-  campaigns.forEach(function(c) {
-    var info = campaignInfo[c];
-    if (!info) return;
-    var isRecommended = campaigns.length > 1 && c === 'annual';
-    investmentCardsHtml += '<div class="investment-card' + (isRecommended ? ' recommended' : '') + '">';
-    investmentCardsHtml += '<span class="badge">' + info.badge + '</span>';
-    investmentCardsHtml += '<div class="investment-price">' + info.price + '</div>';
-    investmentCardsHtml += '<div class="investment-period">' + info.period + '</div>';
-    var featuresList = standardFeatures;
-    if (c === 'annual') featuresList = guaranteeFeature + featuresList;
-    investmentCardsHtml += '<ul class="investment-features">' + featuresList + '</ul>';
-    investmentCardsHtml += '<a href="/' + slug + '/checkout?plan=' + c + '" class="cta-btn" target="_blank">Choose Your Plan &#8594;</a>';
-    investmentCardsHtml += '</div>';
-  });
-  // Add custom pricing card if present
-  if (customPricing) {
-    // Guard amount_cents: admin-controlled field, if non-numeric we'd render literal "$NaN" in prospect-facing HTML.
-    var amt = Number(customPricing.amount_cents);
-    var priceHtml = (Number.isFinite(amt) && amt >= 0)
-      ? '$' + (amt / 100).toLocaleString()
-      : '&mdash;';
-    investmentCardsHtml += '<div class="investment-card">';
-    investmentCardsHtml += '<span class="badge">Custom Arrangement</span>';
-    investmentCardsHtml += '<div class="investment-price">' + priceHtml + '</div>';
-    investmentCardsHtml += '<div class="investment-period">' + esc(customPricing.label || customPricing.period) + '</div>';
-    investmentCardsHtml += '<ul class="investment-features">' + standardFeatures + '</ul>';
-    investmentCardsHtml += '<a href="/' + slug + '/checkout" class="cta-btn" target="_blank">Choose Your Plan &#8594;</a>';
-    investmentCardsHtml += '</div>';
-  }
-  investmentCardsHtml += '</div>';
-
-  // Guarantee box
-  var guaranteeBox = '';
-  if (campaigns.includes('annual')) {
-    guaranteeBox = '<div class="guarantee-box"><h3>Performance Guarantee</h3><p>Our annual program includes a <a href="https://clients.moonraker.ai/guarantee" target="_blank" rel="noopener">performance guarantee</a> - we set a measurable consultation benchmark together using your historical data, and we continue working for free until you hit it. No other agency in this space offers this.</p></div>';
-  } else if (campaigns.includes('quarterly')) {
-    guaranteeBox = '<div class="guarantee-box"><h3>Looking Ahead</h3><p>Our annual program includes a <a href="https://clients.moonraker.ai/guarantee" target="_blank" rel="noopener">performance guarantee</a> - we set a measurable consultation benchmark together and continue working for free until you hit it. While the 3-month engagement builds the foundation, many clients see enough momentum to transition to an annual program where the guarantee kicks in.</p><p>Everything we build in these 3 months is yours to keep, regardless of what you decide next.</p></div>';
-  }
-
-  // Build next steps HTML
-  var nextStepsHtml = '';
-  var steps = [];
-  if (Array.isArray(generatedContent.next_steps) && generatedContent.next_steps.length > 0) {
-    steps = generatedContent.next_steps;
-  } else {
-    steps = [
-      { title: 'Choose Your Plan', desc: 'Click the button below to select your payment method and complete your investment. We offer both bank transfer (ACH) and credit card options.' },
-      { title: 'Sign Your Agreement', desc: 'After payment, you will be directed to our client portal where you can review and electronically sign our service agreement.' },
-      { title: 'Book Your Onboarding Call', desc: 'Schedule a 60-75 minute call with Scott, our Director of Growth. We will set up accounts, define your target keywords, and align on campaign strategy together.' },
-      { title: 'We Get to Work', desc: 'Within the first week, our team starts the deep audit of your practice. You will see content drafts for review, and your digital footprint begins taking shape immediately.' }
-    ];
-  }
-  steps.forEach(function(s, i) {
-    var mb = i < steps.length - 1 ? 'margin-bottom:1.25rem;' : '';
-    nextStepsHtml += '<div style="display:flex;gap:1rem;align-items:flex-start;' + mb + '"><div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;">' + (i + 1) + '</div><div><h4>' + esc(s.title || 'Step ' + (i+1)) + '</h4><p style="margin-bottom:0;">' + esc(s.desc || s.description || '') + '</p></div></div>';
-  });
-
-  // ─── Build Results Section (practice-type aware) ──────────────
-  function buildResultsSection(type) {
-    // Hardcoded GSC results matching the /results page data
-    var groupResults = [
-      { pct: 213, time: '6 months', id: '1uVfNKUBxYy3KCEJEmJU92QE3DN9khHWA', label: 'Group Practice' },
-      { pct: 170, time: '6 months', id: '1spFbq2k8QOqwWbLuvz1JxLgWpM7VFfaa', label: 'Group Practice' },
-      { pct: 156, time: '3 months', id: '1jNjoiNtFgIINAyUpWyvH426qq1HTHG7X', label: 'Group Practice' }
-    ];
-    var soloResults = [
-      { pct: 308, time: '3 months', id: '1ClS6rM1HrdGKr1qXKF7J9Yo32HaiFZOE', label: 'Solo Therapist' },
-      { pct: 202, time: '6 months', id: '1fdthfPuD2hn4g-yR1yaEd3VYJTYdFN5l', label: 'Solo Therapist' },
-      { pct: 168, time: '6 months', id: '1zTy0yzf_cZFPRiQNCykjxTLQfjoRDKVT', label: 'Solo Therapist' }
-    ];
-
-    var featured = type === 'solo' ? soloResults : groupResults;
-    var typeLabel = type === 'solo' ? 'Solo Therapists' : 'Group Practices';
-    var topPct = type === 'solo' ? '308%' : '213%';
-
-    var html = '';
-
-    // Stats bar (green numbers)
-    html += '<div class="results-stats-bar">';
-    html += '<div class="stat"><div class="stat-value">22</div><div class="stat-label">Client Results</div></div>';
-    html += '<div class="stat"><div class="stat-value">115%</div><div class="stat-label">Average Increase</div></div>';
-    html += '<div class="stat"><div class="stat-value">' + topPct + '</div><div class="stat-label">Top ' + (type === 'solo' ? 'Solo' : 'Group') + ' Result</div></div>';
-    html += '</div>';
-
-    // Type label
-    html += '<p style="text-align:center;font-size:.8125rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-muted);margin-bottom:1rem;">Featuring results from ' + typeLabel + '</p>';
-
-    // Mini grid of top 3 results (matching results page card design)
-    html += '<div class="results-mini-grid">';
-    featured.forEach(function(r, i) {
-      var imgUrl = 'https://lh3.googleusercontent.com/d/' + r.id + '=w800';
-      var hiResUrl = 'https://lh3.googleusercontent.com/d/' + r.id + '=w1400';
-      html += '<div class="results-mini-card" onclick="window._openResultLightbox(' + i + ')">';
-      html += '<div class="card-image-wrap"><img src="' + imgUrl + '" alt="' + r.label + ' result: +' + r.pct + '% in ' + r.time + '" loading="lazy" data-hires="' + hiResUrl + '"><div class="card-badge">+' + r.pct + '%</div></div>';
-      html += '<div class="card-body"><div class="card-meta"><span class="card-type-tag">' + r.label + '</span> ' + r.time + '</div></div>';
-      html += '</div>';
-    });
-    html += '</div>';
-
-    // CTA
-    html += '<div class="results-see-all">';
-    html += '<a href="https://clients.moonraker.ai/results" class="cta-btn-outline" target="_blank" rel="noopener">See All 22 Client Results &#8594;</a>';
-    html += '</div>';
-
-    // Lightbox HTML
-    html += '<div class="results-lightbox" id="resultsLightbox" onclick="window._closeResultLightbox()">';
-    html += '<button class="results-lightbox-close" onclick="window._closeResultLightbox()">&times;</button>';
-    html += '<div class="results-lightbox-inner" onclick="event.stopPropagation()">';
-    html += '<img id="resultsLightboxImg" src="" alt="">';
-    html += '<div class="results-lightbox-caption" id="resultsLightboxCaption"></div>';
-    html += '</div></div>';
-
-    // Lightbox JS (data embedded)
-    html += '<script>';
-    html += '(function(){';
-    html += 'var rd=' + JSON.stringify(featured.map(function(r) { return { pct: r.pct, time: r.time, label: r.label, hires: 'https://lh3.googleusercontent.com/d/' + r.id + '=w1400' }; })) + ';';
-    html += 'window._openResultLightbox=function(i){var r=rd[i],lb=document.getElementById("resultsLightbox");document.getElementById("resultsLightboxImg").src=r.hires;document.getElementById("resultsLightboxCaption").textContent=r.label+"  \\u00B7  +"+r.pct+"%  \\u00B7  "+r.time;lb.classList.add("open");document.body.style.overflow="hidden";};';
-    html += 'window._closeResultLightbox=function(){document.getElementById("resultsLightbox").classList.remove("open");document.body.style.overflow="";};';
-    html += 'document.addEventListener("keydown",function(e){if(e.key==="Escape")window._closeResultLightbox();});';
-    html += 'var lb=document.getElementById("resultsLightbox");if(lb)document.body.appendChild(lb);';
-    html += '})();';
-    html += '</script>';
-
-    return html;
-  }
-
-  // Replace template variables
-  var html = templateHtml;
-
-  // Post-C6: proposal page no longer carries a baked-in token. It calls
-  // /api/page-token/request on load to mint a scope='proposal' HttpOnly cookie
-  // bound to the contact matching the URL slug. Kept as empty string for the
-  // {{PAGE_TOKEN}} replacement map below (which is a no-op now).
-  var signedPageToken = '';
-
-  var replacements = {
-    '{{PRACTICE_NAME}}': practiceName,
-    '{{PROSPECT_NAME_CREDENTIALS}}': nameWithCreds,
-    '{{PROSPECT_FIRST_NAME}}': firstName,
-    '{{LOCATION}}': location || 'United States',
-    '{{DATE}}': dateStr,
-    '{{BADGE_TEXT}}': campaignDisplay[primaryCampaign],
-    '{{HERO_HEADLINE}}': generatedContent.hero_headline || 'Your Practice Deserves to Be Found',
-    '{{HERO_SUBTITLE}}': generatedContent.hero_subtitle || '',
-    '{{EXEC_SUMMARY_PARAGRAPHS}}': generatedContent.exec_summary_paragraphs || '',
-    '{{SCORE_C}}': scores.c,
-    '{{SCORE_O}}': scores.o,
-    '{{SCORE_R}}': scores.r,
-    '{{SCORE_E}}': scores.e,
-    '{{SCORE_C_CLASS}}': scoreClass(scores.c),
-    '{{SCORE_O_CLASS}}': scoreClass(scores.o),
-    '{{SCORE_R_CLASS}}': scoreClass(scores.r),
-    '{{SCORE_E_CLASS}}': scoreClass(scores.e),
-    '{{SCORE_C_OFFSET}}': scoreOffset(scores.c),
-    '{{SCORE_O_OFFSET}}': scoreOffset(scores.o),
-    '{{SCORE_R_OFFSET}}': scoreOffset(scores.r),
-    '{{SCORE_E_OFFSET}}': scoreOffset(scores.e),
-    '{{CREDIBILITY_FINDINGS}}': generatedContent.credibility_findings || '',
-    '{{OPTIMIZATION_FINDINGS}}': generatedContent.optimization_findings || '',
-    '{{REPUTATION_FINDINGS}}': generatedContent.reputation_findings || '',
-    '{{ENGAGEMENT_FINDINGS}}': generatedContent.engagement_findings || '',
-    '{{STRATEGY_INTRO}}': generatedContent.strategy_intro || '',
-    '{{STRATEGY_CARDS}}': generatedContent.strategy_cards || '',
-    '{{STRATEGY_ROI_CALLOUT}}': generatedContent.strategy_roi_callout || '',
-    '{{TIMELINE_TITLE}}': 'Your ' + timelineLabel[primaryCampaign] + ' Roadmap',
-    '{{TIMELINE_INTRO}}': 'Here is exactly what happens from the moment you say go. We handle the heavy lifting - your time commitment is roughly 6-8 hours in month one (mostly the onboarding call and content review), then significantly less after that.',
-    '{{TIMELINE_ITEMS}}': generatedContent.timeline_items || '',
-    '{{INVESTMENT_CARDS_HTML}}': investmentCardsHtml,
-    '{{CHECKOUT_URL}}': '/' + slug + '/checkout',
-    '{{GUARANTEE_BOX}}': guaranteeBox,
-    '{{RESULTS_SECTION}}': buildResultsSection(practiceType),
-    '{{NEXT_STEPS_ITEMS}}': nextStepsHtml,
-    '{{PAGE_TOKEN}}': signedPageToken
-  };
-
-  Object.keys(replacements).forEach(function(key) {
-    html = html.split(key).join(String(replacements[key]));
-  });
-
-  // Add view tracking script before </body>
-  var trackingScript = `
-<script>
-(function(){
-  var params = new URLSearchParams(window.location.search);
-  if (params.has('preview')) return;
-  var SB='https://ofmmwcjhdrhvxxkhcuww.supabase.co';
-  var K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
-  fetch(SB+'/rest/v1/rpc/track_proposal_view',{method:'POST',headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify({p_slug:'${slug}'})}).catch(function(){});
-})();
-</script>`;
-  html = html.replace('</body>', trackingScript + '\n</body>');
-
-  // ─── 5. Deploy all pages to GitHub ────────────────────────────
+  // ─── 3. Persist generated content as a new proposal version ────
   //
-  // Sign a scope='onboarding' token bound to this contact. The onboarding
-  // page reads it as window.__PAGE_TOKEN__ and sends it on every call to
-  // /api/onboarding-action, which verifies and uses the contact_id from the
-  // token instead of from the request body.
-  var signedOnboardingToken = '';
-  try {
-    signedOnboardingToken = pageToken.sign({ scope: 'onboarding', contact_id: contact.id });
-  } catch (e) {
-    return res.status(500).json({ error: 'Failed to sign onboarding page token: ' + e.message });
-  }
-
-  var pagesToDeploy = [
-    { dest: slug + '/proposal/index.html', content: html },
-    { template: 'router.html', dest: slug + '/index.html' },
-    { template: 'checkout.html', dest: slug + '/checkout/index.html' },
-    { template: 'onboarding.html', dest: slug + '/onboarding/index.html', replacements: { '{{PAGE_TOKEN}}': signedOnboardingToken } }
+  // Layout the content with AI-fallback defaults so a missing field from
+  // the model doesn't leave users staring at an empty hero/findings
+  // section. These defaults mirror the ones the old template-fill step
+  // used to apply at bake time. Here we bake them into the JSONB row
+  // so every downstream reader gets the same safety net.
+  var defaultNextSteps = [
+    { title: 'Choose Your Plan', desc: 'Click the button below to select your payment method and complete your investment. We offer both bank transfer (ACH) and credit card options.' },
+    { title: 'Sign Your Agreement', desc: 'After payment, you will be directed to our client portal where you can review and electronically sign our service agreement.' },
+    { title: 'Book Your Onboarding Call', desc: 'Schedule a 60-75 minute call with Scott, our Director of Growth. We will set up accounts, define your target keywords, and align on campaign strategy together.' },
+    { title: 'We Get to Work', desc: 'Within the first week, our team starts the deep audit of your practice. You will see content drafts for review, and your digital footprint begins taking shape immediately.' }
   ];
-
-  for (var p of pagesToDeploy) {
-    try {
-      var fileContent;
-      if (p.content) {
-        fileContent = p.content;
-      } else {
-        // Read template from GitHub via _lib wrapper (returns utf8 string)
-        fileContent = await gh.readTemplate(p.template);
-
-        // Apply any page-specific replacements (e.g. {{PAGE_TOKEN}} for onboarding)
-        if (p.replacements) {
-          Object.keys(p.replacements).forEach(function(key) {
-            fileContent = fileContent.split(key).join(String(p.replacements[key]));
-          });
-        }
-      }
-
-      await gh.pushFile(p.dest, fileContent, 'Deploy ' + p.dest.split('/').pop() + ' for ' + slug);
-      results.deploy.push({ path: p.dest, ok: true });
-    } catch (e) {
-      results.deploy.push({ path: p.dest, ok: false, error: 'Deploy failed' });
-      monitor.logError('generate-proposal', e, {
-        client_slug: slug,
-        detail: { stage: 'deploy', path: p.dest }
-      });
-    }
+  var versionContent = Object.assign({}, generatedContent);
+  if (!versionContent.hero_headline) versionContent.hero_headline = 'Your Practice Deserves to Be Found';
+  if (!versionContent.scores || typeof versionContent.scores !== 'object') {
+    versionContent.scores = { c: 3, o: 3, r: 3, e: 3 };
+  }
+  if (!Array.isArray(versionContent.next_steps) || !versionContent.next_steps.length) {
+    versionContent.next_steps = defaultNextSteps;
   }
 
-  // ─── 6. Update proposal record ────────────────────────────────
   var proposalUrl = 'https://clients.moonraker.ai/' + slug + '/proposal';
   var checkoutUrl = 'https://clients.moonraker.ai/' + slug + '/checkout';
+  var nowIso = new Date().toISOString();
 
   // Also update checkout_options on the contact.
   // M30: was `.catch(function(){})`. Non-critical, but surface failures in results.
@@ -636,28 +340,92 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
     }
   }
 
-  // Final proposal record update — flips status to 'ready' and saves the
-  // generated URLs + content. M30: previously fire-and-forget. If this PATCH
-  // failed silently the proposal would sit in 'generating' forever even
-  // though the HTML was already deployed. Awaited with error tracking +
-  // server-side log so admin has both UI-visible state (results.finalize_error)
-  // and observability in error_log.
+  // STEP A — Retire the previously-active version, if any. Non-fatal:
+  // if retire fails we still want the new version written so the proposal
+  // can serve. Any stale un-retired row is a minor audit-trail blemish,
+  // not a user-facing problem.
+  if (proposal.active_version_id) {
+    try {
+      await sb.mutate('proposal_versions?id=eq.' + proposal.active_version_id, 'PATCH', {
+        retired_at: nowIso,
+        retired_reason: 'regenerated'
+      }, 'return=minimal');
+    } catch (e) {
+      results.retire_prior_error = e.message || String(e);
+      monitor.logError('generate-proposal', e, {
+        client_slug: slug,
+        detail: { stage: 'retire_prior_version', proposal_id: proposalId, prior_version_id: proposal.active_version_id }
+      });
+    }
+  }
+
+  // STEP B — Insert the new version. Fatal on failure: we abort rather
+  // than leave the parent proposals row pointing at a now-retired version
+  // with no successor.
+  var priorVersionCount = proposal.version_count || 0;
+  var newVersionNumber = priorVersionCount + 1;
+  var newVersion = null;
+  try {
+    var inserted = await sb.mutate('proposal_versions', 'POST', {
+      proposal_id:      proposalId,
+      contact_id:       contact.id,
+      version_number:   newVersionNumber,
+      proposal_content: versionContent,
+      campaign_lengths: campaigns,
+      billing_options:  billings,
+      custom_pricing:   customPricing,
+      generated_at:     nowIso,
+      generated_by:     'api:generate-proposal'
+    }, 'return=representation');
+    newVersion = Array.isArray(inserted) ? inserted[0] : inserted;
+    if (!newVersion || !newVersion.id) {
+      throw new Error('proposal_versions INSERT returned no row');
+    }
+  } catch (e) {
+    results.version_insert_error = e.message || String(e);
+    monitor.logError('generate-proposal', e, {
+      client_slug: slug,
+      detail: { stage: 'insert_new_version', proposal_id: proposalId, attempted_version_number: newVersionNumber }
+    });
+    // Try to flip status back to 'review' so admin sees the failure in the UI
+    // rather than a stuck 'generating'. The prior version, if any, was already
+    // retired in STEP A — the proposal is in a degraded state that regeneration
+    // will fix on retry.
+    try {
+      await sb.mutate('proposals?id=eq.' + proposalId, 'PATCH', {
+        status: 'review',
+        notes: 'Version insert failed: ' + (e.message || String(e))
+      });
+    } catch (_) { /* observability already logged */ }
+    return res.status(500).json({ error: 'Failed to persist new proposal version', details: e.message, results: results });
+  }
+
+  // STEP C — Repoint the parent proposals row at the new version, bump
+  // version_count, flip status to 'ready', set URLs. Tracked in
+  // results.finalize_error consistent with the prior flow.
   try {
     await sb.mutate('proposals?id=eq.' + proposalId, 'PATCH', {
-      status: 'ready',
-      proposal_url: proposalUrl,
-      checkout_url: checkoutUrl,
-      proposal_content: generatedContent
-    });
+      status:            'ready',
+      proposal_url:      proposalUrl,
+      checkout_url:      checkoutUrl,
+      active_version_id: newVersion.id,
+      version_count:     newVersionNumber
+    }, 'return=minimal');
   } catch (e) {
     results.finalize_error = e.message || String(e);
     monitor.logError('generate-proposal', e, {
       client_slug: slug,
-      detail: { stage: 'finalize_proposal', proposal_id: proposalId }
+      detail: { stage: 'finalize_proposal', proposal_id: proposalId, new_version_id: newVersion.id }
     });
   }
 
-  // ─── 7. Convert lead to prospect + seed onboarding ────────────
+  results.version = {
+    new_version_id:      newVersion.id,
+    new_version_number:  newVersionNumber,
+    retired_prior_id:    proposal.active_version_id || null
+  };
+
+  // ─── 4. Convert lead to prospect + seed onboarding ────────────
   results.conversion = {};
   try {
     // Flip status to prospect
@@ -716,7 +484,7 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
     results.conversion.error = convErr.message || String(convErr);
   }
 
-  // ─── 8. Create Google Drive folder hierarchy ──────────────────
+  // ─── 5. Create Google Drive folder hierarchy ──────────────────
   var saJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   // M23 (2026-04-18): DRIVE_CLIENTS_FOLDER_ID is the shared parent folder
   // containing all per-client subfolders; read from env instead of a
