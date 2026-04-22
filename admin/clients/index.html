@@ -1527,7 +1527,7 @@
       state.introCall = [];
       state.proposals = [];
       state.trackedKeywords = [];
-      state.workspace = null;
+      state.workspace = undefined; // sentinel: 'not yet loaded' (vs null = 'loaded, no row exists')
       state.socialPlatforms = [];
       state.directoryListings = [];
       state.contentPages = [];
@@ -2613,7 +2613,28 @@
   };
 
   function renderRisingTide() {
-    renderWorkspace();
+    // If workspace hasn't been fetched yet (user opened Rising Tide without
+    // visiting Profile first), lazy-fetch via /api/action — it decrypts
+    // the Gmail creds that PostgREST would otherwise return as ciphertext.
+    // state.workspace === undefined means 'never loaded'; null means
+    // 'loaded, no row exists'.
+    if (state.workspace === undefined && state.contact) {
+      var wsEl = document.getElementById('rtWorkspace');
+      if (wsEl) wsEl.innerHTML = '<div class="empty-state" style="padding:1.5rem;color:var(--color-muted);font-size:.85rem;">Loading workspace…</div>';
+      fetch('/api/action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'read_records', table: 'workspace_credentials', filters: { contact_id: state.contact.id }, limit: 1 })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        state.workspace = (d && d.data && d.data[0]) || null;
+        renderWorkspace();
+      }).catch(function(e) {
+        console.error('[workspace_credentials fetch failed]', e);
+        state.workspace = null;
+        renderWorkspace();
+      });
+    } else {
+      renderWorkspace();
+    }
     renderSocialPlatforms();
     renderDirectories();
   }
@@ -2658,14 +2679,29 @@
 
   window.createWorkspace = function() {
     if (!state.contact) return;
+    // Re-read first: if a row already exists (e.g. this client-side state
+    // was stale), surface it rather than attempting an insert that the
+    // UNIQUE(contact_id) constraint would reject.
     fetch('/api/action', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'create_record', table: 'workspace_credentials', data: { contact_id: state.contact.id } })
-    }).then(function(r) { return r.json(); }).then(function(res) {
-      if (res.success && res.data) {
-        state.workspace = Array.isArray(res.data) ? res.data[0] : res.data;
+      body: JSON.stringify({ action: 'read_records', table: 'workspace_credentials', filters: { contact_id: state.contact.id }, limit: 1 })
+    }).then(function(r) { return r.json(); }).then(function(existing) {
+      if (existing && existing.data && existing.data[0]) {
+        state.workspace = existing.data[0];
         renderWorkspaceEdit();
+        return;
       }
+      fetch('/api/action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create_record', table: 'workspace_credentials', data: { contact_id: state.contact.id } })
+      }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.success && res.data) {
+          state.workspace = Array.isArray(res.data) ? res.data[0] : res.data;
+          renderWorkspaceEdit();
+        } else {
+          toast('Could not create workspace: ' + (res.error || 'unknown error'), 'error');
+        }
+      });
     });
   };
 
