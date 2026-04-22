@@ -30,11 +30,9 @@ var publicContact = require('./public-contact');
 
 // Contact columns returned here. Mirror public-contact.SAFE_COLUMNS so
 // removing the separate /api/public-contact call from the onboarding template
-// is behaviour-preserving. Additionally return `lost` so the template's
-// _locked gate (`!!contact.lost || ...`) fires correctly — public-contact
-// omits `lost` and callers silently read `undefined`, a latent inconsistency
-// not fixed here.
-var CONTACT_COLUMNS = publicContact.SAFE_COLUMNS + ',lost';
+// is behaviour-preserving. `lost` is now in SAFE_COLUMNS directly (was an
+// onboarding-only override until 2026-04-22).
+var CONTACT_COLUMNS = publicContact.SAFE_COLUMNS;
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') {
