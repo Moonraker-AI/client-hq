@@ -1269,8 +1269,11 @@
       <div class="tab-panel" id="tab-billing">
         <div class="card-grid card-grid-2">
           <div class="card">
-            <div class="card-header"><h3>Plan &amp; Payment</h3></div>
-            <div class="field-group" id="billingFields"></div>
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;">
+              <h3>Campaign Commitment</h3>
+              <button id="commitmentEditBtn" class="btn btn-secondary" style="font-size:.78rem;padding:.35rem .75rem;" onclick="window.editCommitment()">Edit</button>
+            </div>
+            <div id="commitmentBody"></div>
           </div>
           <div class="card">
             <div class="card-header"><h3>Agreement</h3></div>
@@ -2993,6 +2996,249 @@
     });
     document.getElementById('obSteps').innerHTML = html;
   }
+
+  // ---- CAMPAIGN COMMITMENT (Billing tab) ----
+  // Five canonical plans. Tier + cadence + commitment_months fully determine
+  // PG eligibility. The legacy plan_type is written in parallel for read
+  // compat during the transition (see docs/plan-terminology.md).
+  var PLAN_PRESETS = {
+    annual_upfront:     { tier:'annual',   cadence:'upfront',   months:12, cents:2000000, legacy:'annual',    label:'Annual Upfront',     rateLabel:'$20,000 one-time',      pg:true  },
+    annual_quarterly:   { tier:'annual',   cadence:'quarterly', months:12, cents:500000,  legacy:'annual',    label:'Annual Quarterly',   rateLabel:'$5,000/qtr \u00D7 4',   pg:true  },
+    annual_monthly:     { tier:'annual',   cadence:'monthly',   months:12, cents:166700,  legacy:'annual',    label:'Annual Monthly',     rateLabel:'$1,667/mo \u00D7 12',   pg:true  },
+    flexible_quarterly: { tier:'flexible', cadence:'quarterly', months:0,  cents:500000,  legacy:'quarterly', label:'Flexible Quarterly', rateLabel:'$5,000/qtr (no end)',   pg:false },
+    flexible_monthly:   { tier:'flexible', cadence:'monthly',   months:0,  cents:166700,  legacy:'monthly',   label:'Flexible Monthly',   rateLabel:'$1,667/mo (no end)',    pg:false }
+  };
+
+  function derivePlanKey(c) {
+    if (!c) return null;
+    var tier = c.plan_tier;
+    var cad  = c.billing_cadence;
+    if (!tier || !cad) return null;
+    var key = tier + '_' + cad;
+    return PLAN_PRESETS[key] ? key : null;
+  }
+
+  function formatCommitmentStart(iso) {
+    if (!iso) return null;
+    try {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return null;
+      return d.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+    } catch (_) { return null; }
+  }
+
+  function renderCommitment(c) {
+    var body = document.getElementById('commitmentBody');
+    if (!body) return;
+    var editBtn = document.getElementById('commitmentEditBtn');
+    if (editBtn) { editBtn.style.display = ''; editBtn.textContent = 'Edit'; }
+
+    var planKey = derivePlanKey(c);
+    var preset  = planKey ? PLAN_PRESETS[planKey] : null;
+
+    var planDisplay;
+    if (preset) {
+      planDisplay = esc(preset.label);
+    } else if (c.plan_type) {
+      planDisplay = '<span style="color:var(--color-warning);">Legacy: ' + esc(c.plan_type) + '</span>'
+        + '<div style="font-size:.72rem;color:var(--color-muted);margin-top:.2rem;">Click Edit to assign a canonical plan.</div>';
+    } else {
+      planDisplay = null;
+    }
+
+    var commitmentDisplay;
+    if (c.commitment_months === 12) {
+      commitmentDisplay = '12 months';
+    } else if (c.commitment_months === 0) {
+      commitmentDisplay = 'No commitment';
+    } else {
+      commitmentDisplay = null;
+    }
+
+    var startDisplay  = formatCommitmentStart(c.commitment_start_at);
+    var amountDisplay = c.plan_amount_cents
+      ? '$' + (c.plan_amount_cents / 100).toLocaleString(undefined, { minimumFractionDigits: (c.plan_amount_cents % 100 ? 2 : 0), maximumFractionDigits: 2 })
+        + (preset ? ' \u00B7 ' + esc(preset.rateLabel) : '')
+      : null;
+
+    var pgEligible = (c.commitment_months || 0) >= 12;
+    var pgBadge = pgEligible
+      ? '<span style="display:inline-flex;align-items:center;gap:.35rem;background:rgba(0,212,126,.12);color:var(--color-success);padding:.22rem .55rem;border-radius:999px;font-size:.72rem;font-weight:600;">\u2713 Eligible</span>'
+      : '<span style="display:inline-flex;align-items:center;gap:.35rem;background:rgba(120,120,120,.12);color:var(--color-muted);padding:.22rem .55rem;border-radius:999px;font-size:.72rem;font-weight:600;">Not eligible</span>';
+
+    body.innerHTML = '<div class="field-group">'
+      + '<div class="field-row"><span class="field-label">Plan</span><span class="field-value">' + (planDisplay || '<span style="color:var(--color-muted);">&mdash;</span>') + '</span></div>'
+      + fieldRow('Commitment', commitmentDisplay)
+      + fieldRow('Commitment Start', startDisplay)
+      + fieldRow('Plan Amount', amountDisplay)
+      + fieldRow('Payment Method', c.payment_method)
+      + fieldRow('Stripe Customer', c.stripe_customer_id, false, c.stripe_customer_id ? 'https://dashboard.stripe.com/customers/' + c.stripe_customer_id : null)
+      + fieldRow('Stripe Subscription', c.stripe_subscription_id, false, c.stripe_subscription_id ? 'https://dashboard.stripe.com/subscriptions/' + c.stripe_subscription_id : null)
+      + fieldRow('SPP Client ID', c.spp_client_id)
+      + '<div class="field-row"><span class="field-label">Performance Guarantee</span><span class="field-value">' + pgBadge + '</span></div>'
+      + '</div>';
+  }
+
+  window.editCommitment = function() {
+    var c = state.contact || {};
+    var body = document.getElementById('commitmentBody');
+    if (!body) return;
+    var editBtn = document.getElementById('commitmentEditBtn');
+    if (editBtn) editBtn.style.display = 'none';
+
+    var currentKey = derivePlanKey(c) || '';
+    var currentStart = c.commitment_start_at ? c.commitment_start_at.slice(0, 10) : '';
+    var currentAmount = c.plan_amount_cents != null ? (c.plan_amount_cents / 100) : '';
+    var currentMethod = c.payment_method || '';
+
+    var planOptions = '<option value="">-- Keep current (no change) --</option>';
+    Object.keys(PLAN_PRESETS).forEach(function(k) {
+      var p = PLAN_PRESETS[k];
+      planOptions += '<option value="' + k + '"' + (k === currentKey ? ' selected' : '') + '>'
+        + esc(p.label) + ' \u2014 ' + esc(p.rateLabel) + '</option>';
+    });
+
+    var inputStyle = 'width:100%;padding:.5rem .75rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-bg);color:var(--color-body);font-size:.875rem;font-family:inherit;';
+    var labelStyle = 'display:block;font-size:.72rem;font-weight:600;color:var(--color-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.35rem;';
+
+    body.innerHTML = '<div style="padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.85rem;">'
+      + '<div>'
+        + '<label style="' + labelStyle + '">Plan</label>'
+        + '<select id="editPlanKey" style="' + inputStyle + '" onchange="window.commitmentPlanChanged()">' + planOptions + '</select>'
+        + '<div id="editPlanNote" style="font-size:.72rem;color:var(--color-muted);margin-top:.3rem;line-height:1.5;">Selecting a plan prefills commitment and amount. Override amount below for custom rates.</div>'
+      + '</div>'
+      + '<div>'
+        + '<label style="' + labelStyle + '">Commitment Start Date</label>'
+        + '<input type="date" id="editCommitmentStart" value="' + esc(currentStart) + '" style="' + inputStyle + '">'
+        + '<div style="font-size:.7rem;color:var(--color-muted);margin-top:.25rem;">Usually the date of first Stripe payment. Leave blank for no-commitment plans.</div>'
+      + '</div>'
+      + '<div>'
+        + '<label style="' + labelStyle + '">Plan Amount (per period, dollars)</label>'
+        + '<input type="number" step="0.01" min="0" id="editPlanAmount" value="' + esc(String(currentAmount)) + '" style="' + inputStyle + '">'
+        + '<div style="font-size:.7rem;color:var(--color-muted);margin-top:.25rem;">For Annual Monthly this is $1,667. For Annual Upfront this is $20,000. Custom rates welcome.</div>'
+      + '</div>'
+      + '<div>'
+        + '<label style="' + labelStyle + '">Payment Method</label>'
+        + '<select id="editPaymentMethod" style="' + inputStyle + '">'
+          + '<option value=""' + (currentMethod === '' ? ' selected' : '') + '>-- not set --</option>'
+          + '<option value="ach"' + (currentMethod === 'ach' ? ' selected' : '') + '>ACH</option>'
+          + '<option value="card"' + (currentMethod === 'card' ? ' selected' : '') + '>Card</option>'
+        + '</select>'
+      + '</div>'
+      + '<div style="display:flex;gap:.5rem;margin-top:.5rem;">'
+        + '<button class="btn btn-primary" id="commitmentSaveBtn" onclick="window.saveCommitment()" style="background:var(--color-primary);color:#fff;border:none;padding:.55rem 1.1rem;border-radius:8px;font-weight:600;cursor:pointer;font-size:.875rem;">Save</button>'
+        + '<button class="btn btn-secondary" onclick="window.cancelCommitmentEdit()" style="padding:.55rem 1.1rem;border-radius:8px;font-size:.875rem;">Cancel</button>'
+      + '</div>'
+      + '</div>';
+
+    window.commitmentPlanChanged();
+  };
+
+  window.commitmentPlanChanged = function() {
+    var sel = document.getElementById('editPlanKey');
+    if (!sel) return;
+    var key = sel.value;
+    var note = document.getElementById('editPlanNote');
+    var amountEl = document.getElementById('editPlanAmount');
+    if (key && PLAN_PRESETS[key]) {
+      var p = PLAN_PRESETS[key];
+      if (amountEl && (amountEl.value === '' || !amountEl.dataset.userEdited)) {
+        amountEl.value = (p.cents / 100).toFixed(p.cents % 100 ? 2 : 0);
+      }
+      if (note) {
+        note.innerHTML = 'Will set <strong>plan_tier=' + esc(p.tier) + '</strong>, <strong>billing_cadence=' + esc(p.cadence)
+          + '</strong>, <strong>commitment_months=' + p.months + '</strong>. Performance Guarantee: '
+          + (p.pg ? '<strong style="color:var(--color-success);">eligible</strong>' : '<strong>not eligible</strong>') + '.';
+      }
+    } else if (note) {
+      note.innerHTML = 'No plan change \u2014 other fields below still save.';
+    }
+    if (amountEl && !amountEl.dataset.boundEdit) {
+      amountEl.dataset.boundEdit = '1';
+      amountEl.addEventListener('input', function() { amountEl.dataset.userEdited = '1'; });
+    }
+  };
+
+  window.cancelCommitmentEdit = function() {
+    renderCommitment(state.contact || {});
+  };
+
+  window.saveCommitment = function() {
+    var c = state.contact || {};
+    var slug = c.slug;
+    if (!slug) { toast('No client loaded', 'error'); return; }
+
+    var planKey = (document.getElementById('editPlanKey') || {}).value || '';
+    var startStr = (document.getElementById('editCommitmentStart') || {}).value || '';
+    var amountStr = (document.getElementById('editPlanAmount') || {}).value || '';
+    var method = (document.getElementById('editPaymentMethod') || {}).value || '';
+
+    var patch = {};
+
+    if (planKey) {
+      if (!PLAN_PRESETS[planKey]) { toast('Unknown plan selected', 'error'); return; }
+      var p = PLAN_PRESETS[planKey];
+      patch.plan_tier = p.tier;
+      patch.billing_cadence = p.cadence;
+      patch.commitment_months = p.months;
+      patch.plan_type = p.legacy; // legacy compat during transition
+    }
+
+    // commitment_start_at: empty string clears it, valid date sets it
+    if (startStr === '') {
+      patch.commitment_start_at = null;
+    } else {
+      // Validate basic YYYY-MM-DD format then send as ISO
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(startStr)) { toast('Commitment start must be a date', 'error'); return; }
+      patch.commitment_start_at = startStr + 'T00:00:00+00:00';
+    }
+
+    // plan_amount_cents: empty clears, numeric sets
+    if (amountStr === '') {
+      patch.plan_amount_cents = null;
+    } else {
+      var amtNum = parseFloat(amountStr);
+      if (isNaN(amtNum) || amtNum < 0) { toast('Plan amount must be a non-negative number', 'error'); return; }
+      patch.plan_amount_cents = Math.round(amtNum * 100);
+    }
+
+    // payment_method: empty clears, ach/card sets
+    patch.payment_method = method === '' ? null : method;
+
+    if (Object.keys(patch).length === 0) { toast('Nothing to save', 'info'); return; }
+
+    var btn = document.getElementById('commitmentSaveBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving\u2026'; }
+
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        action: 'update_record',
+        table:  'contacts',
+        filters: [{ column: 'slug', op: 'eq', value: slug }],
+        data:   patch
+      })
+    })
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, status: r.status, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+        toast((res.data && res.data.error) || 'Save failed', 'error');
+        return;
+      }
+      // Merge into local state so the next render uses fresh values
+      var updated = (res.data && res.data.records && res.data.records[0]) || patch;
+      state.contact = Object.assign({}, state.contact, updated);
+      renderCommitment(state.contact);
+      toast('Commitment saved');
+    })
+    .catch(function(err) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+      toast('Network error', 'error');
+    });
+  };
 
   // ---- INTRO CALL TAB ----
   var REFERRAL_PARTNERS = [
@@ -7905,16 +8151,7 @@
 
   // ---- BILLING TAB ----
   function renderBilling(c) {
-    var bf = document.getElementById('billingFields');
-    var planLabel = c.plan_type || null;
-    var amount = c.plan_amount_cents ? '$' + (c.plan_amount_cents / 100).toLocaleString() : null;
-
-    bf.innerHTML = fieldRow('Plan Type', planLabel)
-      + fieldRow('Plan Amount', amount)
-      + fieldRow('Payment Method', c.payment_method)
-      + fieldRow('Stripe Customer', c.stripe_customer_id, false, c.stripe_customer_id ? 'https://dashboard.stripe.com/customers/' + c.stripe_customer_id : null)
-      + fieldRow('Stripe Subscription', c.stripe_subscription_id, false, c.stripe_subscription_id ? 'https://dashboard.stripe.com/subscriptions/' + c.stripe_subscription_id : null)
-      + fieldRow('SPP Client ID', c.spp_client_id);
+    renderCommitment(c);
 
     var agr = document.getElementById('agreementInfo');
     renderCsaLink();
