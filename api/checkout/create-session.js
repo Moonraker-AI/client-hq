@@ -17,12 +17,13 @@
 
 var sb = require('../_lib/supabase');
 
-var ALLOWED_PRODUCTS = ['core_marketing', 'entity_audit_premium', 'addons'];
+var ALLOWED_PRODUCTS = ['core_marketing', 'entity_audit_premium', 'addons', 'strategy_call'];
 
 var PRODUCT_NAMES = {
   core_marketing:        'CORE Marketing System',
   entity_audit_premium:  'Premium Entity Audit',
-  addons:                'Moonraker Add-on Service'
+  addons:                'Moonraker Add-on Service',
+  strategy_call:         'Paid Strategy Call'
 };
 
 // Look up the persistent Stripe Product for this product_key, creating it on
@@ -130,7 +131,12 @@ module.exports = async function handler(req, res) {
 
   var contact;
   try {
-    contact = await sb.one('contacts?slug=eq.' + encodeURIComponent(slug) + '&select=id,email,first_name,last_name,practice_name&limit=1');
+    // For strategy_call, pull the extra fields we need to pre-fill Scott's
+    // calendar on the success page. For other products, keep the slim query.
+    var contactSelect = product === 'strategy_call'
+      ? 'id,email,first_name,last_name,practice_name,phone,website_url,city'
+      : 'id,email,first_name,last_name,practice_name';
+    contact = await sb.one('contacts?slug=eq.' + encodeURIComponent(slug) + '&select=' + contactSelect + '&limit=1');
   } catch (e) {
     return res.status(500).json({ error: 'contact lookup failed: ' + e.message });
   }
@@ -151,8 +157,34 @@ module.exports = async function handler(req, res) {
 
   var origin = (req.headers && (req.headers['x-forwarded-proto'] ? req.headers['x-forwarded-proto'] : 'https') + '://' +
                 (req.headers['x-forwarded-host'] || req.headers.host)) || 'https://clients.moonraker.ai';
-  var successUrl = origin + '/' + slug + '/checkout/success?session_id={CHECKOUT_SESSION_ID}&tier=' + encodeURIComponent(tier_key) + '&product=' + encodeURIComponent(product);
-  var cancelUrl  = origin + '/' + slug + '/checkout?canceled=1';
+
+  var successUrl, cancelUrl;
+  if (product === 'strategy_call') {
+    // Strategy Call goes to /strategy-call/success with every candidate
+    // pre-fill field in the URL — success page builds the calendar iframe
+    // URL from query params and omits anything empty. Only non-empty fields
+    // are appended so the URL stays readable (and so the success page's
+    // "omit empty" logic matches what actually arrived).
+    var scParams = [
+      'session_id={CHECKOUT_SESSION_ID}',
+      'tier=' + encodeURIComponent(tier_key)
+    ];
+    function scAppend(key, value) {
+      if (value && String(value).trim()) scParams.push(key + '=' + encodeURIComponent(value));
+    }
+    scAppend('first_name',    contact.first_name);
+    scAppend('last_name',     contact.last_name);
+    scAppend('email',         contact.email);
+    scAppend('phone',         contact.phone);
+    scAppend('practice_name', contact.practice_name);
+    scAppend('website',       contact.website_url);
+    scAppend('city',          contact.city);
+    successUrl = origin + '/strategy-call/success?' + scParams.join('&');
+    cancelUrl  = origin + '/strategy-call?canceled=1';
+  } else {
+    successUrl = origin + '/' + slug + '/checkout/success?session_id={CHECKOUT_SESSION_ID}&tier=' + encodeURIComponent(tier_key) + '&product=' + encodeURIComponent(product);
+    cancelUrl  = origin + '/' + slug + '/checkout?canceled=1';
+  }
 
   // ── Preferred path: Stripe Checkout Session with inline price_data ──
   if (typeof tier.amount_cents === 'number' && tier.amount_cents > 0) {
@@ -257,4 +289,5 @@ module.exports = async function handler(req, res) {
 
   return res.status(500).json({ error: 'tier has no amount_cents and no stripe_payment_link' });
 };
+
 
