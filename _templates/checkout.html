@@ -108,7 +108,7 @@ strong{font-weight:600;color:var(--color-heading)}
       <div class="card-desc">Flexible quarterly commitment</div>
     </div>
     <div class="option-card" data-term="monthly" onclick="selectTerm('monthly')">
-      <div class="card-title">Month-to-Month</div>
+      <div class="card-title">Flexible Monthly</div>
       <div class="card-desc">Maximum flexibility</div>
     </div>
   </div>
@@ -196,8 +196,7 @@ strong{font-weight:600;color:var(--color-heading)}
       { key:'annual_monthly',   title:'Monthly Billing',   count: 12 }
     ],
     quarterly: [
-      { key:'quarterly_upfront', title:'Pay Upfront',      count: 1 },
-      { key:'quarterly_monthly', title:'Monthly Billing',  count: 3 }
+      { key:'quarterly_upfront', title:'Pay Upfront',      count: 1 }
     ],
     monthly: []
   };
@@ -300,6 +299,19 @@ strong{font-weight:600;color:var(--color-heading)}
 
     var options = BILLING_OPTIONS[term];
     if (allowedPlans) options = options.filter(function(opt) { return allowedPlans.indexOf(opt.key) !== -1; });
+
+    // Auto-skip singleton billing step (e.g. quarterly has only upfront after
+    // quarterly_monthly was retired on 2026-04-22). Same pattern as the
+    // monthly-term path above: hide the billing section entirely, lock in the
+    // only option, and renumber "Payment Method" to step 2.
+    if (options.length === 1) {
+      currentBilling = options[0].key;
+      document.getElementById('billingSection').classList.add('hidden');
+      document.getElementById('methodLabel').textContent = '2. Payment Method';
+      document.getElementById('methodSection').classList.remove('hidden');
+      return;
+    }
+
     var html = '';
     options.forEach(function(opt) {
       html += '<div class="option-card" data-billing="' + opt.key + '" onclick="selectBilling(\'' + opt.key + '\')">';
@@ -308,10 +320,10 @@ strong{font-weight:600;color:var(--color-heading)}
     var bg = document.getElementById('billingOptions');
     bg.innerHTML = html;
     bg.className = 'options-grid ' + (options.length === 3 ? 'three-col' : 'two-col');
-    if (options.length === 1) { bg.className = 'options-grid'; bg.style.maxWidth = '320px'; bg.style.margin = '0 auto 2rem'; } else { bg.style.maxWidth = ''; bg.style.margin = ''; }
+    bg.style.maxWidth = '';
+    bg.style.margin = '';
     document.getElementById('billingSection').classList.remove('hidden');
     document.getElementById('methodLabel').textContent = '3. Payment Method';
-    if (options.length === 1) selectBilling(options[0].key);
   };
 
   window.selectBilling = function(billing) {
