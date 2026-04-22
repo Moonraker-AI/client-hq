@@ -2243,13 +2243,23 @@ body.contact-locked .autosave-status { display: none !important; }
 
   function init() {
     applyTextareaGuards();
-    fetch('/api/public-contact?slug=' + encodeURIComponent(CLIENT_SLUG)).then(function(r){return r.json()}).then(function(b){return b&&b.contact?[b.contact]:[]})
-      .then(function(contacts) {
-        if (!contacts || contacts.length === 0) {
+    // /api/public-onboarding-data replaces the old /api/public-contact +
+    // six direct-REST reads with a single page-token-gated call. We use
+    // mrPageToken.fetch so a mid-session cookie expiry gets a one-shot
+    // refresh-and-retry for free. The response is reshaped into the same
+    // array layout the downstream `.then(allData)` handler already expects.
+    window.mrPageToken.fetch('/api/public-onboarding-data?slug=' + encodeURIComponent(CLIENT_SLUG))
+      .then(function(r) {
+        if (r.status === 404) return null;
+        if (!r.ok) throw new Error('public-onboarding-data ' + r.status);
+        return r.json();
+      })
+      .then(function(b) {
+        if (!b || !b.contact) {
           document.getElementById('loadingState').innerHTML = '<p style="color:var(--color-danger)">No account found for "' + CLIENT_SLUG + '".</p>';
           return;
         }
-        contact = contacts[0];
+        contact = b.contact;
 
         // ── Access gate: match server-side allowlist (onboarding-action, save-guarantee-draft) ──
         var ALLOWED_STATUSES = ['onboarding', 'active'];
@@ -2271,15 +2281,16 @@ body.contact-locked .autosave-status { display: none !important; }
         document.getElementById('headerName').textContent = contact.practice_name || 'Onboarding';
         document.getElementById('dashboardLink').href = '/' + CLIENT_SLUG;
 
-        // Load all related data in parallel
-        return Promise.all([
-          sbFetch('onboarding_steps', 'contact_id=eq.' + contact.id + '&select=step_key,status&order=sort_order'),
-          sbFetch('signed_agreements', 'contact_id=eq.' + contact.id + '&agreement_type=eq.csa&select=signer_name,signed_at,signature_image&limit=1'),
-          sbFetch('practice_details', 'contact_id=eq.' + contact.id + '&select=*&limit=1'),
-          sbFetch('bio_materials', 'contact_id=eq.' + contact.id + '&select=*&order=is_primary.desc,sort_order'),
-          sbFetch('social_platforms', 'contact_id=eq.' + contact.id + '&select=platform,profile_url,status'),
-          sbFetch('directory_listings', 'contact_id=eq.' + contact.id + '&select=directory,profile_url,status')
-        ]);
+        // Reshape into the array the downstream .then(allData) expects. Single-
+        // row collections get re-wrapped so the [0] indexing pattern still works.
+        return [
+          b.onboarding_steps || [],
+          b.signed_agreement ? [b.signed_agreement] : [],
+          b.practice_details ? [b.practice_details] : [],
+          b.bio_materials || [],
+          b.social_platforms || [],
+          b.directory_listings || []
+        ];
       })
       .then(function(allData) {
         if (!allData) return;
