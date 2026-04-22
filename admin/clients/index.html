@@ -3074,7 +3074,6 @@
       + fieldRow('Payment Method', c.payment_method)
       + fieldRow('Stripe Customer', c.stripe_customer_id, false, c.stripe_customer_id ? 'https://dashboard.stripe.com/customers/' + c.stripe_customer_id : null)
       + fieldRow('Stripe Subscription', c.stripe_subscription_id, false, c.stripe_subscription_id ? 'https://dashboard.stripe.com/subscriptions/' + c.stripe_subscription_id : null)
-      + fieldRow('SPP Client ID', c.spp_client_id)
       + '<div class="field-row"><span class="field-label">Performance Guarantee</span><span class="field-value">' + pgBadge + '</span></div>'
       + '</div>';
   }
