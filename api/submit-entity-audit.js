@@ -1,10 +1,12 @@
 // /api/submit-entity-audit.js
 // Public-facing endpoint for the entity audit intake form.
 // Creates a lead contact + entity_audits row, then triggers the Surge agent.
+// Writes an opt-in row to newsletter_subscribers when marketing_consent=true
+// (via _lib/newsletter-subscribe, idempotent + honors prior opt-outs).
 //
 // POST body: {
 //   first_name, last_name, practice_name, website_url, email,
-//   source, referral_name, city, state, gbp_link
+//   source, referral_name, city, state, gbp_link, marketing_consent
 // }
 
 var sb = require('./_lib/supabase');
