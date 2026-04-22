@@ -397,7 +397,7 @@ section { padding: 5rem 0; }
 <footer class="footer">
   <div class="container">
     <img src="/assets/logo.png" alt="Moonraker">
-    <div>moonraker.ai &middot; <a href="https://moonraker.ai">Home</a></div>
+    <div>moonraker.ai</div>
   </div>
 </footer>
 
@@ -496,23 +496,41 @@ section { padding: 5rem 0; }
       if (!data.slug) throw new Error('Server did not return a slug.');
       leadSlug = data.slug;
 
-      // Lock the intake form in-place (don't hide — the jump was disorienting).
-      // The saved-state banner appears at the top of the form and offers a
-      // "Change" affordance if they need to edit.
-      var intakeStep = document.getElementById('intakeStep');
+      var intakeStep  = document.getElementById('intakeStep');
+      var payStep     = document.getElementById('payStep');
+      var continueBtn = document.getElementById('continueBtn');
+
+      // Drop focus off the continue button BEFORE hiding it. Without this,
+      // the browser's focus-retention kicks in the instant .locked applies
+      // display:none to .form-btn — combined with global smooth scrolling,
+      // that manifests as a twitch toward the top of the form.
+      if (typeof continueBtn.blur === 'function') continueBtn.blur();
+
+      // Apply lock + banner + pay-step reveal together so the browser does
+      // one layout/paint pass instead of three. Order matters: pay-step
+      // transition listener is attached first so we don't miss the event.
+      var scrolled = false;
+      function scrollToPayOnce() {
+        if (scrolled) return;
+        scrolled = true;
+        payStep.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      function onMaxHeightEnd(e) {
+        if (e.propertyName === 'max-height') {
+          payStep.removeEventListener('transitionend', onMaxHeightEnd);
+          scrollToPayOnce();
+        }
+      }
+      payStep.addEventListener('transitionend', onMaxHeightEnd);
+
       intakeStep.classList.add('locked');
       document.getElementById('savedBanner').classList.add('visible');
-
-      // Slide the payment panel in below the (now dimmed) intake form.
-      var payStep = document.getElementById('payStep');
       payStep.classList.add('visible');
 
-      // Smooth-scroll the pay step into view. Wait a tick so the max-height
-      // transition has a sensible start point to animate from; otherwise the
-      // scroll fires before the element has any height and ends up off-target.
-      setTimeout(function() {
-        payStep.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 120);
+      // Safety net: if transitionend never fires (prefers-reduced-motion
+      // collapses the transition, or the element isn't rendered for some
+      // reason), still scroll after the full transition window has elapsed.
+      setTimeout(scrollToPayOnce, 600);
     })
     .catch(function(err) {
       console.error('Intake error:', err);
