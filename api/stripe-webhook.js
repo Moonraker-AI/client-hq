@@ -151,6 +151,24 @@ module.exports = async function handler(req, res) {
 
     if (isEntityAudit) {
       // ── Premium Entity Audit payment ──
+
+      // Flip contacts.audit_tier = 'premium' server-side. This used to live
+      // client-side in checkout/success/index.html but was silently failing
+      // (anon has table-level UPDATE grant but no RLS policy, so PostgREST
+      // returned an empty array and nothing was ever actually written —
+      // evidence: pre-fix there were 31 entity_audits rows with
+      // audit_tier='premium' but zero contacts rows). Idempotent: re-running
+      // sets the same value. Runs before the entity_audits lookup so it
+      // fires even if the audits row doesn't exist yet for this contact.
+      var contactTierResult = await sb.mutate(
+        'contacts?id=eq.' + contact.id,
+        'PATCH',
+        { audit_tier: 'premium' }
+      );
+      if (!contactTierResult || contactTierResult.length === 0) {
+        console.error('stripe-webhook: audit_tier flip to premium returned 0 rows for contact ' + contact.id + ', payment ' + (session.payment_intent || session.id));
+      }
+
       var audits = await sb.query('entity_audits?contact_id=eq.' + contact.id + '&order=created_at.desc&limit=1');
       if (audits && audits.length > 0) {
         var upgradeResult = await sb.mutate('entity_audits?id=eq.' + audits[0].id, 'PATCH', {
