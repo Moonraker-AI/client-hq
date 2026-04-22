@@ -161,18 +161,30 @@ function isEncrypted(value) {
 }
 
 // Encrypt specific fields in an object. Returns a new object with encrypted values.
+// Handles both string fields and text[] arrays of strings (encrypts each element).
+// Idempotent: already-encrypted values pass through unchanged.
 function encryptFields(obj, fields) {
   if (!obj) return obj;
   var result = Object.assign({}, obj);
   for (var i = 0; i < fields.length; i++) {
-    if (result[fields[i]] && typeof result[fields[i]] === 'string' && !isEncrypted(result[fields[i]])) {
-      result[fields[i]] = encrypt(result[fields[i]]);
+    var f = fields[i];
+    var v = result[f];
+    if (v == null) continue;
+    if (typeof v === 'string' && !isEncrypted(v)) {
+      result[f] = encrypt(v);
+    } else if (Array.isArray(v)) {
+      result[f] = v.map(function(item) {
+        return (typeof item === 'string' && !isEncrypted(item)) ? encrypt(item) : item;
+      });
     }
   }
   return result;
 }
 
-// Decrypt specific fields in an object (or array of objects).
+// Decrypt specific fields in an object (or array of rows). Handles both
+// string fields and text[] arrays of strings (decrypts each element).
+// decrypt() passes through values without a known version prefix, so
+// rows that pre-date encryption decrypt-through cleanly.
 function decryptFields(data, fields) {
   if (!data) return data;
   if (Array.isArray(data)) {
@@ -180,8 +192,15 @@ function decryptFields(data, fields) {
   }
   var result = Object.assign({}, data);
   for (var i = 0; i < fields.length; i++) {
-    if (result[fields[i]]) {
-      result[fields[i]] = decrypt(result[fields[i]]);
+    var f = fields[i];
+    var v = result[f];
+    if (v == null) continue;
+    if (typeof v === 'string') {
+      result[f] = decrypt(v);
+    } else if (Array.isArray(v)) {
+      result[f] = v.map(function(item) {
+        return typeof item === 'string' ? decrypt(item) : item;
+      });
     }
   }
   return result;
@@ -194,11 +213,19 @@ function isConfigured() {
 
 // The fields that should be encrypted for workspace_credentials.
 // cms_login_url is NOT included — it's a plaintext URL (e.g. /wp-admin), not a secret.
-// authenticator_secret_key / authenticator_backup_codes / qr_code_image were
-// dropped 2026-04-18 — Moonraker does not manage client-Gmail TOTP credentials.
+//
+// authenticator_* and qr_code_image were dropped 2026-04-18 and restored
+// 2026-04-22 when it became clear the team actively needs client-Gmail
+// recovery material in one place. The restored design masks all three
+// by default in the admin UI (click-to-reveal, same pattern as
+// gmail_password) so they never sit as standing plaintext in the DOM,
+// and each text[] backup-code element is encrypted individually.
 var SENSITIVE_FIELDS = [
   'gmail_password',
   'app_password',
+  'authenticator_secret_key',
+  'authenticator_backup_codes',
+  'qr_code_image',
   'cms_username',
   'cms_password',
   'cms_app_password'
