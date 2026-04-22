@@ -2309,6 +2309,14 @@ body.contact-locked .autosave-status { display: none !important; }
           var a = agreements[0];
           var signedText = 'Signed by ' + esc(a.signer_name) + ' on ' + new Date(a.signed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
           document.getElementById('signedDetails').innerHTML = signedText + (a.signature_image && safeSrc(a.signature_image) ? '<div class="sig-preview"><img src="' + safeSrc(a.signature_image) + '" alt="Signature"></div>' : '');
+        } else if (stepData['sign_agreement'] === 'complete') {
+          // Legacy / bulk-seeded clients: sign_agreement step is complete but
+          // no signed_agreements row exists (pre-CSA-table signers and the
+          // 2026-04-04 bulk seed). Show a generic "on file" banner so they
+          // don't see an empty signature pad and accidentally re-sign.
+          document.getElementById('signatureBlock').style.display = 'none';
+          document.getElementById('csaAlreadySigned').style.display = 'block';
+          document.getElementById('signedDetails').innerHTML = 'Your agreement is on file. Contact support@moonraker.ai if you need a copy.';
         }
 
         // Check embed step states - show completion banners and hide embeds
