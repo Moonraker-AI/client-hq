@@ -6,6 +6,12 @@
 // 3. Writes individual checklist_items rows (structured, trackable, reportable)
 // 4. Deploys scorecard page from template to GitHub
 // 5. For active/onboarding clients, also deploys the 3-page audit suite
+// 6. Nulls entity_audits.surge_raw_data on success. The column is the
+//    agent's safety-net capture (written pre-callback so a failed callback
+//    can be recovered via /api/admin/reprocess-entity-audit) and is no
+//    longer needed once scores + checklist rows have landed. Recovery
+//    callers that PATCH surge_raw_data back in can re-invoke this handler
+//    and the same nulling will fire on re-success.
 
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
@@ -62,6 +68,108 @@ module.exports = async function handler(req, res) {
   }
 
   if (!surgeData) return res.status(400).json({ error: 'surge_data required (not in request body or surge_raw_data column)' });
+
+  // Push 2 (2026-04-21): Reciprocal truncation guard.
+  //
+  // The agent has its own Phase 3 callback guard (MIN_RAW_CHARS_FOR_CALLBACK,
+  // 100,000 chars) in tasks/surge_audit.py. This is the belt-and-suspenders
+  // check on the Client HQ side: if a callback somehow arrives here with
+  // too little raw content — agent regression, an old build still running
+  // somewhere, or a manual reprocess against a stale/truncated
+  // surge_raw_data row — reject before Claude burns tokens extracting
+  // structure from garbage.
+  //
+  // On rejection: flip the row to agent_error + retriable=true (matches
+  // the agent's own _retriable_fail shape) so process-audit-queue Step 0.5
+  // auto-requeues after the 5-min backoff, and fire a direct-to-chris@
+  // alert so manual review is immediate rather than hidden in the regular
+  // team notifications inbox.
+  //
+  // MIN kept in sync with agent-side MIN_RAW_CHARS_FOR_CALLBACK; adjust
+  // both together if thresholds ever change.
+  var MIN_RAW_CHARS_SERVER = 100000;
+  if (surgeData.length < MIN_RAW_CHARS_SERVER) {
+    var rejectReason = 'truncated_extraction_rejected_server';
+    var rejectDetail = (
+      'Reciprocal truncation guard rejected callback: surge_data length ' +
+      surgeData.length + ' chars (required >=' + MIN_RAW_CHARS_SERVER + '). ' +
+      'Row flipped to agent_error+retriable; process-audit-queue Step 0.5 ' +
+      'will requeue after the 5-min backoff.'
+    );
+
+    try {
+      await sb.mutate('entity_audits?id=eq.' + auditId, 'PATCH', {
+        status: 'agent_error',
+        agent_error_retriable: true,
+        last_agent_error_code: rejectReason,
+        last_agent_error: rejectDetail,
+        last_agent_error_at: new Date().toISOString(),
+        agent_task_id: null
+      }, 'return=minimal');
+    } catch (patchErr) {
+      monitor.logError('process-entity-audit', patchErr, {
+        detail: {
+          stage: 'truncation_guard_patch',
+          audit_id: auditId,
+          raw_len: surgeData.length
+        }
+      });
+    }
+
+    try {
+      var resendKey = process.env.RESEND_API_KEY;
+      if (resendKey) {
+        var shortId = (auditId || '').slice(0, 8);
+        var notifyHtml = (
+          '<p style="font-family:Inter,sans-serif;font-size:15px;color:#333F70;line-height:1.7;margin:0 0 16px;">' +
+          'Client HQ rejected a Surge audit callback because the payload was too short to trust.' +
+          '</p>' +
+          '<table style="font-family:Inter,sans-serif;font-size:14px;color:#333F70;border-collapse:collapse;margin:16px 0;">' +
+            '<tr><td style="padding:4px 12px 4px 0;color:#6B7599;">Audit ID</td>' +
+              '<td style="padding:4px 0;font-family:ui-monospace,Menlo,monospace;">' +
+              sanitizer.sanitizeText(auditId || '', 64) + '</td></tr>' +
+            '<tr><td style="padding:4px 12px 4px 0;color:#6B7599;">Raw length</td>' +
+              '<td style="padding:4px 0;font-family:ui-monospace,Menlo,monospace;">' +
+              surgeData.length + ' chars (required >=' + MIN_RAW_CHARS_SERVER + ')</td></tr>' +
+            '<tr><td style="padding:4px 12px 4px 0;color:#6B7599;">Row status</td>' +
+              '<td style="padding:4px 0;">agent_error, retriable=true. Will auto-requeue in ~5 min.</td></tr>' +
+          '</table>' +
+          '<p style="font-family:Inter,sans-serif;font-size:13px;color:#6B7599;line-height:1.5;margin:0;">' +
+          'If this fires repeatedly for the same audit, the Phase 2 settle gate ' +
+          'is being bypassed or the target site is producing genuinely short ' +
+          'Surge output. Review in the admin UI.' +
+          '</p>'
+        );
+        await fetchT('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + resendKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: 'Moonraker Alerts <notifications@clients.moonraker.ai>',
+            to: 'chris@moonraker.ai',
+            subject: 'Surge audit rejected: truncated callback (audit ' + shortId + ')',
+            html: notifyHtml
+          })
+        }, 10000);
+      }
+    } catch (notifyErr) {
+      monitor.logError('process-entity-audit', notifyErr, {
+        detail: {
+          stage: 'truncation_guard_notify',
+          audit_id: auditId
+        }
+      });
+    }
+
+    return res.status(400).json({
+      error: rejectReason,
+      message: rejectDetail,
+      raw_length: surgeData.length,
+      min_required: MIN_RAW_CHARS_SERVER
+    });
+  }
 
   // Switch to streaming mode: NDJSON (newline-delimited JSON)
   res.setHeader('Content-Type', 'application/x-ndjson');
