@@ -29,6 +29,58 @@ var STALE_THRESHOLD_HOURS = parseFloat(process.env.AUDIT_STALE_THRESHOLD_HOURS |
 // same reason as STALE_THRESHOLD_HOURS.
 var DISPATCHING_STALE_MS = parseFloat(process.env.AUDIT_DISPATCHING_STALE_MINUTES || '2') * 60 * 1000;
 
+// Classify a non-2xx dispatch response into (retriable, code) + human detail.
+//
+// Behavior:
+//   - 409, 429:        transient, keep retriable (agent busy/rate-limited)
+//   - Other 4xx:       payload/auth/not-found. Retry won't help. Terminal.
+//   - 5xx + unknown:   network or agent overload. Retry worth trying.
+//   - dispatch_attempts >= MAX_DISPATCH_ATTEMPTS: force terminal regardless of
+//     class. Operators who fix a root cause and release a capped row must reset
+//     dispatch_attempts=0 in the same UPDATE.
+//
+// The code value feeds last_agent_error_code, which is what the alerter
+// (api/cron/agent-error-alerter.js) groups on and what admin UI labels via
+// api/admin/audit-blocks.js + api/cron/check-surge-blocks.js CODE_LABELS.
+// None of the dispatch_* codes are in HEALABLE_CODES — these all require human
+// review before re-dispatch.
+var MAX_DISPATCH_ATTEMPTS = 5;
+
+function classifyDispatchFailure(httpStatus, newAttempts) {
+  var status = Number(httpStatus) || 0;
+
+  if (newAttempts >= MAX_DISPATCH_ATTEMPTS) {
+    return {
+      retriable: false,
+      code: 'dispatch_attempts_exceeded',
+      detail: 'hit cap of ' + MAX_DISPATCH_ATTEMPTS + ' dispatch attempts'
+    };
+  }
+
+  if (status === 409 || status === 429) {
+    return {
+      retriable: true,
+      code: 'dispatch_' + status + '_transient',
+      detail: 'transient ' + status + ', will retry (' + newAttempts + '/' + MAX_DISPATCH_ATTEMPTS + ')'
+    };
+  }
+
+  if (status >= 400 && status < 500) {
+    return {
+      retriable: false,
+      code: 'dispatch_4xx_' + status,
+      detail: 'agent rejected with ' + status + '; payload/auth issue, not retriable'
+    };
+  }
+
+  // 5xx and unknown / 0 (network failure treated as retriable)
+  return {
+    retriable: true,
+    code: status ? ('dispatch_5xx_' + status) : 'dispatch_network_error',
+    detail: (status ? ('agent ' + status) : 'network error') + '; will retry (' + newAttempts + '/' + MAX_DISPATCH_ATTEMPTS + ')'
+  };
+}
+
 // Safety rail on Step 0 mass-requeue: if we ever flip more than this many
 // rows back to queued in one tick, something is seriously wrong (agent wiped
 // its task list mid-bulk-run?). Log a warning but still do the requeue —
@@ -338,13 +390,22 @@ async function handler(req, res) {
     if (!agentResp.ok) {
       var errText = '';
       try { errText = await agentResp.text(); } catch (e) {}
-      // Mark as error with detail so it doesn't block the queue and so the
-      // Step 0.5 agent_error requeue path can back off and retry.
+      // Mark as error with detail so it doesn't block the queue. Classifier
+      // decides whether Step 0.5 should re-dispatch (409/429/5xx) or whether
+      // the row is terminal (other 4xx, or >=MAX_DISPATCH_ATTEMPTS). Without
+      // this classification, a 4xx loop was possible (dispatch -> 4xx ->
+      // requeue -> same 4xx -> ... forever), which Angela-gwak hit on 2026-04-22
+      // before the NOT NULL constraint closed her specific case.
+      var newAttempts = (audit.dispatch_attempts || 0) + 1;
+      var classified = classifyDispatchFailure(agentResp.status, newAttempts);
       await sb.mutate('entity_audits?id=eq.' + audit.id, 'PATCH', {
         status: 'agent_error',
+        agent_error_retriable: classified.retriable,
         last_agent_error: ('Agent returned ' + agentResp.status + ': ' +
-          errText.substring(0, 400)).substring(0, 500),
-        last_agent_error_at: new Date().toISOString()
+          errText.substring(0, 280) + ' — ' + classified.detail).substring(0, 500),
+        last_agent_error_code: classified.code,
+        last_agent_error_at: new Date().toISOString(),
+        dispatch_attempts: newAttempts
       }, 'return=minimal');
       // Return 200 + success:false (cron audit M3). Row already marked
       // agent_error; Step 0.5 backoff requeue will pick up retriable failures
@@ -367,9 +428,12 @@ async function handler(req, res) {
     var agentResult = await agentResp.json();
 
     // Agent accepted — flip dispatching → agent_running with the real task_id.
+    // Reset dispatch_attempts: this attempt-session was successful, future
+    // failures should count from zero again.
     await sb.mutate('entity_audits?id=eq.' + audit.id, 'PATCH', {
       status: 'agent_running',
-      agent_task_id: agentResult.task_id
+      agent_task_id: agentResult.task_id,
+      dispatch_attempts: 0
     }, 'return=minimal');
 
     // Count remaining
