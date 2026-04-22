@@ -104,10 +104,11 @@ h1{font-family:'Outfit',sans-serif;font-weight:700;color:var(--color-heading)}
 
     document.getElementById('redirectNote').innerHTML = 'Redirecting automatically in <span id="countdown">5</span> seconds...';
 
-    // Flip contact status to onboarding
-    sbPatch('contacts', 'slug=eq.' + slug, { status: 'onboarding' })
-      .then(function() { console.log('Status updated to onboarding for ' + slug); })
-      .catch(function(err) { console.error('Status update failed:', err); });
+    // Contact status is flipped server-side by the Stripe webhook on
+    // checkout.session.completed (api/stripe-webhook.js). This page is
+    // landing-only; client-initiated anon writes would race the webhook
+    // and would also require anon UPDATE on contacts, which we do not
+    // want as a general policy.
 
     // Auto-redirect
     var count = 5;
