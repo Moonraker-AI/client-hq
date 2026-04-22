@@ -16,25 +16,18 @@
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
 var monitor = require('./_lib/monitor');
-var gh = require('./_lib/github');
 var fetchT = require('./_lib/fetch-with-timeout');
 var sanitizer = require('./_lib/html-sanitizer');
 var jsonParser = require('./_lib/json-parser');
-var pageToken = require('./_lib/page-token');
-
-// Apply any {{KEY}} replacements to a template HTML string. Kept as a
-// helper even though no templates here use placeholders today — keeps
-// the structure ready for future placeholder substitution (M40,
-// 2026-04-19: simplified to utf8 in/out now that callers go through
-// gh.readTemplate + gh.pushFile which handle base64 framing).
-function prepTemplate(html, replacements) {
-  if (replacements) {
-    Object.keys(replacements).forEach(function(key) {
-      html = html.split(key).join(String(replacements[key]));
-    });
-  }
-  return html;
-}
+// 2026-04-23: gh, pageToken, and prepTemplate removed. The /entity-audit,
+// /entity-audit-checkout, and /audits/{diagnosis,action-plan,progress}
+// pages are now served by the Vercel rewrites in vercel.json straight
+// from /_templates/<page>.html. Templates hydrate per-client data at
+// request time via /api/public-contact (and /api/progress-update for
+// progress writes, which mints its own scope='progress' page-token via
+// the cookie-based /api/page-token/request flow). No per-client copies
+// are pushed; the file-system shadow that used to mask future template
+// edits is gone.
 
 
 module.exports = async function handler(req, res) {
@@ -47,7 +40,6 @@ module.exports = async function handler(req, res) {
   var anthropicKey = process.env.ANTHROPIC_API_KEY;
 
   if (!anthropicKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
-  if (!gh.isConfigured()) return res.status(500).json({ error: 'GITHUB_PAT not configured' });
   if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
 
   var body = req.body;
@@ -544,97 +536,17 @@ ${surgeData}`;
     }
 
     // ============================================================
-    // STEP 5: Deploy scorecard page from template to GitHub
+    // STEP 5: (removed 2026-04-23) Per-client static page deploys.
     // ============================================================
-    send({ step: 'deploy', message: 'Deploying scorecard page...' });
-
-    var githubDeployed = false;
-    var checkoutDeployed = false;
-    var suiteDeployed = false;
-    var scorecardReady = false; // template read succeeded (cascades to checkout + suite)
-
-    // Scorecard page
-    try {
-      var scorecardHtml = prepTemplate(await gh.readTemplate('entity-audit.html'));
-      scorecardReady = true;
-      await gh.pushFile(slug + '/entity-audit/index.html', scorecardHtml, 'Deploy entity audit scorecard for ' + slug);
-      githubDeployed = true;
-    } catch (ghErr) {
-      if (!scorecardReady) {
-        send({ step: 'deploy_warning', message: 'Template not found, skipping GitHub deploy.' });
-      }
-      monitor.logError('process-entity-audit', ghErr, {
-        client_slug: slug,
-        detail: { stage: 'deploy_scorecard' }
-      });
-    }
-
-    if (scorecardReady) {
-      // Checkout page
-      send({ step: 'deploy_checkout', message: 'Deploying checkout page...' });
-      try {
-        var checkoutHtml = prepTemplate(await gh.readTemplate('entity-audit-checkout.html'));
-        await gh.pushFile(slug + '/entity-audit-checkout/index.html', checkoutHtml, 'Deploy entity audit checkout for ' + slug);
-        checkoutDeployed = true;
-      } catch (ghErr) {
-        monitor.logError('process-entity-audit', ghErr, {
-          client_slug: slug,
-          detail: { stage: 'deploy_checkout' }
-        });
-      }
-
-      // ============================================================
-      // STEP 6: For active/onboarding clients, deploy 3-page audit suite
-      // ============================================================
-      if (isActiveCampaign) {
-        send({ step: 'deploy_suite', message: 'Deploying campaign audit suite (diagnosis, action plan, progress)...' });
-
-        var suiteTemplates = [
-          { template: 'diagnosis.html', dest: slug + '/audits/diagnosis/index.html' },
-          { template: 'action-plan.html', dest: slug + '/audits/action-plan/index.html' },
-          { template: 'progress.html', dest: slug + '/audits/progress/index.html' }
-        ];
-
-        // Sign a scope='progress' page token bound to this contact.
-        // progress.html bakes it as window.__PAGE_TOKEN__ and sends it on
-        // every call to /api/progress-update. Security audit H4.
-        var signedProgressToken = '';
-        try {
-          signedProgressToken = pageToken.sign({ scope: 'progress', contact_id: contact.id });
-        } catch (e) {
-          monitor.logError('process-entity-audit', e, {
-            client_slug: slug,
-            detail: { stage: 'sign_progress_token' }
-          });
-        }
-
-        var suiteResults = [];
-        for (var i = 0; i < suiteTemplates.length; i++) {
-          var st = suiteTemplates[i];
-          // Small delay between GitHub pushes (secondary-rate-limit mitigation)
-          if (i > 0) await new Promise(function(r) { setTimeout(r, 600); });
-
-          try {
-            var stReplacements = null;
-            if (st.template === 'progress.html') {
-              stReplacements = { '{{PAGE_TOKEN}}': signedProgressToken };
-            }
-            var stHtml = prepTemplate(await gh.readTemplate(st.template), stReplacements);
-            await gh.pushFile(st.dest, stHtml, 'Deploy audit ' + st.template.replace('.html', '') + ' for ' + slug);
-            suiteResults.push({ template: st.template, deployed: true });
-          } catch (ghErr) {
-            suiteResults.push({ template: st.template, deployed: false });
-            monitor.logError('process-entity-audit', ghErr, {
-              client_slug: slug,
-              detail: { stage: 'deploy_suite', template: st.template }
-            });
-          }
-        }
-
-        suiteDeployed = suiteResults.every(function(r) { return r.deployed; });
-        send({ step: 'deploy_suite_done', message: 'Audit suite: ' + suiteResults.filter(function(r) { return r.deployed; }).length + '/3 pages deployed.' });
-      }
-    }
+    // The /entity-audit, /entity-audit-checkout, and /audits/*
+    // pages are now served directly from /_templates/<page>.html
+    // via Vercel rewrites in vercel.json. No per-client copies are
+    // pushed; templates hydrate per-client data at request time
+    // through /api/public-contact (and progress writes via
+    // /api/progress-update + the cookie-based page-token flow).
+    // Eliminates the file-system shadow that masked future template
+    // edits.
+    send({ step: 'deploy_skipped', message: 'Audit pages served from live templates; no per-client deploy needed.' });
 
     // ============================================================
     // STEP 7: Finalize + auto-delivery for lead audits
@@ -822,9 +734,6 @@ ${surgeData}`;
       checklist_items_created: checklistRows.length,
       scorecard_url: 'https://clients.moonraker.ai/' + slug + '/entity-audit',
       checkout_url: 'https://clients.moonraker.ai/' + slug + '/entity-audit-checkout',
-      github_deployed: githubDeployed,
-      checkout_deployed: checkoutDeployed,
-      suite_deployed: suiteDeployed,
       is_campaign_audit: isActiveCampaign
     });
 
