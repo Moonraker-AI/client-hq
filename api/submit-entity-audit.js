@@ -9,7 +9,9 @@
 
 var sb = require('./_lib/supabase');
 var rateLimit = require('./_lib/rate-limit');
-var fetchT = require('./_lib/fetch-with-timeout');
+var entityAuditTrigger = require('./_lib/entity-audit-trigger');
+var newsletter = require('./_lib/newsletter-subscribe');
+var monitor = require('./_lib/monitor');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -60,10 +62,9 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Please provide a valid email address.' });
   }
 
-  // Build slug
+  // Build slug. brandQuery + geoTarget are now derived inside the helper
+  // (entity-audit-trigger.js) so we don't compute them here.
   var slug = (firstName + ' ' + lastName).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 60);
-  var brandQuery = practiceName || (firstName + ' ' + lastName);
-  var geoTarget = city && state ? city + ', ' + state : city || state || '';
 
   try {
     // M9: slug pre-check removed — contacts_slug_key (UNIQUE) is the
@@ -102,111 +103,61 @@ module.exports = async function handler(req, res) {
 
     var contact = contactRows[0];
 
-    // 2. Create entity_audits row
-    var auditRows = await sb.mutate('entity_audits', 'POST', {
-      contact_id: contact.id,
-      client_slug: slug,
-      audit_tier: 'free',
-      brand_query: brandQuery,
-      homepage_url: websiteUrl,
-      status: 'pending',
-      geo_target: geoTarget || null,
-      gbp_share_link: gbpLink || null
+    // 2. Create entity_audits row + trigger the Surge agent. All the prior
+    // inline logic (~100 lines) lives in _lib/entity-audit-trigger.js now so
+    // it can be shared with the stripe-webhook strategy_call branch. Behavior
+    // is identical: agent failures flip the audit to status='agent_error',
+    // cron/process-audit-queue.js Step 0.5 auto-retries on a 5-min backoff,
+    // an FYI email hits notifications@ for observability.
+    var auditResult = await entityAuditTrigger.createAndTriggerAudit({
+      contact: {
+        id: contact.id,
+        slug: slug,
+        first_name: firstName,
+        last_name: lastName,
+        practice_name: practiceName
+      },
+      website_url: websiteUrl,
+      city: city,
+      state: state,
+      gbp_link: gbpLink,
+      audit_tier: 'free'
     });
 
-    var audit = auditRows[0];
-
-    // 3. Trigger the agent service
-    var AGENT_URL = process.env.AGENT_SERVICE_URL;
-    var AGENT_KEY = process.env.AGENT_API_KEY;
-    var agentTriggered = false;
-    var agentError = null;
-
-    if (AGENT_URL && AGENT_KEY) {
-      try {
-        var agentResp = await fetchT(AGENT_URL + '/tasks/surge-audit', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + AGENT_KEY
-          },
-          body: JSON.stringify({
-            audit_id: audit.id,
-            practice_name: brandQuery,
-            website_url: websiteUrl,
-            city: city || '',
-            state: state || '',
-            geo_target: geoTarget,
-            gbp_link: gbpLink,
-            client_slug: slug
-          })
-        }, 30000);
-
-        if (agentResp.ok) {
-          var agentResult = await agentResp.json();
-          // Update audit status to agent_running
-          await sb.mutate('entity_audits?id=eq.' + audit.id, 'PATCH', {
-            status: 'agent_running',
-            agent_task_id: agentResult.task_id
-          }, 'return=minimal');
-          agentTriggered = true;
-        } else {
-          agentError = 'Agent returned ' + agentResp.status;
-        }
-      } catch (e) {
-        agentError = e.message;
+    // 3. Newsletter subscribe (idempotent, never throws internally, but wrap
+    // in try/catch as belt-and-braces — the intake response must succeed
+    // even if the subscribe write fails unexpectedly). Source='entity-audit'
+    // matches the CHECK constraint on newsletter_subscribers.source.
+    try {
+      var subResult = await newsletter.subscribeIfConsenting({
+        email: email,
+        first_name: firstName,
+        last_name: lastName,
+        source: 'entity-audit',
+        marketingConsent: marketingConsent
+      });
+      if (subResult && subResult.action === 'error') {
+        try {
+          await monitor.logError('submit-entity-audit', new Error('newsletter_subscribe_failed'), {
+            client_slug: slug,
+            detail: { stage: 'newsletter_subscribe', reason: subResult.error }
+          });
+        } catch (_) { /* never mask the 200 */ }
       }
-    } else {
-      agentError = 'Agent service not configured';
-    }
-
-    // If agent failed, still return success to the user (cron will auto-retry).
-    // L6 (2026-04-19): flip status to 'agent_error' with detail so admins can
-    // see what happened; cron/process-audit-queue.js Step 0.5 auto-retries after
-    // a 5-minute backoff. Team notification is now an FYI rather than an
-    // action-required signal.
-    if (!agentTriggered && agentError) {
-      console.error('Agent trigger failed:', agentError, '- cron will auto-retry');
-      // Notify team about the failed trigger (FYI; auto-retry is in progress)
+    } catch (subErr) {
       try {
-        var resendKey = process.env.RESEND_API_KEY;
-        if (resendKey) {
-          await fetchT('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              from: 'Moonraker Notifications <notifications@clients.moonraker.ai>',
-              to: ['notifications@clients.moonraker.ai'],
-              subject: 'Entity Audit Agent Error (auto-retrying) - ' + brandQuery,
-              html: '<p>A new entity audit was submitted; the agent errored on first try. Cron will auto-retry every 30 min until it succeeds.</p>' +
-                '<p><strong>Contact:</strong> ' + firstName + ' ' + lastName + ' (' + email + ')</p>' +
-                '<p><strong>Practice:</strong> ' + brandQuery + '</p>' +
-                '<p><strong>Error:</strong> ' + agentError + '</p>' +
-                '<p><a href="https://clients.moonraker.ai/admin/clients">View in Admin</a></p>'
-            })
-          }, 10000);
-        }
-      } catch (notifyErr) {
-        console.error('Failed to send agent-failure notification:', notifyErr);
-      }
-      // Flip the audit to agent_error with detail so the cron can auto-retry
-      // and admins have visibility into the failure reason.
-      try {
-        await sb.mutate('entity_audits?id=eq.' + audit.id, 'PATCH', {
-          status: 'agent_error',
-          last_agent_error: String(agentError || 'Unknown error').substring(0, 500),
-          last_agent_error_at: new Date().toISOString()
-        }, 'return=minimal');
-      } catch (patchErr) {
-        console.error('[submit-entity-audit] agent_error flip failed:', patchErr.message);
-      }
+        await monitor.logError('submit-entity-audit', subErr, {
+          client_slug: slug,
+          detail: { stage: 'newsletter_subscribe_threw' }
+        });
+      } catch (_) { /* never mask the 200 */ }
     }
 
     return res.status(200).json({
       success: true,
       contact_id: contact.id,
-      audit_id: audit.id,
-      agent_triggered: agentTriggered
+      audit_id: auditResult.audit_id,
+      agent_triggered: auditResult.agent_triggered
     });
 
   } catch (err) {
