@@ -16,8 +16,6 @@
 var sb = require('./_lib/supabase');
 var monitor = require('./_lib/monitor');
 var auth = require('./_lib/auth');
-var gh = require('./_lib/github');
-var pageToken = require('./_lib/page-token');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -73,34 +71,14 @@ module.exports = async function handler(req, res) {
       auditId = adopted.id;
       action = 'adopted';
 
-      // Deploy the 3-page campaign audit suite if not already present
-      // (Leads only get the scorecard page; active clients need the full suite)
-      if (gh.isConfigured()) {
-        var slug = contact.slug;
-        var suiteTemplates = [
-          { template: 'diagnosis.html', dest: slug + '/audits/diagnosis/index.html' },
-          { template: 'action-plan.html', dest: slug + '/audits/action-plan/index.html' },
-          { template: 'progress.html', dest: slug + '/audits/progress/index.html' }
-        ];
-
-        // Post-C6: progress page no longer carries a baked-in token. It calls
-        // /api/page-token/request on load to mint a scope='progress' HttpOnly
-        // cookie bound to the contact matching the URL slug. All three suite
-        // templates ship byte-for-byte.
-        var suiteDeployed = 0;
-        for (var t = 0; t < suiteTemplates.length; t++) {
-          try {
-            var tmplContent = await gh.readTemplate(suiteTemplates[t].template);
-            if (tmplContent) {
-              await gh.pushFile(suiteTemplates[t].dest, tmplContent, 'Deploy audit ' + suiteTemplates[t].template.replace('.html', '') + ' for ' + slug);
-              suiteDeployed++;
-            }
-          } catch (deployErr) {
-            console.log('Suite deploy warning for ' + suiteTemplates[t].template + ':', deployErr.message);
-          }
-          if (t < suiteTemplates.length - 1) await new Promise(function(r) { setTimeout(r, 600); });
-        }
-      }
+      // 2026-04-23: per-client audit-suite deploys removed. The
+      // /audits/{diagnosis,action-plan,progress} pages are served
+      // directly from /_templates/<page>.html via Vercel rewrites.
+      // Templates hydrate per-client data at request time via
+      // /api/public-contact (and /api/progress-update + the
+      // cookie-based page-token flow for progress writes). No
+      // per-client static copies are pushed; eliminates the
+      // file-system shadow that masked future template edits.
 
       // Create checklist_items from the audit's tasks JSONB
       // (Leads don't get checklist items; they're created here when the lead converts)
@@ -220,7 +198,7 @@ module.exports = async function handler(req, res) {
       audit_id: auditId,
       next_audit_due: nextDue,
       message: action === 'adopted'
-        ? 'Recent initial audit promoted to baseline. Campaign audit suite deployed. Next quarterly audit scheduled for ' + nextDue + '.'
+        ? 'Recent initial audit promoted to baseline. Next quarterly audit scheduled for ' + nextDue + '.'
         : 'New baseline audit created and agent triggered. Next quarterly audit scheduled for ' + nextDue + '.'
     });
 
