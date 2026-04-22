@@ -35,6 +35,10 @@
   table.pricing th { background: transparent; color: var(--color-muted); font-weight: 600; font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; }
   table.pricing tr:last-child td { border-bottom: none; }
   table.pricing tr.inactive td { opacity: .55; }
+  /* Visual breathing room between tier pairs. Each ACH row that starts a new
+     pair (i.e. any ACH row except the first row in the group) gets extra top
+     padding so the ACH/CC grouping reads as a unit. */
+  table.pricing tr.pair-start td { padding-top: 1.15rem; }
   table.pricing .tier-name { font-weight: 500; color: var(--color-heading); font-family: 'Outfit', sans-serif; }
   table.pricing .tier-key { display: block; font-family: 'JetBrains Mono', monospace; font-size: .68rem; color: var(--color-muted); margin-top: 2px; }
   table.pricing td.col-detail { white-space: normal; min-width: 220px; }
@@ -269,8 +273,12 @@ function renderPricing() {
         '<th class="col-active">Active</th>' +
         '<th class="col-save"></th>' +
       '</tr></thead><tbody>';
-    rows.forEach(function(r) {
-      html += '<tr data-id="' + esc(r.id) + '" class="' + (r.active ? '' : 'inactive') + '">' +
+    rows.forEach(function(r, idx) {
+      // Any ACH row after the first row in the group starts a new tier pair
+      // (ACH/CC). Extra top padding on these rows visually separates pairs.
+      var rowCls = r.active ? '' : 'inactive';
+      if (idx > 0 && r.payment_method === 'ach') rowCls = (rowCls ? rowCls + ' ' : '') + 'pair-start';
+      html += '<tr data-id="' + esc(r.id) + '" class="' + rowCls + '">' +
         '<td><span class="tier-name">' + esc(r.display_name) + '</span><span class="tier-key">' + esc(r.tier_key) + '</span></td>' +
         '<td class="col-amount"><input type="text" data-field="amount_cents" value="' + esc(fmtDollars(r.amount_cents)) + '" inputmode="decimal"></td>' +
         '<td class="col-period"><input type="text" data-field="period" list="period-options" value="' + esc(r.period || '') + '" placeholder="/month"></td>' +
