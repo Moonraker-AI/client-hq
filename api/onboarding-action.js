@@ -53,7 +53,7 @@ module.exports = async function handler(req, res) {
     var verifiedContactId = tokenData.contact_id;
 
     // ── 2. Enforce action/table allowlists ──────────────────────
-    var allowedTables = ['practice_details', 'bio_materials', 'social_platforms', 'directory_listings', 'contacts', 'signed_agreements'];
+    var allowedTables = ['practice_details', 'bio_materials', 'social_platforms', 'directory_listings', 'contacts', 'signed_agreements', 'onboarding_steps'];
     if (allowedTables.indexOf(table) === -1) return res.status(400).json({ error: 'Table not allowed' });
 
     // Contacts updates are restricted to a narrow field set so the onboarding
@@ -72,6 +72,22 @@ module.exports = async function handler(req, res) {
       if (!data || typeof data !== 'object') return res.status(400).json({ error: 'data required' });
       var stray = Object.keys(data).filter(function(k) { return CONTACT_WRITE_ALLOWLIST.indexOf(k) === -1; });
       if (stray.length > 0) return res.status(400).json({ error: 'Disallowed contacts fields: ' + stray.join(',') });
+    }
+
+    // onboarding_steps is update-only through this surface. The client-facing
+    // flow flips individual step rows to 'complete'/'in_progress'/'skipped'
+    // with an optional notes string. Rows are seeded server-side (convert-to-
+    // prospect, bulk seed) so create is never needed here; delete is never
+    // legitimate from a client. contact_id is forced below from the verified
+    // page-token so cross-client writes are impossible even if filters lied.
+    // The DB has its own CHECK constraint on status ('pending','in_progress',
+    // 'complete','skipped') so a rogue value returns 4xx from PostgREST.
+    var ONBOARDING_STEPS_WRITE_ALLOWLIST = ['status', 'completed_at', 'notes'];
+    if (table === 'onboarding_steps') {
+      if (action !== 'update_record') return res.status(400).json({ error: 'Only update_record allowed on onboarding_steps' });
+      if (!data || typeof data !== 'object') return res.status(400).json({ error: 'data required' });
+      var strayOs = Object.keys(data).filter(function(k) { return ONBOARDING_STEPS_WRITE_ALLOWLIST.indexOf(k) === -1; });
+      if (strayOs.length > 0) return res.status(400).json({ error: 'Disallowed onboarding_steps fields: ' + strayOs.join(',') });
     }
 
     // signed_agreements is create-only through this surface. The onboarding
