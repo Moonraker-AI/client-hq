@@ -113,8 +113,12 @@
   </div>
 
   <div class="content" style="padding: 2rem;">
-    <div class="section-header">
+    <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
       <h2>Pricing</h2>
+      <label id="retiredToggleWrap" style="display:none;align-items:center;gap:.5rem;font-size:.8125rem;color:var(--color-muted);cursor:pointer;user-select:none">
+        <input type="checkbox" id="showRetiredToggle" onchange="onToggleRetired()" style="cursor:pointer;width:14px;height:14px">
+        <span>Show retired tiers <span id="retiredCount" style="color:var(--color-muted);opacity:.7"></span></span>
+      </label>
     </div>
     <p class="section-desc">Single source of truth for checkout prices. The checkout and entity-audit-checkout pages fetch these at page load, and <code>/api/checkout/create-session</code> builds a Stripe Checkout Session inline from the <code>Amount</code> value — no pre-existing Stripe Price required. Edit a value here and it takes effect on the next checkout.</p>
 
@@ -161,6 +165,19 @@ var PRODUCT_ORDER = ['core_marketing', 'entity_audit_premium', 'addons'];
 
 var _pricingRows = [];
 
+// Visibility of retired (active=false) rows. Persisted per-browser so admins
+// don't have to re-tick the box on every visit. Retired rows stay editable
+// when shown — the toggle is a display filter, not a lock.
+var _showRetired = false;
+try { _showRetired = localStorage.getItem('admin-pricing-show-retired') === '1'; } catch (e) {}
+
+function onToggleRetired() {
+  var chk = document.getElementById('showRetiredToggle');
+  _showRetired = !!(chk && chk.checked);
+  try { localStorage.setItem('admin-pricing-show-retired', _showRetired ? '1' : '0'); } catch (e) {}
+  renderPricing();
+}
+
 async function apiAction(action, table, data, filters) {
   var resp = await fetch('/api/action', {
     method: 'POST',
@@ -203,12 +220,30 @@ async function loadPricing() {
 
 function renderPricing() {
   var container = document.getElementById('pricingContainer');
-  if (_pricingRows.length === 0) {
-    container.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--color-muted);">No pricing tiers yet.</div>';
+
+  // Sync toggle UI with state, and expose the wrapper once data has loaded
+  // (hidden until then to avoid a flash-of-unstyled-toggle on cold load).
+  var retiredCount = 0;
+  for (var i = 0; i < _pricingRows.length; i++) {
+    if (!_pricingRows[i].active) retiredCount++;
+  }
+  var toggleWrap = document.getElementById('retiredToggleWrap');
+  var toggleChk = document.getElementById('showRetiredToggle');
+  var countSpan = document.getElementById('retiredCount');
+  if (toggleWrap) toggleWrap.style.display = retiredCount > 0 ? 'flex' : 'none';
+  if (toggleChk) toggleChk.checked = _showRetired;
+  if (countSpan) countSpan.textContent = retiredCount > 0 ? '(' + retiredCount + ')' : '';
+
+  // Filter for display. Toggle controls visibility only; the underlying
+  // _pricingRows array is still the full set so saves round-trip correctly.
+  var visibleRows = _showRetired ? _pricingRows : _pricingRows.filter(function(r) { return r.active; });
+
+  if (visibleRows.length === 0) {
+    container.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--color-muted);">' + (_pricingRows.length === 0 ? 'No pricing tiers yet.' : 'All tiers are retired. Toggle above to show.') + '</div>';
     return;
   }
   var groups = {};
-  _pricingRows.forEach(function(r) {
+  visibleRows.forEach(function(r) {
     var key = r.product_key;
     if (!groups[key]) groups[key] = [];
     groups[key].push(r);
