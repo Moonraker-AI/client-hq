@@ -72,8 +72,7 @@ module.exports = async function handler(req, res) {
     if (emailData.id) {
       await sb.mutate('proposals?id=eq.' + proposalId, 'PATCH', {
         status: 'sent', sent_at: new Date().toISOString(),
-        sent_from: 'proposals@clients.moonraker.ai', sent_to: contact.email,
-        email_subject: subject, email_body: bodyHtml
+        sent_to: contact.email
       });
       return res.status(200).json({ ok: true, email_id: emailData.id });
     } else {
