@@ -44,6 +44,8 @@ var SAFE_COLUMNS = [
   'campaign_start',
   'campaign_end',
   'plan_type',
+  'plan_tier',
+  'billing_cadence',
   'plan_amount_cents',
   'status',
   'audit_tier',
