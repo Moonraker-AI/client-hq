@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<!-- Payment-confirmation page. Intentionally not indexed — this URL is only
+     useful to someone who just paid. -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pick Your Strategy Call Time | Moonraker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root, [data-theme="light"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00b86c;
+  --color-primary-subtle: #DDF8F2;
+  --color-bg: #F7FDFB;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-heading: #1E2A5E;
+  --color-body: #333F70;
+  --color-muted: #6B7599;
+  --color-navy: #141C3A;
+  --color-success: #00D47E;
+}
+[data-theme="dark"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00f598;
+  --color-primary-subtle: #0D2E22;
+  --color-bg: #080F0B;
+  --color-surface: #0E1A14;
+  --color-border: #1E3530;
+  --color-heading: #E8F5EF;
+  --color-body: #C8D8D0;
+  --color-muted: #5A7A6E;
+  --color-navy: #0A1630;
+  --color-success: #00D47E;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 400; color: var(--color-body); background: var(--color-bg); line-height: 1.7; -webkit-font-smoothing: antialiased; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
+h1, h2 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); line-height: 1.15; }
+h1 { font-size: 2.25rem; letter-spacing: -0.02em; }
+h2 { font-size: 1.5rem; margin-bottom: .75rem; letter-spacing: -0.01em; }
+p { margin-bottom: 1rem; }
+a { color: var(--color-primary); text-decoration: none; }
+a:hover { color: var(--color-primary-hover); }
+
+.theme-toggle { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 200; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.theme-toggle:hover { border-color: var(--color-primary); }
+
+.header { background: var(--color-navy); padding: 1.25rem 0; }
+.header-inner { display: flex; justify-content: center; align-items: center; max-width: 1060px; margin: 0 auto; padding: 0 3rem; }
+.header img { height: 32px; }
+
+.hero { padding: 3.5rem 1.5rem 2rem; text-align: center; max-width: 700px; margin: 0 auto; }
+.check-mark { display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: var(--color-primary-subtle); color: var(--color-success); font-size: 2rem; margin-bottom: 1.25rem; }
+.hero h1 { margin-bottom: .75rem; }
+.hero .subtitle { font-size: 1.0625rem; color: var(--color-muted); max-width: 520px; margin: 0 auto; }
+
+.calendar-wrap { max-width: 920px; margin: 0 auto 3rem; padding: 0 1.5rem; }
+.calendar-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,.05); }
+.calendar-frame { width: 100%; border: 0; display: block; height: 900px; }
+@media (max-width: 768px) { .calendar-frame { height: 700px; } }
+
+.fallback { display: none; padding: 2.5rem 2rem; text-align: center; }
+.fallback h2 { margin-bottom: .5rem; }
+.fallback p { color: var(--color-muted); margin-bottom: 1.5rem; font-size: .9375rem; }
+.fallback .cta-btn { display: inline-block; background: var(--color-primary); color: #fff; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1rem; padding: .875rem 2rem; border-radius: 10px; text-decoration: none; transition: all .25s ease; }
+.fallback .cta-btn:hover { background: var(--color-primary-hover); color: #fff; box-shadow: 0 6px 20px rgba(0,212,126,.3); }
+
+.reassurance { max-width: 700px; margin: 0 auto 2rem; padding: 0 1.5rem; color: var(--color-muted); font-size: .9375rem; text-align: center; }
+
+.footer { background: var(--color-navy); color: rgba(232,245,239,.5); padding: 2rem 0; text-align: center; font-size: .75rem; }
+.footer img { height: 24px; margin-bottom: .75rem; opacity: .7; }
+.footer .ref { font-family: 'Inter', monospace; letter-spacing: .02em; opacity: .6; margin-top: .5rem; }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" title="Toggle dark mode" id="themeBtn" aria-label="Toggle dark mode">&#x1F319;</button>
+
+<header class="header">
+  <div class="header-inner">
+    <a href="https://moonraker.ai"><img src="/assets/logo.png" alt="Moonraker"></a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="check-mark">&#10003;</div>
+  <h1>Payment confirmed</h1>
+  <p class="subtitle">Pick your time with Scott below. You&rsquo;ll get a confirmation email with a Zoom link right after you book.</p>
+</section>
+
+<div class="calendar-wrap">
+  <div class="calendar-card">
+    <iframe id="calendarFrame" class="calendar-frame" src="about:blank" title="Book your strategy call" loading="eager"></iframe>
+    <div class="fallback" id="fallback">
+      <h2>Having trouble with the calendar?</h2>
+      <p>Sometimes the embedded calendar doesn&rsquo;t load on certain networks or browsers. Use the direct link below, it&rsquo;ll work the same way.</p>
+      <a class="cta-btn" id="fallbackLink" href="#" target="_blank" rel="noopener">Open calendar in new tab &rarr;</a>
+    </div>
+  </div>
+</div>
+
+<p class="reassurance">
+  If nothing shows up within 10 seconds, we&rsquo;ll automatically offer you a direct link. Anything else? Email
+  <a href="mailto:support@moonraker.ai">support@moonraker.ai</a> and we&rsquo;ll get you sorted.
+</p>
+
+<footer class="footer">
+  <img src="/assets/logo.png" alt="Moonraker">
+  <div>moonraker.ai</div>
+  <div class="ref" id="sessionRef"></div>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── Calendar URL config ──
+  // Base URL is Scott's paid 60-min calendar on our GHL instance.
+  var CALENDAR_BASE = 'https://msg.moonraker.ai/widget/bookings/scott-pope-calendar';
+
+  // ── Pre-fill params to pass to the calendar ──
+  // These are the query-string keys we'll append to the iframe URL. GHL
+  // silently ignores keys it doesn't recognize, so sending extras is safe,
+  // but empty values make the URL noisy. The map is { url_key: query_key }
+  // where url_key is what we read from window.location and query_key is
+  // what GHL expects.
+  //
+  // AS OF 2026-04-22 the following have been CONFIRMED to pre-fill the
+  // GHL booking form in-browser:
+  //   - first_name
+  //   - email
+  //
+  // The following are SENT but not yet confirmed. Once tested, trim the
+  // ones that don't actually pre-fill from this map — the iframe will
+  // work identically, the URL will just be cleaner:
+  //   - last_name
+  //   - phone
+  //   - practice_name
+  //   - website
+  //
+  // If GHL's field keys change later, update the right-hand side here.
+  var PREFILL_MAP = [
+    ['first_name',    'first_name'],
+    ['last_name',     'last_name'],
+    ['email',         'email'],
+    ['phone',         'phone'],
+    ['practice_name', 'practice_name'],
+    ['website',       'website']
+  ];
+
+  // ── Parse URL query params ──
+  function getParams() {
+    var out = {};
+    var search = window.location.search.replace(/^\?/, '');
+    if (!search) return out;
+    search.split('&').forEach(function(pair) {
+      var eq = pair.indexOf('=');
+      if (eq === -1) return;
+      var k = decodeURIComponent(pair.substring(0, eq));
+      var v = decodeURIComponent(pair.substring(eq + 1));
+      if (v) out[k] = v;
+    });
+    return out;
+  }
+  var params = getParams();
+
+  // ── Build the calendar URL with pre-fill ──
+  // Omit any param whose source value is empty. encodeURIComponent every
+  // value so commas, spaces, and & in practice names don't break the URL.
+  function buildCalendarUrl() {
+    var parts = [];
+    PREFILL_MAP.forEach(function(pair) {
+      var sourceKey = pair[0];
+      var calendarKey = pair[1];
+      var value = params[sourceKey];
+      if (value && String(value).trim()) {
+        parts.push(encodeURIComponent(calendarKey) + '=' + encodeURIComponent(value));
+      }
+    });
+    return parts.length ? CALENDAR_BASE + '?' + parts.join('&') : CALENDAR_BASE;
+  }
+
+  var calendarUrl = buildCalendarUrl();
+  var iframe = document.getElementById('calendarFrame');
+  var fallback = document.getElementById('fallback');
+  var fallbackLink = document.getElementById('fallbackLink');
+
+  // Fallback link always points to the base URL (no pre-fill), because an
+  // iframe failure usually means network/CSP weirdness and we want the
+  // simplest possible fallback. If that's too minimal we can send the
+  // pre-filled URL here too — but GHL's page itself should work from any
+  // browser that can reach msg.moonraker.ai.
+  fallbackLink.href = CALENDAR_BASE;
+
+  // ── Load the iframe, with a 10s timeout for the fallback ──
+  // We don't get a load event for an iframe that silently refused to
+  // render (e.g. X-Frame-Options), so we also run a timer. Whichever
+  // fires first, we stop watching.
+  var fallbackShown = false;
+  function showFallback() {
+    if (fallbackShown) return;
+    fallbackShown = true;
+    iframe.style.display = 'none';
+    fallback.style.display = 'block';
+  }
+
+  var loadTimer = setTimeout(showFallback, 10000);
+  iframe.addEventListener('load', function() {
+    // Load fired — assume it's good and cancel the fallback timer.
+    clearTimeout(loadTimer);
+  });
+  iframe.addEventListener('error', showFallback);
+
+  // Setting src AFTER listeners are attached ensures a race-free load.
+  iframe.src = calendarUrl;
+
+  // ── Session reference footer (last 8 chars of session_id) ──
+  var sessionId = params.session_id || '';
+  if (sessionId) {
+    var shortRef = sessionId.substring(Math.max(0, sessionId.length - 8));
+    document.getElementById('sessionRef').textContent = 'Reference: ' + shortRef;
+  }
+
+  // ── Theme toggle ──
+  var themeBtn = document.getElementById('themeBtn');
+  if (themeBtn) {
+    var ct = document.documentElement.getAttribute('data-theme');
+    themeBtn.innerHTML = ct === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
+    themeBtn.addEventListener('click', function() {
+      var h = document.documentElement;
+      function apply() {
+        if (h.getAttribute('data-theme') === 'light') { h.setAttribute('data-theme', 'dark'); themeBtn.innerHTML = '&#9728;&#65039;'; try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {} }
+        else { h.setAttribute('data-theme', 'light'); themeBtn.innerHTML = '&#x1F319;'; try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {} }
+      }
+      if (document.startViewTransition) { document.startViewTransition(apply); } else { apply(); }
+    });
+  }
+})();
+</script>
+</body>
+</html>
