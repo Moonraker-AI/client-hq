@@ -6,9 +6,15 @@
 // and this helper asks /api/page-token/request to mint a scoped HttpOnly cookie
 // on the client's path prefix.
 //
+// LOAD SYNCHRONOUSLY. Do NOT add `defer` or `async` to the script tag.
+// Rationale: inline scripts downstream await .ready() before their first API
+// call. A deferred load runs this file after the inline scripts have already
+// fired, producing 401/403 on every first visit. The full writeup is in
+// docs/client-page-helper-protocol.md (v2, 2026-04-23).
+//
 // Usage (from any page template):
 //   <script>window.__MR_PAGE_SCOPE__ = 'onboarding';</script>
-//   <script src="/shared/page-token.js" defer></script>
+//   <script src="/shared/page-token.js"></script>
 //
 // Then, before any write fetch:
 //   await window.mrPageToken.ready();
@@ -18,13 +24,16 @@
 // it via pageToken.getTokenFromRequest(req, 'scope') on the server.
 //
 // Defense-in-depth: long-lived pages (onboarding can be open 90 days) may see
-// the page-token cookie expire between renders and actions. Templates SHOULD
+// the page-token cookie expire between renders and actions. Templates MAY
 // route write fetches through window.mrPageToken.fetch(url, init), which is a
 // drop-in wrapper around fetch() that:
 //   1. Awaits the initial mint via .ready() before the first call.
 //   2. On a 401 response, calls .refresh() exactly once to re-mint the cookie,
 //      then retries the fetch exactly once.
 //   3. A second 401 is returned to the caller unchanged (no infinite loop).
+// Current lint policy forbids .fetch() in new code — the one-shot retry can
+// mask genuine auth regressions, and the short-lived pages we ship today
+// don't need it. Kept here because the server code still supports it.
 
 (function() {
   if (window.mrPageToken) return;
@@ -106,3 +115,4 @@
     console.error('[mrPageToken] initial mint failed:', e && e.message);
   });
 })();
+
