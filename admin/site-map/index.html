@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="/assets/logo.png">
+<title>Site Map Configurator - Moonraker Admin</title>
+<link rel="stylesheet" href="/assets/admin-base.css">
+<style>
+  body { margin: 0; background: var(--color-bg); color: var(--color-body); font-family: Inter, -apple-system, sans-serif; }
+
+  /* Top bar */
+  .topbar { position: sticky; top: 0; z-index: 100; background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 0 2rem; height: 56px; display: flex; align-items: center; gap: 1rem; }
+  .topbar-title { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1rem; color: var(--color-heading); }
+  .topbar-meta { font-size: .78rem; color: var(--color-muted); }
+  .topbar-right { display: flex; align-items: center; gap: .5rem; margin-left: auto; }
+
+  /* Content */
+  .content { max-width: 1100px; margin: 0 auto; padding: 1.75rem 2rem 6rem; }
+  @media (max-width: 1024px) { .content { padding: 1.25rem; } }
+
+  /* Header card */
+  .header-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .header-card h1 { font-family: 'Outfit', sans-serif; font-size: 1.3rem; margin: 0; color: var(--color-heading); }
+  .header-card .root-url { font-size: .82rem; color: var(--color-muted); margin: .15rem 0 0; }
+  .status-chip { display: inline-flex; align-items: center; padding: .25rem .65rem; border-radius: 6px; font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .status-draft { background: rgba(245,158,11,.1); color: var(--color-warning); }
+  .status-mvp_locked, .status-fully_locked { background: rgba(59,130,246,.08); color: var(--color-info); }
+  .status-launched { background: rgba(0,212,126,.1); color: var(--color-success); }
+  .source-tag { font-size: .7rem; font-weight: 500; color: var(--color-muted); background: var(--color-bg); border: 1px solid var(--color-border); padding: .15rem .5rem; border-radius: 6px; }
+  .hdr-actions { margin-left: auto; display: flex; gap: .5rem; }
+
+  /* Category sections */
+  .cat-section { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; margin-bottom: 1rem; overflow: hidden; }
+  .cat-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .9rem 1.25rem; border-bottom: 1px solid var(--color-border); cursor: pointer; user-select: none; }
+  .cat-head:hover { background: var(--sidebar-hover); }
+  .cat-head h2 { font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 600; color: var(--color-heading); margin: 0; display: flex; align-items: center; gap: .6rem; }
+  .cat-count-badge { font-size: .72rem; font-weight: 500; color: var(--color-muted); background: var(--color-bg); padding: .1rem .5rem; border-radius: 5px; border: 1px solid var(--color-border); }
+  .cat-count-badge.over { color: var(--color-danger); background: rgba(239,68,68,.05); border-color: rgba(239,68,68,.2); }
+  .cat-add { font-size: .75rem; font-weight: 500; color: var(--color-primary); background: var(--color-primary-subtle); border: 1px solid rgba(0,212,126,.2); padding: .3rem .65rem; border-radius: 6px; cursor: pointer; font-family: inherit; }
+  .cat-add:hover { background: var(--color-primary); color: #fff; }
+  .cat-add[disabled] { opacity: .45; cursor: not-allowed; }
+  .cat-toggle { color: var(--color-muted); transition: transform .2s; font-size: .85rem; }
+  .cat-section.collapsed .cat-toggle { transform: rotate(-90deg); }
+  .cat-section.collapsed .cat-body { display: none; }
+  .cat-body { padding: .25rem 0; }
+
+  /* Page row */
+  .page-row { display: flex; align-items: center; gap: .75rem; padding: .75rem 1.25rem; border-top: 1px solid var(--color-border); }
+  .page-row:first-child { border-top: none; }
+  .page-row.removed { opacity: .45; }
+  .page-main { flex: 1; min-width: 0; }
+  .page-title { font-size: .88rem; font-weight: 500; color: var(--color-heading); margin: 0 0 .15rem; word-break: break-word; }
+  .page-title.empty { color: var(--color-muted); font-style: italic; }
+  .page-url { font-size: .72rem; color: var(--color-muted); word-break: break-all; }
+  .page-url a { color: var(--color-muted); text-decoration: none; }
+  .page-url a:hover { color: var(--color-primary); text-decoration: underline; }
+  .page-notes { font-size: .75rem; color: var(--color-body); margin: .2rem 0 0; line-height: 1.4; }
+  .page-bio-chip { display: inline-flex; align-items: center; gap: .25rem; font-size: .68rem; padding: .1rem .4rem; border-radius: 4px; margin-left: .5rem; font-weight: 500; }
+  .page-bio-chip.complete { background: rgba(0,212,126,.1); color: var(--color-success); }
+  .page-bio-chip.pending { background: rgba(245,158,11,.1); color: var(--color-warning); }
+  .page-bio-chip.primary { background: rgba(139,92,246,.1); color: #8B5CF6; }
+
+  /* Status selector */
+  .status-select { font-family: inherit; font-size: .72rem; font-weight: 600; padding: .3rem .55rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; min-width: 140px; background: var(--color-bg); color: var(--color-body); }
+  .status-select:focus { outline: none; border-color: var(--color-primary); }
+  .status-select.st-discovered { background: rgba(107,117,153,.08); color: var(--color-muted); }
+  .status-select.st-existing_keep { background: rgba(0,212,126,.1); color: var(--color-success); }
+  .status-select.st-existing_update { background: rgba(59,130,246,.08); color: var(--color-info); }
+  .status-select.st-existing_remove { background: rgba(239,68,68,.08); color: var(--color-danger); }
+  .status-select.st-new { background: rgba(139,92,246,.08); color: #8B5CF6; }
+  .status-select.st-drafting { background: rgba(245,158,11,.08); color: var(--color-warning); }
+
+  .page-actions { display: flex; gap: .3rem; }
+  .icon-btn { background: none; border: 1px solid transparent; padding: .3rem .5rem; border-radius: 6px; font-size: .8rem; cursor: pointer; color: var(--color-muted); font-family: inherit; }
+  .icon-btn:hover { border-color: var(--color-border); color: var(--color-heading); background: var(--color-bg); }
+  .icon-btn.danger:hover { border-color: rgba(239,68,68,.3); color: var(--color-danger); }
+
+  /* Modal */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--color-surface); border-radius: 14px; padding: 1.5rem; max-width: 560px; width: 100%; border: 1px solid var(--color-border); box-shadow: 0 12px 40px rgba(0,0,0,.2); }
+  .modal h2 { font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin: 0 0 1rem; color: var(--color-heading); }
+  .modal .form-group { margin-bottom: 1rem; }
+  .modal label { font-size: .78rem; font-weight: 500; color: var(--color-heading); margin-bottom: .35rem; display: block; }
+  .modal input, .modal textarea { width: 100%; padding: .55rem .75rem; border: 1px solid var(--color-border); border-radius: 8px; font-family: inherit; font-size: .88rem; color: var(--color-body); background: var(--color-bg); box-sizing: border-box; }
+  .modal input:focus, .modal textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(0,212,126,.1); }
+  .modal textarea { min-height: 80px; resize: vertical; }
+  .modal .help-text { font-size: .72rem; color: var(--color-muted); margin-top: .25rem; }
+  .modal .modal-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1.25rem; }
+
+  /* Empty / loading states */
+  .empty-msg, .loading-msg { text-align: center; padding: 2.5rem 1rem; color: var(--color-muted); font-size: .88rem; }
+  .empty-msg h3 { font-family: 'Outfit', sans-serif; font-size: 1rem; color: var(--color-heading); margin: 0 0 .5rem; }
+
+  /* Toast */
+  .toast { position: fixed; top: 1rem; right: 1rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; padding: .75rem 1rem; box-shadow: 0 8px 24px rgba(0,0,0,.1); font-size: .82rem; z-index: 2000; opacity: 0; transform: translateX(110%); transition: all .2s; max-width: 380px; }
+  .toast.show { opacity: 1; transform: translateX(0); }
+  .toast.err { border-color: rgba(239,68,68,.3); color: var(--color-danger); }
+  .toast.ok { border-color: rgba(0,212,126,.3); color: var(--color-success); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/admin/clients/" class="btn btn-ghost btn-sm">← Clients</a>
+  <div>
+    <div class="topbar-title" id="tb-title">Site Map Configurator</div>
+    <div class="topbar-meta" id="tb-meta">Loading…</div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-ghost" onclick="toggleTheme()" title="Toggle theme">🌓</button>
+  </div>
+</div>
+
+<div class="content" id="content">
+  <div class="loading-msg" id="loading">Loading site map…</div>
+</div>
+
+<!-- Modals -->
+<div class="modal-backdrop" id="rename-modal">
+  <div class="modal">
+    <h2 id="rename-modal-title">Rename page</h2>
+    <div class="form-group">
+      <label>Title (target keyword)</label>
+      <input type="text" id="rename-title" placeholder="e.g. anxiety therapy Toronto">
+      <div class="help-text">This IS the SEO target keyword for the page. Write it like a search query.</div>
+    </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <textarea id="rename-notes" placeholder="Secondary keywords, persona, or context"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('rename-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitRename()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="add-modal">
+  <div class="modal">
+    <h2 id="add-modal-title">Add page</h2>
+    <div class="form-group">
+      <label>Title (target keyword)</label>
+      <input type="text" id="add-title" placeholder="e.g. couples therapy for entrepreneurs">
+      <div class="help-text">This IS the SEO target keyword for the page.</div>
+    </div>
+    <div class="form-group">
+      <label>URL path (optional)</label>
+      <input type="text" id="add-url" placeholder="e.g. /couples-therapy-entrepreneurs">
+      <div class="help-text">Leave blank to auto-generate from the title at launch time.</div>
+    </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <textarea id="add-notes" placeholder="Secondary keywords, persona, or context"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAdd()">Add page</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── Config / state ────────────────────────────────────────────────
+  var qp = new URLSearchParams(window.location.search);
+  var SITE_MAP_ID = qp.get('site_map_id');
+
+  // Category display order + labels
+  var CATEGORY_ORDER = [
+    'home', 'service', 'location', 'bio', 'faq', 'contact', 'about',
+    'testimonials', 'fees', 'services_index', 'careers', 'store',
+    'blog_index', 'blog_post', 'legal_privacy', 'legal_terms', 'legal_other', 'other'
+  ];
+  var CATEGORY_LABELS = {
+    home: 'Home', service: 'Services', location: 'Locations', bio: 'Bio Pages',
+    faq: 'FAQ', contact: 'Contact', about: 'About', testimonials: 'Testimonials',
+    fees: 'Fees / Insurance', services_index: 'Services Index',
+    careers: 'Careers', store: 'Store / Products',
+    blog_index: 'Blog Index', blog_post: 'Blog Posts',
+    legal_privacy: 'Privacy Policy', legal_terms: 'Terms of Service',
+    legal_other: 'Other Legal', other: 'Other'
+  };
+  var STATUS_LABELS = {
+    discovered: 'Needs review',
+    existing_keep: 'Keep as-is',
+    existing_update: 'Needs update',
+    existing_remove: 'Remove',
+    new: 'New page',
+    drafting: 'Drafting'
+  };
+
+  var state = {
+    site_map: null,
+    plan_limits: {},
+    pages_by_category: {},
+    counts: {},
+    collapsed: {},
+    editing_page: null,
+    adding_to_category: null
+  };
+
+  // ── Helpers ───────────────────────────────────────────────────────
+  function el(tag, attrs, children) {
+    var e = document.createElement(tag);
+    if (attrs) {
+      Object.keys(attrs).forEach(function(k) {
+        if (k === 'class') e.className = attrs[k];
+        else if (k === 'onclick') e.addEventListener('click', attrs[k]);
+        else if (k === 'onchange') e.addEventListener('change', attrs[k]);
+        else e.setAttribute(k, attrs[k]);
+      });
+    }
+    if (children) {
+      (Array.isArray(children) ? children : [children]).forEach(function(c) {
+        if (c == null) return;
+        e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+      });
+    }
+    return e;
+  }
+
+  function showToast(msg, kind) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (kind === 'err' ? ' err' : ' ok');
+    setTimeout(function() { t.className = 'toast'; }, 2600);
+  }
+
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  window.closeModal = closeModal;
+
+  window.toggleTheme = function() {
+    var now = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    var applyTheme = function() {
+      document.documentElement.setAttribute('data-theme', now);
+      try { localStorage.setItem('moonraker-theme', now); } catch (_) {}
+    };
+    if (document.startViewTransition) document.startViewTransition(applyTheme);
+    else applyTheme();
+  };
+
+  // ── Fetch helpers ─────────────────────────────────────────────────
+  function apiGet(path) {
+    return fetch(path, { credentials: 'same-origin' })
+      .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, status: r.status, body: j }; }); });
+  }
+  function apiPost(path, body) {
+    return fetch(path, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function(r) { return r.json().then(function(j) { return { ok: r.ok, status: r.status, body: j }; }); });
+  }
+
+  // ── Load ───────────────────────────────────────────────────────────
+  function load() {
+    if (!SITE_MAP_ID) {
+      document.getElementById('loading').innerHTML = '<strong>Missing site_map_id</strong><br>Add ?site_map_id=... to the URL.';
+      return;
+    }
+    apiGet('/api/site-map-get?site_map_id=' + encodeURIComponent(SITE_MAP_ID)).then(function(r) {
+      if (!r.ok) {
+        document.getElementById('loading').textContent = 'Failed to load: ' + (r.body && r.body.error || r.status);
+        return;
+      }
+      state.site_map = r.body.site_map;
+      state.plan_limits = r.body.plan_limits || {};
+      state.pages_by_category = r.body.pages_by_category || {};
+      state.counts = r.body.counts || {};
+      render();
+    }).catch(function(e) {
+      document.getElementById('loading').textContent = 'Error: ' + e.message;
+    });
+  }
+
+  // ── Render ────────────────────────────────────────────────────────
+  function render() {
+    var sm = state.site_map;
+    document.getElementById('tb-title').textContent = 'Site Map Configurator';
+    document.getElementById('tb-meta').textContent = sm.source_type.replace('_', ' ') + ' • ' + sm.status;
+
+    var content = document.getElementById('content');
+    content.innerHTML = '';
+
+    // Header card
+    var hdr = el('div', { class: 'header-card' }, [
+      el('div', {}, [
+        el('h1', {}, sm.root_url || '(no root URL set)'),
+        el('div', { class: 'root-url' }, 'Site map ' + sm.id.slice(0, 8) + '…')
+      ]),
+      el('span', { class: 'status-chip status-' + sm.status }, sm.status.replace('_', ' ')),
+      el('span', { class: 'source-tag' }, sm.source_type.replace('_', ' '))
+    ]);
+    content.appendChild(hdr);
+
+    // Collect categories present, in our preferred display order, with unknown
+    // categories appended at the end.
+    var allCats = Object.keys(state.pages_by_category);
+    var ordered = CATEGORY_ORDER.filter(function(c) { return allCats.indexOf(c) !== -1; });
+    allCats.forEach(function(c) { if (ordered.indexOf(c) === -1) ordered.push(c); });
+
+    // Also include empty categories that have a plan cap so the admin can
+    // add pages to them (e.g. location category is empty but cap=1 for
+    // core_new, we still want the "Add location" button visible).
+    Object.keys(state.plan_limits).forEach(function(c) {
+      if (ordered.indexOf(c) === -1) ordered.push(c);
+    });
+
+    if (ordered.length === 0) {
+      content.appendChild(el('div', { class: 'empty-msg' }, [
+        el('h3', {}, 'No pages yet'),
+        'Start by adding a home page or running a sitemap scout.'
+      ]));
+      return;
+    }
+
+    ordered.forEach(function(cat) { content.appendChild(renderCategory(cat)); });
+  }
+
+  function renderCategory(cat) {
+    var pages = state.pages_by_category[cat] || [];
+    var count = state.counts[cat] || { active: 0, removed: 0, cap: state.plan_limits[cat] || null };
+    var cap = count.cap;
+    var over = cap && count.active > cap;
+
+    var sec = el('section', { class: 'cat-section' + (state.collapsed[cat] ? ' collapsed' : '') });
+    sec.setAttribute('data-cat', cat);
+
+    var countText = count.active + (cap ? ' of ' + cap : '');
+    if (count.removed) countText += ' (' + count.removed + ' to remove)';
+
+    var addBtn = el('button', {
+      class: 'cat-add',
+      onclick: function(e) { e.stopPropagation(); openAddModal(cat); }
+    }, '+ Add');
+    if (cap && count.active >= cap) { addBtn.setAttribute('disabled', 'disabled'); addBtn.title = cap + ' is the cap for this plan'; }
+
+    var head = el('div', { class: 'cat-head', onclick: function() { toggleCat(cat); } }, [
+      el('h2', {}, [
+        el('span', { class: 'cat-toggle' }, '▾'),
+        CATEGORY_LABELS[cat] || cat,
+        el('span', { class: 'cat-count-badge' + (over ? ' over' : '') }, countText)
+      ]),
+      addBtn
+    ]);
+    sec.appendChild(head);
+
+    var body = el('div', { class: 'cat-body' });
+    if (pages.length === 0) {
+      body.appendChild(el('div', { class: 'empty-msg', style: 'padding:1.25rem 1.5rem;text-align:left' },
+        cap ? 'No ' + (CATEGORY_LABELS[cat] || cat).toLowerCase() + ' yet. Add up to ' + cap + '.' : 'No pages in this category.'));
+    } else {
+      pages.forEach(function(p) { body.appendChild(renderPage(cat, p)); });
+    }
+    sec.appendChild(body);
+    return sec;
+  }
+
+  function renderPage(cat, p) {
+    var row = el('div', { class: 'page-row' + (p.status === 'existing_remove' ? ' removed' : '') });
+    row.setAttribute('data-page-id', p.id);
+
+    var titleEl;
+    if (p.title) {
+      titleEl = el('div', { class: 'page-title' }, [p.title]);
+    } else if (p.bio_material && p.bio_material.therapist_name) {
+      titleEl = el('div', { class: 'page-title' }, [p.bio_material.therapist_name]);
+    } else {
+      titleEl = el('div', { class: 'page-title empty' }, p.url || '(untitled)');
+    }
+    // Bio chips
+    if (cat === 'bio' && p.bio_material) {
+      if (p.bio_material.is_primary) titleEl.appendChild(el('span', { class: 'page-bio-chip primary' }, 'Primary'));
+      var intakeOk = p.intake_status === 'intake_complete' || (p.bio_material && p.bio_material.has_bio);
+      titleEl.appendChild(el('span', {
+        class: 'page-bio-chip ' + (intakeOk ? 'complete' : 'pending')
+      }, intakeOk ? '✓ Intake complete' : 'Intake pending'));
+    }
+
+    var main = el('div', { class: 'page-main' });
+    main.appendChild(titleEl);
+    if (p.url) {
+      main.appendChild(el('div', { class: 'page-url' }, [
+        el('a', { href: p.url, target: '_blank', rel: 'noopener' }, p.url)
+      ]));
+    }
+    if (p.notes) main.appendChild(el('div', { class: 'page-notes' }, p.notes));
+
+    // Status select
+    var select = el('select', {
+      class: 'status-select st-' + p.status,
+      onchange: function(e) { onStatusChange(p.id, e.target.value, e.target); }
+    });
+    Object.keys(STATUS_LABELS).forEach(function(s) {
+      // Limit relevant statuses: discovered pages shouldn't be able to jump to
+      // "drafting"; new pages shouldn't go to "existing_*"
+      var allow = true;
+      if (p.status === 'discovered' && s === 'drafting') allow = false;
+      if (p.status === 'new' && s.indexOf('existing_') === 0) allow = false;
+      if (!allow) return;
+      var opt = el('option', { value: s }, STATUS_LABELS[s]);
+      if (s === p.status) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    var actions = el('div', { class: 'page-actions' }, [
+      el('button', {
+        class: 'icon-btn',
+        title: 'Rename',
+        onclick: function() { openRenameModal(p); }
+      }, '✎'),
+      el('button', {
+        class: 'icon-btn danger',
+        title: p.status === 'new' ? 'Delete page' : 'Delete only works for new pages; use Remove instead',
+        onclick: function() { onDeleteClick(p); }
+      }, '✕')
+    ]);
+
+    row.appendChild(main);
+    row.appendChild(select);
+    row.appendChild(actions);
+    return row;
+  }
+
+  // ── Interactions ──────────────────────────────────────────────────
+  function toggleCat(cat) {
+    state.collapsed[cat] = !state.collapsed[cat];
+    var sec = document.querySelector('.cat-section[data-cat="' + cat + '"]');
+    if (sec) sec.classList.toggle('collapsed');
+  }
+
+  function onStatusChange(pageId, newStatus, selectEl) {
+    selectEl.disabled = true;
+    apiPost('/api/site-map-action', {
+      action: 'set_page_status',
+      site_map_id: SITE_MAP_ID,
+      page_id: pageId,
+      status: newStatus
+    }).then(function(r) {
+      selectEl.disabled = false;
+      if (!r.ok) {
+        showToast(r.body.error || 'Failed to update', 'err');
+        return;
+      }
+      load(); // reload to refresh counts + visual state
+    });
+  }
+
+  function openRenameModal(page) {
+    state.editing_page = page;
+    var t = page.title || (page.bio_material && page.bio_material.therapist_name) || '';
+    document.getElementById('rename-title').value = t;
+    document.getElementById('rename-notes').value = page.notes || '';
+    document.getElementById('rename-modal-title').textContent = 'Rename page';
+    openModal('rename-modal');
+  }
+
+  window.submitRename = function() {
+    var p = state.editing_page;
+    if (!p) return;
+    var title = document.getElementById('rename-title').value.trim();
+    var notes = document.getElementById('rename-notes').value.trim();
+    if (!title) { showToast('Title required', 'err'); return; }
+    apiPost('/api/site-map-action', {
+      action: 'rename_page',
+      site_map_id: SITE_MAP_ID,
+      page_id: p.id,
+      title: title,
+      notes: notes
+    }).then(function(r) {
+      if (!r.ok) { showToast(r.body.error || 'Failed', 'err'); return; }
+      closeModal('rename-modal');
+      load();
+    });
+  };
+
+  function openAddModal(cat) {
+    state.adding_to_category = cat;
+    document.getElementById('add-title').value = '';
+    document.getElementById('add-url').value = '';
+    document.getElementById('add-notes').value = '';
+    document.getElementById('add-modal-title').textContent = 'Add ' + (CATEGORY_LABELS[cat] || cat).toLowerCase();
+    openModal('add-modal');
+  }
+
+  window.submitAdd = function() {
+    var cat = state.adding_to_category;
+    if (!cat) return;
+    var title = document.getElementById('add-title').value.trim();
+    var url = document.getElementById('add-url').value.trim();
+    var notes = document.getElementById('add-notes').value.trim();
+    if (!title) { showToast('Title required', 'err'); return; }
+    apiPost('/api/site-map-action', {
+      action: 'add_page',
+      site_map_id: SITE_MAP_ID,
+      category: cat,
+      title: title,
+      url: url || null,
+      notes: notes || null
+    }).then(function(r) {
+      if (!r.ok) { showToast(r.body.error || 'Failed', 'err'); return; }
+      closeModal('add-modal');
+      load();
+    });
+  };
+
+  function onDeleteClick(page) {
+    if (page.status !== 'new') {
+      showToast('Only new pages can be deleted. Use Remove for existing pages.', 'err');
+      return;
+    }
+    if (!confirm('Delete "' + (page.title || page.url || 'this page') + '"? This cannot be undone.')) return;
+    apiPost('/api/site-map-action', {
+      action: 'delete_page',
+      site_map_id: SITE_MAP_ID,
+      page_id: page.id
+    }).then(function(r) {
+      if (!r.ok) { showToast(r.body.error || 'Failed', 'err'); return; }
+      showToast('Deleted', 'ok');
+      load();
+    });
+  }
+
+  // Click-outside-to-close on modals
+  document.querySelectorAll('.modal-backdrop').forEach(function(b) {
+    b.addEventListener('click', function(e) {
+      if (e.target === b) b.classList.remove('open');
+    });
+  });
+
+  // Go
+  load();
+
+})();
+</script>
+</body>
+</html>
