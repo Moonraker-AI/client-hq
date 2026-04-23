@@ -416,29 +416,8 @@ section { padding: 5rem 0; }
           <li><span class="check">&#10003;</span><strong>30-minute strategy call with our team</strong></li>
           <li><span class="check">&#10003;</span>Delivered within 48-72 hours</li>
         </ul>
-        <button class="cta-btn" onclick="showPremiumPayment()">Get Premium Audit</button>
+        <button class="cta-btn" onclick="setIntakeMode('premium')">Get Premium Audit</button>
       </div>
-    </div>
-
-    <!-- Premium Payment Selector (hidden until button click) -->
-    <div id="premiumMethod" style="max-width:480px;margin:3rem auto 0;scroll-margin-top:2rem;display:none;opacity:0;transform:translateY(10px);transition:opacity .4s ease,transform .4s ease;">
-      <div style="text-align:center;margin-bottom:1.5rem;">
-        <h3>Premium Audit Payment</h3>
-        <p style="color:var(--color-muted);font-size:.9375rem;">Select your payment method to proceed.</p>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem;">
-        <div class="pm-btn" data-method="ach" onclick="selectPremiumMethod('ach')" style="background:var(--color-surface);border:2px solid var(--color-border);border-radius:12px;padding:1rem;text-align:center;cursor:pointer;transition:all .25s;">
-          <div style="font-size:1.5rem;margin-bottom:.25rem;">&#127970;</div>
-          <div style="font-family:'Outfit',sans-serif;font-weight:700;font-size:.9375rem;color:var(--color-heading);">Bank Transfer</div>
-          <div style="font-size:.75rem;color:var(--color-muted);">$2,000 - No fee</div>
-        </div>
-        <div class="pm-btn" data-method="cc" onclick="selectPremiumMethod('cc')" style="background:var(--color-surface);border:2px solid var(--color-border);border-radius:12px;padding:1rem;text-align:center;cursor:pointer;transition:all .25s;">
-          <div style="font-size:1.5rem;margin-bottom:.25rem;">&#128179;</div>
-          <div style="font-family:'Outfit',sans-serif;font-weight:700;font-size:.9375rem;color:var(--color-heading);">Credit Card</div>
-          <div style="font-size:.75rem;color:var(--color-muted);">$2,070 (+3.5% fee)</div>
-        </div>
-      </div>
-      <button id="premiumBtn" class="cta-btn" style="width:100%;text-align:center;display:none;" onclick="goToPremiumCheckout()">Proceed to Secure Payment &#8594;</button>
     </div>
   </div>
 </section>
@@ -467,8 +446,31 @@ section { padding: 5rem 0; }
 <section class="form-section" id="free-audit">
   <div class="container">
     <div class="form-wrap">
-      <h2>Get Your Free Entity Audit</h2>
-      <p class="form-subtitle">We will email you when your personalized scorecard is ready.</p>
+      <h2 id="intakeHeading">Get Your Free Entity Audit</h2>
+      <p class="form-subtitle" id="intakeSubtitle">We will email you when your personalized scorecard is ready.</p>
+
+      <!-- Premium-mode indicator + payment-method picker (hidden in free mode). -->
+      <div id="premiumBanner" style="display:none;background:var(--color-primary-subtle);border:1px solid var(--color-primary);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+          <div>
+            <div style="font-family:'Outfit',sans-serif;font-weight:700;font-size:1.0625rem;color:var(--color-heading);">Premium Entity Audit</div>
+            <div style="font-size:.875rem;color:var(--color-muted);">Includes schema files, Loom walkthrough, and a 30-minute strategy call.</div>
+          </div>
+          <button type="button" onclick="setIntakeMode('free')" style="background:transparent;border:none;color:var(--color-muted);font-size:.8125rem;font-weight:500;cursor:pointer;text-decoration:underline;">Switch to free audit</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+          <div class="pm-btn" data-method="ach" onclick="selectPremiumMethod('ach')" style="background:var(--color-surface);border:2px solid var(--color-border);border-radius:12px;padding:.85rem;text-align:center;cursor:pointer;transition:all .2s;">
+            <div style="font-size:1.25rem;margin-bottom:.1rem;">&#127970;</div>
+            <div style="font-family:'Outfit',sans-serif;font-weight:700;font-size:.875rem;color:var(--color-heading);">Bank Transfer</div>
+            <div style="font-size:.75rem;color:var(--color-muted);">$2,000 - No fee</div>
+          </div>
+          <div class="pm-btn" data-method="cc" onclick="selectPremiumMethod('cc')" style="background:var(--color-surface);border:2px solid var(--color-border);border-radius:12px;padding:.85rem;text-align:center;cursor:pointer;transition:all .2s;">
+            <div style="font-size:1.25rem;margin-bottom:.1rem;">&#128179;</div>
+            <div style="font-family:'Outfit',sans-serif;font-weight:700;font-size:.875rem;color:var(--color-heading);">Credit Card</div>
+            <div style="font-size:.75rem;color:var(--color-muted);">$2,070 (+3.5% fee)</div>
+          </div>
+        </div>
+      </div>
 
       <div id="intakeForm">
         <div class="form-row form-row-grid">
@@ -568,11 +570,10 @@ section { padding: 5rem 0; }
 
 <script>
 (function() {
-  var PREMIUM_LINKS = {
-    ach: 'https://buy.stripe.com/3cIdR87co3Z711Wfip5wI0V',
-    cc:  'https://buy.stripe.com/7sY4gyaoAgLT9ys7PX5wI0W'
-  };
-
+  // Intake mode state. 'free' = default; 'premium' = user clicked "Get
+  // Premium Audit" and picks a payment method before the same intake
+  // form posts to /api/submit-entity-audit-premium + /api/checkout/create-session.
+  var intakeMode = 'free';
   var premiumMethod = null;
 
   // -- Referral tracking from URL params --
@@ -663,29 +664,48 @@ section { padding: 5rem 0; }
     }
   }
 
-  // -- Premium payment selector --
-  window.showPremiumPayment = function() {
-    var el = document.getElementById('premiumMethod');
-    el.style.display = 'block';
-    // Trigger reflow then animate in
-    void el.offsetHeight;
-    el.style.opacity = '1';
-    el.style.transform = 'translateY(0)';
-    setTimeout(function() { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+  // -- Intake mode switching --
+  // Free mode: submit button triggers /api/submit-entity-audit and shows
+  // the "audit underway" success state.
+  // Premium mode: banner + payment-method picker show above the form.
+  // Submit posts to /api/submit-entity-audit-premium first (creates
+  // contact + pending audit), then /api/checkout/create-session, then
+  // redirects to Stripe.
+  window.setIntakeMode = function(mode) {
+    intakeMode = (mode === 'premium') ? 'premium' : 'free';
+    var banner  = document.getElementById('premiumBanner');
+    var heading = document.getElementById('intakeHeading');
+    var sub     = document.getElementById('intakeSubtitle');
+    var btn     = document.getElementById('submitBtn');
+    if (intakeMode === 'premium') {
+      banner.style.display = 'block';
+      heading.textContent  = 'Start Your Premium Entity Audit';
+      sub.textContent      = 'Complete intake and payment to kick off your premium audit and Loom walkthrough.';
+      btn.textContent      = 'Continue to Payment \u2192';
+    } else {
+      banner.style.display = 'none';
+      heading.textContent  = 'Get Your Free Entity Audit';
+      sub.textContent      = 'We will email you when your personalized scorecard is ready.';
+      btn.textContent      = 'Request Free Entity Audit \u2192';
+      premiumMethod        = null;
+      document.querySelectorAll('.pm-btn').forEach(function(b) {
+        b.style.borderColor = 'var(--color-border)';
+        b.style.background  = 'var(--color-surface)';
+      });
+    }
+    hideError();
+    // Scroll to the form; small delay so the mode-change layout settles first.
+    setTimeout(function() {
+      document.getElementById('free-audit').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 30);
   };
 
   window.selectPremiumMethod = function(method) {
     premiumMethod = method;
     document.querySelectorAll('.pm-btn').forEach(function(b) {
       b.style.borderColor = b.getAttribute('data-method') === method ? 'var(--color-primary)' : 'var(--color-border)';
-      b.style.background = b.getAttribute('data-method') === method ? 'var(--color-primary-subtle)' : 'var(--color-surface)';
+      b.style.background  = b.getAttribute('data-method') === method ? 'var(--color-primary-subtle)' : 'var(--color-surface)';
     });
-    document.getElementById('premiumBtn').style.display = 'block';
-  };
-
-  window.goToPremiumCheckout = function() {
-    if (!premiumMethod) return;
-    window.open(PREMIUM_LINKS[premiumMethod], '_blank');
   };
 
   // -- Free intake form --
@@ -723,7 +743,7 @@ section { padding: 5rem 0; }
       }
     }
 
-    // Validation
+    // Validation (shared between free + premium)
     var hasGbp = document.getElementById('hasGbp').value;
     if (!firstName || !lastName || !websiteUrl || !email || !hasGbp) {
       showError('Please fill in all required fields.');
@@ -746,11 +766,78 @@ section { padding: 5rem 0; }
       return;
     }
 
+    // Premium-mode extra validation: payment method must be picked.
+    if (intakeMode === 'premium' && !premiumMethod) {
+      showError('Please select a payment method (Bank Transfer or Credit Card).');
+      return;
+    }
+
     var btn = document.getElementById('submitBtn');
     btn.disabled = true;
-    btn.textContent = 'Submitting...';
     hideError();
 
+    if (intakeMode === 'premium') {
+      btn.textContent = 'Creating your audit...';
+
+      // Two-phase flow: create lead + pending audit, then create Stripe
+      // Checkout Session, then redirect. Mirrors strategy-call which uses
+      // the same shape. All DB and Stripe work is server-side.
+      fetch('/api/submit-entity-audit-premium', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          practice_name: practiceName,
+          website_url: websiteUrl,
+          email: email,
+          city: city,
+          state: state,
+          gbp_link: gbpLink,
+          source: 'entity_audit_premium',
+          referral_name: referralName
+        })
+      })
+      .then(function(r) {
+        return r.json().then(function(data) {
+          if (!r.ok) throw new Error(data.message || data.error || 'Something went wrong.');
+          return data;
+        });
+      })
+      .then(function(leadData) {
+        if (!leadData || !leadData.slug) throw new Error('Lead creation returned no slug.');
+        btn.textContent = 'Opening secure checkout...';
+        var tierKey = premiumMethod === 'ach' ? 'premium_ach' : 'premium_cc';
+        return fetch('/api/checkout/create-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slug: leadData.slug,
+            product: 'entity_audit_premium',
+            tier_key: tierKey
+          })
+        }).then(function(r) {
+          return r.json().then(function(data) {
+            if (!r.ok) throw new Error(data.message || data.error || 'Unable to open checkout.');
+            return data;
+          });
+        });
+      })
+      .then(function(sessionData) {
+        if (!sessionData || !sessionData.url) throw new Error('Checkout returned no URL.');
+        window.location.href = sessionData.url;
+      })
+      .catch(function(err) {
+        console.error('Premium intake error:', err);
+        showError(err.message || 'Something went wrong. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Continue to Payment \u2192';
+      });
+      return;
+    }
+
+    // Free-mode flow (unchanged behavior).
+    btn.textContent = 'Submitting...';
     fetch('/api/submit-entity-audit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
