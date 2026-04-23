@@ -28,6 +28,7 @@
 var sb = require('./_lib/supabase');
 var monitor = require('./_lib/monitor');
 var auth = require('./_lib/auth');
+var pageToken = require('./_lib/page-token');
 
 var PLAN_LIMITS = {
   core_existing: { home: 1, service: 5, location: 2, faq: 1, bio: 10, contact: 1 },
@@ -47,8 +48,33 @@ function isUuid(s) {
 
 module.exports = async function(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-  var user = await auth.requireAdmin(req, res);
-  if (!user) return;
+
+  // ── Auth: admin JWT OR onboarding page-token ─────────────────────
+  // Request shape determines which path we take:
+  //  - If an onboarding page-token cookie is present, treat as client call.
+  //  - Otherwise, require admin JWT.
+  // Page-token callers are constrained to their own contact_id; they cannot
+  // read another client's site_map by passing its id in the query.
+  var isAdmin = false;
+  var verifiedContactId = null;
+
+  var tokenStr = pageToken.getTokenFromRequest(req, 'onboarding');
+  if (tokenStr) {
+    var tokenData;
+    try { tokenData = pageToken.verify(tokenStr, 'onboarding'); }
+    catch (e) {
+      console.error('[site-map-get] page-token verify threw:', e.message);
+      return res.status(500).json({ error: 'Auth system unavailable' });
+    }
+    if (!tokenData) return res.status(403).json({ error: 'Invalid or expired page token' });
+    verifiedContactId = tokenData.contact_id;
+  } else {
+    // No page-token — this must be an admin request. requireAdmin writes
+    // the response on failure, so just return.
+    var user = await auth.requireAdmin(req, res);
+    if (!user) return;
+    isAdmin = true;
+  }
 
   var siteMapId = req.query && req.query.site_map_id;
   var slug = req.query && req.query.slug;
@@ -59,6 +85,10 @@ module.exports = async function(req, res) {
     if (!siteMapId && slug && /^[a-z0-9-]+$/.test(slug)) {
       var contact = await sb.one('contacts?slug=eq.' + encodeURIComponent(slug) + '&select=id&limit=1');
       if (!contact) return res.status(404).json({ error: 'Contact not found for slug' });
+      // Page-token callers may only resolve to their own contact's site_map.
+      if (!isAdmin && contact.id !== verifiedContactId) {
+        return res.status(403).json({ error: 'Not authorized for this client' });
+      }
       var sm = await sb.one(
         'site_maps?contact_id=eq.' + contact.id
         + '&status=neq.abandoned&select=id&order=created_at.desc&limit=1'
@@ -77,6 +107,11 @@ module.exports = async function(req, res) {
       + 'addon_invoice_status,sitemap_scout_id,created_at,updated_at'
     );
     if (!siteMap) return res.status(404).json({ error: 'site_map not found' });
+
+    // Page-token: enforce binding to own contact_id.
+    if (!isAdmin && siteMap.contact_id !== verifiedContactId) {
+      return res.status(403).json({ error: 'Not authorized for this site_map' });
+    }
 
     var pages = await sb.query(
       'site_map_pages?site_map_id=eq.' + siteMapId
