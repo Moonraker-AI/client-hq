@@ -900,7 +900,15 @@ module.exports = async function handler(req, res) {
 
     var location = [client.city, client.state_province].filter(Boolean).join(', ');
 
-    res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+    // Auth-gated response — must NOT be cached on Vercel's edge. Without a
+    // Vary on the page-token cookie, `public, s-maxage=...` lets the CDN
+    // serve one client's payload to any visitor who knows the slug. Verified
+    // 2026-04-23: x-vercel-cache: HIT on a no-cookie request returned the
+    // full client object. `private, no-store` keeps the browser from caching
+    // it locally too, which matches the no-store pattern used by every other
+    // page-token-gated endpoint (public-onboarding-data, campaign-summary-chat,
+    // proposal-chat, sign-guarantee, save-guarantee-draft).
+    res.setHeader('Cache-Control', 'private, no-store');
     res.status(200).json({
       client: {
         slug: client.slug,
@@ -944,3 +952,4 @@ module.exports = async function handler(req, res) {
     res.status(500).json({ error: 'Failed to build campaign summary', duration_ms: Date.now() - t0 });
   }
 };
+
