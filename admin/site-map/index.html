@@ -33,103 +33,143 @@
   .toggle-noise { font-size: .78rem; color: var(--color-muted); display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; user-select: none; }
   .toggle-noise input { cursor: pointer; }
 
+  /* Legend */
+  .legend { display: flex; gap: 1rem; flex-wrap: wrap; padding: .75rem 1.25rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; margin-bottom: 1rem; font-size: .72rem; color: var(--color-muted); align-items: center; }
+  .legend-item { display: inline-flex; align-items: center; gap: .35rem; }
+  .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .legend-dot.discovered { background: #9CA3AF; }
+  .legend-dot.keep { background: var(--color-success); }
+  .legend-dot.update { background: var(--color-info); }
+  .legend-dot.remove { background: var(--color-danger); }
+  .legend-dot.new { background: #8B5CF6; }
+  .legend-dot.drafting { background: var(--color-warning); }
+
   /* ── Tree view ─────────────────────────────────────────────── */
   .tree-card {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: 14px;
-    padding: 1.5rem 1rem;
+    padding: 1.5rem 1.25rem;
     overflow-x: auto;
     overflow-y: hidden;
     margin-bottom: 1.25rem;
     min-height: 240px;
+    position: relative;
   }
-  .tree { display: flex; align-items: flex-start; gap: 0; min-height: 200px; font-size: .82rem; }
+  .tree-stage {
+    position: relative;
+    min-width: max-content;
+  }
+  .tree-svg {
+    position: absolute;
+    top: 0; left: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: visible;
+  }
+  .tree {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 0 4rem;
+    align-items: center;
+    min-height: 200px;
+    font-size: .82rem;
+  }
 
   .tree-root {
-    flex-shrink: 0; align-self: center;
-    padding: .75rem 1rem;
-    background: linear-gradient(135deg, rgba(0,212,126,.08), rgba(0,212,126,.02));
+    grid-column: 1;
+    padding: .85rem 1.1rem;
+    background: linear-gradient(135deg, rgba(0,212,126,.10), rgba(0,212,126,.02));
     border: 1px solid rgba(0,212,126,.3);
     border-radius: 12px;
-    min-width: 160px; max-width: 200px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    min-width: 170px; max-width: 210px;
+    box-shadow: 0 2px 12px rgba(0,212,126,.08);
     word-break: break-word;
+    align-self: center;
   }
-  .tree-root .domain { font-size: .82rem; color: var(--color-heading); line-height: 1.35; font-weight: 600; }
+  .tree-root .domain { font-size: .85rem; color: var(--color-heading); line-height: 1.35; font-weight: 700; font-family: 'Outfit', sans-serif; }
   .tree-root .root-label { font-size: .65rem; color: var(--color-primary); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .25rem; font-weight: 700; }
 
-  .tree-trunk { flex-shrink: 0; width: 2.25rem; align-self: stretch; position: relative; }
-  .tree-trunk::before { content: ''; position: absolute; left: 0; top: 50%; width: 100%; border-top: 2px solid var(--color-border); }
+  .tree-categories {
+    grid-column: 2 / 4;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
 
-  .tree-categories { display: flex; flex-direction: column; gap: .85rem; position: relative; padding: .5rem 0; }
-  .tree-categories::before { content: ''; position: absolute; left: -2.25rem; top: 0; bottom: 0; border-left: 2px solid var(--color-border); }
-
-  .tree-category { display: flex; align-items: flex-start; gap: 0; position: relative; }
-  .tree-category::before { content: ''; position: absolute; left: -2.25rem; top: 1.15rem; width: 2.25rem; border-top: 2px solid var(--color-border); }
+  .tree-category {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 4rem;
+    align-items: center;
+  }
 
   .cat-node {
-    flex-shrink: 0;
-    padding: .5rem .75rem;
+    grid-column: 1;
+    padding: .65rem .9rem;
     background: var(--color-bg);
     border: 1px solid var(--color-border);
-    border-radius: 10px;
-    min-width: 170px; max-width: 200px;
+    border-radius: 11px;
+    min-width: 180px; max-width: 210px;
     cursor: pointer; user-select: none;
     transition: all .15s;
-    font-size: .8rem;
+    font-size: .82rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,.02);
   }
-  .cat-node:hover { border-color: var(--color-primary); background: var(--color-surface); }
-  .cat-node .cat-title { font-weight: 600; color: var(--color-heading); display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
-  .cat-node .cat-count { font-size: .7rem; color: var(--color-muted); font-weight: 500; background: var(--color-surface); padding: .05rem .4rem; border-radius: 4px; border: 1px solid var(--color-border); }
-  .cat-node .cat-count.over { color: var(--color-danger); border-color: rgba(239,68,68,.3); background: rgba(239,68,68,.05); }
-  .cat-node .cat-cap { font-size: .68rem; color: var(--color-muted); margin-top: .2rem; }
-  .cat-node.expanded { border-color: var(--color-primary); background: var(--color-surface); box-shadow: 0 0 0 3px rgba(0,212,126,.08); }
+  .cat-node:hover { border-color: var(--color-primary); background: var(--color-surface); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+  .cat-node .cat-title { font-family: 'Outfit', sans-serif; font-weight: 600; color: var(--color-heading); display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+  .cat-node .cat-target {
+    font-size: .68rem; color: var(--color-muted); margin-top: .35rem; line-height: 1.4;
+    display: flex; align-items: center; gap: .35rem; flex-wrap: wrap;
+  }
+  .cat-node .target-pill { background: var(--color-primary-subtle); color: var(--color-primary); padding: .08rem .45rem; border-radius: 4px; font-weight: 600; }
+  .cat-node .target-pill.complete { background: rgba(0,212,126,.18); }
+  .cat-node .found-text { color: var(--color-muted); font-weight: 500; }
 
-  .cat-branch { flex-shrink: 0; width: 1.75rem; align-self: stretch; position: relative; }
-  .cat-branch::before { content: ''; position: absolute; left: 0; top: 1.15rem; width: 100%; border-top: 2px solid var(--color-border); }
-
-  .page-list { display: flex; flex-direction: column; gap: .35rem; position: relative; padding: .15rem 0; }
-  .page-list::before { content: ''; position: absolute; left: -1.75rem; top: .4rem; bottom: .4rem; border-left: 2px solid var(--color-border); }
+  .page-list {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+  }
 
   .page-node {
-    display: flex; align-items: center; gap: .4rem;
-    position: relative;
-    padding: .4rem .7rem;
+    display: flex; align-items: center; gap: .55rem;
+    padding: .5rem .8rem;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: 9px;
     cursor: pointer; user-select: none;
-    min-width: 200px; max-width: 340px;
+    min-width: 220px; max-width: 360px;
     transition: all .12s;
+    box-shadow: 0 1px 2px rgba(0,0,0,.02);
   }
-  .page-node::before { content: ''; position: absolute; left: -1.75rem; top: 50%; width: 1.75rem; border-top: 2px solid var(--color-border); }
-  .page-node:hover { border-color: var(--color-primary); transform: translateX(2px); }
-  .page-node.selected { border-color: var(--color-primary); background: var(--color-primary-subtle); box-shadow: 0 0 0 3px rgba(0,212,126,.08); }
+  .page-node:hover { border-color: var(--color-primary); transform: translateX(3px); box-shadow: 0 3px 10px rgba(0,0,0,.06); }
   .page-node.removed { opacity: .55; text-decoration: line-through; text-decoration-color: var(--color-danger); text-decoration-thickness: 1.5px; }
   .page-node.new { border-left: 3px solid #8B5CF6; }
-  .page-node .page-label { font-size: .8rem; color: var(--color-heading); flex: 1; word-break: break-word; line-height: 1.3; font-weight: 500; }
-  .page-node .status-dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; }
-  .page-node .status-dot.st-discovered { background: #9CA3AF; }
-  .page-node .status-dot.st-existing_keep { background: var(--color-success); }
-  .page-node .status-dot.st-existing_update { background: var(--color-info); }
-  .page-node .status-dot.st-existing_remove { background: var(--color-danger); }
-  .page-node .status-dot.st-new { background: #8B5CF6; }
-  .page-node .status-dot.st-drafting { background: var(--color-warning); }
+  .page-node.highlighted { background: linear-gradient(90deg, rgba(0,212,126,.06), transparent); border-color: rgba(0,212,126,.3); }
+  .page-node .page-label { font-size: .82rem; color: var(--color-heading); flex: 1; word-break: break-word; line-height: 1.3; font-weight: 500; }
+  .page-node .status-dot { flex-shrink: 0; width: 9px; height: 9px; border-radius: 50%; }
+  .status-dot.st-discovered { background: #9CA3AF; }
+  .status-dot.st-existing_keep { background: var(--color-success); }
+  .status-dot.st-existing_update { background: var(--color-info); }
+  .status-dot.st-existing_remove { background: var(--color-danger); }
+  .status-dot.st-new { background: #8B5CF6; }
+  .status-dot.st-drafting { background: var(--color-warning); }
 
   .page-rollup {
     display: flex; align-items: center; gap: .5rem;
-    position: relative;
-    padding: .4rem .7rem;
+    padding: .5rem .8rem;
     background: var(--color-bg);
     border: 1px dashed var(--color-border);
-    border-radius: 8px;
+    border-radius: 9px;
     cursor: pointer; user-select: none;
     font-size: .78rem; color: var(--color-muted);
-    min-width: 200px; max-width: 340px;
+    min-width: 220px; max-width: 360px;
     font-style: italic;
   }
-  .page-rollup::before { content: ''; position: absolute; left: -1.75rem; top: 50%; width: 1.75rem; border-top: 2px solid var(--color-border); }
   .page-rollup:hover { border-color: var(--color-primary); color: var(--color-heading); }
 
   .cat-add-inline {
@@ -137,55 +177,124 @@
     color: var(--color-primary);
     background: transparent;
     border: 1px dashed rgba(0,212,126,.4);
-    padding: .3rem .65rem;
-    border-radius: 6px;
+    padding: .35rem .75rem;
+    border-radius: 7px;
     cursor: pointer; font-family: inherit;
-    min-width: 200px; text-align: left;
-    position: relative;
+    min-width: 220px; text-align: left;
   }
-  .cat-add-inline::before { content: ''; position: absolute; left: -1.75rem; top: 50%; width: 1.75rem; border-top: 2px dashed var(--color-border); }
   .cat-add-inline:hover { background: var(--color-primary-subtle); border-style: solid; }
-  .cat-add-inline[disabled] { opacity: .4; cursor: not-allowed; }
 
-  .mini-chip { display: inline-flex; align-items: center; font-size: .62rem; padding: .05rem .3rem; border-radius: 3px; margin-left: .3rem; font-weight: 600; vertical-align: middle; }
+  .mini-chip { display: inline-flex; align-items: center; font-size: .62rem; padding: .05rem .35rem; border-radius: 3px; margin-left: .35rem; font-weight: 600; vertical-align: middle; }
   .mini-chip.primary { background: rgba(139,92,246,.12); color: #8B5CF6; }
   .mini-chip.complete { background: rgba(0,212,126,.12); color: var(--color-success); }
   .mini-chip.pending { background: rgba(245,158,11,.12); color: var(--color-warning); }
 
-  /* ── Detail panel ──────────────────────────────────────────── */
-  .detail-panel { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 1.5rem; min-height: 180px; }
-  .detail-empty { color: var(--color-muted); text-align: center; padding: 2rem 1rem; font-size: .88rem; }
-  .detail-head { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
-  .detail-title { font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 600; color: var(--color-heading); margin: 0; flex: 1; min-width: 0; word-break: break-word; }
-  .detail-url { font-size: .78rem; color: var(--color-muted); margin: .2rem 0 0; word-break: break-all; }
-  .detail-url a { color: var(--color-muted); text-decoration: none; }
-  .detail-url a:hover { color: var(--color-primary); text-decoration: underline; }
-  .detail-notes { font-size: .82rem; color: var(--color-body); margin: .75rem 0 0; line-height: 1.5; padding: .5rem .75rem; background: var(--color-bg); border-radius: 8px; border: 1px solid var(--color-border); }
-  .detail-actions { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
-  .detail-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border); }
-  .detail-section h3 { font-family: 'Outfit', sans-serif; font-size: .82rem; font-weight: 600; color: var(--color-heading); margin: 0 0 .5rem; text-transform: uppercase; letter-spacing: .05em; }
+  /* ── Modal (Trello-style detail card) ──────────────────────── */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, .55);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: flex-start; justify-content: center;
+    z-index: 1000;
+    padding: 4rem 1rem 1rem;
+    overflow-y: auto;
+  }
+  [data-theme="dark"] .modal-backdrop { background: rgba(0, 0, 0, .65); }
+  .modal-backdrop.open { display: flex; animation: fadeIn .15s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-  .status-select { font-family: inherit; font-size: .8rem; font-weight: 600; padding: .4rem .6rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; min-width: 160px; background: var(--color-bg); color: var(--color-body); }
-  .status-select:focus { outline: none; border-color: var(--color-primary); }
-  .status-select.st-discovered { background: rgba(107,117,153,.08); color: var(--color-muted); }
-  .status-select.st-existing_keep { background: rgba(0,212,126,.1); color: var(--color-success); }
-  .status-select.st-existing_update { background: rgba(59,130,246,.08); color: var(--color-info); }
-  .status-select.st-existing_remove { background: rgba(239,68,68,.08); color: var(--color-danger); }
-  .status-select.st-new { background: rgba(139,92,246,.08); color: #8B5CF6; }
-  .status-select.st-drafting { background: rgba(245,158,11,.08); color: var(--color-warning); }
+  .modal {
+    background: var(--color-surface);
+    border-radius: 16px;
+    padding: 0;
+    max-width: 600px; width: 100%;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 24px 60px rgba(0,0,0,.25);
+    animation: slideUp .2s ease;
+    margin-bottom: 4rem;
+  }
+  @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-  /* Modal */
-  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
-  .modal-backdrop.open { display: flex; }
-  .modal { background: var(--color-surface); border-radius: 14px; padding: 1.5rem; max-width: 560px; width: 100%; border: 1px solid var(--color-border); box-shadow: 0 12px 40px rgba(0,0,0,.2); }
-  .modal h2 { font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin: 0 0 1rem; color: var(--color-heading); }
-  .modal .form-group { margin-bottom: 1rem; }
-  .modal label { font-size: .78rem; font-weight: 500; color: var(--color-heading); margin-bottom: .35rem; display: block; }
-  .modal input, .modal textarea { width: 100%; padding: .55rem .75rem; border: 1px solid var(--color-border); border-radius: 8px; font-family: inherit; font-size: .88rem; color: var(--color-body); background: var(--color-bg); box-sizing: border-box; }
-  .modal input:focus, .modal textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(0,212,126,.1); }
-  .modal textarea { min-height: 80px; resize: vertical; }
-  .modal .help-text { font-size: .72rem; color: var(--color-muted); margin-top: .25rem; }
-  .modal .modal-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1.25rem; }
+  .modal-head {
+    padding: 1.25rem 1.5rem .75rem;
+    border-bottom: 1px solid var(--color-border);
+    display: flex; align-items: flex-start; gap: 1rem;
+  }
+  .modal-head-content { flex: 1; min-width: 0; }
+  .modal-eyebrow { font-size: .68rem; color: var(--color-primary); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; margin-bottom: .35rem; display: flex; align-items: center; gap: .35rem; }
+  .modal-title { font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 600; color: var(--color-heading); margin: 0; word-break: break-word; line-height: 1.3; }
+  .modal-title-input {
+    font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 600;
+    color: var(--color-heading); background: var(--color-bg);
+    border: 1px solid var(--color-border); border-radius: 8px;
+    padding: .45rem .65rem; width: 100%; box-sizing: border-box;
+  }
+  .modal-title-input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(0,212,126,.1); }
+  .modal-close {
+    background: transparent; border: none; cursor: pointer;
+    font-size: 1.4rem; line-height: 1; color: var(--color-muted);
+    padding: .25rem .5rem; border-radius: 6px;
+    transition: all .12s;
+  }
+  .modal-close:hover { background: var(--color-bg); color: var(--color-heading); }
+
+  .modal-body { padding: 1.25rem 1.5rem; }
+
+  .field-group { margin-bottom: 1.1rem; }
+  .field-group:last-child { margin-bottom: 0; }
+  .field-label {
+    font-size: .7rem; font-weight: 600; color: var(--color-heading);
+    text-transform: uppercase; letter-spacing: .05em;
+    margin-bottom: .4rem; display: block;
+  }
+
+  .url-row { display: flex; align-items: center; gap: .5rem; padding: .5rem .75rem; background: var(--color-bg); border-radius: 8px; border: 1px solid var(--color-border); font-size: .78rem; word-break: break-all; }
+  .url-row a { color: var(--color-primary); text-decoration: none; flex: 1; min-width: 0; }
+  .url-row a:hover { text-decoration: underline; }
+
+  .url-preview { font-family: monospace; font-size: .78rem; color: var(--color-muted); padding: .4rem .65rem; background: var(--color-bg); border-radius: 6px; border: 1px dashed var(--color-border); }
+  .url-preview .preview-label { color: var(--color-muted); font-family: Inter, sans-serif; font-size: .65rem; text-transform: uppercase; letter-spacing: .05em; margin-right: .4rem; font-weight: 600; }
+  .url-preview .preview-path { color: var(--color-heading); }
+
+  .modal input.form-input, .modal textarea.form-input {
+    width: 100%; padding: .6rem .75rem; border: 1px solid var(--color-border);
+    border-radius: 8px; font-family: inherit; font-size: .88rem;
+    color: var(--color-body); background: var(--color-bg); box-sizing: border-box;
+  }
+  .modal input.form-input:focus, .modal textarea.form-input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(0,212,126,.1); }
+  .modal textarea.form-input { min-height: 70px; resize: vertical; }
+  .field-help { font-size: .7rem; color: var(--color-muted); margin-top: .35rem; line-height: 1.45; }
+
+  .status-pills { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .status-pill {
+    font-family: inherit; font-size: .75rem; font-weight: 600;
+    padding: .4rem .7rem; border-radius: 7px;
+    border: 1px solid var(--color-border); background: var(--color-bg);
+    color: var(--color-body); cursor: pointer;
+    transition: all .12s; display: inline-flex; align-items: center; gap: .35rem;
+  }
+  .status-pill:hover { border-color: var(--color-primary); }
+  .status-pill .pill-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .status-pill.active.st-discovered { background: rgba(107,117,153,.15); border-color: #9CA3AF; color: var(--color-heading); }
+  .status-pill.active.st-existing_keep { background: rgba(0,212,126,.15); border-color: var(--color-success); color: var(--color-heading); }
+  .status-pill.active.st-existing_update { background: rgba(59,130,246,.12); border-color: var(--color-info); color: var(--color-heading); }
+  .status-pill.active.st-existing_remove { background: rgba(239,68,68,.12); border-color: var(--color-danger); color: var(--color-heading); }
+  .status-pill.active.st-new { background: rgba(139,92,246,.12); border-color: #8B5CF6; color: var(--color-heading); }
+  .status-pill.active.st-drafting { background: rgba(245,158,11,.12); border-color: var(--color-warning); color: var(--color-heading); }
+
+  .modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--color-border);
+    display: flex; justify-content: space-between; gap: .5rem; align-items: center;
+    flex-wrap: wrap;
+  }
+  .modal-footer-left, .modal-footer-right { display: flex; gap: .5rem; }
+
+  .bio-summary { padding: .75rem 1rem; background: var(--color-bg); border-radius: 8px; font-size: .8rem; line-height: 1.6; }
+  .bio-summary .b-row { display: flex; justify-content: space-between; gap: .5rem; }
+  .bio-summary .b-key { color: var(--color-muted); font-weight: 500; }
+  .bio-summary .b-val { color: var(--color-heading); }
 
   .empty-msg, .loading-msg { text-align: center; padding: 2.5rem 1rem; color: var(--color-muted); font-size: .88rem; }
   .empty-msg h3 { font-family: 'Outfit', sans-serif; font-size: 1rem; color: var(--color-heading); margin: 0 0 .5rem; }
@@ -216,45 +325,48 @@
   <div class="loading-msg" id="loading">Loading site map…</div>
 </div>
 
-<div class="modal-backdrop" id="rename-modal">
-  <div class="modal">
-    <h2 id="rename-modal-title">Rename page</h2>
-    <div class="form-group">
-      <label>Title (target keyword)</label>
-      <input type="text" id="rename-title" placeholder="e.g. anxiety therapy Toronto">
-      <div class="help-text">This IS the SEO target keyword for the page. Write it like a search query.</div>
-    </div>
-    <div class="form-group">
-      <label>Notes (optional)</label>
-      <textarea id="rename-notes" placeholder="Secondary keywords, persona, or context"></textarea>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('rename-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="submitRename()">Save</button>
-    </div>
+<!-- Page detail modal -->
+<div class="modal-backdrop" id="page-modal">
+  <div class="modal" id="page-modal-content">
+    <!-- populated by openPageModal() -->
   </div>
 </div>
 
+<!-- Add page modal -->
 <div class="modal-backdrop" id="add-modal">
   <div class="modal">
-    <h2 id="add-modal-title">Add page</h2>
-    <div class="form-group">
-      <label>Title (target keyword)</label>
-      <input type="text" id="add-title" placeholder="e.g. couples therapy for entrepreneurs">
-      <div class="help-text">This IS the SEO target keyword for the page.</div>
+    <div class="modal-head">
+      <div class="modal-head-content">
+        <div class="modal-eyebrow"><span id="add-cat-label">Add page</span></div>
+        <h2 class="modal-title" id="add-modal-title">New page</h2>
+      </div>
+      <button class="modal-close" onclick="closeModal('add-modal')" aria-label="Close">×</button>
     </div>
-    <div class="form-group">
-      <label>URL path (optional)</label>
-      <input type="text" id="add-url" placeholder="e.g. /couples-therapy-entrepreneurs">
-      <div class="help-text">Leave blank to auto-generate from the title at launch time.</div>
+    <div class="modal-body">
+      <div class="field-group">
+        <label class="field-label">Title (target keyword)</label>
+        <input type="text" class="form-input" id="add-title" placeholder="e.g. couples therapy for entrepreneurs" oninput="updateAddPreview()">
+        <div class="field-help">Write it like a search query — this becomes the H1 and the SEO target.</div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">URL path</label>
+        <div class="url-preview">
+          <span class="preview-label">Preview:</span><span class="preview-path" id="add-url-preview">/your-page</span>
+        </div>
+        <input type="text" class="form-input" id="add-url" placeholder="(auto-generated from title)" style="margin-top:.5rem">
+        <div class="field-help">Leave blank to auto-generate from the title above.</div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Notes (optional)</label>
+        <textarea class="form-input" id="add-notes" placeholder="Secondary keywords, persona, or context"></textarea>
+      </div>
     </div>
-    <div class="form-group">
-      <label>Notes (optional)</label>
-      <textarea id="add-notes" placeholder="Secondary keywords, persona, or context"></textarea>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('add-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="submitAdd()">Add page</button>
+    <div class="modal-footer">
+      <div></div>
+      <div class="modal-footer-right">
+        <button class="btn btn-outline" onclick="closeModal('add-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAdd()">Add page</button>
+      </div>
     </div>
   </div>
 </div>
@@ -290,15 +402,20 @@
     legal_other: 'Other Legal', other: 'Other'
   };
   var STATUS_LABELS = {
-    discovered: 'Needs review', existing_keep: 'Keep as-is',
-    existing_update: 'Needs update', existing_remove: 'Remove',
-    new: 'New page', drafting: 'Drafting'
+    discovered: 'Needs review',
+    existing_keep: 'Keep as-is',
+    existing_update: 'Highlight & update',
+    existing_remove: 'Remove',
+    new: 'New page',
+    drafting: 'Drafting'
   };
+  // Pages with these statuses count toward the highlight target.
+  var HIGHLIGHTED_STATUSES = ['existing_keep', 'existing_update', 'new', 'drafting'];
 
   var state = {
     site_map: null, plan_limits: {}, pages_by_category: {}, counts: {},
-    showAll: false, expandedRollups: {}, expandedCategory: null,
-    selectedPageId: null, editing_page: null, adding_to_category: null,
+    showAll: false, expandedRollups: {},
+    selectedPageId: null, adding_to_category: null,
     pageById: {}
   };
 
@@ -309,6 +426,7 @@
         if (k === 'class') e.className = attrs[k];
         else if (k === 'onclick') e.addEventListener('click', attrs[k]);
         else if (k === 'onchange') e.addEventListener('change', attrs[k]);
+        else if (k === 'oninput') e.addEventListener('input', attrs[k]);
         else e.setAttribute(k, attrs[k]);
       });
     }
@@ -328,8 +446,8 @@
     setTimeout(function() { t.className = 'toast'; }, 2600);
   }
 
-  function openModal(id) { document.getElementById(id).classList.add('open'); }
-  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
   window.closeModal = closeModal;
 
   // Theme toggle (canonical)
@@ -354,6 +472,8 @@
       }
       if (document.startViewTransition) document.startViewTransition(apply);
       else apply();
+      // Repaint connectors after theme shift (border color changes)
+      setTimeout(drawConnectors, 50);
     });
   })();
 
@@ -362,7 +482,17 @@
     render();
   });
 
-  // Humanize: prefer author title, then bio name, then URL-last-segment
+  // Slugify (mirrors server slugifyTitle in api/site-map-action.js)
+  function slugify(t) {
+    if (!t) return '';
+    return String(t).toLowerCase().trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 80);
+  }
+
   function labelFromPage(p) {
     if (p.title && p.title.trim()) return p.title.trim();
     if (p.bio_material && p.bio_material.therapist_name && p.bio_material.therapist_name !== 'New Therapist') {
@@ -376,7 +506,6 @@
       var segs = pathname.split('/').filter(Boolean);
       var last = segs[segs.length - 1] || '';
       last = last.replace(/\.(html|htm|php)$/i, '');
-      // Strip random hash-like suffixes (e.g. "-s8rr4")
       last = last.replace(/-([a-z0-9]{5,8})$/i, function(m, suf) {
         return /[0-9]/.test(suf) && /[a-z]/i.test(suf) ? '' : m;
       });
@@ -452,6 +581,8 @@
     }
     var content = document.getElementById('content');
     content.innerHTML = '';
+
+    // Header card
     var hdr = el('div', { class: 'header-card' }, [
       el('div', {}, [
         el('h1', {}, sm.root_url || '(no root URL set)'),
@@ -461,12 +592,31 @@
       el('span', { class: 'source-tag' }, sm.source_type.replace('_', ' '))
     ]);
     content.appendChild(hdr);
+
+    // Legend
+    var legend = el('div', { class: 'legend' }, [
+      el('span', {}, 'Status:'),
+      el('span', { class: 'legend-item' }, [el('span', { class: 'legend-dot discovered' }), 'Needs review']),
+      el('span', { class: 'legend-item' }, [el('span', { class: 'legend-dot keep' }), 'Keep as-is']),
+      el('span', { class: 'legend-item' }, [el('span', { class: 'legend-dot update' }), 'Highlight & update']),
+      el('span', { class: 'legend-item' }, [el('span', { class: 'legend-dot remove' }), 'Remove']),
+      el('span', { class: 'legend-item' }, [el('span', { class: 'legend-dot new' }), 'New page'])
+    ]);
+    content.appendChild(legend);
+
+    // Tree card with SVG layer
     var treeCard = el('div', { class: 'tree-card' });
-    treeCard.appendChild(buildTree());
+    var stage = el('div', { class: 'tree-stage' });
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'tree-svg');
+    svg.setAttribute('id', 'tree-svg');
+    stage.appendChild(svg);
+    stage.appendChild(buildTree());
+    treeCard.appendChild(stage);
     content.appendChild(treeCard);
-    var detail = el('div', { class: 'detail-panel', id: 'detail-panel' });
-    detail.appendChild(buildDetail());
-    content.appendChild(detail);
+
+    // Draw connectors after layout settles
+    requestAnimationFrame(drawConnectors);
   }
 
   function visibleCategories() {
@@ -486,11 +636,12 @@
     var sm = state.site_map;
     var tree = el('div', { class: 'tree' });
     var rootDomain = domainFromUrl(sm.root_url);
-    tree.appendChild(el('div', { class: 'tree-root' }, [
+    var rootEl = el('div', { class: 'tree-root', id: 'tree-root' }, [
       el('div', { class: 'root-label' }, 'Site'),
       el('div', { class: 'domain' }, rootDomain || '(root)')
-    ]));
-    tree.appendChild(el('div', { class: 'tree-trunk' }));
+    ]);
+    tree.appendChild(rootEl);
+
     var catCol = el('div', { class: 'tree-categories' });
     var cats = visibleCategories();
     if (cats.length === 0) {
@@ -503,30 +654,39 @@
 
   function buildCategoryRow(cat) {
     var pages = state.pages_by_category[cat] || [];
-    var count = state.counts[cat] || { active: 0, removed: 0, cap: state.plan_limits[cat] || null };
+    var count = state.counts[cat] || { active: 0, removed: 0, highlighted: 0, discovered: 0, cap: state.plan_limits[cat] || null };
     var cap = count.cap;
-    var over = cap && count.active > cap;
+    var highlighted = count.highlighted || 0;
+    var totalDiscovered = count.discovered || 0;
+    var totalActive = count.active || 0;
 
-    var row = el('div', { class: 'tree-category' });
+    var row = el('div', { class: 'tree-category', 'data-cat': cat });
+
+    // Cap display: "5 to highlight • 13 found"
+    var targetEl = el('div', { class: 'cat-target' });
+    if (cap) {
+      var pillClass = highlighted >= cap ? 'target-pill complete' : 'target-pill';
+      targetEl.appendChild(el('span', { class: pillClass }, highlighted + ' of ' + cap + ' highlighted'));
+      if (totalActive > 0) {
+        targetEl.appendChild(el('span', { class: 'found-text' }, '• ' + totalActive + ' found'));
+      }
+    } else if (totalActive > 0) {
+      targetEl.appendChild(el('span', { class: 'found-text' }, totalActive + ' page' + (totalActive === 1 ? '' : 's')));
+    }
 
     var node = el('div', {
-      class: 'cat-node' + (state.expandedCategory === cat ? ' expanded' : ''),
-      onclick: function() {
-        state.expandedCategory = state.expandedCategory === cat ? null : cat;
-        render();
-      }
+      class: 'cat-node',
+      id: 'cat-' + cat,
+      onclick: function() { /* clicking the cat node does nothing currently */ }
     }, [
       el('div', { class: 'cat-title' }, [
-        CATEGORY_LABELS[cat] || cat,
-        el('span', { class: 'cat-count' + (over ? ' over' : '') },
-          count.active + (cap ? '/' + cap : ''))
+        CATEGORY_LABELS[cat] || cat
       ]),
-      count.removed ? el('div', { class: 'cat-cap' }, count.removed + ' to remove') : null
+      targetEl
     ]);
     row.appendChild(node);
-    row.appendChild(el('div', { class: 'cat-branch' }));
 
-    var pageList = el('div', { class: 'page-list' });
+    var pageList = el('div', { class: 'page-list', 'data-cat-list': cat });
     var isRollup = ROLLUP_CATEGORIES.indexOf(cat) !== -1 && !state.expandedRollups[cat] && pages.length > 3;
 
     if (isRollup) {
@@ -543,10 +703,6 @@
         class: 'cat-add-inline',
         onclick: function(e) { e.stopPropagation(); openAddModal(cat); }
       }, '+ Add ' + (CATEGORY_LABELS[cat] || cat).toLowerCase());
-      if (cap && count.active >= cap) {
-        addBtn.setAttribute('disabled', 'disabled');
-        addBtn.title = cap + ' is the cap for this plan';
-      }
       pageList.appendChild(addBtn);
     }
     row.appendChild(pageList);
@@ -567,114 +723,225 @@
     var classes = 'page-node st-' + p.status;
     if (p.status === 'existing_remove') classes += ' removed';
     if (p.status === 'new') classes += ' new';
-    if (state.selectedPageId === p.id) classes += ' selected';
+    if (HIGHLIGHTED_STATUSES.indexOf(p.status) !== -1) classes += ' highlighted';
 
     return el('div', {
       class: classes,
-      onclick: function() {
-        state.selectedPageId = p.id;
-        var dp = document.getElementById('detail-panel');
-        if (dp) { dp.innerHTML = ''; dp.appendChild(buildDetail()); }
-        document.querySelectorAll('.page-node.selected').forEach(function(n) { n.classList.remove('selected'); });
-        this.classList.add('selected');
-        if (window.innerWidth < 900) dp.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
+      'data-page-id': p.id,
+      onclick: function() { openPageModal(p.id); }
     }, [
       el('span', { class: 'status-dot st-' + p.status }),
       labelEl
     ]);
   }
 
-  function buildDetail() {
-    var p = state.selectedPageId ? state.pageById[state.selectedPageId] : null;
-    if (!p) {
-      return el('div', { class: 'detail-empty' }, 'Tap a page in the tree to see details and change its status.');
-    }
-    var container = el('div', {});
-    container.appendChild(el('div', { class: 'detail-head' }, [
-      el('div', { style: 'flex:1;min-width:0' }, [
-        el('h2', { class: 'detail-title' }, labelFromPage(p)),
-        p.url ? el('div', { class: 'detail-url' }, [
-          el('a', { href: p.url, target: '_blank', rel: 'noopener' }, p.url)
-        ]) : null
-      ])
-    ]));
-    if (p.notes) container.appendChild(el('div', { class: 'detail-notes' }, p.notes));
+  // ── SVG curved connectors ─────────────────────────────────────────
+  function drawConnectors() {
+    var svg = document.getElementById('tree-svg');
+    if (!svg) return;
+    var stage = svg.parentElement;
+    if (!stage) return;
+    var stageRect = stage.getBoundingClientRect();
+    svg.setAttribute('width', stageRect.width);
+    svg.setAttribute('height', stageRect.height);
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-    var statusSection = el('div', { class: 'detail-section' }, [ el('h3', {}, 'Status & Actions') ]);
-    var actions = el('div', { class: 'detail-actions' });
-    var select = el('select', {
-      class: 'status-select st-' + p.status,
-      onchange: function(e) { onStatusChange(p.id, e.target.value, e.target); }
+    // Stroke color — read from CSS so it adapts to theme
+    var strokeColor = getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim() || '#E2E8F0';
+
+    function pt(elem) {
+      if (!elem) return null;
+      var r = elem.getBoundingClientRect();
+      return {
+        leftX: r.left - stageRect.left,
+        rightX: r.right - stageRect.left,
+        midY: r.top - stageRect.top + r.height / 2,
+        topY: r.top - stageRect.top,
+        bottomY: r.bottom - stageRect.top
+      };
+    }
+
+    function curve(x1, y1, x2, y2) {
+      // Cubic bezier: control points pulled horizontally toward midpoint
+      var dx = Math.max(20, (x2 - x1) * 0.5);
+      var c1x = x1 + dx, c1y = y1;
+      var c2x = x2 - dx, c2y = y2;
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M ' + x1 + ' ' + y1 +
+                             ' C ' + c1x + ' ' + c1y + ', ' +
+                                     c2x + ' ' + c2y + ', ' +
+                                     x2 + ' ' + y2);
+      path.setAttribute('stroke', strokeColor);
+      path.setAttribute('stroke-width', '1.75');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke-linecap', 'round');
+      svg.appendChild(path);
+    }
+
+    var root = pt(document.getElementById('tree-root'));
+    if (!root) return;
+
+    visibleCategories().forEach(function(cat) {
+      var catEl = document.getElementById('cat-' + cat);
+      if (!catEl) return;
+      var c = pt(catEl);
+      if (!c) return;
+      // Root → category
+      curve(root.rightX, root.midY, c.leftX, c.midY);
+
+      // Category → each page (or rollup, or +Add button)
+      var listEl = document.querySelector('[data-cat-list="' + cat + '"]');
+      if (!listEl) return;
+      Array.prototype.forEach.call(listEl.children, function(child) {
+        var p = pt(child);
+        if (!p) return;
+        curve(c.rightX, c.midY, p.leftX, p.midY);
+      });
     });
+  }
+  window.addEventListener('resize', function() { requestAnimationFrame(drawConnectors); });
+
+  // ── Page modal ────────────────────────────────────────────────────
+  function openPageModal(pageId) {
+    var p = state.pageById[pageId];
+    if (!p) return;
+    state.selectedPageId = pageId;
+
+    var content = document.getElementById('page-modal-content');
+    content.innerHTML = '';
+
+    // Head
+    var head = el('div', { class: 'modal-head' }, [
+      el('div', { class: 'modal-head-content' }, [
+        el('div', { class: 'modal-eyebrow' }, [
+          el('span', { class: 'status-dot st-' + p.status, style: 'width:10px;height:10px;border-radius:50%;display:inline-block' }),
+          (CATEGORY_LABELS[p.category] || p.category)
+        ]),
+        el('h2', { class: 'modal-title' }, labelFromPage(p))
+      ]),
+      el('button', { class: 'modal-close', onclick: function() { closeModal('page-modal'); }, 'aria-label': 'Close' }, '×')
+    ]);
+    content.appendChild(head);
+
+    // Body
+    var body = el('div', { class: 'modal-body' });
+
+    if (p.url) {
+      body.appendChild(el('div', { class: 'field-group' }, [
+        el('label', { class: 'field-label' }, 'URL'),
+        el('div', { class: 'url-row' }, [
+          el('a', { href: p.url, target: '_blank', rel: 'noopener' }, p.url),
+          el('span', { style: 'color:var(--color-muted);font-size:.7rem' }, '↗')
+        ])
+      ]));
+    }
+
+    // Title (editable)
+    body.appendChild(el('div', { class: 'field-group' }, [
+      el('label', { class: 'field-label' }, 'Title (target keyword)'),
+      el('input', {
+        type: 'text', class: 'form-input', id: 'detail-title-input',
+        value: p.title || ''
+      }),
+      el('div', { class: 'field-help' }, 'Edit the title to update what this page targets. Auto-pulled from the URL when blank.')
+    ]));
+
+    // Notes
+    body.appendChild(el('div', { class: 'field-group' }, [
+      el('label', { class: 'field-label' }, 'Notes'),
+      el('textarea', {
+        class: 'form-input', id: 'detail-notes-input',
+        placeholder: 'Secondary keywords, persona, context'
+      }, p.notes || '')
+    ]));
+
+    // Status pills
+    var pillRow = el('div', { class: 'status-pills' });
     Object.keys(STATUS_LABELS).forEach(function(s) {
-      var allow = true;
-      if (p.status === 'discovered' && s === 'drafting') allow = false;
-      if (p.status === 'new' && s.indexOf('existing_') === 0) allow = false;
-      if (!allow) return;
-      var opt = el('option', { value: s }, STATUS_LABELS[s]);
-      if (s === p.status) opt.selected = true;
-      select.appendChild(opt);
+      // Filter unsupported transitions
+      if (p.status === 'discovered' && s === 'drafting') return;
+      if (p.status === 'new' && s.indexOf('existing_') === 0) return;
+      var pill = el('button', {
+        class: 'status-pill st-' + s + (p.status === s ? ' active' : ''),
+        onclick: function() { changeStatus(p.id, s); }
+      }, [
+        el('span', { class: 'pill-dot status-dot st-' + s }),
+        STATUS_LABELS[s]
+      ]);
+      pillRow.appendChild(pill);
     });
-    actions.appendChild(select);
-    actions.appendChild(el('button', {
-      class: 'btn btn-outline btn-sm',
-      onclick: function() { openRenameModal(p); }
-    }, 'Rename'));
+    body.appendChild(el('div', { class: 'field-group' }, [
+      el('label', { class: 'field-label' }, 'Status'),
+      pillRow
+    ]));
+
+    // Bio details
+    if (p.category === 'bio' && p.bio_material) {
+      var bio = p.bio_material;
+      var summary = el('div', { class: 'bio-summary' });
+      if (bio.therapist_name) summary.appendChild(el('div', { class: 'b-row' }, [el('span', { class: 'b-key' }, 'Name'), el('span', { class: 'b-val' }, bio.therapist_name)]));
+      if (bio.therapist_credentials) summary.appendChild(el('div', { class: 'b-row' }, [el('span', { class: 'b-key' }, 'Credentials'), el('span', { class: 'b-val' }, bio.therapist_credentials)]));
+      summary.appendChild(el('div', { class: 'b-row' }, [
+        el('span', { class: 'b-key' }, 'Intake'),
+        el('span', { class: 'b-val' }, bio.has_bio ? 'Complete ✓' : 'Pending — client fills via onboarding step 6')
+      ]));
+      if (bio.is_primary) summary.appendChild(el('div', { class: 'b-row' }, [el('span', { class: 'b-key' }, 'Role'), el('span', { class: 'b-val' }, '★ Primary bio')]));
+      body.appendChild(el('div', { class: 'field-group' }, [
+        el('label', { class: 'field-label' }, 'Bio Details'),
+        summary
+      ]));
+    }
+
+    content.appendChild(body);
+
+    // Footer
+    var footerLeft = el('div', { class: 'modal-footer-left' });
     if (p.status === 'new') {
-      actions.appendChild(el('button', {
+      footerLeft.appendChild(el('button', {
         class: 'btn btn-outline btn-sm',
         style: 'color:var(--color-danger);border-color:rgba(239,68,68,.3)',
         onclick: function() { onDeleteClick(p); }
       }, 'Delete'));
     }
-    statusSection.appendChild(actions);
-    container.appendChild(statusSection);
+    var footer = el('div', { class: 'modal-footer' }, [
+      footerLeft,
+      el('div', { class: 'modal-footer-right' }, [
+        el('button', { class: 'btn btn-outline', onclick: function() { closeModal('page-modal'); } }, 'Close'),
+        el('button', { class: 'btn btn-primary', onclick: function() { saveDetailEdits(p); } }, 'Save')
+      ])
+    ]);
+    content.appendChild(footer);
 
-    if (p.category === 'bio' && p.bio_material) {
-      var bio = p.bio_material;
-      var bioSection = el('div', { class: 'detail-section' }, [ el('h3', {}, 'Bio Details') ]);
-      var parts = [];
-      if (bio.therapist_name) parts.push('Name: ' + bio.therapist_name);
-      if (bio.therapist_credentials) parts.push('Credentials: ' + bio.therapist_credentials);
-      if (bio.is_primary) parts.push('★ Primary bio');
-      parts.push(bio.has_bio ? 'Intake complete' : 'Intake pending — client needs to fill in step 6 of onboarding');
-      var ul = el('div', { style: 'font-size:.82rem;color:var(--color-body);line-height:1.7' });
-      parts.forEach(function(t) { ul.appendChild(el('div', {}, '• ' + t)); });
-      bioSection.appendChild(ul);
-      container.appendChild(bioSection);
-    }
-    return container;
+    openModal('page-modal');
   }
+  window.openPageModal = openPageModal;
 
-  function onStatusChange(pageId, newStatus, selectEl) {
-    selectEl.disabled = true;
+  function changeStatus(pageId, newStatus) {
     apiPost('/api/site-map-action', {
       action: 'set_page_status',
       site_map_id: state.site_map.id,
       page_id: pageId,
       status: newStatus
     }).then(function(r) {
-      selectEl.disabled = false;
       if (!r.ok) { showToast(r.body.error || 'Failed to update', 'err'); return; }
+      // Reload, then reopen this page modal so the user sees the new status applied
       load();
+      // Wait for reload then re-render modal with fresh data
+      var attempts = 0;
+      var iv = setInterval(function() {
+        if (state.pageById[pageId] && state.pageById[pageId].status === newStatus) {
+          clearInterval(iv);
+          openPageModal(pageId);
+        } else if (++attempts > 20) clearInterval(iv);
+      }, 100);
     });
   }
 
-  function openRenameModal(page) {
-    state.editing_page = page;
-    var t = page.title || (page.bio_material && page.bio_material.therapist_name) || labelFromPage(page);
-    document.getElementById('rename-title').value = t;
-    document.getElementById('rename-notes').value = page.notes || '';
-    document.getElementById('rename-modal-title').textContent = 'Rename page';
-    openModal('rename-modal');
-  }
-
-  window.submitRename = function() {
-    var p = state.editing_page;
-    if (!p) return;
-    var title = document.getElementById('rename-title').value.trim();
-    var notes = document.getElementById('rename-notes').value.trim();
+  function saveDetailEdits(p) {
+    var title = (document.getElementById('detail-title-input').value || '').trim();
+    var notes = (document.getElementById('detail-notes-input').value || '').trim();
+    var unchanged = (title === (p.title || '')) && (notes === (p.notes || ''));
+    if (unchanged) { closeModal('page-modal'); return; }
     if (!title) { showToast('Title required', 'err'); return; }
     apiPost('/api/site-map-action', {
       action: 'rename_page',
@@ -683,19 +950,58 @@
       title: title, notes: notes
     }).then(function(r) {
       if (!r.ok) { showToast(r.body.error || 'Failed', 'err'); return; }
-      closeModal('rename-modal');
+      showToast('Saved', 'ok');
+      closeModal('page-modal');
       load();
     });
-  };
+  }
 
+  function onDeleteClick(page) {
+    if (page.status !== 'new') {
+      showToast('Only new pages can be deleted. Use Remove for existing pages.', 'err');
+      return;
+    }
+    if (!confirm('Delete "' + (page.title || page.url || 'this page') + '"? This cannot be undone.')) return;
+    apiPost('/api/site-map-action', {
+      action: 'delete_page',
+      site_map_id: state.site_map.id,
+      page_id: page.id
+    }).then(function(r) {
+      if (!r.ok) { showToast(r.body.error || 'Failed', 'err'); return; }
+      showToast('Deleted', 'ok');
+      state.selectedPageId = null;
+      closeModal('page-modal');
+      load();
+    });
+  }
+
+  // ── Add page modal ────────────────────────────────────────────────
   function openAddModal(cat) {
     state.adding_to_category = cat;
     document.getElementById('add-title').value = '';
     document.getElementById('add-url').value = '';
     document.getElementById('add-notes').value = '';
-    document.getElementById('add-modal-title').textContent = 'Add ' + (CATEGORY_LABELS[cat] || cat).toLowerCase();
+    document.getElementById('add-cat-label').textContent = 'Add ' + (CATEGORY_LABELS[cat] || cat).toLowerCase();
+    document.getElementById('add-modal-title').textContent = 'New ' + (CATEGORY_LABELS[cat] || cat).toLowerCase().replace(/s$/, '');
+    document.getElementById('add-url-preview').textContent = '/your-page';
     openModal('add-modal');
+    setTimeout(function() { document.getElementById('add-title').focus(); }, 100);
   }
+
+  window.updateAddPreview = function() {
+    var title = document.getElementById('add-title').value || '';
+    var explicitUrl = (document.getElementById('add-url').value || '').trim();
+    var preview;
+    if (explicitUrl) {
+      preview = explicitUrl.indexOf('/') === 0 ? explicitUrl : '/' + explicitUrl;
+    } else {
+      var s = slugify(title);
+      preview = s ? '/' + s : '/your-page';
+    }
+    document.getElementById('add-url-preview').textContent = preview;
+  };
+  // Also re-preview when URL field changes
+  document.getElementById('add-url').addEventListener('input', window.updateAddPreview);
 
   window.submitAdd = function() {
     var cat = state.adding_to_category;
@@ -712,32 +1018,21 @@
     }).then(function(r) {
       if (!r.ok) { showToast(r.body.error || 'Failed', 'err'); return; }
       closeModal('add-modal');
+      showToast('Page added', 'ok');
       load();
     });
   };
 
-  function onDeleteClick(page) {
-    if (page.status !== 'new') {
-      showToast('Only new pages can be deleted. Use Remove for existing pages.', 'err');
-      return;
-    }
-    if (!confirm('Delete "' + (page.title || page.url || 'this page') + '"? This cannot be undone.')) return;
-    apiPost('/api/site-map-action', {
-      action: 'delete_page',
-      site_map_id: state.site_map.id,
-      page_id: page.id
-    }).then(function(r) {
-      if (!r.ok) { showToast(r.body.error || 'Failed', 'err'); return; }
-      showToast('Deleted', 'ok');
-      state.selectedPageId = null;
-      load();
-    });
-  }
-
+  // Click-outside-to-close + ESC on modals
   document.querySelectorAll('.modal-backdrop').forEach(function(b) {
     b.addEventListener('click', function(e) {
-      if (e.target === b) b.classList.remove('open');
+      if (e.target === b) closeModal(b.id);
     });
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop.open').forEach(function(b) { closeModal(b.id); });
+    }
   });
 
   load();
