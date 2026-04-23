@@ -23,6 +23,16 @@
   .navy-meta .sub { font-size: .72rem; color: rgba(232,245,239,.55); margin: .15rem 0 0; }
 
   .topbar { position: sticky; top: 0; z-index: 100; background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 0 2rem; height: 52px; display: flex; align-items: center; gap: 1rem; }
+
+  /* Floating theme toggle — matches client-facing template position */
+  .theme-toggle {
+    position: fixed; top: 1.25rem; right: 1.25rem; z-index: 200;
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: 50%; width: 40px; height: 40px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 1.15rem; transition: all .15s;
+  }
+  .theme-toggle:hover { border-color: var(--color-primary); box-shadow: 0 2px 12px rgba(0,212,126,.15); }
   .topbar-title { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1rem; color: var(--color-heading); }
   .topbar-meta { font-size: .78rem; color: var(--color-muted); }
   .topbar-right { display: flex; align-items: center; gap: .75rem; margin-left: auto; }
@@ -118,7 +128,7 @@
   .cat-node {
     grid-column: 1;
     padding: .65rem .9rem;
-    background: var(--color-bg);
+    background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: 11px;
     min-width: 180px; max-width: 210px;
@@ -127,7 +137,7 @@
     font-size: .82rem;
     box-shadow: 0 1px 2px rgba(0,0,0,.02);
   }
-  .cat-node:hover { border-color: var(--color-primary); background: var(--color-surface); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+  .cat-node:hover { border-color: var(--color-primary); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.06); }
   .cat-node .cat-title { font-family: 'Outfit', sans-serif; font-weight: 600; color: var(--color-heading); display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
   .cat-node .cat-target {
     font-size: .68rem; color: var(--color-muted); margin-top: .35rem; line-height: 1.4;
@@ -197,17 +207,18 @@
   .page-rollup:hover { border-color: var(--color-primary); color: var(--color-heading); }
 
   .cat-add-inline {
-    font-size: .72rem; font-weight: 500;
+    font-size: .82rem; font-weight: 500;
     color: var(--color-primary);
     background: transparent;
-    border: 1px dashed rgba(0,212,126,.4);
-    padding: .35rem .75rem;
-    border-radius: 7px;
+    border: 1.5px dashed rgba(0,212,126,.4);
+    padding: .5rem .8rem;
+    border-radius: 9px;
     cursor: pointer; font-family: inherit;
     min-width: 220px; max-width: 360px;
     width: max-content;
     text-align: left;
     align-self: flex-start;
+    line-height: 1.3;
   }
   .cat-add-inline:hover { background: var(--color-primary-subtle); border-style: solid; }
 
@@ -351,9 +362,10 @@
     <label class="toggle-noise">
       <input type="checkbox" id="showAllToggle"> Show all categories
     </label>
-    <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme"><span class="theme-icon">&#x1F319;</span></button>
   </div>
 </div>
+
+<button class="theme-toggle" id="themeBtn" aria-label="Toggle theme"><span class="theme-icon">&#x1F319;</span></button>
 
 <div class="content" id="content">
   <div class="loading-msg" id="loading">Loading site map…</div>
@@ -445,6 +457,11 @@
   };
   // Pages with these statuses count toward the highlight target.
   var HIGHLIGHTED_STATUSES = ['existing_keep', 'existing_update', 'new', 'drafting'];
+
+  // Categories where the client/admin can ADD new pages from the configurator.
+  // Other categories (FAQ, contact, blog, etc.) only show discovered pages —
+  // adding pages there isn't useful at this stage of the build.
+  var ADDABLE_CATEGORIES = ['service', 'location', 'bio'];
 
   // Friendly labels for site_maps.source_type. The DB enum values stay as
   // core_existing / core_new / standalone but the UI uses these names.
@@ -765,11 +782,13 @@
       ]));
     } else {
       pages.forEach(function(p) { pageList.appendChild(buildPageNode(p)); });
-      var addBtn = el('button', {
-        class: 'cat-add-inline',
-        onclick: function(e) { e.stopPropagation(); openAddModal(cat); }
-      }, '+ Add ' + (CATEGORY_LABELS[cat] || cat).toLowerCase());
-      pageList.appendChild(addBtn);
+      if (ADDABLE_CATEGORIES.indexOf(cat) !== -1) {
+        var addBtn = el('button', {
+          class: 'cat-add-inline',
+          onclick: function(e) { e.stopPropagation(); openAddModal(cat); }
+        }, '+ Add ' + (CATEGORY_LABELS[cat] || cat).toLowerCase());
+        pageList.appendChild(addBtn);
+      }
     }
     row.appendChild(pageList);
     return row;
