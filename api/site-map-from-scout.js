@@ -117,23 +117,32 @@ module.exports = async function(req, res) {
       for (var i = 0; i < urls.length; i++) {
         var u = urls[i];
         if (!u) continue;
+        // All rows must share the same key set for PostgREST bulk insert.
+        // Explicitly set intake_status to null for non-bio categories.
         var row = {
           site_map_id: siteMap.id,
           category: cat,
           status: 'discovered',
           url: u,
-          display_order: i
+          display_order: i,
+          intake_status: (cat === 'bio') ? 'not_applicable' : null
         };
-        // Bio pages get intake state pre-populated so the UI can render the
-        // "awaiting intake" pill even before the client makes a decision.
-        if (cat === 'bio') row.intake_status = 'not_applicable';
         rows.push(row);
       }
     }
 
     // Batch insert (if anything to insert)
     if (rows.length) {
-      await sb.mutate('site_map_pages', 'POST', rows, 'return=minimal');
+      try {
+        await sb.mutate('site_map_pages', 'POST', rows, 'return=minimal');
+      } catch (seedErr) {
+        // Rollback: delete the empty site_map so the next call re-tries cleanly
+        // instead of short-circuiting on the idempotency check.
+        try {
+          await sb.mutate('site_maps?id=eq.' + siteMap.id, 'DELETE', null, 'return=minimal');
+        } catch (_) { /* swallow; seedErr is the real story */ }
+        throw seedErr;
+      }
     }
 
     return res.json({
