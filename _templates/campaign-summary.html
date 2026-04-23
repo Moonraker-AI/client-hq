@@ -1055,6 +1055,36 @@ section { padding: 4.5rem 0; }
   //      (Erika / Bridges of the Mind).
   //
   // If neither has data, the section is hidden entirely.
+
+  // Source classifier. Drives both display ordering (organic always on top
+  // because that is what we focus on as an agency) and the narrative tone
+  // (positive bias on organic + AI growth). Categories ranked low -> high
+  // priority for sort: paid/social/referral/other below organic and AI.
+  function classifySource(name) {
+    var n = String(name || '').toLowerCase();
+    if (/\bai\b|chatgpt|claude|gemini|perplexity|copilot|llm/.test(n)) return 'ai_search';
+    if (/google|bing|duckduckgo|organic|search engine|seo/.test(n)) return 'organic_search';
+    if (/psychology today|psych today|goodtherapy|good therapy|mental health match|therapyden|directory/.test(n)) return 'paid_directory';
+    if (/facebook|instagram|tiktok|youtube|linkedin|twitter|x\.com|social/.test(n)) return 'social';
+    if (/referral|word of mouth|wom|friend|family/.test(n)) return 'referral';
+    return 'other';
+  }
+  // Lower number = higher priority in the legend and chart drawing order.
+  // Organic search and AI search always lead.
+  function sourcePriority(category) {
+    return ({
+      organic_search: 0,
+      ai_search: 1,
+      referral: 2,
+      paid_directory: 3,
+      social: 4,
+      other: 5
+    })[category];
+  }
+  function isOrganicCategory(category) {
+    return category === 'organic_search' || category === 'ai_search';
+  }
+
   var bookingsChart = null;
   var leadVolumeChart = null;
 
@@ -1108,10 +1138,17 @@ section { padding: 4.5rem 0; }
       'Self-reported lead source from your intake form, by month. This is full-pipeline volume across all sources, not just SEO-attributed.';
     document.getElementById('leadVolumeSubtle').textContent = fmtNum(totalLeads) + ' total';
 
-    // Order sources by total volume desc, take top 8
+    // Order sources: organic channels (Google, AI search) always at the top
+    // because that is what we focus on as an agency. Within each category,
+    // sort by total volume desc. Cap at 8 series.
     var orderedSources = Object.keys(sourceTotals)
       .filter(function(k) { return sourceTotals[k] > 0; })
-      .sort(function(a, b) { return sourceTotals[b] - sourceTotals[a]; })
+      .sort(function(a, b) {
+        var pa = sourcePriority(classifySource(a));
+        var pb = sourcePriority(classifySource(b));
+        if (pa !== pb) return pa - pb;
+        return sourceTotals[b] - sourceTotals[a];
+      })
       .slice(0, 8);
 
     // Color palette — primary green for top source, then a controlled spectrum
@@ -1227,67 +1264,111 @@ section { padding: 4.5rem 0; }
     var early = sumWindow(earlyRows);
     var recent = sumWindow(recentRows);
 
-    var sentences = [];
-
-    // Sentence 1: top source + share
-    var top = rankedSources[0];
-    if (top && totalLeads > 0) {
-      var topShare = Math.round((sourceTotals[top] / totalLeads) * 100);
-      sentences.push('<strong>' + escapeHtml(top) + '</strong> remains your largest channel, accounting for ' +
-        topShare + '% of leads (' + sourceTotals[top] + ' of ' + totalLeads + ') over this window.');
-    }
-
-    // Sentence 2: emerged channels — sources with 0 in early window but meaningful volume in recent
-    var emerged = [];
+    // Compute organic (organic_search + ai_search) totals + share. This is
+    // the headline number we want to lead with because that is what we focus on.
+    var organicTotal = 0;
+    var organicSources = [];
     rankedSources.forEach(function(src) {
-      var earlyV = early.bySrc[src] || 0;
-      var recentV = recent.bySrc[src] || 0;
-      // "Emerged" = was zero (or near-zero) in early window AND has at least
-      // 3 leads in the recent window AND represents >= 5% of recent volume.
-      if (earlyV <= 1 && recentV >= 3 && recent.total > 0 && (recentV / recent.total) >= 0.05) {
-        emerged.push({ src: src, recentV: recentV, share: recentV / recent.total });
+      if (isOrganicCategory(classifySource(src))) {
+        organicTotal += sourceTotals[src];
+        organicSources.push(src);
       }
     });
-    if (emerged.length > 0) {
-      var e = emerged[0];
-      var sharePct = Math.round(e.share * 100);
-      var monthsLabel = recent.monthCount === 1 ? 'last month' : 'last ' + recent.monthCount + ' months';
-      var emergedPhrase = '<strong>' + escapeHtml(e.src) + '</strong> has emerged as a meaningful new channel — ' +
-        e.recentV + ' lead' + (e.recentV === 1 ? '' : 's') + ' over the ' + monthsLabel +
-        ', or about ' + sharePct + '% of recent volume, up from zero earlier in the engagement.';
-      // If it's specifically AI Search, lean in harder
-      if (/ai\s*search|chatgpt|llm/i.test(e.src)) {
-        emergedPhrase += ' This is exactly the trajectory we want to see — patients are increasingly ' +
-          'discovering practices through AI assistants, and your practice is being surfaced where it counts.';
+    var organicShare = totalLeads > 0 ? organicTotal / totalLeads : 0;
+
+    var sentences = [];
+
+    // Sentence 1: lead with organic share. Positive framing because that is
+    // the work we are accountable for.
+    if (organicTotal > 0 && organicShare >= 0.4) {
+      var organicPct = Math.round(organicShare * 100);
+      var organicNames = organicSources.length === 1
+        ? '<strong>' + escapeHtml(organicSources[0]) + '</strong>'
+        : organicSources.length === 2
+          ? '<strong>' + escapeHtml(organicSources[0]) + '</strong> and <strong>' + escapeHtml(organicSources[1]) + '</strong>'
+          : 'organic channels (<strong>' + organicSources.slice(0, -1).map(escapeHtml).join(', ') +
+            '</strong> and <strong>' + escapeHtml(organicSources[organicSources.length - 1]) + '</strong>)';
+      sentences.push(organicNames + ' are driving <strong>' + organicPct + '% of your leads</strong> over this window (' +
+        organicTotal + ' of ' + totalLeads + '), which is the part of the funnel we are most focused on growing.');
+    } else {
+      // Fallback: just name the top source
+      var top = rankedSources[0];
+      if (top) {
+        var topShare = Math.round((sourceTotals[top] / totalLeads) * 100);
+        sentences.push('<strong>' + escapeHtml(top) + '</strong> is currently your largest channel at ' +
+          topShare + '% of leads (' + sourceTotals[top] + ' of ' + totalLeads + ') over this window.');
       }
-      sentences.push(emergedPhrase);
     }
 
-    // Sentence 3: overall volume trend (recent vs early window, normalized to per-month)
+    // Sentence 2: AI Search trajectory. This gets its own sentence whenever
+    // it is present and trending up, because growing AI discovery is a
+    // strategic goal we want to highlight.
+    var aiSources = rankedSources.filter(function(s) { return classifySource(s) === 'ai_search'; });
+    if (aiSources.length > 0) {
+      var aiSrc = aiSources[0];
+      var aiEarly = early.bySrc[aiSrc] || 0;
+      var aiRecent = recent.bySrc[aiSrc] || 0;
+      var aiRecentShare = recent.total > 0 ? aiRecent / recent.total : 0;
+      var monthsLabel = recent.monthCount === 1 ? 'last month' : 'last ' + recent.monthCount + ' months';
+      if (aiEarly <= 1 && aiRecent >= 3 && aiRecentShare >= 0.05) {
+        // Emerged from zero. This is the most exciting case.
+        sentences.push('<strong>' + escapeHtml(aiSrc) + '</strong> has emerged as a meaningful new channel, ' +
+          'with ' + aiRecent + ' lead' + (aiRecent === 1 ? '' : 's') + ' over the ' + monthsLabel +
+          ' (about ' + Math.round(aiRecentShare * 100) + '% of recent volume), up from zero earlier in the engagement. ' +
+          'This is exactly the trajectory we want to see, since patients are increasingly discovering practices through AI assistants and your practice is being surfaced where it counts.');
+      } else if (aiRecent > aiEarly && aiRecentShare >= 0.05) {
+        // Already present and growing.
+        sentences.push('<strong>' + escapeHtml(aiSrc) + '</strong> is now driving about ' +
+          Math.round(aiRecentShare * 100) + '% of recent leads (' + aiRecent + ' over the ' + monthsLabel +
+          '), and that share is growing. AI discovery is a meaningful tailwind we want to keep building on.');
+      } else if (aiRecent > 0) {
+        // Present but flat. Still call it out positively.
+        sentences.push('<strong>' + escapeHtml(aiSrc) + '</strong> continues to contribute ' +
+          aiRecent + ' lead' + (aiRecent === 1 ? '' : 's') + ' over the ' + monthsLabel +
+          '. AI discovery remains a focus area we are actively building toward.');
+      }
+    }
+
+    // Sentence 3: organic trend (recent vs early window, normalized per-month).
+    // We only call out positive moves loudly. If volume is down we still note
+    // it but with a constructive frame.
     if (early.monthCount > 0 && recent.monthCount > 0 && early.total > 0) {
-      var earlyAvg = early.total / early.monthCount;
-      var recentAvg = recent.total / recent.monthCount;
-      var change = (recentAvg - earlyAvg) / earlyAvg;
-      if (Math.abs(change) >= 0.10) {
-        var dir = change > 0 ? 'up' : 'down';
-        var pct = Math.round(Math.abs(change) * 100);
-        var earlyMonths = earlyRows.map(function(r) { return ymLabel(r.month); }).join('/');
-        var recentMonths = recentRows.map(function(r) { return ymLabel(r.month); }).join('/');
-        if (early.monthCount > 1) {
-          sentences.push('Total monthly lead volume is <strong>' + dir + ' ' + pct + '%</strong> comparing ' +
-            recentMonths + ' (avg ' + Math.round(recentAvg) + '/month) to ' +
-            earlyMonths + ' (avg ' + Math.round(earlyAvg) + '/month).');
-        } else {
-          sentences.push('Lead volume in ' + recentMonths + ' is <strong>' + dir + ' ' + pct + '%</strong> versus ' +
-            earlyMonths + ' (' + Math.round(recentAvg) + ' vs. ' + Math.round(earlyAvg) + ').');
+      // Compute organic-only per-month averages so the trend reflects what
+      // we are accountable for, not paid-directory churn.
+      function organicSum(window) {
+        var t = 0;
+        Object.keys(window.bySrc).forEach(function(k) {
+          if (isOrganicCategory(classifySource(k))) t += window.bySrc[k];
+        });
+        return t;
+      }
+      var earlyOrganic = organicSum(early);
+      var recentOrganic = organicSum(recent);
+      var earlyAvgOrganic = earlyOrganic / early.monthCount;
+      var recentAvgOrganic = recentOrganic / recent.monthCount;
+      var earlyMonths = earlyRows.map(function(r) { return ymLabel(r.month); }).join('/');
+      var recentMonths = recentRows.map(function(r) { return ymLabel(r.month); }).join('/');
+
+      if (earlyAvgOrganic > 0) {
+        var organicChange = (recentAvgOrganic - earlyAvgOrganic) / earlyAvgOrganic;
+        if (organicChange >= 0.10) {
+          var pct = Math.round(organicChange * 100);
+          sentences.push('Organic lead volume is <strong>up ' + pct + '%</strong> on a per-month basis comparing ' +
+            recentMonths + ' (avg ' + Math.round(recentAvgOrganic) + ' organic leads/month) to ' +
+            earlyMonths + ' (avg ' + Math.round(earlyAvgOrganic) + '/month). The compounding effect of consistent SEO investment is showing up in the funnel.');
+        } else if (organicChange <= -0.15) {
+          // Constructive, not alarming.
+          var dropPct = Math.round(Math.abs(organicChange) * 100);
+          sentences.push('Organic volume is currently running about ' + dropPct + '% below where it started, with ' +
+            recentMonths + ' averaging ' + Math.round(recentAvgOrganic) + ' organic leads/month. Worth digging into ' +
+            'whether seasonality or specific query categories are at play, and we will use the next reporting period to dial in.');
         }
       }
     }
 
-    // Sentence 4: psych-today / paid directory share shift, if applicable
-    var directoryNames = ['psychology today', 'psych today', 'goodtherapy', 'good therapy', 'mental health match'];
+    // Sentence 4: paid directory share decline, framed as organic expanding around it.
     rankedSources.forEach(function(src) {
-      if (!directoryNames.some(function(d) { return src.toLowerCase().indexOf(d) !== -1; })) return;
+      if (classifySource(src) !== 'paid_directory') return;
       var earlyV = early.bySrc[src] || 0;
       var recentV = recent.bySrc[src] || 0;
       if (early.monthCount > 0 && recent.monthCount > 0 && early.total > 0 && recent.total > 0) {
@@ -1295,9 +1376,8 @@ section { padding: 4.5rem 0; }
         var recentShare = recentV / recent.total;
         if (earlyShare > 0.05 && (earlyShare - recentShare) / earlyShare >= 0.20) {
           var dropPct = Math.round(((earlyShare - recentShare) / earlyShare) * 100);
-          sentences.push('<strong>' + escapeHtml(src) + '</strong>\u2019s share of leads has declined ' +
-            dropPct + '% relative to where it started — counts are roughly stable, but organic and AI channels ' +
-            'are expanding around it.');
+          sentences.push('<strong>' + escapeHtml(src) + '</strong>\u2019s share of leads has dropped about ' +
+            dropPct + '% relative to where it started. Raw counts are roughly steady, so the shift reflects organic and AI channels expanding around it, which is the direction we want.');
         }
       }
     });
