@@ -684,6 +684,38 @@ async function pullAttribution(contactId) {
   }
 }
 
+// ── Attribution deep-dive insights (synthesis + client commentary) ──
+//
+// Renders a narrative block under the YoY attribution table. Populated
+// manually by the Moonraker team from client-supplied data (e.g. lead
+// attribution spreadsheets). Row stored per contact; only shown when
+// published=true.
+
+async function pullAttributionInsights(contactId) {
+  if (!contactId) return { available: false };
+  try {
+    var row = await sb.one('client_attribution_insights?contact_id=eq.'
+      + encodeURIComponent(contactId) + '&limit=1');
+    if (!row || !row.published) return { available: false };
+    return {
+      available: true,
+      headline: row.headline || null,
+      summary_markdown: row.summary_markdown || null,
+      client_commentary_markdown: row.client_commentary_markdown || null,
+      source_mix: Array.isArray(row.source_mix_json) ? row.source_mix_json : null,
+      data_period_start: row.data_period_start || null,
+      data_period_end: row.data_period_end || null,
+      data_source_note: row.data_source_note || null,
+      updated_at: row.updated_at || null
+    };
+  } catch (e) {
+    monitor.logError('campaign-summary', e, {
+      detail: { stage: 'pull_attribution_insights', contact_id: contactId }
+    });
+    return { available: false, error: 'Failed to pull attribution insights' };
+  }
+}
+
 // ── Performance guarantee evaluation ──────────────────────────────
 //
 // Compares the threshold (typically 2x investment) against the most recent
@@ -823,13 +855,14 @@ module.exports = async function handler(req, res) {
     var billedMonths = Math.min(elapsedMonths, displayMonths);
 
     // 4. Pull all sources in parallel
-    var [bookings, gsc, localfalcon, deliverables, attribution, gbpPerf] = await Promise.all([
+    var [bookings, gsc, localfalcon, deliverables, attribution, gbpPerf, attributionInsights] = await Promise.all([
       pullBookings(client, monthBuckets),
       pullGsc(reportConfig && reportConfig.gsc_property, monthBuckets, displayStartISO, displayEndISO),
       pullLocalFalcon(reportConfig),
       pullDeliverables(client.id),
       pullAttribution(client.id),
-      pullGbp(reportConfig, displayStartISO, displayEndISO)
+      pullGbp(reportConfig, displayStartISO, displayEndISO),
+      pullAttributionInsights(client.id)
     ]);
 
     // Cost + derived unit economics (synchronous)
@@ -894,6 +927,7 @@ module.exports = async function handler(req, res) {
       cost_per_consultation: costPerConsultation,
       deliverables: deliverables,
       attribution: attribution,
+      attribution_deep_dive: attributionInsights,
       guarantee: guarantee,
       next_period: {
         heading: (reportConfig && reportConfig.next_period_heading) || null,
