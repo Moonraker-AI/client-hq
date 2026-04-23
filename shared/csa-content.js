@@ -337,7 +337,8 @@ window.renderCSA = function(contactParam, pricingParam) {
       window.validateSignFields = function() {
         var name = sigName.value.trim();
         var consent = sigConsent.checked;
-        var hasSig = typeof sigHasDrawn !== 'undefined' ? sigHasDrawn : false;
+        var sigContainer = document.getElementById('sigCanvasContainer');
+        var hasSig = !!(sigContainer && sigContainer.classList.contains('has-signature'));
         signBtn.disabled = !(consent && name.length > 1 && hasSig);
       };
       sigConsent.addEventListener('change', validateSignFields);
