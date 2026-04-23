@@ -29,6 +29,8 @@
 var sb = require('./_lib/supabase');
 var monitor = require('./_lib/monitor');
 var auth = require('./_lib/auth');
+var pageToken = require('./_lib/page-token');
+var fetchT = require('./_lib/fetch-with-timeout');
 
 // ── Validation helpers ───────────────────────────────────────────────────
 
@@ -348,6 +350,95 @@ async function actionDeletePage(body, siteMap) {
   return { success: true, page_id: body.page_id };
 }
 
+// ── Client onboarding review actions ────────────────────────────────────
+//
+// Client flow:
+//   draft ──(client submit)──► client_submitted ──(admin approve)──► draft
+// "Approve" flips the matching onboarding_steps row to complete.
+// Admin may also reject by setting status back to draft with no step-flip
+// (not a separate action — the admin configurator just edits normally).
+
+async function actionSubmitForReview(body, siteMap) {
+  // Gating: need at least 1 highlighted service + 1 highlighted location.
+  // Checked server-side so a client can't flip this past the UI guard.
+  var serviceCount = await countHighlightedInCategory(siteMap.id, 'service');
+  var locationCount = await countHighlightedInCategory(siteMap.id, 'location');
+  if (serviceCount < 1 || locationCount < 1) {
+    return {
+      error: 'Highlight at least 1 service and 1 location before submitting.',
+      status: 409,
+      blockers: { service: Math.max(0, 1 - serviceCount), location: Math.max(0, 1 - locationCount) }
+    };
+  }
+
+  await sb.mutate(
+    'site_maps?id=eq.' + siteMap.id,
+    'PATCH',
+    { status: 'client_submitted' },
+    'return=minimal'
+  );
+
+  // Fire notify-team (non-blocking; don't fail submission if notify fails).
+  try {
+    var contact = await sb.one(
+      'contacts?id=eq.' + siteMap.contact_id + '&select=slug&limit=1'
+    );
+    if (contact && contact.slug && process.env.CRON_SECRET) {
+      // Fire-and-forget with short timeout. If notify-team is down the
+      // submission still succeeds — admin can see client_submitted status
+      // in the configurator regardless.
+      fetchT('https://clients.moonraker.ai/api/notify-team', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + process.env.CRON_SECRET
+        },
+        body: JSON.stringify({ event: 'site_map_submitted', slug: contact.slug })
+      }, 10000).catch(function(e) {
+        console.error('[site-map-action] notify-team site_map_submitted failed:', e.message);
+      });
+    }
+  } catch (e) {
+    console.error('[site-map-action] submit_for_review notify lookup failed:', e.message);
+  }
+
+  return { success: true, status: 'client_submitted' };
+}
+
+async function actionApproveReview(body, siteMap) {
+  // Admin-only. Flips site_map back to draft and marks the onboarding
+  // site_map step complete so the wizard advances.
+  if (siteMap.status !== 'client_submitted') {
+    return {
+      error: 'Cannot approve — site_map status is ' + siteMap.status + ' (expected client_submitted)',
+      status: 409
+    };
+  }
+  if (!siteMap.contact_id) {
+    return { error: 'Cannot approve — site_map has no contact_id (standalone?)', status: 409 };
+  }
+
+  // Flip onboarding step before the site_map status change so, if the step
+  // update fails, we don't silently leave the site_map in a confusing state.
+  // The auto_promote_to_active trigger picks up the step->complete transition
+  // automatically if this was the final step.
+  await sb.mutate(
+    'onboarding_steps?contact_id=eq.' + siteMap.contact_id + '&step_key=eq.site_map',
+    'PATCH',
+    { status: 'complete' },
+    'return=minimal'
+  );
+
+  await sb.mutate(
+    'site_maps?id=eq.' + siteMap.id,
+    'PATCH',
+    { status: 'draft' },
+    'return=minimal'
+  );
+
+  return { success: true, status: 'draft', onboarding_step: 'complete' };
+}
+
 // ── Router ───────────────────────────────────────────────────────────────
 
 var ACTIONS = {
@@ -355,17 +446,58 @@ var ACTIONS = {
   rename_page: actionRenamePage,
   reorder_pages: actionReorderPages,
   add_page: actionAddPage,
-  delete_page: actionDeletePage
+  delete_page: actionDeletePage,
+  submit_for_review: actionSubmitForReview,
+  approve_review: actionApproveReview
+};
+
+// Actions a page-token (client) caller may invoke. Admin callers can invoke
+// any action. delete_page is already restricted at the handler level to
+// status=new pages, which is the only safe client-editable surface.
+var CLIENT_ALLOWED_ACTIONS = {
+  set_page_status: true,
+  rename_page: true,
+  add_page: true,
+  delete_page: true,
+  submit_for_review: true
+};
+
+// Actions that remain available when the site_map is in client_submitted
+// status (awaiting admin review). Everything else requires admin intervention
+// — this is the "locked for review" window.
+var ACTIONS_ALLOWED_WHILE_SUBMITTED = {
+  approve_review: true
 };
 
 module.exports = async function(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  var user = await auth.requireAdmin(req, res);
-  if (!user) return;
+
+  // ── Auth: admin JWT OR onboarding page-token ─────────────────────
+  var isAdmin = false;
+  var verifiedContactId = null;
+
+  var clientTokenStr = pageToken.getTokenFromRequest(req, 'onboarding');
+  if (clientTokenStr) {
+    var tokenData;
+    try { tokenData = pageToken.verify(clientTokenStr, 'onboarding'); }
+    catch (e) {
+      console.error('[site-map-action] page-token verify threw:', e.message);
+      return res.status(500).json({ error: 'Auth system unavailable' });
+    }
+    if (!tokenData) return res.status(403).json({ error: 'Invalid or expired page token' });
+    verifiedContactId = tokenData.contact_id;
+  } else {
+    var user = await auth.requireAdmin(req, res);
+    if (!user) return;
+    isAdmin = true;
+  }
 
   var body = req.body || {};
   if (!body.action || !ACTIONS[body.action]) {
     return res.status(400).json({ error: 'action required; valid: ' + Object.keys(ACTIONS).join(', ') });
+  }
+  if (!isAdmin && !CLIENT_ALLOWED_ACTIONS[body.action]) {
+    return res.status(403).json({ error: 'Action not allowed for client caller' });
   }
   if (!isUuid(body.site_map_id)) {
     return res.status(400).json({ error: 'site_map_id required (uuid)' });
@@ -379,18 +511,40 @@ module.exports = async function(req, res) {
     );
     if (!siteMap) return res.status(404).json({ error: 'site_map not found' });
 
-    // Write-gate: only draft site_maps accept edits. mvp_locked is read-only
-    // except for bios (not part of phase 2; UI should disable the button).
-    if (siteMap.status !== 'draft') {
+    // Page-token callers must match the site_map's contact_id.
+    if (!isAdmin && siteMap.contact_id !== verifiedContactId) {
+      return res.status(403).json({ error: 'Not authorized for this site_map' });
+    }
+
+    // Client callers may NOT edit URLs — strip url from rename_page/add_page
+    // so admin URL-rewrite remains an admin-only capability. Client can still
+    // set a title; add_page auto-slugifies from title when url is absent.
+    if (!isAdmin && body.url !== undefined) delete body.url;
+
+    // Write-gate by site_map status:
+    //  - draft: fully editable
+    //  - client_submitted: only approve_review (admin)
+    //  - mvp_locked / fully_locked / launched / abandoned: read-only
+    if (siteMap.status === 'client_submitted') {
+      if (!ACTIONS_ALLOWED_WHILE_SUBMITTED[body.action]) {
+        return res.status(409).json({
+          error: 'Site map is awaiting admin review. No edits until approved.',
+          hint: 'Admin can approve via approve_review action'
+        });
+      }
+      if (!isAdmin) {
+        return res.status(403).json({ error: 'Client cannot modify a submitted site map' });
+      }
+    } else if (siteMap.status !== 'draft') {
       return res.status(409).json({
         error: 'site_map is ' + siteMap.status + ' and cannot be edited',
-        hint: 'Only status=draft accepts configurator edits in phase 2'
+        hint: 'Only status=draft accepts edits'
       });
     }
 
     var result = await ACTIONS[body.action](body, siteMap);
     if (result && result.error) {
-      return res.status(result.status || 400).json({ error: result.error });
+      return res.status(result.status || 400).json(result);
     }
     return res.json(result);
 
