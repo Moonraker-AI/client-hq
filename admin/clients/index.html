@@ -1544,11 +1544,22 @@
   }
 
   function loadDetailData() {
-    // Single server-side aggregation call (replaces 2-phase sequential 7-request load)
-    fetch('/api/admin/client-detail?slug=' + encodeURIComponent(slug)).then(function(r) {
-      if (!r.ok) throw new Error('Failed to load client');
-      return r.json();
-    }).then(function(data) {
+    // Two parallel server-side aggregations:
+    //   /api/admin/client-detail      — shell (contact, tabCounts, practice, entity audit, guarantee, bio materials)
+    //   /api/admin/client-deep-dive   — wider child-table surface (audit_followups, client_sites, report_configs,
+    //                                    tracked_keywords, content_pages, intro_call_steps, content_audit_batches,
+    //                                    entity_audits, cms_scouts, design_specs, deliverables, report_snapshots,
+    //                                    sitemap_scouts)
+    // Fired in parallel; first-render fetches read from state.deepDive instead of direct REST.
+    var detailPromise = fetch('/api/admin/client-detail?slug=' + encodeURIComponent(slug), { credentials: 'same-origin' })
+      .then(function(r) { if (!r.ok) throw new Error('Failed to load client'); return r.json(); });
+    var deepDivePromise = fetch('/api/admin/client-deep-dive?slug=' + encodeURIComponent(slug), { credentials: 'same-origin' })
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .catch(function() { return null; });
+
+    detailPromise.then(function(data) {
+      // Resolve deep-dive in the background; initial render does not block on it.
+      deepDivePromise.then(function(dd) { state.deepDive = dd || null; });
       state.contact = data.contact || null;
       state.contacts = data.allContacts || [];
 
@@ -1987,15 +1998,25 @@
         state.tabLoaded[tabName] = true;
         renderTab(tabName);
 
-        // Async load audit followups after render
+        // Async load audit followups after render. Prefer state.deepDive.audit_followups
+        // when present (populated by /api/admin/client-deep-dive on page open); fall back
+        // to a direct REST fetch for first-time tab opens that race ahead of the aggregator.
         if (tabName === 'audit' && state.entityAudit) {
-          var h = { 'apikey': SK, 'Authorization': 'Bearer ' + SK };
-          fetch(SB + '/rest/v1/audit_followups?audit_id=eq.' + state.entityAudit.id + '&order=sequence_number.asc', { headers: h })
-            .then(function(r) { return r.json(); })
-            .then(function(afus) {
-              state.auditFollowups = afus || [];
-              renderEntityAudit();
-            }).catch(function(e) { console.error('[audit_followups fetch failed]', e); });
+          var _aid = state.entityAudit.id;
+          if (state.deepDive && Array.isArray(state.deepDive.audit_followups)) {
+            state.auditFollowups = state.deepDive.audit_followups
+              .filter(function(f) { return f.audit_id === _aid; })
+              .sort(function(a, b) { return (a.sequence_number || 0) - (b.sequence_number || 0); });
+            renderEntityAudit();
+          } else {
+            var h = { 'apikey': SK, 'Authorization': 'Bearer ' + SK };
+            fetch(SB + '/rest/v1/audit_followups?audit_id=eq.' + _aid + '&order=sequence_number.asc', { headers: h })
+              .then(function(r) { return r.json(); })
+              .then(function(afus) {
+                state.auditFollowups = afus || [];
+                renderEntityAudit();
+              }).catch(function(e) { console.error('[audit_followups fetch failed]', e); });
+          }
         }
       }).catch(function(e) {
         console.error('[ensureTabData] Error loading tab=' + tabName + ':', e);
@@ -2117,9 +2138,19 @@
     var badge = document.getElementById('hostingBadge');
     if (!el || !badge) return;
 
-    // Fetch client_sites for this contact (cached in state)
+    // Fetch client_sites for this contact (cached in state). Prefer state.deepDive
+    // on first load; fall back to direct REST if the aggregator hasn't resolved yet
+    // or if we're inspecting a contact other than the currently-loaded deep-dive.
     if (!state._hostingSites) state._hostingSites = {};
     if (state._hostingSites[c.id] === undefined) {
+      if (state.deepDive && state.contact && state.contact.id === c.id && Array.isArray(state.deepDive.client_sites)) {
+        var ddSites = state.deepDive.client_sites.slice(0, 5);
+        state._hostingSites[c.id] = ddSites;
+        var moonrakerSiteDd = ddSites.find(function(s) { return s.hosting_type === 'moonraker' && s.status === 'active'; });
+        state.clientSite = moonrakerSiteDd || false;
+        renderHostingCard(c);
+        return;
+      }
       state._hostingSites[c.id] = 'loading';
       fetch(SB + '/rest/v1/client_sites?contact_id=eq.' + c.id + '&select=*&limit=5', {
         headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
@@ -3940,11 +3971,9 @@
     var slug = state.contact ? state.contact.slug : '';
     if (!slug) return;
 
-    // Check if batch already exists
-    fetch(SB + '/rest/v1/content_audit_batches?client_slug=eq.' + slug + '&order=created_at.desc&limit=1', {
-      headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
-    }).then(function(r) { return r.json(); }).then(function(batches) {
-      var batch = batches && batches[0];
+    // Check if batch already exists. Prefer state.deepDive.content_audit_batches when
+    // available (page-open aggregator), fall back to direct REST.
+    function _renderBatchArea(batch) {
       if (batch && (batch.status === 'agent_running' || batch.status === 'processing' || batch.status === 'queued')) {
         area.innerHTML = '<span style="font-size:.82rem;color:var(--color-info);font-weight:500;">Batch audit in progress (' + batch.pages_extracted + '/' + batch.pages_total + ' pages)</span>';
       } else if (batch && batch.status === 'complete') {
@@ -3954,9 +3983,19 @@
         area.innerHTML = '<button class="btn btn-primary btn-sm" id="btnIcBatchTrigger" style="font-size:.78rem;" onclick="triggerBatchFromIntroCall()">Run Batch Audit</button>' +
           '<span id="icBatchStatus" style="font-size:.78rem;color:var(--color-muted);margin-left:.5rem;"></span>';
       }
-    }).catch(function() {
-      area.innerHTML = '<button class="btn btn-primary btn-sm" id="btnIcBatchTrigger" style="font-size:.78rem;" onclick="triggerBatchFromIntroCall()">Run Batch Audit</button>';
-    });
+    }
+
+    if (state.deepDive && Array.isArray(state.deepDive.content_audit_batches)) {
+      _renderBatchArea(state.deepDive.content_audit_batches[0] || null);
+    } else {
+      fetch(SB + '/rest/v1/content_audit_batches?client_slug=eq.' + slug + '&order=created_at.desc&limit=1', {
+        headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
+      }).then(function(r) { return r.json(); }).then(function(batches) {
+        _renderBatchArea(batches && batches[0]);
+      }).catch(function() {
+        area.innerHTML = '<button class="btn btn-primary btn-sm" id="btnIcBatchTrigger" style="font-size:.78rem;" onclick="triggerBatchFromIntroCall()">Run Batch Audit</button>';
+      });
+    }
   }
 
   window.triggerBatchFromIntroCall = function() {

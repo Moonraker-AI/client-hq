@@ -372,13 +372,12 @@
   var state = { contacts: [], onboarding: {}, filter: 'all', view: 'cards' };
 
   function loadData() {
-    Promise.all([
-      fetch(SB + '/rest/v1/contacts?select=id,slug,status,practice_name,email,first_name,last_name,onboarding_completed,agreement_signed,campaign_start&order=practice_name', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }),
-      fetch(SB + '/rest/v1/onboarding_steps?select=contact_id,step_key,status,sort_order&order=contact_id,sort_order&limit=5000', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); })
-    ]).then(function(res) {
-      state.contacts = res[0] || [];
+    fetch('/api/admin/onboarding-directory', { credentials: 'same-origin' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+      state.contacts = (data && data.contacts) || [];
       state.onboarding = {};
-      (res[1] || []).forEach(function(s) {
+      ((data && data.onboarding_steps) || []).forEach(function(s) {
         if (!state.onboarding[s.contact_id]) state.onboarding[s.contact_id] = [];
         state.onboarding[s.contact_id].push(s);
       });

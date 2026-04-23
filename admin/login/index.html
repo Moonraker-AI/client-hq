@@ -325,28 +325,29 @@ async function handlePasswordChange() {
   btn.textContent = 'Updating...';
 
   try {
-    // Update password via Supabase Auth
-    var result = await sb.auth.updateUser({ password: newPw });
-    if (result.error) {
-      errEl.textContent = result.error.message;
+    // Server-mediated password change (FE-H3): rotates the Supabase Auth
+    // password and clears must_change_password atomically under admin cookie
+    // auth. Payload is restricted to new_password + must_change_password —
+    // endpoint rejects role/email/id/display_name.
+    var resp = await fetch('/api/auth/change-password', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ new_password: newPw, must_change_password: false })
+    });
+
+    if (!resp.ok) {
+      var msg = 'Could not update password. Please try again.';
+      try {
+        var errBody = await resp.json();
+        if (errBody && errBody.error) msg = errBody.error;
+      } catch (e) {}
+      errEl.textContent = msg;
       errEl.className = 'error-msg visible';
       btn.disabled = false;
       btn.textContent = 'Set password and continue';
       return;
     }
-
-    // Clear the must_change_password flag
-    var session = (await sb.auth.getSession()).data.session;
-    await fetch(SB_URL + '/rest/v1/admin_profiles?id=eq.' + session.user.id, {
-      method: 'PATCH',
-      headers: {
-        'apikey': SB_ANON,
-        'Authorization': 'Bearer ' + session.access_token,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ must_change_password: false })
-    });
 
     window.location.href = '/admin';
 

@@ -900,16 +900,17 @@
   // ============================================================
   window.loadData = function loadData() {
 
-    Promise.all([
-      sbFetch('contacts?select=slug,status,practice_name,email,gsc_property,ga4_property&status=eq.active&order=practice_name'),
-      sbFetch('report_configs?select=*&order=client_slug'),
-      sbFetch('report_snapshots?select=client_slug,report_month,report_status,created_at&order=created_at.desc&limit=50')
-    ]).then(function(results) {
-      state.clients = results[0] || [];
+    fetch('/api/admin/reports-directory', { credentials: 'same-origin' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+      // Endpoint widened to active + onboarding. Preserve the page's
+      // historical active-only list view to avoid a visible behavior shift.
+      var contacts = (data && data.contacts) || [];
+      state.clients = contacts.filter(function(c) { return c.status === 'active'; });
       state.configs = {};
-      (results[1] || []).forEach(function(c) { state.configs[c.client_slug] = c; });
+      ((data && data.report_configs) || []).forEach(function(c) { state.configs[c.client_slug] = c; });
       state.snapshots = {};
-      (results[2] || []).forEach(function(s) {
+      ((data && data.report_snapshots) || []).forEach(function(s) {
         if (!state.snapshots[s.client_slug]) state.snapshots[s.client_slug] = s;
       });
       render();
