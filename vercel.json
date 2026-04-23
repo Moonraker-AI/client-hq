@@ -207,14 +207,6 @@
       "maxDuration": 300,
       "memory": 1024
     },
-    "api/backfill-campaign-summary-pages.js": {
-      "maxDuration": 300,
-      "memory": 1024
-    },
-    "api/backfill-progress-pages.js": {
-      "maxDuration": 300,
-      "memory": 1024
-    },
     "api/cron/backfill-gbp-daily.js": {
       "maxDuration": 300,
       "memory": 1024
