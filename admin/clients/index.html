@@ -815,7 +815,7 @@
 .kw-lock-tip::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--color-heading); color: var(--color-bg); font-size: .68rem; font-weight: 500; line-height: 1.35; padding: .35rem .55rem; border-radius: 6px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
 .kw-lock-tip:hover::after { opacity: 1; }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js" defer></script>
+<script src="/vendor/supabase/supabase-2.49.4.min.js" integrity="sha384-2zrRDgDHSYB/GN3nFW3fsZXoxEhKIr3N2h63Tc6DEOB9JJdFIu8xMJT2Cph/gBil" crossorigin="anonymous" defer></script>
 <script src="/shared/admin-auth.js"></script>
 <script src="/shared/offline-banner.js" defer></script>
 </head>
@@ -1544,6 +1544,35 @@
     }).catch(function(e) { console.error('Directory load error:', e); });
   }
 
+  // ---- Deep-dive cache refresh helpers ----
+  // Callers that mutate a child table, or that poll for server-side updates,
+  // use these to re-read state.deepDive instead of hitting /rest/v1/ directly.
+  // The endpoint is bounded and cheap enough that we don't field-slice yet.
+  async function refreshDeepDive(slugArg) {
+    var s = slugArg || (state.contact && state.contact.slug);
+    if (!s) return null;
+    try {
+      var res = await fetch('/api/admin/client-deep-dive?slug=' + encodeURIComponent(s), { credentials: 'same-origin' });
+      if (!res.ok) throw new Error('deep-dive refresh failed: ' + res.status);
+      var dd = await res.json();
+      // Only assign if we're still viewing this slug (avoids race on client switch).
+      if (state.contact && state.contact.slug === s) {
+        state.deepDive = dd || null;
+      }
+      return dd;
+    } catch (e) {
+      console.warn('[deepDive] refresh failed:', e);
+      return null;
+    }
+  }
+  async function refreshDeepDiveSlice(slugArg, _key) {
+    // Cheap path: re-fetch the entire aggregate. If perf becomes a concern,
+    // add ?fields=... support on the endpoint later.
+    return refreshDeepDive(slugArg);
+  }
+  window.refreshDeepDive = refreshDeepDive;
+  window.refreshDeepDiveSlice = refreshDeepDiveSlice;
+
   function loadDetailData() {
     // Two parallel server-side aggregations:
     //   /api/admin/client-detail      — shell (contact, tabCounts, practice, entity audit, guarantee, bio materials)
@@ -2010,13 +2039,14 @@
               .sort(function(a, b) { return (a.sequence_number || 0) - (b.sequence_number || 0); });
             renderEntityAudit();
           } else {
-            var h = { 'apikey': SK, 'Authorization': 'Bearer ' + SK };
-            fetch(SB + '/rest/v1/audit_followups?audit_id=eq.' + _aid + '&order=sequence_number.asc', { headers: h })
-              .then(function(r) { return r.json(); })
-              .then(function(afus) {
-                state.auditFollowups = afus || [];
-                renderEntityAudit();
-              }).catch(function(e) { console.error('[audit_followups fetch failed]', e); });
+            // Fallback: refresh deep-dive cache, then filter + sort client-side.
+            refreshDeepDiveSlice(state.contact && state.contact.slug, 'audit_followups').then(function() {
+              state.auditFollowups = ((state.deepDive && state.deepDive.audit_followups) || [])
+                .filter(function(f) { return f.audit_id === _aid; })
+                .slice()
+                .sort(function(a, b) { return (a.sequence_number || 0) - (b.sequence_number || 0); });
+              renderEntityAudit();
+            }).catch(function(e) { console.error('[audit_followups fetch failed]', e); });
           }
         }
       }).catch(function(e) {
@@ -2153,16 +2183,17 @@
         return;
       }
       state._hostingSites[c.id] = 'loading';
-      fetch(SB + '/rest/v1/client_sites?contact_id=eq.' + c.id + '&select=*&limit=5', {
-        headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
-      }).then(function(r) { return r.json(); }).then(function(sites) {
-        state._hostingSites[c.id] = sites || [];
-        var moonrakerSite = (sites || []).find(function(s) { return s.hosting_type === 'moonraker' && s.status === 'active'; });
+      refreshDeepDiveSlice(state.contact && state.contact.slug, 'client_sites').then(function() {
+        var sites = ((state.deepDive && state.deepDive.client_sites) || [])
+          .filter(function(s) { return s.contact_id === c.id; })
+          .slice(0, 5);
+        state._hostingSites[c.id] = sites;
+        var moonrakerSite = sites.find(function(s) { return s.hosting_type === 'moonraker' && s.status === 'active'; });
         state.clientSite = moonrakerSite || false;
         renderHostingCard(c);
         // Service Pages' Deploy-to-Site button depends on state.clientSite, which was null
         // during the initial synchronous render. Re-render the Content tab now that the
-        // fetch resolved, but only if the user is still on the same contact + Content tab.
+        // refresh resolved, but only if the user is still on the same contact + Content tab.
         if (state.contact === c && typeof renderContent === 'function') {
           var activeTab = document.querySelector('#tabBar .tab-btn.active');
           if (activeTab && activeTab.dataset.tab === 'content') {
@@ -3775,9 +3806,10 @@
         } else {
           toast('LocalFalcon location found: ' + (res.location_name || res.place_id), 'success');
         }
-        // Reload report config
-        fetch(SB + '/rest/v1/report_configs?client_slug=eq.' + c.slug + '&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).then(function(cfgs) {
-          state.reportConfig = (cfgs && cfgs[0]) || state.reportConfig;
+        // Reload report config via deep-dive cache
+        refreshDeepDiveSlice(c.slug, 'report_configs').then(function() {
+          var cfgs = (state.deepDive && state.deepDive.report_configs) || [];
+          state.reportConfig = cfgs[0] || state.reportConfig;
           renderReports();
         });
       } else {
@@ -3806,7 +3838,14 @@
     var slug = c.slug;
     var configData = { client_slug: slug, active: true };
     if (c.gsc_property) configData.gsc_property = c.gsc_property;
-    fetch(SB + '/rest/v1/report_configs?client_slug=eq.' + slug + '&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).then(function(existing) {
+    // Pre-check existence via deep-dive cache (no direct REST).
+    Promise.resolve().then(function() {
+      var cached = (state.deepDive && state.deepDive.report_configs) || null;
+      if (cached) return cached;
+      return refreshDeepDiveSlice(slug, 'report_configs').then(function() {
+        return (state.deepDive && state.deepDive.report_configs) || [];
+      });
+    }).then(function(existing) {
       if (existing && existing.length > 0) {
         fetch('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update_record', table: 'report_configs', filters: { client_slug: slug } || undefined, data: configData }) }).then(function(r) { return r.json(); }).then(function(res) {
           if (res.success) { state.reportConfig = (res.data && res.data[0]) || state.reportConfig; renderReports(); }
@@ -3825,14 +3864,25 @@
     // Lock mechanism: keywords with downstream dependencies (content pages, LF campaigns) cannot be deleted
     var targets = targetId ? [targetId] : ['ctKeywordForm'];
     var slug = state.contact.slug;
-    // Fetch active, non-retired keywords
-    var kwUrl = SB + '/rest/v1/tracked_keywords?client_slug=eq.' + slug + '&active=eq.true&retired_at=is.null&order=priority.asc,keyword.asc';
-    // Also fetch content_pages to compute per-keyword dependencies
-    var cpUrl = SB + '/rest/v1/content_pages?client_slug=eq.' + slug + '&select=tracked_keyword_id';
-    Promise.all([
-      fetch(kwUrl, { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }),
-      fetch(cpUrl, { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); })
-    ]).then(function(results) {
+    // Read keywords + content_pages from deep-dive cache (refresh if missing).
+    // Client-side filters mirror the REST query: active=true, retired_at IS NULL,
+    // ordered by priority ASC then keyword ASC. Content pages projected to tracked_keyword_id.
+    function _readKwCp() {
+      var kws = ((state.deepDive && state.deepDive.tracked_keywords) || [])
+        .filter(function(k) { return k.active === true && !k.retired_at; })
+        .slice()
+        .sort(function(a, b) {
+          var pa = a.priority == null ? 999999 : a.priority;
+          var pb = b.priority == null ? 999999 : b.priority;
+          if (pa !== pb) return pa - pb;
+          return String(a.keyword || '').localeCompare(String(b.keyword || ''));
+        });
+      var cps = ((state.deepDive && state.deepDive.content_pages) || [])
+        .map(function(cp) { return { tracked_keyword_id: cp.tracked_keyword_id }; });
+      return [kws, cps];
+    }
+    (state.deepDive ? Promise.resolve(_readKwCp()) : refreshDeepDiveSlice(slug, 'tracked_keywords').then(_readKwCp))
+      .then(function(results) {
       var kws = results[0] || [];
       var cps = results[1] || [];
       // Build a set of keyword IDs that have content pages
@@ -3962,7 +4012,17 @@
     var rows = IC_STEPS.map(function(s) { return { contact_id: cid, step_key: s.key, label: s.label, category: s.cat, sort_order: s.sort, status: 'pending' }; });
     fetch('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create_record', table: 'intro_call_steps', filters: undefined, data: rows }) }).then(function(r) { return r.json(); }).then(function(res) {
       if (res.success && res.data) { state.introCall = res.data; }
-      else { fetch(SB + '/rest/v1/intro_call_steps?select=*&order=sort_order&contact_id=eq.' + cid, { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).then(function(d) { state.introCall = d || []; renderIntroCall(); }); }
+      else {
+        // Fallback: refresh deep-dive cache then read intro_call_steps, sorted by sort_order.
+        refreshDeepDiveSlice(state.contact && state.contact.slug, 'intro_call_steps').then(function() {
+          var rows = ((state.deepDive && state.deepDive.intro_call_steps) || [])
+            .filter(function(r) { return r.contact_id === cid; })
+            .slice()
+            .sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+          state.introCall = rows;
+          renderIntroCall();
+        });
+      }
       renderIntroCall();
     }).catch(function(err) { console.error('Seed failed:', err); alert('Failed to create checklist.'); });
   };
@@ -3989,10 +4049,9 @@
     if (state.deepDive && Array.isArray(state.deepDive.content_audit_batches)) {
       _renderBatchArea(state.deepDive.content_audit_batches[0] || null);
     } else {
-      fetch(SB + '/rest/v1/content_audit_batches?client_slug=eq.' + slug + '&order=created_at.desc&limit=1', {
-        headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
-      }).then(function(r) { return r.json(); }).then(function(batches) {
-        _renderBatchArea(batches && batches[0]);
+      refreshDeepDiveSlice(slug, 'content_audit_batches').then(function() {
+        var batches = (state.deepDive && state.deepDive.content_audit_batches) || [];
+        _renderBatchArea(batches[0] || null);
       }).catch(function() {
         area.innerHTML = '<button class="btn btn-primary btn-sm" id="btnIcBatchTrigger" style="font-size:.78rem;" onclick="triggerBatchFromIntroCall()">Run Batch Audit</button>';
       });
@@ -4639,8 +4698,14 @@
           if (chunk.done) {
             // Processing complete: reload the audit data
             var cid = state.contact ? state.contact.id : '';
-            fetch(SB + '/rest/v1/entity_audits?contact_id=eq.' + cid + '&order=created_at.desc&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } })
-              .then(function(r) { return r.json(); })
+            refreshDeepDiveSlice(state.contact && state.contact.slug, 'entity_audits')
+              .then(function() {
+                var audits = ((state.deepDive && state.deepDive.entity_audits) || [])
+                  .filter(function(a) { return a.contact_id === cid; })
+                  .slice()
+                  .sort(function(a, b) { return String(b.created_at || '').localeCompare(String(a.created_at || '')); });
+                return audits;
+              })
               .then(function(audits) {
                 if (audits && audits[0]) {
                   state.entityAudit = audits[0];
@@ -5732,9 +5797,14 @@
     var resultDiv = document.getElementById('cmsScoutResult');
     if (!resultDiv) return;
     try {
-      var _r = await fetch(SB + '/rest/v1/cms_scouts?client_slug=eq.' + slug + '&order=created_at.desc&limit=1&select=id,status,summary,platform,scanned_at,report', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } });
-      if (!_r.ok) throw new Error(_r.status);
-      var scouts = await _r.json();
+      // Prefer deep-dive cache; refresh if missing. Client-side sort by created_at DESC.
+      if (!(state.deepDive && state.deepDive.cms_scouts)) {
+        await refreshDeepDiveSlice(slug, 'cms_scouts');
+      }
+      var scouts = ((state.deepDive && state.deepDive.cms_scouts) || [])
+        .slice()
+        .sort(function(a, b) { return String(b.created_at || '').localeCompare(String(a.created_at || '')); })
+        .slice(0, 1);
       if (scouts && scouts.length > 0) {
         var s = scouts[0];
         if (s.status === 'complete' && s.summary) {
@@ -5759,9 +5829,13 @@
       attempts++;
       if (attempts > maxAttempts) { clearInterval(interval); return; }
       try {
-        var _r2 = await fetch(SB + '/rest/v1/cms_scouts?client_slug=eq.' + slug + '&order=created_at.desc&limit=1&select=id,status,summary,scanned_at', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } });
-        if (!_r2.ok) { clearInterval(interval); return; }
-        var scouts = await _r2.json();
+        // Polling: refresh deep-dive cache each tick, read cms_scouts latest.
+        var _dd = await refreshDeepDiveSlice(slug, 'cms_scouts');
+        if (!_dd) { clearInterval(interval); return; }
+        var scouts = ((state.deepDive && state.deepDive.cms_scouts) || [])
+          .slice()
+          .sort(function(a, b) { return String(b.created_at || '').localeCompare(String(a.created_at || '')); })
+          .slice(0, 1);
         if (scouts && scouts.length > 0 && scouts[0].status === 'complete') {
           clearInterval(interval);
           var s = scouts[0];
@@ -6040,9 +6114,9 @@
               if (msg.step === 'complete') {
                 toast(cp.page_name + ' generated successfully!', 'success');
                 // Reload the content page data
-                fetch(SB + '/rest/v1/content_pages?id=eq.' + cpId + '&limit=1', {
-                  headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
-                }).then(function(r) { return r.json(); }).then(function(arr) {
+                refreshDeepDiveSlice(state.contact && state.contact.slug, 'content_pages').then(function() {
+                  var arr = ((state.deepDive && state.deepDive.content_pages) || [])
+                    .filter(function(p) { return p.id === cpId; });
                   if (arr && arr[0]) {
                     var idx = state.contentPages.findIndex(function(p) { return p.id === cpId; });
                     if (idx !== -1) state.contentPages[idx] = arr[0];
@@ -6196,9 +6270,9 @@
             clearInterval(pollInterval);
             if (data.status === 'completed') {
               toast('Surge audit complete! Refreshing...', 'success');
-              fetch(SB + '/rest/v1/content_pages?id=eq.' + cpId + '&limit=1', {
-                headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
-              }).then(function(r) { return r.json(); }).then(function(arr) {
+              refreshDeepDiveSlice(state.contact && state.contact.slug, 'content_pages').then(function() {
+                var arr = ((state.deepDive && state.deepDive.content_pages) || [])
+                  .filter(function(p) { return p.id === cpId; });
                 if (arr && arr[0]) {
                   var idx = state.contentPages.findIndex(function(p) { return p.id === cpId; });
                   if (idx !== -1) state.contentPages[idx] = arr[0];
@@ -6230,18 +6304,19 @@
       if (res.success) {
         var s = res.summary;
         toast(s.content_pages_created + ' pages created, ' + s.deliverables_created + ' deliverables added, ' + s.deliverables_linked + ' linked', 'success');
-        // Reload content pages and deliverables
+        // Reload content pages and deliverables via deep-dive cache.
         var cid = state.contact.id;
-        Promise.all([
-          fetch(SB + '/rest/v1/content_pages?contact_id=eq.' + cid + '&order=created_at.desc', {
-            headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
-          }).then(function(r) { return r.json(); }),
-          fetch(SB + '/rest/v1/deliverables?contact_id=eq.' + cid + '&order=created_at.desc', {
-            headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
-          }).then(function(r) { return r.json(); })
-        ]).then(function(results) {
-          state.contentPages = results[0] || [];
-          state.deliverables = results[1] || [];
+        refreshDeepDiveSlice(state.contact && state.contact.slug, 'content_pages').then(function() {
+          var cpAll = ((state.deepDive && state.deepDive.content_pages) || [])
+            .filter(function(p) { return p.contact_id === cid; })
+            .slice()
+            .sort(function(a, b) { return String(b.created_at || '').localeCompare(String(a.created_at || '')); });
+          var delAll = ((state.deepDive && state.deepDive.deliverables) || [])
+            .filter(function(d) { return d.contact_id === cid; })
+            .slice()
+            .sort(function(a, b) { return String(b.created_at || '').localeCompare(String(a.created_at || '')); });
+          state.contentPages = cpAll;
+          state.deliverables = delAll;
           renderContent();
           renderDeliverables();
           var contentCount = state.contentPages.filter(function(cp) { return cp.status !== 'delivered' && cp.status !== 'approved'; }).length;
@@ -6476,12 +6551,12 @@
         if (!window._specCapturePoll) {
           var _specPollFails = 0;
           window._specCapturePoll = mkInterval(function() {
-            fetch(SB + '/rest/v1/design_specs?contact_id=eq.' + c.id + '&limit=1', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) {
-              if (!r.ok) throw new Error(r.status);
-              return r.json();
-            }).then(function(res) {
+            // Polling: refresh deep-dive cache each tick, read design_specs for this contact.
+            refreshDeepDiveSlice(state.contact && state.contact.slug, 'design_specs').then(function(dd) {
+              if (!dd) throw new Error('refresh failed');
               _specPollFails = 0;
-              var updated = res && res[0];
+              var updated = ((state.deepDive && state.deepDive.design_specs) || [])
+                .filter(function(d) { return d.contact_id === c.id; })[0];
               if (updated && updated.capture_status !== 'capturing') {
                 clearInterval(window._specCapturePoll);
                 window._specCapturePoll = null;
@@ -6855,23 +6930,29 @@
       if (!window._batchPollTimer) {
         var _batchPollFails = 0;
         window._batchPollTimer = mkInterval(function() {
-          fetch(SB + '/rest/v1/content_audit_batches?select=*&client_slug=eq.' + state.contact.slug + '&order=created_at.desc&limit=5', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) {
-            if (!r.ok) throw new Error(r.status);
-            return r.json();
-          }).then(function(res) {
+          // Polling: refresh deep-dive cache each tick, read content_audit_batches (latest 5 by created_at).
+          refreshDeepDiveSlice(state.contact && state.contact.slug, 'content_audit_batches').then(function(dd) {
+            if (!dd) throw new Error('refresh failed');
             _batchPollFails = 0;
-            state.contentBatches = res || [];
+            var batches = ((state.deepDive && state.deepDive.content_audit_batches) || [])
+              .slice()
+              .sort(function(a, b) { return String(b.created_at || '').localeCompare(String(a.created_at || '')); })
+              .slice(0, 5);
+            state.contentBatches = batches;
             renderBatchAuditStatus();
             // If no longer active, stop polling and refresh pages
             var still = (state.contentBatches || []).find(function(b) { return b.status === 'queued' || b.status === 'agent_running' || b.status === 'extracting' || b.status === 'processing'; });
             if (!still) {
               clearInterval(window._batchPollTimer);
               window._batchPollTimer = null;
-              // Refresh content pages
-              fetch(SB + '/rest/v1/content_pages?select=*&contact_id=eq.' + state.contact.id + '&order=created_at.desc', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).then(function(cp) {
-                state.contentPages = cp || [];
-                renderContent();
-              });
+              // Refresh content pages from cache (already refreshed above).
+              var cid = state.contact && state.contact.id;
+              var cp = ((state.deepDive && state.deepDive.content_pages) || [])
+                .filter(function(p) { return p.contact_id === cid; })
+                .slice()
+                .sort(function(a, b) { return String(b.created_at || '').localeCompare(String(a.created_at || '')); });
+              state.contentPages = cp;
+              renderContent();
             }
           }).catch(function() {
             if (++_batchPollFails >= 3) { clearInterval(window._batchPollTimer); window._batchPollTimer = null; }
@@ -6948,8 +7029,12 @@
     }).then(function(r) { return r.json(); }).then(function(res) {
       if (res.success) {
         toast('Batch audit triggered for ' + res.pages_count + ' keywords', 'success');
-        fetch(SB + '/rest/v1/content_audit_batches?select=*&client_slug=eq.' + slug + '&order=created_at.desc&limit=5', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).then(function(batches) {
-          state.contentBatches = batches || [];
+        refreshDeepDiveSlice(slug, 'content_audit_batches').then(function() {
+          var batches = ((state.deepDive && state.deepDive.content_audit_batches) || [])
+            .slice()
+            .sort(function(a, b) { return String(b.created_at || '').localeCompare(String(a.created_at || '')); })
+            .slice(0, 5);
+          state.contentBatches = batches;
           renderBatchAuditStatus();
         });
       } else {
@@ -7444,11 +7529,10 @@
     }).then(function(r) { return r.json(); }).then(function(res) {
       if (res.success || res.campaign_keys) {
         crProgress(res.campaigns_created + ' campaigns created. ' + res.keywords + ' keywords, ~' + res.credits_per_run + ' credits/run. First run: ' + res.first_run, 'success');
-        // Reload report config
-        fetch(SB + '/rest/v1/report_configs?client_slug=eq.' + c.slug + '&limit=1', {
-          headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK }
-        }).then(function(r) { return r.json(); }).then(function(cfgs) {
-          state.reportConfig = (cfgs && cfgs[0]) || state.reportConfig;
+        // Reload report config via deep-dive cache
+        refreshDeepDiveSlice(c.slug, 'report_configs').then(function() {
+          var cfgs = (state.deepDive && state.deepDive.report_configs) || [];
+          state.reportConfig = cfgs[0] || state.reportConfig;
           setTimeout(function() { renderReports(); }, 1200);
         });
       } else {
@@ -7694,9 +7778,13 @@
     }).then(function(r) { return r.json(); }).then(function(res) {
       if (res.success) {
         toast('Report compiled for ' + (res.practice_name || c.slug), 'success');
-        // Reload snapshots
-        fetch(SB + '/rest/v1/report_snapshots?select=*&client_slug=eq.' + c.slug + '&order=report_month.desc&limit=20', { headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK } }).then(function(r) { return r.json(); }).then(function(snaps) {
-          state.snapshots = snaps || [];
+        // Reload snapshots via deep-dive cache (sorted by report_month DESC, limit 20).
+        refreshDeepDiveSlice(c.slug, 'report_snapshots').then(function() {
+          var snaps = ((state.deepDive && state.deepDive.report_snapshots) || [])
+            .slice()
+            .sort(function(a, b) { return String(b.report_month || '').localeCompare(String(a.report_month || '')); })
+            .slice(0, 20);
+          state.snapshots = snaps;
           renderReports();
         });
       } else {

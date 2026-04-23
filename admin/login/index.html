@@ -178,8 +178,8 @@ h1, h2 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script>if(!window.supabase){document.write('<scr'+'ipt src="https://unpkg.com/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></scr'+'ipt>')}</script>
+<script src="/vendor/supabase/supabase-2.49.4.min.js" integrity="sha384-2zrRDgDHSYB/GN3nFW3fsZXoxEhKIr3N2h63Tc6DEOB9JJdFIu8xMJT2Cph/gBil" crossorigin="anonymous"></script>
+<script>if(!window.supabase){console.error('[login] Supabase SDK failed to load'); document.body.insertAdjacentHTML('beforeend', '<div role="alert" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#fff;color:#b00020;font-family:system-ui,sans-serif;z-index:9999;padding:24px;text-align:center;">Login unavailable: required script failed to load. Please refresh the page or contact support.</div>');}</script>
 <script>
 var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
 var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';

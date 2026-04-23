@@ -390,7 +390,7 @@
 .search-result .result-status { margin-left: auto; }
 
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="/vendor/supabase/supabase-2.49.4.min.js" integrity="sha384-2zrRDgDHSYB/GN3nFW3fsZXoxEhKIr3N2h63Tc6DEOB9JJdFIu8xMJT2Cph/gBil" crossorigin="anonymous"></script>
 <script src="/shared/admin-auth.js"></script>
 <script src="/shared/offline-banner.js" defer></script>
 </head>
@@ -904,10 +904,9 @@
     fetch('/api/admin/reports-directory', { credentials: 'same-origin' })
       .then(function(r) { return r.json(); })
       .then(function(data) {
-      // Endpoint widened to active + onboarding. Preserve the page's
-      // historical active-only list view to avoid a visible behavior shift.
-      var contacts = (data && data.contacts) || [];
-      state.clients = contacts.filter(function(c) { return c.status === 'active'; });
+      // Endpoint returns active + onboarding clients. Both surfaces are
+      // intended in the reports view (onboarding clients ramping into reports).
+      state.clients = (data && data.contacts) || [];
       state.configs = {};
       ((data && data.report_configs) || []).forEach(function(c) { state.configs[c.client_slug] = c; });
       state.snapshots = {};
