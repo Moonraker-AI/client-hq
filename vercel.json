@@ -107,6 +107,10 @@
       "destination": "/_templates/proposal"
     },
     {
+      "source": "/:slug([a-z0-9-]+)/checkout/success",
+      "destination": "/_templates/checkout-success"
+    },
+    {
       "source": "/:slug([a-z0-9-]+)",
       "destination": "/_templates/router"
     }
