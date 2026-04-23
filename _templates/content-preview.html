@@ -173,9 +173,11 @@
         .then(function(endorsementsHtml) {
           if (endorsementsHtml) {
             // Replace the <section id="endorsement-section"> inner body if present.
+            // Use a function replacer so any `$1`/`$&` etc. appearing inside
+            // endorsementsHtml are treated as literal text, not backrefs.
             htmlToRender = htmlToRender.replace(
               /(<[a-z]+[^>]*id=["']endorsement-section["'][^>]*>)([\s\S]*?)(<\/[a-z]+>)/i,
-              '$1' + endorsementsHtml + '$3'
+              function(match, p1, p2, p3) { return p1 + endorsementsHtml + p3; }
             );
           }
           iframe.srcdoc = htmlToRender;

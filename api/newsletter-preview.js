@@ -7,6 +7,7 @@ var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
 var nl = require('./_lib/newsletter-template');
 var monitor = require('./_lib/monitor');
+var sanitizer = require('./_lib/html-sanitizer');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -36,6 +37,13 @@ module.exports = async function handler(req, res) {
     } catch (e) { /* non-fatal — preview without warmup flag */ }
 
     var html = nl.build(newsletter, 'preview', { warmupActive: warmupActive });
+
+    // Defense in depth: strip <script>, event handlers, javascript:/data: URLs,
+    // and any disallowed tags from the rendered output before it reaches the
+    // preview iframe (iframe sandbox is now empty — no scripts/same-origin —
+    // but we also sanitize here so the 'raw' JSON path used by copy-to-GHL
+    // gets the same guarantee.)
+    html = sanitizer.sanitizeHtml(html);
 
     if (raw) {
       res.setHeader('Content-Type', 'application/json');
