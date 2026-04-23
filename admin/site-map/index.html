@@ -139,17 +139,32 @@
     display: flex; align-items: center; gap: .55rem;
     padding: .5rem .8rem;
     background: var(--color-surface);
-    border: 1px solid var(--color-border);
+    border: 1.5px solid var(--color-border);
     border-radius: 9px;
     cursor: pointer; user-select: none;
     min-width: 220px; max-width: 360px;
     transition: all .12s;
     box-shadow: 0 1px 2px rgba(0,0,0,.02);
+    align-self: flex-start;
   }
-  .page-node:hover { border-color: var(--color-primary); transform: translateX(3px); box-shadow: 0 3px 10px rgba(0,0,0,.06); }
+  .page-node:hover { transform: translateX(3px); box-shadow: 0 3px 10px rgba(0,0,0,.06); }
   .page-node.removed { opacity: .55; text-decoration: line-through; text-decoration-color: var(--color-danger); text-decoration-thickness: 1.5px; }
-  .page-node.new { border-left: 3px solid #8B5CF6; }
-  .page-node.highlighted { background: linear-gradient(90deg, rgba(0,212,126,.06), transparent); border-color: rgba(0,212,126,.3); }
+
+  /* Per-status border color — entire node outlined to match its status */
+  .page-node.st-discovered    { border-color: rgba(156,163,175,.45); }
+  .page-node.st-existing_keep { border-color: rgba(0,212,126,.55); background: linear-gradient(90deg, rgba(0,212,126,.05), transparent); }
+  .page-node.st-existing_update { border-color: rgba(59,130,246,.5); background: linear-gradient(90deg, rgba(59,130,246,.05), transparent); }
+  .page-node.st-existing_remove { border-color: rgba(239,68,68,.45); }
+  .page-node.st-new           { border-color: rgba(139,92,246,.55); background: linear-gradient(90deg, rgba(139,92,246,.05), transparent); }
+  .page-node.st-drafting      { border-color: rgba(245,158,11,.55); background: linear-gradient(90deg, rgba(245,158,11,.05), transparent); }
+
+  .page-node:hover.st-discovered    { border-color: var(--color-primary); }
+  .page-node:hover.st-existing_keep { border-color: var(--color-success); }
+  .page-node:hover.st-existing_update { border-color: var(--color-info); }
+  .page-node:hover.st-existing_remove { border-color: var(--color-danger); }
+  .page-node:hover.st-new           { border-color: #8B5CF6; }
+  .page-node:hover.st-drafting      { border-color: var(--color-warning); }
+
   .page-node .page-label { font-size: .82rem; color: var(--color-heading); flex: 1; word-break: break-word; line-height: 1.3; font-weight: 500; }
   .page-node .status-dot { flex-shrink: 0; width: 9px; height: 9px; border-radius: 50%; }
   .status-dot.st-discovered { background: #9CA3AF; }
@@ -180,7 +195,10 @@
     padding: .35rem .75rem;
     border-radius: 7px;
     cursor: pointer; font-family: inherit;
-    min-width: 220px; text-align: left;
+    min-width: 220px; max-width: 360px;
+    width: max-content;
+    text-align: left;
+    align-self: flex-start;
   }
   .cat-add-inline:hover { background: var(--color-primary-subtle); border-style: solid; }
 
@@ -411,6 +429,29 @@
   };
   // Pages with these statuses count toward the highlight target.
   var HIGHLIGHTED_STATUSES = ['existing_keep', 'existing_update', 'new', 'drafting'];
+
+  // Placeholder copy for the "Add page" modal — category-aware so the
+  // suggested keyword pattern matches the page type.
+  var ADD_PLACEHOLDER = {
+    home:           { title: 'e.g. therapy in Toronto',                       url: '/' },
+    service:        { title: 'e.g. couples therapy for entrepreneurs',         url: '/couples-therapy-entrepreneurs' },
+    location:       { title: 'e.g. therapist in Brooklyn NY',                  url: '/brooklyn-ny' },
+    bio:            { title: 'e.g. Dr. Jane Smith, LMFT',                      url: '/team/jane-smith' },
+    faq:            { title: 'e.g. how does therapy work',                     url: '/faq' },
+    contact:        { title: 'e.g. contact us',                                url: '/contact' },
+    about:          { title: 'e.g. about our practice',                        url: '/about' },
+    testimonials:   { title: 'e.g. client testimonials',                       url: '/testimonials' },
+    fees:           { title: 'e.g. fees and insurance',                        url: '/fees' },
+    services_index: { title: 'e.g. our services',                              url: '/services' },
+    careers:        { title: 'e.g. join our team',                             url: '/careers' },
+    store:          { title: 'e.g. self-help workbook',                        url: '/store/workbook' },
+    blog_index:     { title: 'e.g. mental health blog',                        url: '/blog' },
+    blog_post:      { title: 'e.g. 5 signs you need couples counseling',       url: '/blog/5-signs-couples-counseling' },
+    legal_privacy:  { title: 'Privacy policy',                                 url: '/privacy' },
+    legal_terms:    { title: 'Terms of service',                               url: '/terms' },
+    legal_other:    { title: 'e.g. accessibility statement',                   url: '/accessibility' },
+    other:          { title: 'e.g. resources',                                 url: '/resources' }
+  };
 
   var state = {
     site_map: null, plan_limits: {}, pages_by_category: {}, counts: {},
@@ -722,8 +763,6 @@
     }
     var classes = 'page-node st-' + p.status;
     if (p.status === 'existing_remove') classes += ' removed';
-    if (p.status === 'new') classes += ' new';
-    if (HIGHLIGHTED_STATUSES.indexOf(p.status) !== -1) classes += ' highlighted';
 
     return el('div', {
       class: classes,
@@ -828,7 +867,7 @@
 
     if (p.url) {
       body.appendChild(el('div', { class: 'field-group' }, [
-        el('label', { class: 'field-label' }, 'URL'),
+        el('label', { class: 'field-label' }, 'Live URL'),
         el('div', { class: 'url-row' }, [
           el('a', { href: p.url, target: '_blank', rel: 'noopener' }, p.url),
           el('span', { style: 'color:var(--color-muted);font-size:.7rem' }, '↗')
@@ -841,9 +880,29 @@
       el('label', { class: 'field-label' }, 'Title (target keyword)'),
       el('input', {
         type: 'text', class: 'form-input', id: 'detail-title-input',
-        value: p.title || ''
+        value: p.title || labelFromPage(p),
+        oninput: function() { updateProposedUrlPreview(p); }
       }),
-      el('div', { class: 'field-help' }, 'Edit the title to update what this page targets. Auto-pulled from the URL when blank.')
+      el('div', { class: 'field-help' }, 'Edit to change what this page targets. The H1 and SEO title both use this.')
+    ]));
+
+    // Proposed URL update — admin/client can rewrite the URL slug. Live preview
+    // mirrors what the slug will look like if left blank.
+    var initialProposed = (p.url && p.url.indexOf('http') === 0) ? '' : (p.url || '');
+    body.appendChild(el('div', { class: 'field-group' }, [
+      el('label', { class: 'field-label' }, 'Propose URL update'),
+      el('div', { class: 'url-preview' }, [
+        el('span', { class: 'preview-label' }, 'New URL:'),
+        el('span', { class: 'preview-path', id: 'detail-url-preview' }, initialProposed || '/' + (slugify(p.title || labelFromPage(p)) || 'page'))
+      ]),
+      el('input', {
+        type: 'text', class: 'form-input', id: 'detail-url-input',
+        placeholder: '(leave blank to auto-generate from title above)',
+        value: initialProposed,
+        style: 'margin-top:.5rem',
+        oninput: function() { updateProposedUrlPreview(p); }
+      }),
+      el('div', { class: 'field-help' }, 'Only the URL path is editable here (e.g. /couples-therapy). Used when relaunching the page on the new site.')
     ]));
 
     // Notes
@@ -855,12 +914,9 @@
       }, p.notes || '')
     ]));
 
-    // Status pills
+    // Status pills — show all options; server validates edge cases.
     var pillRow = el('div', { class: 'status-pills' });
     Object.keys(STATUS_LABELS).forEach(function(s) {
-      // Filter unsupported transitions
-      if (p.status === 'discovered' && s === 'drafting') return;
-      if (p.status === 'new' && s.indexOf('existing_') === 0) return;
       var pill = el('button', {
         class: 'status-pill st-' + s + (p.status === s ? ' active' : ''),
         onclick: function() { changeStatus(p.id, s); }
@@ -917,38 +973,107 @@
   window.openPageModal = openPageModal;
 
   function changeStatus(pageId, newStatus) {
+    var p = state.pageById[pageId];
+    if (!p || p.status === newStatus) return;
+    var prevStatus = p.status;
+
+    // Optimistic update — repaint immediately
+    p.status = newStatus;
+    repaintAfterStatusChange(pageId);
+
     apiPost('/api/site-map-action', {
       action: 'set_page_status',
       site_map_id: state.site_map.id,
       page_id: pageId,
       status: newStatus
     }).then(function(r) {
-      if (!r.ok) { showToast(r.body.error || 'Failed to update', 'err'); return; }
-      // Reload, then reopen this page modal so the user sees the new status applied
+      if (!r.ok) {
+        // Roll back
+        p.status = prevStatus;
+        repaintAfterStatusChange(pageId);
+        showToast(r.body.error || 'Failed to update', 'err');
+        return;
+      }
+      // Success — refresh counts in background (don't block UI)
       load();
-      // Wait for reload then re-render modal with fresh data
-      var attempts = 0;
-      var iv = setInterval(function() {
-        if (state.pageById[pageId] && state.pageById[pageId].status === newStatus) {
-          clearInterval(iv);
-          openPageModal(pageId);
-        } else if (++attempts > 20) clearInterval(iv);
-      }, 100);
+    }).catch(function(e) {
+      p.status = prevStatus;
+      repaintAfterStatusChange(pageId);
+      showToast('Network error', 'err');
     });
+  }
+
+  // Repaint the affected page node + the open modal pills without a full
+  // reload. Counts will sync when load() returns.
+  function repaintAfterStatusChange(pageId) {
+    var p = state.pageById[pageId];
+    if (!p) return;
+    // Update tree node classes
+    var nodeEl = document.querySelector('.page-node[data-page-id="' + pageId + '"]');
+    if (nodeEl) {
+      nodeEl.className = 'page-node st-' + p.status + (p.status === 'existing_remove' ? ' removed' : '');
+      var dot = nodeEl.querySelector('.status-dot');
+      if (dot) dot.className = 'status-dot st-' + p.status;
+    }
+    // Update active pill in open modal
+    if (state.selectedPageId === pageId) {
+      document.querySelectorAll('#page-modal-content .status-pill').forEach(function(b) {
+        b.classList.remove('active');
+      });
+      var newActive = document.querySelector('#page-modal-content .status-pill.st-' + p.status);
+      if (newActive) newActive.classList.add('active');
+      // Update the eyebrow dot too
+      var eyebrowDot = document.querySelector('#page-modal-content .modal-eyebrow .status-dot');
+      if (eyebrowDot) eyebrowDot.className = 'status-dot st-' + p.status;
+    }
+    // Reflow connectors since node colors don't change layout, but if removed
+    // class toggled it can shift slightly
+    requestAnimationFrame(drawConnectors);
+  }
+
+  function updateProposedUrlPreview(p) {
+    var titleInput = document.getElementById('detail-title-input');
+    var urlInput = document.getElementById('detail-url-input');
+    var preview = document.getElementById('detail-url-preview');
+    if (!titleInput || !urlInput || !preview) return;
+    var explicitUrl = (urlInput.value || '').trim();
+    var title = (titleInput.value || '').trim();
+    var out;
+    if (explicitUrl) {
+      out = explicitUrl.indexOf('/') === 0 || explicitUrl.indexOf('http') === 0
+        ? explicitUrl : '/' + explicitUrl;
+    } else {
+      var s = slugify(title || labelFromPage(p));
+      out = s ? '/' + s : (p.url || '/page');
+    }
+    preview.textContent = out;
   }
 
   function saveDetailEdits(p) {
     var title = (document.getElementById('detail-title-input').value || '').trim();
     var notes = (document.getElementById('detail-notes-input').value || '').trim();
-    var unchanged = (title === (p.title || '')) && (notes === (p.notes || ''));
+    var urlInput = document.getElementById('detail-url-input');
+    var newUrl = urlInput ? (urlInput.value || '').trim() : null;
+    // Only send url if it differs from the current page url (string compare).
+    // Note: the input is path-only when it's a new proposal; if user pasted
+    // a full URL we accept that too.
+    var urlChanged = (newUrl !== ((p.url && p.url.indexOf('http') === 0) ? '' : (p.url || '')));
+    var unchanged = (title === (p.title || '')) && (notes === (p.notes || '')) && !urlChanged;
     if (unchanged) { closeModal('page-modal'); return; }
     if (!title) { showToast('Title required', 'err'); return; }
-    apiPost('/api/site-map-action', {
+
+    var payload = {
       action: 'rename_page',
       site_map_id: state.site_map.id,
       page_id: p.id,
       title: title, notes: notes
-    }).then(function(r) {
+    };
+    if (urlChanged) {
+      // If user left the field blank but title changed, auto-generate from title.
+      // Otherwise send what they typed (path-only or full URL).
+      payload.url = newUrl || ('/' + slugify(title));
+    }
+    apiPost('/api/site-map-action', payload).then(function(r) {
       if (!r.ok) { showToast(r.body.error || 'Failed', 'err'); return; }
       showToast('Saved', 'ok');
       closeModal('page-modal');
@@ -978,14 +1103,19 @@
   // ── Add page modal ────────────────────────────────────────────────
   function openAddModal(cat) {
     state.adding_to_category = cat;
-    document.getElementById('add-title').value = '';
-    document.getElementById('add-url').value = '';
+    var ph = ADD_PLACEHOLDER[cat] || { title: 'e.g. new page', url: '/new-page' };
+    var titleEl = document.getElementById('add-title');
+    var urlEl = document.getElementById('add-url');
+    titleEl.value = '';
+    titleEl.setAttribute('placeholder', ph.title);
+    urlEl.value = '';
+    urlEl.setAttribute('placeholder', '(auto from title, e.g. ' + ph.url + ')');
     document.getElementById('add-notes').value = '';
     document.getElementById('add-cat-label').textContent = 'Add ' + (CATEGORY_LABELS[cat] || cat).toLowerCase();
     document.getElementById('add-modal-title').textContent = 'New ' + (CATEGORY_LABELS[cat] || cat).toLowerCase().replace(/s$/, '');
-    document.getElementById('add-url-preview').textContent = '/your-page';
+    document.getElementById('add-url-preview').textContent = ph.url;
     openModal('add-modal');
-    setTimeout(function() { document.getElementById('add-title').focus(); }, 100);
+    setTimeout(function() { titleEl.focus(); }, 100);
   }
 
   window.updateAddPreview = function() {
@@ -996,7 +1126,12 @@
       preview = explicitUrl.indexOf('/') === 0 ? explicitUrl : '/' + explicitUrl;
     } else {
       var s = slugify(title);
-      preview = s ? '/' + s : '/your-page';
+      if (s) {
+        preview = '/' + s;
+      } else {
+        var ph = ADD_PLACEHOLDER[state.adding_to_category];
+        preview = ph ? ph.url : '/your-page';
+      }
     }
     document.getElementById('add-url-preview').textContent = preview;
   };
