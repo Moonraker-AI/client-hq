@@ -173,6 +173,39 @@ section { padding: 4.5rem 0; }
 .attribution-source-pill.organic { background: rgba(0,212,126,.12); color: #006e44; }
 .attribution-source-pill.ai { background: rgba(139,92,246,.12); color: #5b21b6; }
 
+/* Attribution deep dive */
+.attribution-deep-dive { margin: 2rem 0 1rem; }
+.attribution-deep-dive.hidden { display: none; }
+.attr-dd-header h3 { font-size: 1.15rem; margin-bottom: .35rem; }
+.attr-dd-header .section-intro { font-size: .8125rem; color: var(--color-muted); margin-top: 0; }
+.attr-dd-summary { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1.5rem; margin: 1rem 0; line-height: 1.55; }
+.attr-dd-summary h1, .attr-dd-summary h2, .attr-dd-summary h3, .attr-dd-summary h4 { font-size: 1rem; margin: 1rem 0 .35rem; }
+.attr-dd-summary h1:first-child, .attr-dd-summary h2:first-child, .attr-dd-summary h3:first-child, .attr-dd-summary h4:first-child { margin-top: 0; }
+.attr-dd-summary p { margin: .5rem 0; }
+.attr-dd-summary ul, .attr-dd-summary ol { margin: .5rem 0; padding-left: 1.35rem; }
+.attr-dd-summary li { margin: .2rem 0; }
+.attr-dd-summary strong { color: var(--color-heading); }
+.attr-dd-summary a { color: var(--color-primary); text-decoration: underline; }
+.attr-dd-chart { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 1.25rem 1.5rem; margin: 1rem 0; }
+.attr-dd-chart.hidden { display: none; }
+.attr-dd-chart h4 { font-size: .875rem; color: var(--color-muted); font-weight: 500; margin: 0 0 .85rem; text-transform: uppercase; letter-spacing: .04em; }
+.attr-dd-chart-row { display: grid; grid-template-columns: 160px 1fr 60px; gap: .75rem; align-items: center; margin: .45rem 0; font-size: .875rem; }
+.attr-dd-chart-row .bar-track { background: var(--color-border); height: 10px; border-radius: 5px; overflow: hidden; position: relative; }
+.attr-dd-chart-row .bar-fill { background: var(--color-primary); height: 100%; border-radius: 5px; transition: width .4s ease; }
+.attr-dd-chart-row .bar-fill.prior { background: var(--color-muted); opacity: .5; }
+.attr-dd-chart-row .bar-pct { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--color-heading); }
+.attr-dd-chart-legend { display: flex; gap: 1rem; font-size: .75rem; color: var(--color-muted); margin-top: .75rem; }
+.attr-dd-chart-legend .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: .35rem; }
+.attr-dd-chart-legend .swatch.current { background: var(--color-primary); }
+.attr-dd-chart-legend .swatch.prior { background: var(--color-muted); opacity: .5; }
+.attr-dd-commentary { background: var(--color-primary-subtle); border-left: 3px solid var(--color-primary); border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
+.attr-dd-commentary.hidden { display: none; }
+.attr-dd-commentary-label { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--color-primary); margin-bottom: .5rem; }
+.attr-dd-commentary-body { line-height: 1.55; }
+.attr-dd-commentary-body p { margin: .4rem 0; }
+.attr-dd-commentary-body p:first-child { margin-top: 0; }
+.attr-dd-commentary-body p:last-child { margin-bottom: 0; }
+
 /* Striking distance section */
 .striking-intro { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem; }
 .striking-summary { background: var(--color-primary-subtle); border-radius: 12px; padding: 1.25rem 1.5rem; }
@@ -309,6 +342,19 @@ section { padding: 4.5rem 0; }
             </tr></thead>
             <tbody id="attributionBody"></tbody>
           </table>
+        </div>
+      </div>
+
+      <div class="attribution-deep-dive hidden" id="attributionDeepDive">
+        <div class="attr-dd-header">
+          <h3 id="attrDdHeadline">Attribution deep dive</h3>
+          <p class="section-intro" id="attrDdDataNote"></p>
+        </div>
+        <div class="attr-dd-summary" id="attrDdSummary"></div>
+        <div class="attr-dd-chart hidden" id="attrDdChart"></div>
+        <div class="attr-dd-commentary hidden" id="attrDdCommentary">
+          <div class="attr-dd-commentary-label">In the client's words</div>
+          <div class="attr-dd-commentary-body" id="attrDdCommentaryBody"></div>
         </div>
       </div>
     </div>
@@ -522,6 +568,65 @@ section { padding: 4.5rem 0; }
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+
+  // Minimal, escape-first markdown renderer. Supports: headings (## ###),
+  // bold **x**, italic *x*, links [text](url), inline code `x`, ordered
+  // and unordered lists, paragraphs. Everything escaped before conversion,
+  // so injected HTML/scripts stay inert. Links restricted to http/https/mailto.
+  function renderMarkdown(src) {
+    if (!src) return '';
+    var lines = String(src).replace(/\r\n?/g, '\n').split('\n');
+    var out = [];
+    var i = 0;
+    function inline(s) {
+      s = escapeHtml(s);
+      s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+      s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/(^|[^\*])\*([^\*]+)\*/g, '$1<em>$2</em>');
+      s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function(m, t, u) {
+        if (!/^(https?:|mailto:)/i.test(u)) return t;
+        return '<a href="' + u + '" target="_blank" rel="noopener">' + t + '</a>';
+      });
+      return s;
+    }
+    while (i < lines.length) {
+      var line = lines[i];
+      if (!line.trim()) { i++; continue; }
+      var h = line.match(/^(#{1,4})\s+(.*)$/);
+      if (h) {
+        var level = Math.min(h[1].length + 2, 6);
+        out.push('<h' + level + '>' + inline(h[2]) + '</h' + level + '>');
+        i++; continue;
+      }
+      if (/^[-*]\s+/.test(line)) {
+        var items = [];
+        while (i < lines.length && /^[-*]\s+/.test(lines[i])) {
+          items.push('<li>' + inline(lines[i].replace(/^[-*]\s+/, '')) + '</li>');
+          i++;
+        }
+        out.push('<ul>' + items.join('') + '</ul>');
+        continue;
+      }
+      if (/^\d+\.\s+/.test(line)) {
+        var olitems = [];
+        while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
+          olitems.push('<li>' + inline(lines[i].replace(/^\d+\.\s+/, '')) + '</li>');
+          i++;
+        }
+        out.push('<ol>' + olitems.join('') + '</ol>');
+        continue;
+      }
+      var para = [line];
+      i++;
+      while (i < lines.length && lines[i].trim() && !/^(#{1,4}\s|[-*]\s|\d+\.\s)/.test(lines[i])) {
+        para.push(lines[i]);
+        i++;
+      }
+      out.push('<p>' + inline(para.join(' ')) + '</p>');
+    }
+    return out.join('');
+  }
+
   // Slightly muted navy in light mode, soft cream-gray in dark mode.
   // Uses the design system's --color-body equivalents in each theme so the
   // line reads as a "data accent" rather than a heading. Hardcoded to avoid
@@ -751,6 +856,7 @@ section { padding: 4.5rem 0; }
     // ── Performance Guarantee + Attribution ─────────────────────────
     renderGuarantee(data);
     renderAttribution(data);
+    renderAttributionDeepDive(data);
 
     // ── Bookings section ────────────────────────────────────────────
     renderBookings(data);
@@ -1329,6 +1435,82 @@ section { padding: 4.5rem 0; }
       + '</tr>');
 
     body.innerHTML = rows.join('');
+  }
+
+  function renderAttributionDeepDive(data) {
+    var dd = data.attribution_deep_dive;
+    var el = document.getElementById('attributionDeepDive');
+    if (!dd || !dd.available) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+
+    var headline = dd.headline || 'Attribution deep dive';
+    document.getElementById('attrDdHeadline').textContent = headline;
+
+    var noteParts = [];
+    if (dd.data_source_note) noteParts.push(dd.data_source_note);
+    if (dd.data_period_start && dd.data_period_end) {
+      noteParts.push(formatDateRange(dd.data_period_start, dd.data_period_end));
+    }
+    var noteEl = document.getElementById('attrDdDataNote');
+    if (noteParts.length) {
+      noteEl.textContent = noteParts.join(' · ');
+      noteEl.style.display = '';
+    } else {
+      noteEl.style.display = 'none';
+    }
+
+    var summaryEl = document.getElementById('attrDdSummary');
+    if (dd.summary_markdown) {
+      summaryEl.innerHTML = renderMarkdown(dd.summary_markdown);
+      summaryEl.style.display = '';
+    } else {
+      summaryEl.style.display = 'none';
+    }
+
+    var chartEl = document.getElementById('attrDdChart');
+    if (dd.source_mix && dd.source_mix.length) {
+      var hasPrior = dd.source_mix.some(function(s) { return s.prior_pct != null; });
+      var rows = dd.source_mix.map(function(s) {
+        var name = escapeHtml(s.source || '');
+        var current = Number(s.current_pct) || 0;
+        var prior = s.prior_pct != null ? Number(s.prior_pct) : null;
+        var count = s.count != null ? ' <span style="color:var(--color-muted);font-weight:400">(' + s.count + ')</span>' : '';
+        var bars = '<div class="bar-fill" style="width:' + Math.min(100, current) + '%"></div>';
+        if (prior != null) {
+          bars = '<div class="bar-fill prior" style="width:' + Math.min(100, prior) + '%;position:absolute;top:0;left:0"></div>' + bars;
+        }
+        return '<div class="attr-dd-chart-row">'
+          + '<div>' + name + count + '</div>'
+          + '<div class="bar-track">' + bars + '</div>'
+          + '<div class="bar-pct">' + current.toFixed(1) + '%</div>'
+          + '</div>';
+      });
+      var legend = hasPrior
+        ? '<div class="attr-dd-chart-legend"><span><span class="swatch current"></span>Current period</span><span><span class="swatch prior"></span>Prior period</span></div>'
+        : '';
+      chartEl.innerHTML = '<h4>Source mix</h4>' + rows.join('') + legend;
+      chartEl.classList.remove('hidden');
+    } else {
+      chartEl.classList.add('hidden');
+    }
+
+    var commEl = document.getElementById('attrDdCommentary');
+    var commBody = document.getElementById('attrDdCommentaryBody');
+    if (dd.client_commentary_markdown) {
+      commBody.innerHTML = renderMarkdown(dd.client_commentary_markdown);
+      commEl.classList.remove('hidden');
+    } else {
+      commEl.classList.add('hidden');
+    }
+  }
+
+  function formatDateRange(startIso, endIso) {
+    try {
+      var s = new Date(startIso + 'T00:00:00Z');
+      var e = new Date(endIso + 'T00:00:00Z');
+      var opts = { year: 'numeric', month: 'short', timeZone: 'UTC' };
+      return s.toLocaleDateString('en-US', opts) + ' – ' + e.toLocaleDateString('en-US', opts);
+    } catch (err) { return startIso + ' – ' + endIso; }
   }
 
   function formatPeriodShort(p) {
