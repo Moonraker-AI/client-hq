@@ -56,7 +56,7 @@
     },
     {
       "source": "/admin/clients/:slug([a-z0-9-]+)/site-map",
-      "destination": "/admin/site-map/index.html"
+      "destination": "/admin/site-map"
     },
     {
       "source": "/:slug/img/:path*",
