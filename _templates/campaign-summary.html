@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
 <script>window.__MR_PAGE_SCOPE__ = 'campaign_summary';</script>
-<script src="/shared/page-token.js" defer></script>
+<script src="/shared/page-token.js"></script>
 <head>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex, nofollow">
@@ -699,7 +699,7 @@ section { padding: 4.5rem 0; }
   // Auth rides along via the HttpOnly cookie set by /api/page-token/request
   // (see shared/page-token.js). Wait for the initial mint before fetching so
   // the server-side verify has a cookie to read.
-  (window.mrPageToken && window.mrPageToken.ready ? window.mrPageToken.ready() : Promise.resolve())
+  window.mrPageToken.ready()
     .catch(function() { /* surface as HTTP error below */ })
     .then(function() {
       return fetch('/api/campaign-summary?client=' + encodeURIComponent(CLIENT_SLUG), {
