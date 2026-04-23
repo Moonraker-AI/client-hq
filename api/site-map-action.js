@@ -54,6 +54,11 @@ var PLAN_LIMITS = {
 // Actions that reduce the active page count (existing_remove takes a page
 // out of the "active" set for cap purposes, same as delete).
 var REMOVED_STATUSES = ['existing_remove'];
+// Pages that count toward the plan cap. The cap is a "highlight target" —
+// discovered pages are inventory awaiting triage and don't count. Once a page
+// is committed to keep/update/draft/new it enters the highlighted set and
+// counts against the cap.
+var HIGHLIGHTED_STATUSES = ['existing_keep', 'existing_update', 'new', 'drafting'];
 
 function isUuid(s) {
   return typeof s === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
@@ -68,13 +73,26 @@ function sanitizeText(s, maxLen) {
   return str.slice(0, maxLen || 500);
 }
 
-// Count "active" pages in a category (excludes existing_remove since those
-// won't ship to production).
-async function countActivePagesInCategory(siteMapId, category) {
+// Slugify a title into a URL path segment. Mirrors the client-side preview
+// in admin/site-map/index.html so server and client agree on the auto-URL.
+function slugifyTitle(title) {
+  if (!title) return null;
+  var s = String(title).toLowerCase().trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  return s ? '/' + s.slice(0, 80) : null;
+}
+
+// Count "highlighted" pages in a category — these count toward the plan cap.
+// Discovered pages are excluded (they're inventory) and removed pages are
+// excluded (they won't ship).
+async function countHighlightedInCategory(siteMapId, category) {
   var rows = await sb.query(
     'site_map_pages?site_map_id=eq.' + siteMapId
     + '&category=eq.' + encodeURIComponent(category)
-    + '&status=not.in.(' + REMOVED_STATUSES.join(',') + ')'
+    + '&status=in.(' + HIGHLIGHTED_STATUSES.join(',') + ')'
     + '&select=id'
   );
   return Array.isArray(rows) ? rows.length : 0;
@@ -98,16 +116,18 @@ async function actionSetPageStatus(body, siteMap) {
   // No-op if status matches
   if (page.status === body.status) return { success: true, noop: true };
 
-  // If this transition takes a page from removed -> active (e.g. user undoes
-  // an accidental "mark for removal"), we need to re-check the plan cap.
-  var wasActive = REMOVED_STATUSES.indexOf(page.status) === -1;
-  var willBeActive = REMOVED_STATUSES.indexOf(body.status) === -1;
+  // Cap is the "highlight target". A page enters the highlighted set when
+  // moving to keep/update/draft/new from any other status. If this transition
+  // would push the highlighted count past the cap, block it (the caller can
+  // un-highlight another page first).
+  var wasHighlighted = HIGHLIGHTED_STATUSES.indexOf(page.status) !== -1;
+  var willBeHighlighted = HIGHLIGHTED_STATUSES.indexOf(body.status) !== -1;
   var cap = PLAN_LIMITS[siteMap.source_type] && PLAN_LIMITS[siteMap.source_type][page.category];
-  if (cap && !wasActive && willBeActive) {
-    var activeCount = await countActivePagesInCategory(siteMap.id, page.category);
-    if (activeCount >= cap) {
+  if (cap && !wasHighlighted && willBeHighlighted) {
+    var highlightedCount = await countHighlightedInCategory(siteMap.id, page.category);
+    if (highlightedCount >= cap) {
       return {
-        error: 'Cannot restore page: ' + page.category + ' cap of ' + cap + ' reached',
+        error: 'Already highlighting ' + cap + ' ' + page.category + ' page(s). Un-highlight one first or change the status to "Remove".',
         status: 409
       };
     }
@@ -194,14 +214,18 @@ async function actionAddPage(body, siteMap) {
   if (!title) return { error: 'title required', status: 400 };
   var notes = sanitizeText(body.notes, 2000) || null;
   var url = sanitizeText(body.url, 500) || null;
+  // Auto-generate URL path from title when caller didn't provide one. The
+  // client also previews this so users see what the URL will look like.
+  if (!url) url = slugifyTitle(title);
 
-  // Plan cap enforcement
+  // Plan cap enforcement — new pages enter as 'new' which IS in the
+  // highlighted set, so they count immediately.
   var cap = PLAN_LIMITS[siteMap.source_type] && PLAN_LIMITS[siteMap.source_type][body.category];
   if (cap) {
-    var activeCount = await countActivePagesInCategory(siteMap.id, body.category);
-    if (activeCount >= cap) {
+    var highlightedCount = await countHighlightedInCategory(siteMap.id, body.category);
+    if (highlightedCount >= cap) {
       return {
-        error: body.category + ' cap of ' + cap + ' reached for this plan',
+        error: 'Already highlighting ' + cap + ' ' + body.category + ' page(s). Remove one from your highlight set first.',
         status: 409
       };
     }
