@@ -1,3 +1,4 @@
+// rebuild trigger
 // /api/admin/fix-drive-folders.js
 // TEMPORARY one-shot fixes for Derek + Monique.
 // Auth: CRON_SECRET Bearer.
