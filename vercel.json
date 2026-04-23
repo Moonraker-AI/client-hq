@@ -55,6 +55,10 @@
       "destination": "/assets/logo.png"
     },
     {
+      "source": "/admin/clients/:slug([a-z0-9-]+)/site-map",
+      "destination": "/admin/site-map/index.html"
+    },
+    {
       "source": "/:slug/img/:path*",
       "destination": "https://ofmmwcjhdrhvxxkhcuww.supabase.co/storage/v1/object/public/images/:slug/:path*"
     },
@@ -283,3 +287,4 @@
     }
   ]
 }
+
