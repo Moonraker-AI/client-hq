@@ -45,6 +45,7 @@ var TABLES = {
   report_configs:          { read: true, write: true, delete: true },
   report_queue:            { read: true, write: true, delete: true },
   tracked_keywords:        { read: true, write: true, delete: true },
+  client_attribution_insights: { read: true, write: true, delete: true },
 
   // Audits
   entity_audits:           { read: true, write: true, delete: true },
