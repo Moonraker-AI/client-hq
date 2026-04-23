@@ -182,6 +182,90 @@ module.exports = async function handler(req, res) {
         results.action = 'entity_audit_upgraded';
         results.audit_id = audits[0].id;
 
+        // ── New-from-scratch premium flow (2026-04-23) ──
+        // If this audit was created by /api/submit-entity-audit-premium
+        // and the buyer paid without ever going through the free-intake
+        // path, the row is still status='pending' and the Surge agent
+        // has never been fired. Fire it now — we intentionally deferred
+        // until after payment so a non-completing Stripe session wouldn't
+        // consume Surge budget or auto-send a free scorecard.
+        //
+        // We can't use entityAuditTrigger.createAndTriggerAudit() because
+        // it always INSERTS a new audit row. We already have one (pending,
+        // just upgraded to premium above); fire the agent for its existing
+        // id. Mirror of entity-audit-trigger.js lines 77-116. On agent
+        // error we PATCH status='agent_error' + last_agent_error and let
+        // cron/process-audit-queue.js Step 0.5 retry every 5 min.
+        if (audits[0].status === 'pending') {
+          try {
+            var premiumContact = await sb.one(
+              'contacts?id=eq.' + contact.id +
+              '&select=id,slug,first_name,last_name,practice_name,website_url,city,state_province,gbp_share_link&limit=1'
+            );
+            if (premiumContact && premiumContact.website_url) {
+              var pBrand = (premiumContact.practice_name && premiumContact.practice_name.trim()) ||
+                           ((premiumContact.first_name || '') + ' ' + (premiumContact.last_name || '')).trim();
+              var pGeo = (premiumContact.city && premiumContact.state_province)
+                ? (premiumContact.city + ', ' + premiumContact.state_province)
+                : (premiumContact.city || premiumContact.state_province || '');
+
+              var AGENT_URL = process.env.AGENT_SERVICE_URL;
+              var AGENT_KEY = process.env.AGENT_API_KEY;
+              if (AGENT_URL && AGENT_KEY) {
+                var agentResp = await fetchT(AGENT_URL + '/tasks/surge-audit', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + AGENT_KEY
+                  },
+                  body: JSON.stringify({
+                    audit_id: audits[0].id,
+                    practice_name: pBrand,
+                    website_url: premiumContact.website_url,
+                    city: premiumContact.city || '',
+                    state: premiumContact.state_province || '',
+                    geo_target: pGeo,
+                    gbp_link: premiumContact.gbp_share_link || '',
+                    client_slug: premiumContact.slug
+                  })
+                }, 30000);
+                if (agentResp.ok) {
+                  var agentBody = await agentResp.json();
+                  await sb.mutate('entity_audits?id=eq.' + audits[0].id, 'PATCH', {
+                    status: 'agent_running',
+                    agent_task_id: agentBody && agentBody.task_id
+                  }, 'return=minimal');
+                  results.premium_agent_triggered = true;
+                } else {
+                  await sb.mutate('entity_audits?id=eq.' + audits[0].id, 'PATCH', {
+                    status: 'agent_error',
+                    last_agent_error: 'Agent returned ' + agentResp.status
+                  }, 'return=minimal');
+                  results.premium_agent_error = 'http_' + agentResp.status;
+                }
+              } else {
+                results.premium_agent_skipped = 'agent_not_configured';
+              }
+            } else {
+              results.premium_agent_skipped = 'missing_website_url';
+            }
+          } catch (triggerErr) {
+            try {
+              await sb.mutate('entity_audits?id=eq.' + audits[0].id, 'PATCH', {
+                status: 'agent_error',
+                last_agent_error: String(triggerErr && triggerErr.message || triggerErr).substring(0, 500)
+              }, 'return=minimal');
+            } catch (_) { /* ignore */ }
+            try {
+              await monitor.logError('stripe-webhook', triggerErr, {
+                client_slug: slug,
+                detail: { stage: 'premium_agent_trigger', audit_id: audits[0].id, session_id: session.id }
+              });
+            } catch (_) { /* don't mask the 200 */ }
+            results.premium_agent_trigger_failed = true;
+          }
+        }
+
         // M19 race-case check: if the free scorecard email had already been
         // auto-sent by process-entity-audit before this upgrade landed, the
         // customer paid for premium but already received free delivery. Fire
