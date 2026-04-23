@@ -1801,6 +1801,7 @@
     if (c.drive_folder_url) ql.push({ icon: '&#128193;', label: 'Google Drive', url: c.drive_folder_url });
     if (c.psychology_today_url) ql.push({ icon: '&#129504;', label: 'Psychology Today', url: c.psychology_today_url });
     ql.push({ icon: '&#9881;', label: 'Audit Pages', url: '/' + c.slug + '/audits/diagnosis' });
+    ql.push({ icon: '&#127794;', label: 'Site Map', url: '/admin/clients/' + c.slug + '/site-map' });
     ql.push({ icon: '&#9654;', label: 'Onboarding', url: '/' + c.slug + '/onboarding' });
     ql.push({ icon: '&#128279;', label: 'Client Portal', url: '/' + c.slug });
     if (c.stripe_customer_id) ql.push({ icon: '&#128179;', label: 'Stripe', url: 'https://dashboard.stripe.com/customers/' + c.stripe_customer_id });
