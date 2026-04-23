@@ -38,11 +38,11 @@ module.exports = async function(req, res) {
 
   try {
     // 1. Fetch contact data
-    var contact = await sb.one('contacts?id=eq.' + body.contact_id + '&select=*&limit=1');
+    var contact = await sb.one('contacts?id=eq.' + encodeURIComponent(body.contact_id) + '&select=*&limit=1');
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
 
     // 2. Fetch entity audit
-    var audit = await sb.one('entity_audits?id=eq.' + body.audit_id + '&select=*&limit=1');
+    var audit = await sb.one('entity_audits?id=eq.' + encodeURIComponent(body.audit_id) + '&select=*&limit=1');
     if (!audit) return res.status(404).json({ error: 'Entity audit not found' });
 
     // 3. Assemble fields: prefer audit row, fall back to contact
@@ -79,7 +79,7 @@ module.exports = async function(req, res) {
     var agentResult = await agentResp.json();
 
     // 5. Update entity_audit status
-    await sb.mutate('entity_audits?id=eq.' + body.audit_id, 'PATCH', {
+    await sb.mutate('entity_audits?id=eq.' + encodeURIComponent(body.audit_id), 'PATCH', {
       status: 'agent_running', agent_task_id: agentResult.task_id
     }, 'return=minimal');
 

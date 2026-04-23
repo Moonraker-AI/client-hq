@@ -41,7 +41,7 @@ module.exports = async function handler(req, res) {
     if (!RESEND_KEY) return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
 
     // Fetch newsletter
-    var newsletters = await sb.query('newsletters?id=eq.' + newsletterId + '&select=*');
+    var newsletters = await sb.query('newsletters?id=eq.' + encodeURIComponent(newsletterId) + '&select=*');
     if (!newsletters.length) return res.status(404).json({ error: 'Newsletter not found' });
     var newsletter = newsletters[0];
 
@@ -97,7 +97,7 @@ module.exports = async function handler(req, res) {
     // ─────────────────────────────────────────────────────────────
     // Claim "sending" state (fail if another run holds it)
     // ─────────────────────────────────────────────────────────────
-    var sendingResult = await sb.mutate('newsletters?id=eq.' + newsletterId, 'PATCH', { status: 'sending' });
+    var sendingResult = await sb.mutate('newsletters?id=eq.' + encodeURIComponent(newsletterId), 'PATCH', { status: 'sending' });
     if (!sendingResult || sendingResult.length === 0) {
       return res.status(409).json({ error: 'Newsletter status transition to sending failed — may already be sending or in invalid state' });
     }
@@ -112,7 +112,7 @@ module.exports = async function handler(req, res) {
     var subscribers = await sb.query('newsletter_subscribers?' + subFilter + '&select=id,email,first_name&' + orderBy + '&limit=' + fetchLimit);
 
     if (!subscribers.length) {
-      await sb.mutate('newsletters?id=eq.' + newsletterId, 'PATCH', { status: 'draft' });
+      await sb.mutate('newsletters?id=eq.' + encodeURIComponent(newsletterId), 'PATCH', { status: 'draft' });
       return res.status(400).json({ error: 'No subscribers match the selected tier' });
     }
 
@@ -127,7 +127,7 @@ module.exports = async function handler(req, res) {
     var sendList = sendLimit ? eligibleSubscribers.slice(0, sendLimit) : eligibleSubscribers;
 
     if (sendList.length === 0) {
-      await sb.mutate('newsletters?id=eq.' + newsletterId, 'PATCH', { status: 'sent' });
+      await sb.mutate('newsletters?id=eq.' + encodeURIComponent(newsletterId), 'PATCH', { status: 'sent' });
       return res.status(200).json({
         sent: 0, failed: 0, skipped_already_sent: subscribers.length - eligibleSubscribers.length,
         message: 'All eligible subscribers have already received this newsletter'
@@ -248,7 +248,7 @@ module.exports = async function handler(req, res) {
     };
     if (isComplete) finalUpdate.sent_at = new Date().toISOString();
 
-    var finalResult = await sb.mutate('newsletters?id=eq.' + newsletterId, 'PATCH', finalUpdate);
+    var finalResult = await sb.mutate('newsletters?id=eq.' + encodeURIComponent(newsletterId), 'PATCH', finalUpdate);
     if (!finalResult || finalResult.length === 0) {
       console.error('send-newsletter: final status update failed for newsletter ' + newsletterId);
     }
@@ -302,7 +302,7 @@ module.exports = async function handler(req, res) {
     console.error('send-newsletter error:', e);
     try {
       if (body && body.newsletter_id) {
-        await sb.mutate('newsletters?id=eq.' + body.newsletter_id, 'PATCH', { status: 'draft' });
+        await sb.mutate('newsletters?id=eq.' + encodeURIComponent(body.newsletter_id), 'PATCH', { status: 'draft' });
       }
     } catch (e2) {}
     monitor.logError('send-newsletter', e, {

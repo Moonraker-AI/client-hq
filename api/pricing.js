@@ -27,6 +27,7 @@
 //     carry formatting logic.
 
 var sb = require('./_lib/supabase');
+var monitor = require('./_lib/monitor');
 
 var ALLOWED_PRODUCTS = ['core_marketing', 'entity_audit_premium', 'addons'];
 
@@ -76,7 +77,8 @@ module.exports = async function handler(req, res) {
         'product_key,tier_key,display_name,amount_cents,period,detail,payment_method,billing_term,billing_cadence'
       );
     } catch (e) {
-      return res.status(500).json({ error: 'pricing fetch failed: ' + e.message });
+      monitor.logError('pricing', e, { detail: { stage: 'fetch_all_tiers' } });
+      return res.status(500).json({ error: 'Pricing fetch failed' });
     }
 
     res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=60');
@@ -99,7 +101,8 @@ module.exports = async function handler(req, res) {
       'tier_key,display_name,amount_cents,period,detail,payment_method,billing_term,billing_cadence'
     );
   } catch (e) {
-    return res.status(500).json({ error: 'pricing fetch failed: ' + e.message });
+    monitor.logError('pricing', e, { detail: { stage: 'fetch_scoped_tier', product: product } });
+    return res.status(500).json({ error: 'Pricing fetch failed' });
   }
 
   // Edge-cache for 60s: pricing changes are infrequent and the endpoint is hit

@@ -152,6 +152,6 @@ module.exports = async function handler(req, res) {
         detail: { stage: 'scan_proposals' }
       });
     } catch (_) {}
-    return res.status(500).json({ error: 'Backfill failed: ' + (err.message || String(err)) });
+    return res.status(500).json({ error: 'Backfill failed' });
   }
 };

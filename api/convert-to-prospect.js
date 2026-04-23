@@ -54,7 +54,8 @@ module.exports = async function handler(req, res) {
         converted_from_lead_at: new Date().toISOString()
       });
     } catch (e) {
-      return res.status(500).json({ error: 'Failed to update contact', detail: e.message });
+      monitor.logError('convert-to-prospect', e, { client_slug: slug, detail: { stage: 'update_contact_status', contact_id: contactId } });
+      return res.status(500).json({ error: 'Failed to update contact' });
     }
     results.supabase.status = 'prospect';
 
@@ -98,7 +99,8 @@ module.exports = async function handler(req, res) {
         try {
           driveToken = await google.getDelegatedAccessToken('support@moonraker.ai', 'https://www.googleapis.com/auth/drive');
         } catch (e) {
-          results.drive.error = 'Failed to get Drive token: ' + (e.message || String(e));
+          monitor.logError('convert-to-prospect', e, { client_slug: slug, detail: { stage: 'drive_token' } });
+          results.drive.error = 'Failed to get Drive token';
         }
         if (driveToken) {
           var driveHeaders = {

@@ -3,6 +3,7 @@
 var auth = require('./_lib/auth');
 var monitor = require('./_lib/monitor');
 var sanitizer = require('./_lib/html-sanitizer');
+var rateLimit = require('./_lib/rate-limit');
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', 'https://clients.moonraker.ai');
@@ -18,6 +19,19 @@ module.exports = async function handler(req, res) {
   // Require authenticated admin
   var user = await auth.requireAdmin(req, res);
   if (!user) return;
+
+  // H2: per-admin rate limit on Claude passthrough. Higher ceiling than the
+  // client-facing chat endpoints (20/60) because admin work is burstier, but
+  // still bounded so a compromised JWT or a runaway retry loop can't burn
+  // unbounded Anthropic tokens. failClosed=false keeps admin unblocked if
+  // the rate-limit store is down.
+  try {
+    var rl = await rateLimit.check('admin:' + user.id + ':chat', 60, 60, { failClosed: false });
+    if (rl && rl.allowed === false) {
+      res.setHeader('Retry-After', '60');
+      return res.status(429).json({ error: 'Rate limit exceeded' });
+    }
+  } catch (_) { /* never fail-closed on rate-limiter errors */ }
 
   var apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {

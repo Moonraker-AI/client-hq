@@ -20,6 +20,8 @@ var sb = require('./_lib/supabase');
 var monitor = require('./_lib/monitor');
 var auth = require('./_lib/auth');
 
+var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 module.exports = async function(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -37,7 +39,7 @@ module.exports = async function(req, res) {
 
   try {
     // 1. Fetch contact
-    var contact = await sb.one('contacts?slug=eq.' + body.client_slug + '&limit=1');
+    var contact = await sb.one('contacts?slug=eq.' + encodeURIComponent(body.client_slug) + '&limit=1');
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
 
     if (!contact.website_url) {
@@ -48,12 +50,18 @@ module.exports = async function(req, res) {
     }
 
     // 2. Fetch tracked keywords (P1, active, with target page)
-    var kwFilter = 'tracked_keywords?client_slug=eq.' + body.client_slug +
+    var kwFilter = 'tracked_keywords?client_slug=eq.' + encodeURIComponent(body.client_slug) +
       '&active=eq.true&priority=eq.1&order=keyword.asc';
 
-    // If specific keyword IDs provided, filter to those
+    // If specific keyword IDs provided, filter to those. Validate every element
+    // against a strict UUID regex BEFORE joining + interpolating — PostgREST
+    // parses the filter, but an admin with a compromised session could splice
+    // arbitrary filter clauses via a crafted array element otherwise.
     if (body.keyword_ids && body.keyword_ids.length > 0) {
-      kwFilter += '&id=in.(' + body.keyword_ids.join(',') + ')';
+      if (!Array.isArray(body.keyword_ids) || !body.keyword_ids.every(function(id) { return typeof id === 'string' && UUID_RE.test(id); })) {
+        return res.status(400).json({ error: 'keyword_ids must be an array of UUIDs' });
+      }
+      kwFilter += '&id=in.(' + body.keyword_ids.map(encodeURIComponent).join(',') + ')';
     }
 
     var keywords = await sb.query(kwFilter);
@@ -69,7 +77,7 @@ module.exports = async function(req, res) {
     }
 
     // 3. Check for existing running batch
-    var existing = await sb.query('content_audit_batches?client_slug=eq.' + body.client_slug +
+    var existing = await sb.query('content_audit_batches?client_slug=eq.' + encodeURIComponent(body.client_slug) +
       '&status=in.(queued,agent_running,extracting,processing)&limit=1');
     if (existing && existing.length > 0) {
       return res.status(409).json({
@@ -92,7 +100,8 @@ module.exports = async function(req, res) {
     try {
       batchResult = await sb.mutate('content_audit_batches', 'POST', batchData);
     } catch (e) {
-      return res.status(500).json({ error: 'Failed to create batch record', detail: (e.message || '').substring(0, 300) });
+      monitor.logError('trigger-batch-audit', e, { client_slug: body.client_slug, detail: { stage: 'create_batch' } });
+      return res.status(500).json({ error: 'Failed to create batch record' });
     }
     var batch = batchResult[0];
 
@@ -103,7 +112,7 @@ module.exports = async function(req, res) {
 
       // Check if content_page already exists for this keyword
       var existingPage = await sb.one(
-        'content_pages?tracked_keyword_id=eq.' + kw.id + '&client_slug=eq.' + contact.slug + '&limit=1'
+        'content_pages?tracked_keyword_id=eq.' + encodeURIComponent(kw.id) + '&client_slug=eq.' + encodeURIComponent(contact.slug) + '&limit=1'
       );
 
       var pageId;

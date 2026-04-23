@@ -23,6 +23,7 @@
 var pageToken = require('../_lib/page-token');
 var sb = require('../_lib/supabase');
 var rateLimit = require('../_lib/rate-limit');
+var monitor = require('../_lib/monitor');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -60,7 +61,8 @@ module.exports = async function handler(req, res) {
   try {
     contact = await sb.one('contacts?slug=eq.' + encodeURIComponent(slug) + '&select=id,slug&limit=1');
   } catch (e) {
-    return res.status(500).json({ error: 'contact lookup failed: ' + e.message });
+    monitor.logError('page-token-request', e, { client_slug: slug, detail: { stage: 'contact_lookup', scope: scope } });
+    return res.status(500).json({ error: 'Contact lookup failed' });
   }
   if (!contact) return res.status(404).json({ error: 'unknown slug' });
 
@@ -68,7 +70,8 @@ module.exports = async function handler(req, res) {
   try {
     token = pageToken.sign({ scope: scope, contact_id: contact.id });
   } catch (e) {
-    return res.status(500).json({ error: 'sign failed: ' + e.message });
+    monitor.logError('page-token-request', e, { client_slug: slug, detail: { stage: 'sign_token', scope: scope } });
+    return res.status(500).json({ error: 'Token signing failed' });
   }
 
   // Emit TWO Set-Cookie headers:

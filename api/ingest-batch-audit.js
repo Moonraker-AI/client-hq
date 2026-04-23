@@ -27,7 +27,7 @@ module.exports = async function(req, res) {
 
   try {
     // 1. Fetch the batch record
-    var batch = await sb.one('content_audit_batches?id=eq.' + body.batch_id + '&limit=1');
+    var batch = await sb.one('content_audit_batches?id=eq.' + encodeURIComponent(body.batch_id) + '&limit=1');
     if (!batch) return res.status(404).json({ error: 'Batch not found' });
 
     var pages = body.pages || [];
@@ -60,7 +60,7 @@ module.exports = async function(req, res) {
       }
 
       try {
-        await sb.mutate('content_pages?id=eq.' + pg.content_page_id, 'PATCH', updateData, 'return=minimal');
+        await sb.mutate('content_pages?id=eq.' + encodeURIComponent(pg.content_page_id), 'PATCH', updateData, 'return=minimal');
         pagesProcessed++;
       } catch (e) {
         console.error('Failed to update content_page ' + pg.content_page_id + ':', e.message);
@@ -103,7 +103,7 @@ module.exports = async function(req, res) {
       error_message: errorMessage,
       updated_at: new Date().toISOString()
     };
-    await sb.mutate('content_audit_batches?id=eq.' + body.batch_id, 'PATCH', batchUpdate, 'return=minimal');
+    await sb.mutate('content_audit_batches?id=eq.' + encodeURIComponent(body.batch_id), 'PATCH', batchUpdate, 'return=minimal');
 
     // Surface partial or total failures to monitor so admins are notified.
     if (pagesErrors > 0) {
@@ -138,7 +138,7 @@ module.exports = async function(req, res) {
     // 4. Send team notification
     if (RESEND_KEY) {
       try {
-        var contact = await sb.one('contacts?slug=eq.' + batch.client_slug + '&select=first_name,last_name,practice_name&limit=1');
+        var contact = await sb.one('contacts?slug=eq.' + encodeURIComponent(batch.client_slug) + '&select=first_name,last_name,practice_name&limit=1');
         var clientName = contact ? ((contact.first_name || '') + ' ' + (contact.last_name || '')).trim() : batch.client_slug;
         var practice = contact ? contact.practice_name : '';
 

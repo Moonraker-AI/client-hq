@@ -5,6 +5,7 @@
 
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
+var monitor = require('./_lib/monitor');
 
 var SERPAPI_KEY = process.env.SERPAPI_KEY || '';
 
@@ -58,7 +59,8 @@ module.exports = async function handler(req, res) {
       newsletter = await sb.one('newsletters?id=eq.' + newsletterId + '&select=id,content&limit=1');
       if (!newsletter) return res.status(404).json({ error: 'Newsletter not found' });
     } catch (e) {
-      return res.status(500).json({ error: 'Failed to load newsletter: ' + e.message });
+      monitor.logError('newsletter-verify', e, { detail: { stage: 'load_newsletter', newsletter_id: newsletterId } });
+      return res.status(500).json({ error: 'Failed to load newsletter' });
     }
 
     var stories = (newsletter.content || {}).stories || [];
@@ -156,8 +158,8 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (e) {
-    console.error('Newsletter verify FATAL:', e.message);
-    return res.status(500).json({ error: 'Verification failed: ' + e.message });
+    monitor.logError('newsletter-verify', e, { detail: { stage: 'verify_handler' } });
+    return res.status(500).json({ error: 'Verification failed' });
   }
 };
 

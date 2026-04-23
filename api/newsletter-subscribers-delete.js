@@ -7,6 +7,7 @@
 
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
+var monitor = require('./_lib/monitor');
 
 var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var MAX_IDS_PER_REQUEST = 500;
@@ -71,7 +72,7 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (e) {
-    console.error('newsletter-subscribers-delete error:', e);
-    return res.status(500).json({ error: 'Delete failed: ' + e.message });
+    monitor.logError('newsletter-subscribers-delete', e, { detail: { stage: 'delete_handler', id_count: valid.length } });
+    return res.status(500).json({ error: 'Delete failed' });
   }
 };

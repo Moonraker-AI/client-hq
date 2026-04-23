@@ -7,6 +7,7 @@
 
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
+var monitor = require('./_lib/monitor');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -67,6 +68,7 @@ module.exports = async function handler(req, res) {
       message: 'Approved and scheduled ' + updated + ' follow-up emails.'
     });
   } catch (e) {
-    return res.status(500).json({ error: 'Failed to approve followups: ' + e.message });
+    monitor.logError('approve-followups', e, { detail: { stage: 'approve_handler', proposal_id: proposalId } });
+    return res.status(500).json({ error: 'Failed to approve followups' });
   }
 };

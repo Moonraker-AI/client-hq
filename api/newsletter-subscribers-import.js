@@ -21,6 +21,7 @@
 
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
+var monitor = require('./_lib/monitor');
 
 var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 var ALLOWED_SOURCES = ['ghl-import', 'entity-audit', 'manual', 'website', 'webinar'];
@@ -175,8 +176,8 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ results: results, counts: summarize(results) });
 
   } catch (e) {
-    console.error('newsletter-subscribers-import error:', e);
-    return res.status(500).json({ error: 'Import failed: ' + e.message });
+    monitor.logError('newsletter-subscribers-import', e, { detail: { stage: 'import_handler', email_count: emailOrder.length, resubscribe: resubscribe } });
+    return res.status(500).json({ error: 'Import failed' });
   }
 };
 

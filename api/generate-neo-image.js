@@ -28,7 +28,7 @@ module.exports = async function(req, res) {
 
   try {
     // 1. Fetch contact
-    var contact = await sb.one('contacts?id=eq.' + contactId + '&select=id,slug,practice_name,first_name,last_name,city,state_province&limit=1');
+    var contact = await sb.one('contacts?id=eq.' + encodeURIComponent(contactId) + '&select=id,slug,practice_name,first_name,last_name,city,state_province&limit=1');
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
 
     var slug = contact.slug;
@@ -41,7 +41,7 @@ module.exports = async function(req, res) {
       // Fetch content page for keyword context
       var keyword = '';
       if (body.content_page_id) {
-        var cp = await sb.one('content_pages?id=eq.' + body.content_page_id + '&select=target_keyword,page_name&limit=1');
+        var cp = await sb.one('content_pages?id=eq.' + encodeURIComponent(body.content_page_id) + '&select=target_keyword,page_name&limit=1');
         if (cp) keyword = cp.target_keyword || cp.page_name || '';
       }
       prompt = buildPrompt(keyword, practiceName, location);

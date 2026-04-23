@@ -3,6 +3,7 @@
 // POST { story_index, headline, body, feedback }
 
 var auth = require('./_lib/auth');
+var monitor = require('./_lib/monitor');
 
 module.exports = async function handler(req, res) {
   try {
@@ -59,6 +60,7 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({ success: true, headline: refined.headline, body: refined.body });
   } catch (e) {
-    return res.status(500).json({ error: 'Refine failed: ' + e.message });
+    monitor.logError('newsletter-refine-story', e, { detail: { stage: 'refine_handler' } });
+    return res.status(500).json({ error: 'Refine failed' });
   }
 };

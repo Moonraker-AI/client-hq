@@ -56,7 +56,8 @@ module.exports = async function handler(req, res) {
         'https://www.googleapis.com/auth/drive'
       );
     } catch (e) {
-      return res.status(500).json({ error: 'Drive token failed', detail: e.message });
+      monitor.logError('admin-provision-drive-folder', e, { detail: { stage: 'drive_token', contact_id: contactId } });
+      return res.status(500).json({ error: 'Drive token failed' });
     }
 
     var headers = {
@@ -145,8 +146,8 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (err) {
-    monitor.logError('admin-provision-drive-folder', err, { detail: { contact_id: contactId } });
-    return res.status(500).json({ error: 'Provision failed', detail: err.message });
+    monitor.logError('admin-provision-drive-folder', err, { detail: { stage: 'provision_handler', contact_id: contactId } });
+    return res.status(500).json({ error: 'Provision failed' });
   }
 };
 

@@ -56,13 +56,13 @@ module.exports = async function(req, res) {
 
   try {
     // Fetch contact
-    var contact = await sb.one('contacts?id=eq.' + body.contact_id + '&select=id,slug,website_url,status');
+    var contact = await sb.one('contacts?id=eq.' + encodeURIComponent(body.contact_id) + '&select=id,slug,website_url,status');
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
 
     // Idempotency: return existing site_map if one already exists for this contact.
     // Only one active site_map per contact_id — we surface all non-abandoned ones.
     var existing = await sb.one(
-      'site_maps?contact_id=eq.' + contact.id
+      'site_maps?contact_id=eq.' + encodeURIComponent(contact.id)
       + '&status=neq.abandoned'
       + '&select=id,status,source_type,root_url,created_at,mvp_locked_at,fully_locked_at,launched_at'
       + '&order=created_at.desc&limit=1'

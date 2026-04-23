@@ -39,7 +39,7 @@ module.exports = async function(req, res) {
 
   try {
     // 1. Fetch current content page
-    var cp = await sb.one('content_pages?id=eq.' + body.content_page_id + '&limit=1');
+    var cp = await sb.one('content_pages?id=eq.' + encodeURIComponent(body.content_page_id) + '&limit=1');
     if (!cp) {
       return res.status(404).json({ error: 'Content page not found' });
     }
@@ -65,10 +65,10 @@ module.exports = async function(req, res) {
     };
 
     try {
-      await sb.mutate('content_pages?id=eq.' + body.content_page_id, 'PATCH', updateData);
+      await sb.mutate('content_pages?id=eq.' + encodeURIComponent(body.content_page_id), 'PATCH', updateData);
     } catch (e) {
-      console.error('Supabase update error:', e.message);
-      return res.status(500).json({ error: 'Failed to update content page', detail: (e.message || '').substring(0, 300) });
+      monitor.logError('ingest-surge-content', e, { detail: { stage: 'update_content_page', content_page_id: body.content_page_id } });
+      return res.status(500).json({ error: 'Failed to update content page' });
     }
 
     // 5. Notify team

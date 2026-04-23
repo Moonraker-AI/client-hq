@@ -11,6 +11,7 @@
 var email = require('./_lib/email-template');
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
+var monitor = require('./_lib/monitor');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -34,7 +35,8 @@ module.exports = async function handler(req, res) {
     if (!proposal) return res.status(404).json({ error: 'Proposal not found' });
     contact = proposal.contacts;
   } catch (e) {
-    return res.status(500).json({ error: 'Failed to load proposal: ' + e.message });
+    monitor.logError('send-proposal-email', e, { detail: { stage: 'load_proposal', proposal_id: proposalId } });
+    return res.status(500).json({ error: 'Failed to load proposal' });
   }
 
   if (!contact.email) return res.status(400).json({ error: 'Contact has no email address' });
@@ -79,7 +81,8 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'Resend error', details: emailData });
     }
   } catch (e) {
-    return res.status(500).json({ error: 'Email send failed: ' + e.message });
+    monitor.logError('send-proposal-email', e, { client_slug: contact && contact.slug, detail: { stage: 'resend_send', proposal_id: proposalId } });
+    return res.status(500).json({ error: 'Email send failed' });
   }
 };
 

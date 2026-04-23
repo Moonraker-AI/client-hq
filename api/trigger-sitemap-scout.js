@@ -32,7 +32,7 @@ module.exports = async function(req, res) {
 
   try {
     // Fetch contact
-    var contact = await sb.one('contacts?id=eq.' + body.contact_id + '&select=id,slug,website_url,practice_name');
+    var contact = await sb.one('contacts?id=eq.' + encodeURIComponent(body.contact_id) + '&select=id,slug,website_url,practice_name');
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
     if (!contact.website_url) return res.status(400).json({ error: 'Website URL is required' });
 

@@ -14,6 +14,7 @@
 var email = require('./_lib/email-template');
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
+var monitor = require('./_lib/monitor');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -36,7 +37,8 @@ module.exports = async function handler(req, res) {
     if (!proposal) return res.status(404).json({ error: 'Proposal not found' });
     contact = proposal.contacts;
   } catch (e) {
-    return res.status(500).json({ error: 'Failed to load proposal: ' + e.message });
+    monitor.logError('generate-followups', e, { detail: { stage: 'load_proposal', proposal_id: proposalId } });
+    return res.status(500).json({ error: 'Failed to load proposal' });
   }
 
   if (proposal.status === 'draft') return res.status(400).json({ error: 'Proposal has not been sent yet' });
@@ -115,7 +117,8 @@ module.exports = async function handler(req, res) {
       message: 'Generated ' + inserted.length + ' follow-up emails. Preview and approve to schedule.'
     });
   } catch (e) {
-    return res.status(500).json({ error: 'Failed to save followups: ' + e.message });
+    monitor.logError('generate-followups', e, { detail: { stage: 'insert_followups', proposal_id: proposalId } });
+    return res.status(500).json({ error: 'Failed to save followups' });
   }
 };
 

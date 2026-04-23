@@ -37,16 +37,16 @@ module.exports = async function(req, res) {
 
   try {
     // 1. Fetch batch
-    var batch = await sb.one('content_audit_batches?id=eq.' + body.batch_id + '&limit=1');
+    var batch = await sb.one('content_audit_batches?id=eq.' + encodeURIComponent(body.batch_id) + '&limit=1');
     if (!batch) return res.status(404).json({ error: 'Batch not found' });
     if (!batch.synthesis_raw) return res.status(400).json({ error: 'No synthesis data to process' });
 
     // 2. Fetch contact for context
-    var contact = await sb.one('contacts?slug=eq.' + batch.client_slug + '&limit=1');
+    var contact = await sb.one('contacts?slug=eq.' + encodeURIComponent(batch.client_slug) + '&limit=1');
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
 
     // 3. Check for existing entity audit to get the audit_id for checklist items
-    var audits = await sb.query('entity_audits?client_slug=eq.' + batch.client_slug +
+    var audits = await sb.query('entity_audits?client_slug=eq.' + encodeURIComponent(batch.client_slug) +
       '&status=in.(complete,delivered)&order=created_at.desc&limit=1');
     var auditId = (audits && audits[0]) ? audits[0].id : null;
 
@@ -183,7 +183,7 @@ module.exports = async function(req, res) {
     }
 
     // 8. Store processed synthesis on batch record
-    await sb.mutate('content_audit_batches?id=eq.' + body.batch_id, 'PATCH', {
+    await sb.mutate('content_audit_batches?id=eq.' + encodeURIComponent(body.batch_id), 'PATCH', {
       synthesis_processed: parsed,
       updated_at: new Date().toISOString()
     }, 'return=minimal');

@@ -16,6 +16,8 @@
 // for rows that predate the inline-price_data flow.
 
 var sb = require('../_lib/supabase');
+var monitor = require('../_lib/monitor');
+var rateLimit = require('../_lib/rate-limit');
 
 var ALLOWED_PRODUCTS = ['core_marketing', 'entity_audit_premium', 'addons', 'strategy_call'];
 
@@ -118,6 +120,21 @@ module.exports = async function handler(req, res) {
   }
   if (!sb.isConfigured()) return res.status(500).json({ error: 'Supabase not configured' });
 
+  // M8a: per-IP rate limit. This endpoint is anonymous and calls Stripe on
+  // every request; cap at 20/min per IP to prevent automated spam from
+  // flooding the Stripe Dashboard with junk Checkout Sessions. failClosed=false
+  // so a rate-limit store outage doesn't block legitimate checkouts.
+  var ip = (req.headers && req.headers['x-forwarded-for']
+    ? String(req.headers['x-forwarded-for']).split(',')[0].trim()
+    : (req.socket && req.socket.remoteAddress)) || 'unknown';
+  try {
+    var rl = await rateLimit.check('ip:' + ip + ':checkout-create', 20, 60, { failClosed: false });
+    if (rl && rl.allowed === false) {
+      res.setHeader('Retry-After', '60');
+      return res.status(429).json({ error: 'Too many requests' });
+    }
+  } catch (_) { /* never fail-closed on rate-limiter errors */ }
+
   var body = req.body || {};
   var slug = String(body.slug || '').trim();
   var product = String(body.product || '').trim();
@@ -138,7 +155,8 @@ module.exports = async function handler(req, res) {
       : 'id,email,first_name,last_name,practice_name';
     contact = await sb.one('contacts?slug=eq.' + encodeURIComponent(slug) + '&select=' + contactSelect + '&limit=1');
   } catch (e) {
-    return res.status(500).json({ error: 'contact lookup failed: ' + e.message });
+    monitor.logError('checkout-create-session', e, { detail: { stage: 'contact_lookup', slug: slug } });
+    return res.status(500).json({ error: 'Contact lookup failed' });
   }
   if (!contact) return res.status(404).json({ error: 'contact not found for slug' });
 
@@ -150,7 +168,8 @@ module.exports = async function handler(req, res) {
       '&active=eq.true&limit=1'
     );
   } catch (e) {
-    return res.status(500).json({ error: 'pricing fetch failed: ' + e.message });
+    monitor.logError('checkout-create-session', e, { detail: { stage: 'pricing_fetch', product: product, tier_key: tier_key } });
+    return res.status(500).json({ error: 'Pricing fetch failed' });
   }
   var tier = tiers && tiers[0];
   if (!tier) return res.status(404).json({ error: 'tier not found or inactive' });
@@ -294,7 +313,8 @@ module.exports = async function handler(req, res) {
         body: encodeStripeForm(payload)
       });
     } catch (e) {
-      return res.status(502).json({ error: 'stripe request failed: ' + e.message });
+      monitor.logError('checkout-create-session', e, { detail: { stage: 'stripe_request', product: product, tier_key: tier_key } });
+      return res.status(502).json({ error: 'Stripe request failed' });
     }
 
     var data;

@@ -32,7 +32,7 @@ module.exports = async function(req, res) {
 
   try {
     // Fetch contact
-    var contact = await sb.one('contacts?id=eq.' + body.contact_id + '&select=id,slug,website_url,website_platform,practice_name');
+    var contact = await sb.one('contacts?id=eq.' + encodeURIComponent(body.contact_id) + '&select=id,slug,website_url,website_platform,practice_name');
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
     if (!contact.website_url) return res.status(400).json({ error: 'Website URL is required' });
 
@@ -40,7 +40,7 @@ module.exports = async function(req, res) {
     // Per security audit C8: CMS creds were migrated from contacts (plaintext)
     // to workspace_credentials (encrypted via _lib/crypto SENSITIVE_FIELDS).
     // Row may not exist if admin hasn't entered creds — scout falls back to public-only.
-    var wsRow = await sb.one('workspace_credentials?contact_id=eq.' + contact.id
+    var wsRow = await sb.one('workspace_credentials?contact_id=eq.' + encodeURIComponent(contact.id)
       + '&select=id,cms_login_url,cms_username,cms_password,cms_app_password&limit=1');
     var creds = {
       cms_login_url:    (wsRow && wsRow.cms_login_url) || '',

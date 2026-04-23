@@ -36,11 +36,11 @@ module.exports = async function(req, res) {
 
   try {
     // 1. Fetch content page
-    var cp = await sb.one('content_pages?id=eq.' + body.content_page_id + '&limit=1');
+    var cp = await sb.one('content_pages?id=eq.' + encodeURIComponent(body.content_page_id) + '&limit=1');
     if (!cp) return res.status(404).json({ error: 'Content page not found' });
 
     // 2. Fetch contact
-    var contact = await sb.one('contacts?id=eq.' + cp.contact_id + '&select=*&limit=1');
+    var contact = await sb.one('contacts?id=eq.' + encodeURIComponent(cp.contact_id) + '&select=*&limit=1');
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
 
     // 3. Assemble audit parameters
@@ -89,7 +89,7 @@ module.exports = async function(req, res) {
     var agentResult = await agentResp.json();
 
     // 5. Update content_pages with agent task ID
-    await sb.mutate('content_pages?id=eq.' + body.content_page_id, 'PATCH', {
+    await sb.mutate('content_pages?id=eq.' + encodeURIComponent(body.content_page_id), 'PATCH', {
       agent_task_id: agentResult.task_id
     }, 'return=minimal');
 

@@ -6,6 +6,7 @@
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
 var nl = require('./_lib/newsletter-template');
+var monitor = require('./_lib/monitor');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -45,7 +46,8 @@ module.exports = async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-cache');
     return res.status(200).send(html);
   } catch (e) {
-    return res.status(500).json({ error: 'Preview failed: ' + e.message });
+    monitor.logError('newsletter-preview', e, { detail: { newsletter_id: newsletterId, raw: raw } });
+    return res.status(500).json({ error: 'Preview failed' });
   }
 };
 

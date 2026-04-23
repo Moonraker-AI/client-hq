@@ -7,6 +7,7 @@
 var sb = require('./_lib/supabase');
 var gh = require('./_lib/github');
 var auth = require('./_lib/auth');
+var monitor = require('./_lib/monitor');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -52,6 +53,7 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({ success: true, results: results });
   } catch (err) {
-    return res.status(500).json({ error: 'Delete failed', detail: err.message, results: results });
+    monitor.logError('delete-entity-audit', err, { client_slug: slug, detail: { stage: 'delete_handler', audit_id: auditId } });
+    return res.status(500).json({ error: 'Delete failed', results: results });
   }
 };

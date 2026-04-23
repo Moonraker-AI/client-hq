@@ -5,6 +5,7 @@
 
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
+var monitor = require('./_lib/monitor');
 
 // ----- Query pools (Tier 2) -----
 // Core: always run. Non-negotiable beats.
@@ -112,7 +113,8 @@ module.exports = async function handler(req, res) {
       newsletter = await sb.one('newsletters?id=eq.' + newsletterId + '&select=id,edition_number,status&limit=1');
       if (!newsletter) return res.status(404).json({ error: 'Newsletter not found' });
     } catch (e) {
-      return res.status(500).json({ error: 'Failed to load newsletter: ' + e.message });
+      monitor.logError('newsletter-research', e, { detail: { stage: 'load_newsletter', newsletter_id: newsletterId } });
+      return res.status(500).json({ error: 'Failed to load newsletter' });
     }
 
     // Load previous stories for dedup
@@ -373,9 +375,9 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (e) {
-    console.error('Newsletter research FATAL:', e.message, e.stack);
+    monitor.logError('newsletter-research', e, { detail: { stage: 'research_handler' } });
     try {
-      return res.status(500).json({ error: 'Research failed: ' + e.message });
+      return res.status(500).json({ error: 'Research failed' });
     } catch (e2) { /* */ }
   }
 };

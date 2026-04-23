@@ -99,7 +99,8 @@ module.exports = async function handler(req, res) {
     if (!contacts || contacts.length === 0) return res.status(404).json({ error: 'Contact not found for ' + clientSlug });
     var contact = contacts[0];
   } catch (e) {
-    return res.status(500).json({ error: 'Failed to load config/contact: ' + e.message });
+    monitor.logError('compile-report', e, { client_slug: clientSlug, detail: { stage: 'load_config_contact' } });
+    return res.status(500).json({ error: 'Failed to load config/contact' });
   }
 
   var range = monthRange(reportMonth);
@@ -661,7 +662,8 @@ module.exports = async function handler(req, res) {
       snapshotId = Array.isArray(inserted) ? inserted[0].id : inserted.id;
     }
   } catch (e) {
-    return res.status(500).json({ error: 'Failed to write snapshot: ' + e.message, errors: errors });
+    monitor.logError('compile-report', e, { client_slug: clientSlug, detail: { stage: 'write_snapshot', report_month: reportMonth } });
+    return res.status(500).json({ error: 'Failed to write snapshot', errors: errors });
   }
 
   // ─── STEP 10: Generate highlights via Claude ──────────────────

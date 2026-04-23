@@ -34,7 +34,8 @@ module.exports = async function handler(req, res) {
     if (!proposal) return res.status(404).json({ error: 'Proposal not found' });
     contact = proposal.contacts;
   } catch (e) {
-    return res.status(500).json({ error: 'Failed to load proposal: ' + e.message });
+    monitor.logError('delete-proposal', e, { detail: { stage: 'load_proposal', proposal_id: proposalId } });
+    return res.status(500).json({ error: 'Failed to load proposal' });
   }
 
   var slug = contact.slug;

@@ -10,6 +10,7 @@
 var email = require('./_lib/email-template');
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
+var monitor = require('./_lib/monitor');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -130,8 +131,8 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ success: true, event: event, slug: slug, email_id: emailResult.id });
 
   } catch (err) {
-    console.error('notify-team error:', err);
-    return res.status(500).json({ error: 'Internal error', detail: err.message });
+    monitor.logError('notify-team', err, { client_slug: slug, detail: { event: event } });
+    return res.status(500).json({ error: 'Internal error' });
   }
 };
 

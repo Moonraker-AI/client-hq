@@ -38,12 +38,22 @@ async function logEvent(outcome, ctx) {
 }
 
 function headerSnapshot(req) {
-  // Capture only non-sensitive headers relevant to diagnosis
-  var picks = ['svix-id', 'svix-timestamp', 'svix-signature', 'user-agent', 'content-type', 'content-length', 'x-vercel-id'];
+  // Capture only non-sensitive headers relevant to diagnosis.
+  // M5 (2026-04-23): svix-signature is explicitly NOT captured — anyone with
+  // a signature + body can replay the webhook within the 300s staleness
+  // window, so signatures must never be persisted. We still log the PRESENCE
+  // of the signature header (as a boolean and a length-only breadcrumb) so
+  // "sig missing" diagnostics work without the raw value.
+  var picks = ['svix-id', 'svix-timestamp', 'user-agent', 'content-type', 'content-length', 'x-vercel-id'];
   var out = {};
   for (var i = 0; i < picks.length; i++) {
     var v = req.headers[picks[i]];
     if (v !== undefined) out[picks[i]] = String(v);
+  }
+  var sig = req.headers['svix-signature'];
+  if (sig !== undefined) {
+    out['svix-signature-present'] = true;
+    out['svix-signature-length'] = String(sig).length;
   }
   return out;
 }

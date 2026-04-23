@@ -51,7 +51,7 @@ module.exports = async function(req, res) {
       updateData.crawled_urls = body.crawled_urls;
     }
 
-    await sb.mutate('design_specs?id=eq.' + body.design_spec_id, 'PATCH', updateData, 'return=minimal');
+    await sb.mutate('design_specs?id=eq.' + encodeURIComponent(body.design_spec_id), 'PATCH', updateData, 'return=minimal');
 
     return res.status(200).json({
       success: true,
