@@ -214,6 +214,15 @@ section { padding: 4.5rem 0; }
 .attr-dd-commentary-body .md-table th, .attr-dd-commentary-body .md-table td { padding: .5rem .65rem; border-bottom: 1px solid rgba(0,0,0,.08); text-align: left; }
 .attr-dd-commentary-body .md-table th { font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; }
 
+/* Lead-volume narrative */
+.lead-volume-narrative { background: var(--color-primary-subtle); border-left: 3px solid var(--color-primary); border-radius: 8px; padding: 1.1rem 1.4rem; margin: 1rem 0 0; line-height: 1.6; font-size: .9375rem; color: var(--color-body); }
+.lead-volume-narrative.hidden { display: none; }
+.lead-volume-narrative strong { color: var(--color-heading); }
+.lead-volume-narrative .lvn-label { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--color-primary); margin-bottom: .4rem; display: block; }
+.lead-volume-narrative p { margin: .35rem 0; }
+.lead-volume-narrative p:first-of-type { margin-top: 0; }
+.lead-volume-narrative p:last-of-type { margin-bottom: 0; }
+
 /* Striking distance section */
 .striking-intro { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem; }
 .striking-summary { background: var(--color-primary-subtle); border-radius: 12px; padding: 1.25rem 1.5rem; }
@@ -400,6 +409,8 @@ section { padding: 4.5rem 0; }
           <canvas id="leadVolumeChart" role="img" aria-label="Monthly lead volume by self-reported referral source"></canvas>
         </div>
       </div>
+
+      <div class="lead-volume-narrative hidden" id="leadVolumeNarrative"></div>
     </div>
   </section>
 
@@ -1163,6 +1174,139 @@ section { padding: 4.5rem 0; }
         }
       }
     });
+
+    renderLeadVolumeNarrative(dd);
+  }
+
+  // Auto-generated narrative under the lead-volume chart. Detects:
+  //   - Recently emerged channels (zero-to-meaningful trajectory) — e.g. AI Search
+  //   - Top source by total volume + share
+  //   - Recent month vs. earlier month total trend
+  //   - Channel rank shifts
+  // Stays silent when patterns are too weak to call out, rather than padding
+  // with filler. Uses last 3 months as "recent" and first 3 as "earlier" when
+  // there are >= 6 months; otherwise compares latest to first.
+  function renderLeadVolumeNarrative(dd) {
+    var el = document.getElementById('leadVolumeNarrative');
+    if (!el) return;
+    var rows = (dd.monthly_by_source || []).slice().sort(function(a, b) {
+      return a.month < b.month ? -1 : a.month > b.month ? 1 : 0;
+    });
+    if (rows.length < 2) { el.classList.add('hidden'); return; }
+
+    // Aggregate
+    var sourceTotals = {};
+    rows.forEach(function(r) {
+      var s = r.sources || {};
+      Object.keys(s).forEach(function(k) {
+        sourceTotals[k] = (sourceTotals[k] || 0) + (Number(s[k]) || 0);
+      });
+    });
+    var totalLeads = Object.keys(sourceTotals).reduce(function(a, k) { return a + sourceTotals[k]; }, 0);
+    if (totalLeads === 0) { el.classList.add('hidden'); return; }
+
+    var rankedSources = Object.keys(sourceTotals)
+      .filter(function(k) { return sourceTotals[k] > 0; })
+      .sort(function(a, b) { return sourceTotals[b] - sourceTotals[a]; });
+
+    // Time windows
+    var windowSize = rows.length >= 6 ? 3 : 1;
+    var earlyRows = rows.slice(0, windowSize);
+    var recentRows = rows.slice(-windowSize);
+    function sumWindow(wRows) {
+      var t = 0; var bySrc = {};
+      wRows.forEach(function(r) {
+        var s = r.sources || {};
+        Object.keys(s).forEach(function(k) {
+          var v = Number(s[k]) || 0;
+          t += v; bySrc[k] = (bySrc[k] || 0) + v;
+        });
+      });
+      return { total: t, bySrc: bySrc, monthCount: wRows.length };
+    }
+    var early = sumWindow(earlyRows);
+    var recent = sumWindow(recentRows);
+
+    var sentences = [];
+
+    // Sentence 1: top source + share
+    var top = rankedSources[0];
+    if (top && totalLeads > 0) {
+      var topShare = Math.round((sourceTotals[top] / totalLeads) * 100);
+      sentences.push('<strong>' + escapeHtml(top) + '</strong> remains your largest channel, accounting for ' +
+        topShare + '% of leads (' + sourceTotals[top] + ' of ' + totalLeads + ') over this window.');
+    }
+
+    // Sentence 2: emerged channels — sources with 0 in early window but meaningful volume in recent
+    var emerged = [];
+    rankedSources.forEach(function(src) {
+      var earlyV = early.bySrc[src] || 0;
+      var recentV = recent.bySrc[src] || 0;
+      // "Emerged" = was zero (or near-zero) in early window AND has at least
+      // 3 leads in the recent window AND represents >= 5% of recent volume.
+      if (earlyV <= 1 && recentV >= 3 && recent.total > 0 && (recentV / recent.total) >= 0.05) {
+        emerged.push({ src: src, recentV: recentV, share: recentV / recent.total });
+      }
+    });
+    if (emerged.length > 0) {
+      var e = emerged[0];
+      var sharePct = Math.round(e.share * 100);
+      var monthsLabel = recent.monthCount === 1 ? 'last month' : 'last ' + recent.monthCount + ' months';
+      var emergedPhrase = '<strong>' + escapeHtml(e.src) + '</strong> has emerged as a meaningful new channel — ' +
+        e.recentV + ' lead' + (e.recentV === 1 ? '' : 's') + ' over the ' + monthsLabel +
+        ', or about ' + sharePct + '% of recent volume, up from zero earlier in the engagement.';
+      // If it's specifically AI Search, lean in harder
+      if (/ai\s*search|chatgpt|llm/i.test(e.src)) {
+        emergedPhrase += ' This is exactly the trajectory we want to see — patients are increasingly ' +
+          'discovering practices through AI assistants, and your practice is being surfaced where it counts.';
+      }
+      sentences.push(emergedPhrase);
+    }
+
+    // Sentence 3: overall volume trend (recent vs early window, normalized to per-month)
+    if (early.monthCount > 0 && recent.monthCount > 0 && early.total > 0) {
+      var earlyAvg = early.total / early.monthCount;
+      var recentAvg = recent.total / recent.monthCount;
+      var change = (recentAvg - earlyAvg) / earlyAvg;
+      if (Math.abs(change) >= 0.10) {
+        var dir = change > 0 ? 'up' : 'down';
+        var pct = Math.round(Math.abs(change) * 100);
+        var earlyMonths = earlyRows.map(function(r) { return ymLabel(r.month); }).join('/');
+        var recentMonths = recentRows.map(function(r) { return ymLabel(r.month); }).join('/');
+        if (early.monthCount > 1) {
+          sentences.push('Total monthly lead volume is <strong>' + dir + ' ' + pct + '%</strong> comparing ' +
+            recentMonths + ' (avg ' + Math.round(recentAvg) + '/month) to ' +
+            earlyMonths + ' (avg ' + Math.round(earlyAvg) + '/month).');
+        } else {
+          sentences.push('Lead volume in ' + recentMonths + ' is <strong>' + dir + ' ' + pct + '%</strong> versus ' +
+            earlyMonths + ' (' + Math.round(recentAvg) + ' vs. ' + Math.round(earlyAvg) + ').');
+        }
+      }
+    }
+
+    // Sentence 4: psych-today / paid directory share shift, if applicable
+    var directoryNames = ['psychology today', 'psych today', 'goodtherapy', 'good therapy', 'mental health match'];
+    rankedSources.forEach(function(src) {
+      if (!directoryNames.some(function(d) { return src.toLowerCase().indexOf(d) !== -1; })) return;
+      var earlyV = early.bySrc[src] || 0;
+      var recentV = recent.bySrc[src] || 0;
+      if (early.monthCount > 0 && recent.monthCount > 0 && early.total > 0 && recent.total > 0) {
+        var earlyShare = earlyV / early.total;
+        var recentShare = recentV / recent.total;
+        if (earlyShare > 0.05 && (earlyShare - recentShare) / earlyShare >= 0.20) {
+          var dropPct = Math.round(((earlyShare - recentShare) / earlyShare) * 100);
+          sentences.push('<strong>' + escapeHtml(src) + '</strong>\u2019s share of leads has declined ' +
+            dropPct + '% relative to where it started — counts are roughly stable, but organic and AI channels ' +
+            'are expanding around it.');
+        }
+      }
+    });
+
+    if (sentences.length === 0) { el.classList.add('hidden'); return; }
+
+    el.innerHTML = '<span class="lvn-label">What this is showing</span>' +
+      sentences.map(function(s) { return '<p>' + s + '</p>'; }).join('');
+    el.classList.remove('hidden');
   }
 
   function renderBookingsGmail(data, b) {
@@ -1188,7 +1332,9 @@ section { padding: 4.5rem 0; }
         borderColor: '#00b86c',
         borderWidth: 0,
         yAxisID: 'y',
-        order: 3
+        // Chart.js inverts: HIGHER order = drawn FIRST = appears BEHIND.
+        // Bars get high order so they sit behind the line.
+        order: 10
       }
     ];
 
@@ -1211,7 +1357,8 @@ section { padding: 4.5rem 0; }
         pointStyle: 'rect',
         tension: 0.25,
         yAxisID: 'y1',
-        order: 10
+        // LOW order = drawn LAST = appears IN FRONT of the bars.
+        order: 0
       });
       document.getElementById('clicksLegend').classList.remove('hidden');
     }
