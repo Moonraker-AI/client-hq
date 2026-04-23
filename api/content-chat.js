@@ -59,6 +59,7 @@ module.exports = async function handler(req, res) {
   var pageData = null;
   var contactData = null;
   var specData = null;
+  var practiceData = null;
   var contentPageId = context.content_page_id || '';
 
   // H12: validate UUID format before any PostgREST concat. Rejects
@@ -81,13 +82,14 @@ module.exports = async function handler(req, res) {
       pageData = fetched.page;
       contactData = fetched.contact;
       specData = fetched.spec;
+      practiceData = fetched.practice;
     } catch (e) {
       console.error('[content-chat] fetchPageContext error:', e && e.message);
       return res.status(503).json({ error: 'Service temporarily unavailable' });
     }
   }
 
-  var systemPrompt = buildSystemPrompt(pageData, contactData, specData);
+  var systemPrompt = buildSystemPrompt(pageData, contactData, specData, practiceData);
 
   // Call Anthropic with streaming
   var aiResp;
@@ -183,7 +185,7 @@ async function fetchPageContext(contentPageId) {
 
 
 // ─── System prompt ─────────────────────────────────────────────
-function buildSystemPrompt(page, contact, spec) {
+function buildSystemPrompt(page, contact, spec, practice) {
   var practiceName = sanitizer.sanitizeText((contact && contact.practice_name) || 'the practice', 200);
   var therapistName = contact ? sanitizer.sanitizeText(((contact.first_name || '') + ' ' + (contact.last_name || '')).trim(), 200) : '';
 
@@ -226,14 +228,67 @@ IMPORTANT EDITING RULES:
   if (therapistName) prompt += `\n- Therapist: ${therapistName}`;
   if (contact && contact.city) prompt += `\n- Location: ${sanitizer.sanitizeText(contact.city, 100)}, ${sanitizer.sanitizeText(contact.state_province || '', 100)}`;
 
-  // Include current HTML summary (not the full HTML, that comes in the user messages from the chatbot)
+  // Structured practice details — the chatbot uses these as authoritative
+  // answers for questions like "what insurances do you take", "what do you
+  // treat", "do you offer consultations". Sanitize every field individually.
+  if (practice) {
+    var practiceLines = [];
+    var arr = function(v, n) {
+      if (!Array.isArray(v) || v.length === 0) return null;
+      return v.map(function(x) { return sanitizer.sanitizeText(String(x || ''), 120); })
+              .filter(Boolean).slice(0, n || 25).join(', ');
+    };
+    var txt = function(v, n) {
+      if (!v) return null;
+      var s = sanitizer.sanitizeText(String(v), n || 300);
+      return s || null;
+    };
+
+    var specialties    = arr(practice.specialties, 25);
+    var modalities     = arr(practice.modalities, 25);
+    var populations    = arr(practice.populations, 25);
+    var licensedStates = arr(practice.licensed_states, 60);
+    var targetKeywords = arr(practice.target_keywords, 30);
+    var associations   = arr(practice.associations, 20);
+
+    if (practice.practice_type)            practiceLines.push('- Practice type: ' + txt(practice.practice_type, 100));
+    if (practice.num_therapists)           practiceLines.push('- Number of therapists: ' + practice.num_therapists);
+    if (specialties)                       practiceLines.push('- Specialties: ' + specialties);
+    if (modalities)                        practiceLines.push('- Modalities: ' + modalities);
+    if (populations)                       practiceLines.push('- Populations served: ' + populations);
+    if (practice.issues_treated)           practiceLines.push('- Issues treated: ' + txt(practice.issues_treated, 800));
+    if (practice.additional_services)      practiceLines.push('- Additional services: ' + txt(practice.additional_services, 500));
+    if (practice.insurance_or_private_pay) practiceLines.push('- Insurance posture: ' + txt(practice.insurance_or_private_pay, 100));
+    if (practice.insurance_panels)         practiceLines.push('- Insurance panels: ' + txt(practice.insurance_panels, 500));
+    if (practice.session_cost)             practiceLines.push('- Session cost: ' + txt(practice.session_cost, 120));
+    if (practice.session_frequency)        practiceLines.push('- Session frequency: ' + txt(practice.session_frequency, 120));
+    if (practice.offers_consultation === true) {
+      practiceLines.push('- Offers free consultation: yes' + (practice.consultation_length ? ' (' + txt(practice.consultation_length, 40) + ')' : ''));
+    } else if (practice.offers_consultation === false) {
+      practiceLines.push('- Offers free consultation: no');
+    }
+    if (licensedStates)                    practiceLines.push('- Licensed in: ' + licensedStates);
+    if (practice.ideal_client)             practiceLines.push('- Ideal client: ' + txt(practice.ideal_client, 400));
+    if (practice.differentiators)          practiceLines.push('- Differentiators: ' + txt(practice.differentiators, 500));
+    if (practice.intake_process)           practiceLines.push('- Intake process: ' + txt(practice.intake_process, 400));
+    if (practice.pronoun_usage)            practiceLines.push('- Pronoun usage: ' + txt(practice.pronoun_usage, 100));
+    if (practice.content_to_omit)          practiceLines.push('- Content to OMIT (never include): ' + txt(practice.content_to_omit, 500));
+    if (targetKeywords)                    practiceLines.push('- Target keywords: ' + targetKeywords);
+    if (associations)                      practiceLines.push('- Professional associations: ' + associations);
+
+    if (practiceLines.length > 0) {
+      prompt += '\n\nPRACTICE DETAILS (authoritative — use for factual questions about specialties, insurance, services, and locations):\n'
+        + practiceLines.join('\n');
+    }
+  }
+
+  // Include current HTML excerpt (first 8000 chars of visible text)
   if (page && page.generated_html) {
-    // Extract text-only summary for context (first 2000 chars of visible text)
     var textOnly = page.generated_html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
       .replace(/<[^>]+>/g, ' ')
       .replace(/\s+/g, ' ').trim();
-    prompt += '\n\nCURRENT PAGE CONTENT SUMMARY (first 2000 chars):\n' + textOnly.substring(0, 2000);
+    prompt += '\n\nCURRENT PAGE CONTENT SUMMARY (first 8000 chars):\n' + textOnly.substring(0, 8000);
   }
 
   return prompt;
