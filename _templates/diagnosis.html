@@ -156,7 +156,10 @@ section{padding:3.5rem 0}
 
 ::view-transition-old(root),::view-transition-new(root){animation-duration:.25s}
 
-.footer{text-align:center;padding:3rem 0;font-size:.8125rem;color:var(--color-muted)}
+.confidential{text-align:center;padding:2rem 0;color:var(--color-muted);font-size:.8125rem;letter-spacing:.04em}
+.footer{background:var(--color-navy);padding:3rem 0;text-align:center;color:rgba(232,245,239,.4);font-size:.8125rem}
+.footer img{height:28px;margin-bottom:.75rem;opacity:.6}
+.footer a{color:var(--color-primary)}
 .loading-state{text-align:center;padding:8rem 2rem}
 .spinner{width:32px;height:32px;border:3px solid var(--color-border);border-top-color:var(--color-primary);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -206,7 +209,7 @@ section{padding:3.5rem 0}
 <section id="summary"><div class="container">
   <h2>Overview</h2>
   <div class="card" style="margin-top:1.5rem;">
-    <p class="lead" id="summaryText"></p>
+    <div class="lead" id="summaryText"></div>
   </div>
   <div class="variance-box">
     <div class="v-label">Variance Score</div>
@@ -255,11 +258,8 @@ section{padding:3.5rem 0}
   </div>
 </div></section>
 
-<footer class="footer"><div class="container">
-  <p id="footerConf"></p>
-  <p style="margin-top:.5rem;">Questions about your findings? Reach out to <a href="mailto:support@moonraker.ai">support@moonraker.ai</a></p>
-  <p style="margin-top:1.5rem;"><img src="/assets/logo.png" alt="Moonraker" style="height:24px;opacity:.5;"><br>moonraker.ai</p>
-</div></footer>
+<div class="confidential"><div class="container" id="confidentialLine"></div></div>
+<footer class="footer"><div class="container"><img src="/assets/logo.png" alt="Moonraker"><br>moonraker.ai</div></footer>
 
 </div>
 <script>
@@ -326,7 +326,7 @@ section{padding:3.5rem 0}
     document.getElementById('heroTitle').textContent=name+': CORE Diagnosis';
 
     // Summary (in card, like entity-audit)
-    if(scores.summary){document.getElementById('summaryText').textContent=scores.summary}
+    if(scores.summary){document.getElementById('summaryText').innerHTML=scores.summary}
 
     // Variance (matches entity-audit dark box exactly)
     var variance=audit.variance_score!=null?audit.variance_score:(scores.variance||0);
@@ -418,7 +418,7 @@ section{padding:3.5rem 0}
     document.getElementById('findingsContainer').innerHTML=fh;
 
     // Footer
-    document.getElementById('footerConf').textContent='This report is confidential and prepared exclusively for '+(contact.first_name||'')+' '+(contact.last_name||'')+creds+' \u00B7 '+name;
+    document.getElementById('confidentialLine').innerHTML='This report is confidential and prepared exclusively for '+esc((contact.first_name||'')+' '+(contact.last_name||'')+creds)+'.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai';
 
     // Show content
     document.getElementById('loadingState').style.display='none';

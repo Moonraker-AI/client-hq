@@ -103,7 +103,10 @@ section{padding:3.5rem 0}
 /* Stacked bar */
 .progress-bar-wrap{height:10px;background:var(--color-bg);border-radius:5px;overflow:hidden;margin:1rem 0}
 .progress-bar-fill{height:100%;border-radius:5px;transition:width .5s}
-.footer{text-align:center;padding:3rem 0;font-size:.8125rem;color:var(--color-muted)}
+.confidential{text-align:center;padding:2rem 0;color:var(--color-muted);font-size:.8125rem;letter-spacing:.04em}
+.footer{background:var(--color-navy);padding:3rem 0;text-align:center;color:rgba(232,245,239,.4);font-size:.8125rem}
+.footer img{height:28px;margin-bottom:.75rem;opacity:.6}
+.footer a{color:var(--color-primary)}
 .loading-state{text-align:center;padding:8rem 2rem}
 .spinner{width:32px;height:32px;border:3px solid var(--color-border);border-top-color:var(--color-primary);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -146,7 +149,8 @@ section{padding:3.5rem 0}
   <p style="color:var(--color-muted);max-width:500px;margin:0 auto 1.5rem;">Use the interactive progress tracker to update task statuses as work gets completed.</p>
   <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;"><a id="ctaDiagnosis" href="#" style="padding:.75rem 1.75rem;border:1px solid var(--color-border);color:var(--color-heading);border-radius:8px;font-weight:600;font-family:'Outfit',sans-serif;font-size:.9375rem;">View Diagnosis</a><a id="ctaProgress" href="#" style="padding:.75rem 1.75rem;background:var(--color-primary);color:#fff;border-radius:8px;font-weight:600;font-family:'Outfit',sans-serif;font-size:.9375rem;">Track Progress</a></div>
 </div></section>
-<footer class="footer"><div class="container"><p id="footerText"></p></div></footer>
+<div class="confidential"><div class="container" id="confidentialLine"></div></div>
+<footer class="footer"><div class="container"><img src="/assets/logo.png" alt="Moonraker"><br>moonraker.ai</div></footer>
 </div>
 <script>
 (function(){
@@ -222,7 +226,7 @@ section{padding:3.5rem 0}
     });
     sn+='<a href="#next"><span class="nav-dot"></span>Next Steps</a>';
     document.getElementById('sectionNav').innerHTML=sn;
-    document.getElementById('footerText').textContent='Prepared for '+(contact.first_name||'')+' '+(contact.last_name||'')+creds+' \u00B7 '+name+' \u00B7 Confidential';
+    document.getElementById('confidentialLine').innerHTML='This report is confidential and prepared exclusively for '+esc((contact.first_name||'')+' '+(contact.last_name||'')+creds)+'.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai';
     document.getElementById('heroTitle').textContent=name+': Action Plan';
     document.getElementById('loadingState').style.display='none';
     document.getElementById('mainContent').style.display='block';

@@ -120,7 +120,10 @@ section{padding:3.5rem 0}
 .rtpba-section p{font-size:.9375rem;line-height:1.7}
 .rtpba-section ul,.rtpba-section ol{margin:0 0 1rem 1.5rem;font-size:.9375rem}
 .rtpba-section li{margin-bottom:.35rem}
-.footer{text-align:center;padding:3rem 0;font-size:.8125rem;color:var(--color-muted)}
+.confidential{text-align:center;padding:2rem 0;color:var(--color-muted);font-size:.8125rem;letter-spacing:.04em}
+.footer{background:var(--color-navy);padding:3rem 0;text-align:center;color:rgba(232,245,239,.4);font-size:.8125rem}
+.footer img{height:28px;margin-bottom:.75rem;opacity:.6}
+.footer a{color:var(--color-primary)}
 .loading-state{text-align:center;padding:8rem 2rem}
 .spinner{width:32px;height:32px;border:3px solid var(--color-border);border-top-color:var(--color-primary);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -183,7 +186,8 @@ section{padding:3.5rem 0}
   <div id="taskList"></div>
 </div></section>
 <div id="rtpbaWrap"></div>
-<footer class="footer"><div class="container"><p id="footerText"></p></div></footer>
+<div class="confidential"><div class="container" id="confidentialLine"></div></div>
+<footer class="footer"><div class="container"><img src="/assets/logo.png" alt="Moonraker"><br>moonraker.ai</div></footer>
 </div>
 <script>
 (function(){
@@ -227,7 +231,7 @@ section{padding:3.5rem 0}
     if(audit&&audit.scores&&audit.scores.rtpba){
       document.getElementById('rtpbaWrap').innerHTML='<hr class="divider"><section id="rtpba"><div class="container"><h2>Ready-to-Publish Content</h2><p style="color:var(--color-muted);margin-bottom:1.5rem;">Use this AI-optimized content for your homepage and target pages.</p><div class="rtpba-section">'+audit.scores.rtpba+'</div></div></section>';
     }
-    document.getElementById('footerText').textContent='Prepared for '+(contact.first_name||'')+' '+(contact.last_name||'')+creds+' \u00B7 '+name+' \u00B7 Confidential';
+    document.getElementById('confidentialLine').innerHTML='This report is confidential and prepared exclusively for '+esc((contact.first_name||'')+' '+(contact.last_name||'')+creds)+'.<br>&copy; 2026 Moonraker AI &middot; moonraker.ai';
     renderTasks();
     document.getElementById('loadingState').style.display='none';
     document.getElementById('mainContent').style.display='block';
