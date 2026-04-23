@@ -191,6 +191,38 @@ module.exports = async function handler(req, res) {
     var secret = process.env.STRIPE_SECRET_KEY;
     if (!secret) return res.status(500).json({ error: 'STRIPE_SECRET_KEY not configured' });
 
+    // ── Dedup guard: if a non-expired, non-consumed Checkout Session already
+    // exists for this (contact, product, tier_key), return its URL instead of
+    // minting a new one. Prevents the "triple-tap on slow ACH checkout creates
+    // three Stripe subscriptions" failure mode (2026-04-22 Athena McCullough).
+    // Stripe Checkout Sessions live 24h by default; we mirror that in
+    // pending_checkout_sessions.expires_at. The stripe-webhook clears rows on
+    // checkout.session.completed.
+    try {
+      var existing = await sb.one(
+        'pending_checkout_sessions' +
+        '?contact_id=eq.' + encodeURIComponent(contact.id) +
+        '&product=eq.' + encodeURIComponent(product) +
+        '&tier_key=eq.' + encodeURIComponent(tier_key) +
+        '&consumed_at=is.null' +
+        '&expires_at=gt.' + encodeURIComponent(new Date().toISOString()) +
+        '&select=stripe_session_id,session_url,mode&limit=1'
+      );
+      if (existing && existing.session_url) {
+        return res.status(200).json({
+          url: existing.session_url,
+          mode: existing.mode || 'session',
+          session_id: existing.stripe_session_id,
+          reused: true
+        });
+      }
+    } catch (dedupErr) {
+      // Non-fatal: if the dedup read fails, fall through and create a fresh
+      // session. Better to create a possible duplicate than to block checkout
+      // entirely on a transient Supabase read failure.
+      console.warn('create-session: dedup check failed, proceeding', dedupErr && dedupErr.message);
+    }
+
     var modeInfo = inferMode(tier);
     var priceData = {
       currency: 'usd',
@@ -271,6 +303,36 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({ error: 'stripe error', stripe: data && data.error ? data.error.message : ('HTTP ' + resp.status) });
     }
     if (!data.url) return res.status(502).json({ error: 'stripe returned no session url' });
+
+    // Record for dedup. 24h TTL matches Stripe Checkout Session expiry.
+    // Upsert via PostgREST's on_conflict: if a row already exists for
+    // (contact_id, product, tier_key) that has since expired or been consumed,
+    // overwrite it with the new session. Non-fatal: if this write fails, the
+    // session still works for the caller — we just lose dedup for that tier
+    // until the next manual retry clears it.
+    try {
+      var nowIso = new Date().toISOString();
+      var expiresIso = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
+      await sb.mutate(
+        'pending_checkout_sessions?on_conflict=contact_id,product,tier_key',
+        'POST',
+        {
+          contact_id: contact.id,
+          product: product,
+          tier_key: tier_key,
+          stripe_session_id: data.id,
+          session_url: data.url,
+          mode: 'session',
+          amount_cents: tier.amount_cents,
+          created_at: nowIso,
+          expires_at: expiresIso,
+          consumed_at: null
+        },
+        'resolution=merge-duplicates,return=minimal'
+      );
+    } catch (recErr) {
+      console.warn('create-session: failed to record pending_checkout_session', recErr && recErr.message);
+    }
 
     return res.status(200).json({ url: data.url, mode: 'session', session_id: data.id });
   }
