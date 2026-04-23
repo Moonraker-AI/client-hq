@@ -1545,7 +1545,9 @@ section { padding: 4.5rem 0; }
             data: imps,
             backgroundColor: '#00D47E',
             borderWidth: 0,
-            yAxisID: 'y'
+            yAxisID: 'y',
+            // Chart.js inverts: HIGHER order = drawn FIRST = appears BEHIND.
+            order: 10
           },
           {
             type: 'line',
@@ -1561,7 +1563,9 @@ section { padding: 4.5rem 0; }
             pointHoverRadius: 5,
             pointStyle: 'rect',
             tension: 0.25,
-            yAxisID: 'y1'
+            yAxisID: 'y1',
+            // LOW order = drawn LAST = appears IN FRONT of the bars.
+            order: 0
           }
         ]
       },
