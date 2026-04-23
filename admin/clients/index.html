@@ -1321,6 +1321,15 @@
               <textarea id="attrDdSourceMix" rows="6" placeholder='[{"source":"Google Search","current_pct":63.2,"prior_pct":71.7,"count":194}, {"source":"AI Search","current_pct":10.4,"prior_pct":0,"count":32}]' style="width:100%;padding:.6rem .75rem;border:1px solid var(--color-border);border-radius:6px;font-family:ui-monospace,monospace;font-size:.78rem;margin-top:.25rem;line-height:1.5;background:var(--color-surface);color:var(--color-heading);resize:vertical;"></textarea>
               <p id="attrDdSourceMixError" style="font-size:.72rem;color:var(--color-danger);margin:.25rem 0 0;display:none;"></p>
             </div>
+            <div>
+              <label style="font-size:.72rem;font-weight:600;color:var(--color-muted);text-transform:uppercase;letter-spacing:.04em;">Monthly leads by source JSON (optional, replaces Bookings chart)</label>
+              <textarea id="attrDdMonthly" rows="8" placeholder='[
+  {"month":"2025-09","sources":{"Google Search":46,"Psychology Today":15,"Personal Referral":6,"AI Search":0,"Social":0}},
+  {"month":"2025-10","sources":{"Google Search":47,"Psychology Today":8,"Personal Referral":8,"AI Search":0,"Social":0}}
+]' style="width:100%;padding:.6rem .75rem;border:1px solid var(--color-border);border-radius:6px;font-family:ui-monospace,monospace;font-size:.78rem;margin-top:.25rem;line-height:1.5;background:var(--color-surface);color:var(--color-heading);resize:vertical;"></textarea>
+              <p style="font-size:.72rem;color:var(--color-muted);margin:.25rem 0 0;">Each entry is a month (YYYY-MM) with a <code>sources</code> map. When populated, this replaces the Gmail-derived bookings chart with a per-source line chart.</p>
+              <p id="attrDdMonthlyError" style="font-size:.72rem;color:var(--color-danger);margin:.25rem 0 0;display:none;"></p>
+            </div>
             <div style="font-size:.72rem;color:var(--color-muted);" id="attrDdMeta"></div>
           </div>
         </div>
@@ -7869,6 +7878,7 @@
     v('attrDdSummary',       row && row.summary_markdown);
     v('attrDdCommentary',    row && row.client_commentary_markdown);
     v('attrDdSourceMix',     row && row.source_mix_json ? JSON.stringify(row.source_mix_json, null, 2) : '');
+    v('attrDdMonthly',       row && row.monthly_by_source_json ? JSON.stringify(row.monthly_by_source_json, null, 2) : '');
     var pub = document.getElementById('attrDdPublished');
     if (pub) pub.checked = !!(row && row.published);
     var meta = document.getElementById('attrDdMeta');
@@ -7881,6 +7891,8 @@
     }
     var err = document.getElementById('attrDdSourceMixError');
     if (err) { err.style.display = 'none'; err.textContent = ''; }
+    var merr = document.getElementById('attrDdMonthlyError');
+    if (merr) { merr.style.display = 'none'; merr.textContent = ''; }
   }
 
   function saveAttributionDeepDive() {
@@ -7888,7 +7900,9 @@
     if (!c) return;
     var btn = document.getElementById('attrDdSaveBtn');
     var errEl = document.getElementById('attrDdSourceMixError');
+    var monthlyErrEl = document.getElementById('attrDdMonthlyError');
     errEl.style.display = 'none';
+    monthlyErrEl.style.display = 'none';
 
     var rawMix = (document.getElementById('attrDdSourceMix').value || '').trim();
     var mixJson = null;
@@ -7908,12 +7922,34 @@
       }
     }
 
+    var rawMonthly = (document.getElementById('attrDdMonthly').value || '').trim();
+    var monthlyJson = null;
+    if (rawMonthly) {
+      try {
+        monthlyJson = JSON.parse(rawMonthly);
+        if (!Array.isArray(monthlyJson)) throw new Error('Must be an array');
+        monthlyJson.forEach(function(r, i) {
+          if (typeof r !== 'object' || r == null) throw new Error('Row ' + i + ' is not an object');
+          if (!r.month || !/^\d{4}-\d{2}$/.test(r.month)) throw new Error('Row ' + i + ' month must be YYYY-MM');
+          if (!r.sources || typeof r.sources !== 'object') throw new Error('Row ' + i + ' missing sources object');
+          Object.keys(r.sources).forEach(function(k) {
+            if (isNaN(Number(r.sources[k]))) throw new Error('Row ' + i + ' source "' + k + '" is not numeric');
+          });
+        });
+      } catch (e) {
+        monthlyErrEl.textContent = 'Monthly JSON invalid: ' + e.message;
+        monthlyErrEl.style.display = '';
+        return;
+      }
+    }
+
     var payload = {
       contact_id: c.id,
       headline: (document.getElementById('attrDdHeadlineInput').value || '').trim() || null,
       summary_markdown: document.getElementById('attrDdSummary').value || null,
       client_commentary_markdown: (document.getElementById('attrDdCommentary').value || '').trim() || null,
       source_mix_json: mixJson,
+      monthly_by_source_json: monthlyJson,
       data_period_start: document.getElementById('attrDdPeriodStart').value || null,
       data_period_end: document.getElementById('attrDdPeriodEnd').value || null,
       data_source_note: (document.getElementById('attrDdDataSourceNote').value || '').trim() || null,
