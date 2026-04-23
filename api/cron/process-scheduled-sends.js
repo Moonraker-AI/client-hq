@@ -121,11 +121,15 @@ async function handler(req, res) {
 
     return res.status(200).json({ processed: results.length, results: results });
   } catch (e) {
+    // CR-M2: Per-row recordFailure already persisted retry state for every
+    // known failure mode. Returning 500 here would trigger a Vercel retry
+    // and risk duplicate sends for rows we already processed in this tick.
+    // Keep 200 + log to monitor so the failure surfaces without re-firing.
     console.error('process-scheduled-sends FATAL:', e.message);
     monitor.logError('cron/process-scheduled-sends', e, {
       detail: { stage: 'cron_handler' }
     });
-    return res.status(500).json({ error: 'Scheduled sends processing failed' });
+    return res.status(200).json({ success: false, error: 'Scheduled sends processing failed: ' + (e && e.message ? e.message : 'unknown') });
   }
 }
 

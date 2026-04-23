@@ -167,10 +167,14 @@ async function handler(req, res) {
 
     return res.status(200).json({ ok: true, results: results });
   } catch (e) {
+    // CR-M1: Per-row recordFailure already persisted retry state for every
+    // known send failure. Returning 500 here would trigger a Vercel retry
+    // and risk duplicate Resend sends for rows already marked 'sent' in
+    // this tick. Keep 200 + log to monitor.
     monitor.logError('cron/process-followups', e, {
       detail: { stage: 'cron_handler', results: results }
     });
-    return res.status(500).json({ error: 'Cron failed: ' + e.message, results: results });
+    return res.status(200).json({ ok: false, error: 'Cron failed: ' + (e && e.message ? e.message : 'unknown'), results: results });
   }
 }
 

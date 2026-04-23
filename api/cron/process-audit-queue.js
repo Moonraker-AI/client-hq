@@ -255,43 +255,31 @@ async function handler(req, res) {
     }
 
     // ============================================================
-    // STEP 0.5: Flip agent_error rows back to queued for retry.
+    // STEP 0.5: Flip agent_error rows back to queued for retry (CR-H1).
     // ============================================================
     // Only rows with agent_error_retriable=true are requeued. Terminal
-    // failures (credits_exhausted, surge_maintenance, surge_rejected)
-    // are set retriable=false by the agent and require manual intervention.
-    // 5-min backoff is a safety rail against a submit-time failure being
-    // immediately retried in the same cron tick that's about to dispatch;
-    // well below the cron interval so no real throttling happens in practice.
-    // Do NOT clear last_agent_error / last_agent_error_at when flipping —
-    // admins want to see "this row errored N minutes ago, now retrying."
+    // failures (credits_exhausted, surge_maintenance, surge_rejected) are
+    // set retriable=false by the agent and require manual intervention.
     //
-    // 2026-04-22: filter now includes rows where last_agent_error_at IS NULL.
-    // Previously the filter was a plain `last_agent_error_at=lt.<cutoff>`,
-    // which PostgREST excludes NULL from (NULL comparisons return NULL, not
-    // TRUE). Legacy rows that errored before per-row timestamp instrumentation
-    // (or any row that lands in agent_error without setting last_agent_error_at)
-    // could never match and sat stranded. The `or=(...)` clause below matches
-    // both NULL timestamps and timestamps older than the backoff cutoff.
-    // Angela Gwak (5e56c0c7) was the first caught case; backfilled inline
-    // alongside this deploy so she picks up on the next cron tick.
+    // 5-min backoff is a safety rail against a submit-time failure being
+    // immediately retried in the same cron tick that's about to dispatch.
+    // last_agent_error / last_agent_error_at are NOT cleared — admins want
+    // to see "errored N minutes ago, now retrying."
+    //
+    // 2026-04-23 (CR-H1): collapsed the previous SELECT-then-loop-PATCH into
+    // a single SECURITY DEFINER RPC with FOR UPDATE SKIP LOCKED. The earlier
+    // loop raced Step 1's claim_next_audit under concurrent cron invocations:
+    // two ticks could observe the same agent_error row, PATCH it to queued,
+    // and both attempt to claim. RPC partitions rows atomically.
+    //
+    // The RPC matches the legacy filter semantics, including NULL-safe
+    // backoff (rows with last_agent_error_at IS NULL are treated as eligible).
     var errorBackoffCutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    var errorRows = await sb.query(
-      'entity_audits?status=eq.agent_error' +
-      '&agent_error_retriable=eq.true' +
-      '&or=(last_agent_error_at.is.null,last_agent_error_at.lt.' + encodeURIComponent(errorBackoffCutoff) + ')' +
-      '&select=id'
-    );
-    var agentErrorRequeued = 0;
-    if (errorRows && errorRows.length > 0) {
-      for (var i = 0; i < errorRows.length; i++) {
-        await sb.mutate('entity_audits?id=eq.' + errorRows[i].id, 'PATCH', {
-          status: 'queued',
-          agent_task_id: null
-        }, 'return=minimal');
-        agentErrorRequeued++;
-      }
-    }
+    var requeued = await sb.mutate('rpc/requeue_retriable_agent_errors', 'POST', {
+      p_backoff_cutoff: errorBackoffCutoff,
+      p_limit: 50
+    });
+    var agentErrorRequeued = Array.isArray(requeued) ? requeued.length : 0;
 
     // ============================================================
     // STEP 1: Claim the oldest queued audit atomically and dispatch
