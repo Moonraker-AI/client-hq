@@ -120,35 +120,48 @@ Deferred: Batch 6b AGENT_API_KEY rotation (shipped separately below).
 
 ---
 
-## Deferred work (follow-up batches)
+## Follow-up batches (shipped post-Batch 7)
 
-### Needs new API endpoint + frontend swap (pair)
-- **FE-H3 + API new route** — `/api/auth/change-password` endpoint that validates role field is NOT in payload. admin/login:196/247/340 then swap to call it. Current admin_profiles self-UPDATE is safe (Batch 4 trigger) but defense-in-depth wants the server-side route anyway.
+### FE-H3 + FE-H2 extras — `0c91ea5d`
+- `api/auth/change-password.js` — POST, admin-gated, rate-limited, rejects role/email/id/display_name in payload.
+- `api/admin/client-deep-dive.js` — one-call replacement for 22 per-client REST reads.
+- `api/admin/onboarding-directory.js` + `api/admin/reports-directory.js` — admin-gated directory consolidators.
+- admin/login handlePasswordChange swapped to change-password endpoint.
+- admin/onboarding + admin/reports + admin/clients (3 of 22 deep-dive sites) migrated.
 
-### Needs new directory endpoints
-- `/api/admin/client-detail?slug=X` — consolidates ~22 per-client deep-dive reads in admin/clients/index.html.
-- `/api/admin/onboarding-directory` — consolidates admin/onboarding reads.
-- `/api/admin/reports-directory` — consolidates admin/reports reads.
-- Global client-search nav widget — shared across audits, clients, deliverables. Single cross-cutting migration.
-- Per-page audits PATCHes (entity_audits saveLoom, changeEaStatus) — migrate to /api/action.
+### check-must-change + ga4_detail + offline-banner + FE-M5 leftovers — `831b7d11`
+- `api/auth/check-must-change.js` — GET admin-gated; replaces direct admin_profiles reads from admin/login. Post-swap: 0 `admin_profiles` refs in admin/login.
+- `migrations/2026-04-23-report-snapshots-ga4-detail-fix.sql` — UPDATE `(ga4_detail #>> '{}')::jsonb` on 1 legacy double-encoded row (`anna-skomorovskaia` / `2026-03-01`), then add `jsonb_typeof='object'` CHECK. Post-apply: 31/31 rows object.
+- /shared/offline-banner.js added to all 14+1 admin pages (discovered admin/system during sweep).
+- credentials:'same-origin' added to 3 remaining flagged fetch sites (endorsements, progress, proposal).
 
-### Single-site polish
-- endorsements.html, progress.html, proposal.html — 3 unguarded fetch sites flagged in Batch 7 FE-M5 sweep.
-- FE-M7 — vendor Supabase SDK locally + narrow cdn.jsdelivr.net CSP grant (SRI-pin).
-- FE-M2 — admin pages (14) missing offline-banner.js.
+### FE-M7 full sweep + admin/clients cache-invalidation + admin/reports scope widen — `3c1d22bb`
+- Supabase SDK 2.49.4 vendored to `/vendor/supabase/` with SRI.
+- chart.js 4.4.1 vendored to `/vendor/chartjs/` with SRI (campaign-summary template).
+- 13 HTML files swapped (12 admin pages + 1 template). admin/login swapped in the prior sub-batch.
+- `vercel.json` CSP: dropped `https://cdn.jsdelivr.net` from `script-src` AND `connect-src`.
+- admin/clients: added `refreshDeepDive` + `refreshDeepDiveSlice` with stale-client-race guard. 18 additional REST fetches migrated via cache-refresh pattern. `/rest/v1/` count dropped 22 → 1 (the last is the new-client slug-uniqueness check — handled in the next batch).
+- admin/reports: dropped client-side `.filter(status==='active')`. Reports view now surfaces onboarding clients.
 
-### DB outliers
-- report_snapshots.ga4_detail has 1 legacy string row vs 30 objects. Fix the outlier, then add the `jsonb_typeof='object'` CHECK (deferred from Batch 7).
-- 25 unused indexes — revisit after stats accumulate (too new to decide safely).
+### AGENT_API_KEY rotation (Batch 6b) — `e6c6c2d5`
+See the Batch 6b section above.
 
-### VPS
-- moonraker-agent repo sync — patched admin_service.py v1.1.0 on the VPS has NOT been committed back to Moonraker-AI/moonraker-agent. Next VPS rebuild from repo would revert the rate-limit + audit tee. Fix: sync separately in that repo.
-- VPS-H2 option B — replace /admin/exec with named RPCs (docker-restart, logs-tail, deploy). Larger effort; separate design.
-- SSH move off port 22 (optional; 14,000+ brute-force probes vs 0 successful).
-- VPS `.env.bak-rotate-<ts>` backups from Batch 6b — retain for rollback window, delete after ~1 week of stable operation.
+### moonraker-agent repo sync
+PR #5 open at https://github.com/Moonraker-AI/moonraker-agent/pull/5. `host_admin/admin_service.py` v1.0.0 → v1.1.0 (rate limit + audit tee + version bump). Awaits operator review/merge.
 
-### Decisions still open
-- Decision 7 revisit when hiring a 3rd admin.
+### Final slug-check endpoint + admin/clients 0 REST
+- `api/admin/check-slug.js` — GET admin-gated; rate-limited; UUID-style slug regex; returns legacy-compatible `[{id, practice_name}]` array shape so the admin/clients page-side swap is a one-line URL change.
+- admin/clients line 10051: swapped to `fetch('/api/admin/check-slug?slug=…')`. Post-migration `/rest/v1/` count in admin/clients: **0**.
+
+---
+
+## Open / deferred (nothing blocking audit closure)
+
+- **moonraker-agent PR #5** — your review/merge at convenience.
+- **VPS `.env.bak-rotate-1776955281`** — delete after ~2026-04-30 (1 week stable post-rotation) via `ssh root@87.99.133.69 "rm /opt/moonraker-*/.env.bak-rotate-1776955281"`.
+- **Decision 7** (`workspace_credentials` role-scoping) — revisit when hiring 3rd admin.
+- **25 unused indexes** — revisit after stats accumulate (too new to decide).
+- **Browser smoke test** — admin/login, any admin dashboard, any client `campaign-summary` page. Confirm vendored SDK + chart.js load + no CSP violations in devtools console.
 
 ---
 
