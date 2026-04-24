@@ -327,7 +327,7 @@ body.contact-locked .autosave-status { display: none !important; }
   <aside class="sidebar">
     <div class="sidebar-header">
       <h3>Getting Started</h3>
-      <div class="sidebar-progress"><span id="progressLabel">0 of 8 complete</span></div>
+      <div class="sidebar-progress"><span id="progressLabel">0 of 10 complete</span></div>
       <div class="sidebar-progress-bar"><div class="sidebar-progress-fill" id="progressFill" style="width:0%"></div></div>
     </div>
     <ul class="step-nav" id="stepNav"></ul>
@@ -345,7 +345,7 @@ body.contact-locked .autosave-status { display: none !important; }
 
     <!-- STEP 1: Confirm Info -->
     <div class="step-panel" data-step="confirm_info">
-      <span class="step-badge">Step 1 of 9</span>
+      <span class="step-badge">Step 1 of 10</span>
       <h1>Confirm Your Info <span class="autosave-status" id="ci_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
       <p style="color:var(--color-muted)">We have gathered some details about your practice. Please review and correct anything that needs updating.</p>
 
@@ -399,7 +399,7 @@ body.contact-locked .autosave-status { display: none !important; }
 
     <!-- STEP 2: Sign Agreement -->
     <div class="step-panel" data-step="sign_agreement">
-      <span class="step-badge">Step 2 of 9</span>
+      <span class="step-badge">Step 2 of 10</span>
       <h1>Client Service Agreement</h1>
       <p style="color:var(--color-muted)">Please review the agreement below, then sign at the bottom to confirm.</p>
 
@@ -461,7 +461,7 @@ body.contact-locked .autosave-status { display: none !important; }
 
     <!-- STEP 3: Book Intro Call -->
     <div class="step-panel" data-step="book_intro_call">
-      <span class="step-badge">Step 3 of 9</span>
+      <span class="step-badge">Step 3 of 10</span>
       <h1>Book Your Intro Call</h1>
       <p style="color:var(--color-muted)">Your intro call with Scott is a collaborative kickoff where we align on your campaign strategy and make sure everything is set up for success.</p>
 
@@ -524,7 +524,7 @@ body.contact-locked .autosave-status { display: none !important; }
 
     <!-- STEP 4: Connect Accounts (Leadsie) -->
     <div class="step-panel" data-step="connect_accounts">
-      <span class="step-badge">Step 4 of 9</span>
+      <span class="step-badge">Step 4 of 10</span>
       <h1>Connect Your Accounts</h1>
       <p style="color:var(--color-muted)">We use a secure tool called Leadsie to connect to your website and Google properties. Click through the steps below to grant access to your accounts. This process takes about 5 minutes.</p>
 
@@ -572,7 +572,7 @@ body.contact-locked .autosave-status { display: none !important; }
 
     <!-- STEP 5: Practice Details -->
     <div class="step-panel" data-step="practice_details">
-      <span class="step-badge">Step 5 of 9</span>
+      <span class="step-badge">Step 5 of 10</span>
       <h1>Practice &amp; Clinical Details <span class="autosave-status" id="pd_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
       <p style="color:var(--color-muted)">This information helps us build your service pages, write content in your voice, and target the right audience. Separate multiple items with commas.</p>
 
@@ -643,9 +643,24 @@ body.contact-locked .autosave-status { display: none !important; }
       </div>
     </div>
 
-    <!-- STEP 6: Bio Materials -->
+    <!-- STEP 6: Site Map -->
+    <div class="step-panel" data-step="site_map">
+      <span class="step-badge">Step 6 of 10</span>
+      <h1>Review your site map</h1>
+      <p style="color:var(--color-muted)">We've scanned your current site. Review each page and tell us which ones we should keep, update as a target, or remove &mdash; plus propose any new pages you want built.</p>
+      <div class="site-map-iframe-wrap" style="border:1px solid var(--color-border); border-radius:12px; overflow:hidden; background:var(--color-surface); margin-top:1rem;">
+        <iframe id="siteMapFrame" style="width:100%; min-height:800px; border:0;" loading="lazy" title="Site map configurator"></iframe>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn btn-outline" onclick="goToStep(4)">&#8592; Back</button>
+        <button class="btn btn-primary" onclick="goToStep(6)">Next: Bio Materials &#8594;</button>
+      </div>
+    </div>
+
+    <!-- STEP 7: Bio Materials -->
     <div class="step-panel" data-step="bio_materials">
-      <span class="step-badge">Step 6 of 9</span>
+      <span class="step-badge">Step 7 of 10</span>
       <h1>Bio Page Materials <span class="autosave-status" id="bio_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
       <p style="color:var(--color-muted)">We build a detailed bio page for each therapist at your practice. This info feeds directly into your bio page, schema markup, and AI visibility. Start with the primary therapist and we can add more later.</p>
 
@@ -703,14 +718,14 @@ body.contact-locked .autosave-status { display: none !important; }
       </div>
 
       <div class="step-actions">
-        <button class="btn btn-outline" onclick="goToStep(4)">&#8592; Back</button>
-        <button class="btn btn-primary" onclick="completeAndAdvance('bio_materials', 6)">Continue: Social Profiles &#8594;</button>
+        <button class="btn btn-outline" onclick="goToStep(5)">&#8592; Back</button>
+        <button class="btn btn-primary" onclick="completeAndAdvance('bio_materials', 7)">Continue: Social Profiles &#8594;</button>
       </div>
     </div>
 
-    <!-- STEP 7: Social Profiles -->
+    <!-- STEP 8: Social Profiles -->
     <div class="step-panel" data-step="social_profiles">
-      <span class="step-badge">Step 7 of 9</span>
+      <span class="step-badge">Step 8 of 10</span>
       <h1>Social Profiles <span class="autosave-status" id="sp_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
       <p style="color:var(--color-muted)">Google crawls social profiles to verify your practice is tied to a real person. We build out 9 interconnected profiles as part of our Rising Tide strategy. Please share any existing profile URLs below.</p>
 
@@ -827,14 +842,14 @@ body.contact-locked .autosave-status { display: none !important; }
       </div>
 
       <div class="step-actions">
-        <button class="btn btn-outline" onclick="goToStep(5)">&#8592; Back</button>
-        <button class="btn btn-primary" onclick="completeAndAdvance('social_profiles', 7)">Continue: Google Drive &#8594;</button>
+        <button class="btn btn-outline" onclick="goToStep(6)">&#8592; Back</button>
+        <button class="btn btn-primary" onclick="completeAndAdvance('social_profiles', 8)">Continue: Google Drive &#8594;</button>
       </div>
     </div>
 
-    <!-- STEP 8: Google Drive -->
+    <!-- STEP 9: Google Drive -->
     <div class="step-panel" data-step="checkins_and_drive">
-      <span class="step-badge">Step 8 of 9</span>
+      <span class="step-badge">Step 9 of 10</span>
       <h1>Your Google Drive Folder</h1>
       <p style="color:var(--color-muted)">Your shared Google Drive folder is where you can upload creative assets, documents, and images for your campaign. We check this folder regularly.</p>
 
@@ -870,14 +885,14 @@ body.contact-locked .autosave-status { display: none !important; }
       </div>
 
       <div class="step-actions">
-        <button class="btn btn-outline" onclick="goToStep(6)">&#8592; Back</button>
-        <button class="btn btn-primary" onclick="completeAndAdvance('checkins_and_drive', 8)">Continue: Performance Guarantee &#8594;</button>
+        <button class="btn btn-outline" onclick="goToStep(7)">&#8592; Back</button>
+        <button class="btn btn-primary" onclick="completeAndAdvance('checkins_and_drive', 9)">Continue: Performance Guarantee &#8594;</button>
       </div>
     </div>
 
-    <!-- STEP 9: Performance Guarantee -->
+    <!-- STEP 10: Performance Guarantee -->
     <div class="step-panel" data-step="performance_guarantee">
-      <span class="step-badge">Step 9 of 9</span>
+      <span class="step-badge">Step 10 of 10</span>
       <h1>Your SEO Performance Guarantee</h1>
 
       <!-- Non-annual notice (hidden by default, shown via JS) -->
@@ -1081,7 +1096,7 @@ body.contact-locked .autosave-status { display: none !important; }
       </div>
 
       <div class="step-actions">
-        <button class="btn btn-outline" onclick="goToStep(7)">&#8592; Back</button>
+        <button class="btn btn-outline" onclick="goToStep(8)">&#8592; Back</button>
         <a href="" id="dashboardLink" class="btn btn-primary">Go to Dashboard &#8594;</a>
       </div>
     </div>
@@ -1125,10 +1140,11 @@ body.contact-locked .autosave-status { display: none !important; }
     { key: 'book_intro_call', label: 'Book Intro Call', num: 3 },
     { key: 'connect_accounts', label: 'Connect Accounts', num: 4 },
     { key: 'practice_details', label: 'Practice Details', num: 5 },
-    { key: 'bio_materials', label: 'Bio Materials', num: 6 },
-    { key: 'social_profiles', label: 'Social Profiles', num: 7 },
-    { key: 'checkins_and_drive', label: 'Google Drive', num: 8 },
-    { key: 'performance_guarantee', label: 'Guarantee', num: 9 }
+    { key: 'site_map', label: 'Site Map', num: 6 },
+    { key: 'bio_materials', label: 'Bio Materials', num: 7 },
+    { key: 'social_profiles', label: 'Social Profiles', num: 8 },
+    { key: 'checkins_and_drive', label: 'Google Drive', num: 9 },
+    { key: 'performance_guarantee', label: 'Guarantee', num: 10 }
   ];
 
   var contact = null;
@@ -1203,6 +1219,15 @@ body.contact-locked .autosave-status { display: none !important; }
     document.querySelectorAll('.step-panel').forEach(function(p, i) {
       p.classList.toggle('active', i === idx);
     });
+    // Lazy-load the site-map configurator iframe the first time the panel
+    // activates. Cookie mr_pt_onboarding is Path=/ so it reaches /admin/site-map/
+    // automatically; same-origin embed, CSP frame-ancestors 'self'.
+    if (STEPS[idx] && STEPS[idx].key === 'site_map' && CLIENT_SLUG) {
+      var frame = document.getElementById('siteMapFrame');
+      if (frame && !frame.getAttribute('src')) {
+        frame.setAttribute('src', '/admin/site-map/?slug=' + encodeURIComponent(CLIENT_SLUG) + '&mode=client');
+      }
+    }
     buildNav();
     window.scrollTo(0, 0);
   };
