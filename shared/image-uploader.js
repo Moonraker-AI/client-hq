@@ -47,7 +47,6 @@
   // Ordered by frequency of use for therapy practices.
   var STOCK_CATEGORIES = [
     { value: 'office',       label: 'Office' },
-    { value: 'lobby',        label: 'Lobby & waiting' },
     { value: 'exterior',     label: 'Exterior' },
     { value: 'nature',       label: 'Nature' },
     { value: 'hands',        label: 'Hands & connection' },
@@ -264,7 +263,7 @@
 
     function renderUploadPanel() {
       var hint = {
-        practice: 'Drop photos of your practice — office, lobby, exterior, neighborhood, team candids.',
+        practice: 'Drop photos of your practice (office, lobby, exterior, neighborhood, team candids).',
         logo: 'Drop your practice logo. PNG with a transparent background works best.',
         headshot: 'Drop a professional headshot.',
         credential: 'Drop photos of diplomas, certificates, or licenses.',
@@ -292,11 +291,12 @@
         gridHtml = '<div class="mr-up__lib-empty">Pick a category or search to browse the library.</div>';
       } else {
         gridHtml = stockResults.map(function (s) {
-          var alreadyAdded = items.some(function (it) { return it.stock_image_id === s.id; });
+          var addedItem = items.find(function (it) { return it.stock_image_id === s.id; });
+          var alreadyAdded = !!addedItem;
           return [
-            '<div class="mr-up__lib-tile' + (alreadyAdded ? ' is-added' : '') + '" data-stock-id="' + s.id + '">',
-            '  <img src="' + escapeHtml(s.hosted_url) + '" alt="' + escapeHtml(s.rich_description || '') + '" loading="lazy">',
-            '  <div class="mr-up__lib-check">' + (alreadyAdded ? '✓ Added' : '+ Add') + '</div>',
+            '<div class="mr-up__lib-tile' + (alreadyAdded ? ' is-added' : '') + '" data-stock-id="' + s.id + '"' + (alreadyAdded && addedItem.id ? ' data-pool-id="' + escapeHtml(addedItem.id) + '"' : '') + '>',
+            '  <img src="' + escapeHtml(s.hosted_url) + '" alt="' + escapeHtml(s.rich_description || '') + '" loading="lazy" data-expand-src="' + escapeHtml(s.hosted_url) + '" data-expand-alt="' + escapeHtml(s.rich_description || '') + '">',
+            '  <button type="button" class="mr-up__lib-icon" data-stock-id="' + s.id + '" aria-label="' + (alreadyAdded ? 'Remove' : 'Add') + '">' + (alreadyAdded ? '×' : '+') + '</button>',
             '</div>'
           ].join('');
         }).join('');
@@ -315,7 +315,7 @@
 
     function renderGeneratePanel() {
       var draftsHtml = drafts.length ? [
-        '<div class="mr-up__draft-label">Drafts — accept the ones you want, discard the rest:</div>',
+        '<div class="mr-up__draft-label">Drafts. Accept the ones you want, discard the rest:</div>',
         '<div class="mr-up__draft-grid">',
         drafts.map(function (d) {
           if (d.status === 'failed') {
@@ -329,13 +329,17 @@
           if (d.status === 'generating') {
             return [
               '<div class="mr-up__draft-tile is-loading" data-draft-id="' + escapeHtml(d.id) + '">',
-              '  <div class="mr-up__draft-spin">✨ Generating…</div>',
+              '  <div class="mr-up__draft-spin">',
+              '    <div class="mr-up__spinner"></div>',
+              '    <div class="mr-up__draft-spin-label">Generating</div>',
+              '    <div class="mr-up__draft-spin-sub">30 to 60 seconds</div>',
+              '  </div>',
               '</div>'
             ].join('');
           }
           return [
             '<div class="mr-up__draft-tile" data-draft-id="' + escapeHtml(d.id) + '">',
-            '  <img src="' + escapeHtml(d.hosted_url) + '" alt="">',
+            '  <img src="' + escapeHtml(d.hosted_url) + '" alt="" data-expand-src="' + escapeHtml(d.hosted_url) + '">',
             '  <div class="mr-up__draft-actions">',
             '    <button type="button" class="mr-up__draft-accept" data-draft-id="' + escapeHtml(d.id) + '">Accept</button>',
             '    <button type="button" class="mr-up__draft-discard" data-draft-id="' + escapeHtml(d.id) + '">Discard</button>',
@@ -351,7 +355,7 @@
         '  <label class="mr-up__gen-label">Describe the image you want</label>',
         '  <textarea class="mr-up__gen-prompt" rows="2" placeholder="e.g. warm therapy office with plants and natural light, soft morning sun"></textarea>',
         '  <div class="mr-up__gen-bar">',
-        '    <span class="mr-up__gen-hint">Generates a draft. Accept it to add to your photos.</span>',
+        '    <span class="mr-up__gen-hint">Generation usually takes 30 to 60 seconds. Tap an image to preview, then accept or discard.</span>',
         '    <button type="button" class="mr-up__gen-btn">Generate ✨</button>',
         '  </div>',
         '  ' + draftsHtml,
@@ -399,12 +403,30 @@
           });
         });
         panelsEl.querySelectorAll('.mr-up__lib-tile').forEach(function (tile) {
-          tile.addEventListener('click', function () {
-            if (tile.classList.contains('is-added')) return;
-            var stockId = parseInt(tile.dataset.stockId, 10);
-            var stock = stockResults.find(function (s) { return s.id === stockId; });
-            if (stock) addStockOne(stock, tile);
-          });
+          // Click image → expand preview modal
+          var img = tile.querySelector('img');
+          if (img) {
+            img.addEventListener('click', function (e) {
+              e.stopPropagation();
+              showExpandModal(img.dataset.expandSrc || img.src, img.dataset.expandAlt || '');
+            });
+          }
+          // Click + / × icon → add or remove
+          var icon = tile.querySelector('.mr-up__lib-icon');
+          if (icon) {
+            icon.addEventListener('click', function (e) {
+              e.stopPropagation();
+              var stockId = parseInt(tile.dataset.stockId, 10);
+              if (tile.classList.contains('is-added')) {
+                // Remove via stored pool_id
+                var poolId = tile.dataset.poolId;
+                if (poolId) removeOneById(poolId);
+              } else {
+                var stock = stockResults.find(function (s) { return s.id === stockId; });
+                if (stock) addStockOne(stock, tile);
+              }
+            });
+          }
         });
       } else if (activeTab === 'generate') {
         var genBtn = panelsEl.querySelector('.mr-up__gen-btn');
@@ -414,6 +436,12 @@
           if (!p) return;
           startGenerate(p);
           promptEl.value = '';
+        });
+        panelsEl.querySelectorAll('.mr-up__draft-tile img').forEach(function (img) {
+          img.addEventListener('click', function (e) {
+            e.stopPropagation();
+            showExpandModal(img.dataset.expandSrc || img.src, '');
+          });
         });
         panelsEl.querySelectorAll('.mr-up__draft-accept').forEach(function (btn) {
           btn.addEventListener('click', function () { acceptDraft(btn.dataset.draftId); });
@@ -541,18 +569,14 @@
             stock_image_id: stock.id,
           });
           if (!r.existing) trackPending(contactId, r.pool_id);
-          tile.classList.remove('is-adding');
-          tile.classList.add('is-added');
-          var label = tile.querySelector('.mr-up__lib-check');
-          if (label) label.textContent = '✓ Added';
         } else {
           items[idx] = Object.assign({}, items[idx], {
             status: 'failed',
             error: r && r.error || 'Failed',
           });
-          tile.classList.remove('is-adding');
         }
         renderGrid();
+        if (activeTab === 'library') renderPanels();   // refresh +/× state
         onChange(items);
       }).catch(function (err) {
         var idx = items.findIndex(function (it) { return it.id === localId; });
@@ -560,9 +584,22 @@
           items[idx] = Object.assign({}, items[idx], { status: 'failed', error: err.message });
           renderGrid();
         }
-        tile.classList.remove('is-adding');
         alert('Could not add: ' + err.message);
       });
+    }
+
+    // Remove an existing pool item by its pool_id (used by library × icon)
+    function removeOneById(id) {
+      var idx = items.findIndex(function (it) { return it.id === id; });
+      if (idx === -1) return;
+      items.splice(idx, 1);
+      renderGrid();
+      if (activeTab === 'library') renderPanels();
+      onChange(items);
+      if (!String(id).startsWith('local-') && !String(id).startsWith('stock-') && !String(id).startsWith('gen-')) {
+        apiPost('/api/archive-pool-image', { contact_id: contactId, pool_id: id })
+          .catch(function () { /* non-critical */ });
+      }
     }
 
     // ── AI generate flow (drafts) ──────────────────────────
@@ -693,6 +730,11 @@
     }
 
     function renderGrid() {
+      // Single-mode (maxFiles===1) widgets hide the input area once a photo
+      // is in. We toggle a class on the root so CSS can collapse the tabs +
+      // panels to make it obvious there's no more to do.
+      el.classList.toggle('has-items', items.length > 0);
+
       if (!items.length) {
         grid.innerHTML = '<div class="mr-up__grid-empty">No photos yet. Add some using the options above.</div>';
         return;
@@ -700,8 +742,8 @@
       grid.innerHTML = items.map(function (it) {
         var statusBadge =
           it.status === 'failed' ? '<span class="mr-up__badge mr-up__badge--failed">Failed</span>' :
-          it.status === 'pending' ? '<span class="mr-up__badge mr-up__badge--pending">Processing…</span>' :
-          it.status === 'uploading' ? '<span class="mr-up__badge mr-up__badge--pending">Uploading…</span>' :
+          it.status === 'pending' ? '<span class="mr-up__badge mr-up__badge--pending">Processing (up to 2 min)</span>' :
+          it.status === 'uploading' ? '<span class="mr-up__badge mr-up__badge--pending">Uploading</span>' :
           '';
         var imgHtml = it.hosted_url
           ? '<img src="' + escapeHtml(it.hosted_url) + '" alt="' + escapeHtml(it.alt_text || it.filename || '') + '">'
@@ -744,6 +786,27 @@
       },
       getItems: function () { return items.slice(); },
     };
+  }
+
+  // Modal preview for stock + AI draft images. Click backdrop / × to dismiss.
+  function showExpandModal(src, alt) {
+    var existing = document.querySelector('.mr-up-modal');
+    if (existing) existing.remove();
+    var modal = document.createElement('div');
+    modal.className = 'mr-up-modal';
+    modal.innerHTML = [
+      '<div class="mr-up-modal__backdrop"></div>',
+      '<div class="mr-up-modal__panel">',
+      '  <button type="button" class="mr-up-modal__close" aria-label="Close">×</button>',
+      '  <img src="' + escapeHtml(src) + '" alt="' + escapeHtml(alt || '') + '">',
+      '</div>'
+    ].join('');
+    document.body.appendChild(modal);
+    var close = function () { modal.remove(); document.removeEventListener('keydown', onKey); };
+    var onKey = function (e) { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', onKey);
+    modal.querySelector('.mr-up-modal__backdrop').addEventListener('click', close);
+    modal.querySelector('.mr-up-modal__close').addEventListener('click', close);
   }
 
   function renderShell(opts) {
@@ -796,14 +859,22 @@
     '.mr-up__chip.is-active { background: var(--color-accent, #00d47e); color: #fff; border-color: var(--color-accent, #00d47e); }',
     '.mr-up__lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; }',
     '.mr-up__lib-empty { grid-column: 1 / -1; padding: 1.5rem; text-align: center; color: var(--color-muted, rgba(0,0,0,0.5)); font-size: 0.875rem; }',
-    '.mr-up__lib-tile { position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: transform 0.18s ease, border-color 0.18s ease; }',
-    '.mr-up__lib-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }',
+    '.mr-up__lib-tile { position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; border: 2px solid transparent; transition: transform 0.18s ease, border-color 0.18s ease; background: rgba(0,0,0,0.04); }',
+    '.mr-up__lib-tile img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }',
     '.mr-up__lib-tile:hover { transform: translateY(-2px); border-color: var(--color-accent, #00d47e); }',
-    '.mr-up__lib-tile.is-added { opacity: 0.55; cursor: default; }',
-    '.mr-up__lib-tile.is-added:hover { transform: none; border-color: transparent; }',
+    '.mr-up__lib-tile.is-added { border-color: var(--color-accent, #00d47e); }',
     '.mr-up__lib-tile.is-adding { opacity: 0.6; pointer-events: none; }',
-    '.mr-up__lib-check { position: absolute; bottom: 0.375rem; left: 0.375rem; right: 0.375rem; text-align: center; padding: 0.25rem 0.4rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; background: rgba(0,0,0,0.65); color: #fff; }',
-    '.mr-up__lib-tile.is-added .mr-up__lib-check { background: var(--color-accent, #00d47e); }',
+    '.mr-up__lib-icon { position: absolute; top: 0.4rem; right: 0.4rem; width: 28px; height: 28px; border-radius: 50%; border: 0; cursor: pointer; font-size: 1.05rem; line-height: 1; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.25); transition: background 0.18s ease, transform 0.12s ease; }',
+    '.mr-up__lib-tile:not(.is-added) .mr-up__lib-icon { background: var(--color-accent, #00d47e); }',
+    '.mr-up__lib-tile.is-added .mr-up__lib-icon { background: rgba(220,38,38,0.92); }',
+    '.mr-up__lib-icon:hover { transform: scale(1.08); }',
+
+    /* Expand modal */
+    '.mr-up-modal { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 2rem; }',
+    '.mr-up-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.78); }',
+    '.mr-up-modal__panel { position: relative; max-width: 90vw; max-height: 90vh; }',
+    '.mr-up-modal__panel img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: block; }',
+    '.mr-up-modal__close { position: absolute; top: -2.4rem; right: -0.4rem; width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(255,255,255,0.95); color: rgba(0,0,0,0.85); cursor: pointer; font-size: 1.4rem; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }',
 
     '.mr-up__gen { display: flex; flex-direction: column; gap: 0.625rem; }',
     '.mr-up__gen-label { font-size: 0.875rem; font-weight: 600; color: var(--color-body, inherit); }',
@@ -814,10 +885,15 @@
     '.mr-up__draft-label { font-size: 0.8125rem; font-weight: 600; margin-top: 0.5rem; color: var(--color-body, inherit); }',
     '.mr-up__draft-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.625rem; }',
     '.mr-up__draft-tile { position: relative; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; background: rgba(0,0,0,0.04); border: 2px dashed rgba(0,0,0,0.15); display: flex; flex-direction: column; }',
-    '.mr-up__draft-tile img { width: 100%; height: 100%; object-fit: cover; display: block; flex: 1; }',
-    '.mr-up__draft-tile.is-loading { align-items: center; justify-content: center; }',
+    '.mr-up__draft-tile img { width: 100%; height: 100%; object-fit: cover; display: block; flex: 1; cursor: zoom-in; }',
+    '.mr-up__draft-tile.is-loading { align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(0,212,126,0.06), rgba(0,212,126,0.14)); border-color: rgba(0,212,126,0.3); }',
     '.mr-up__draft-tile.is-failed { align-items: center; justify-content: center; padding: 0.75rem; text-align: center; border-color: rgba(220,38,38,0.4); }',
-    '.mr-up__draft-spin { font-size: 0.875rem; color: var(--color-muted, rgba(0,0,0,0.5)); }',
+    '.mr-up__draft-spin { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; color: var(--color-body, inherit); }',
+    '.mr-up__draft-spin-label { font-size: 0.875rem; font-weight: 600; }',
+    '.mr-up__draft-spin-sub { font-size: 0.75rem; opacity: 0.7; }',
+    '.mr-up__spinner { width: 36px; height: 36px; border-radius: 50%; border: 3px solid rgba(0,212,126,0.18); border-top-color: var(--color-accent, #00d47e); animation: mr-up-spin 0.9s linear infinite; }',
+    '@keyframes mr-up-spin { to { transform: rotate(360deg); } }',
+    '@media (prefers-reduced-motion: reduce) { .mr-up__spinner { animation: none; border-top-color: var(--color-accent, #00d47e); opacity: 0.6; } }',
     '.mr-up__draft-fail { font-size: 0.78rem; color: rgba(220,38,38,0.85); }',
     '.mr-up__draft-fail span { font-size: 0.7rem; opacity: 0.7; }',
     '.mr-up__draft-actions { position: absolute; bottom: 0; left: 0; right: 0; display: flex; gap: 0.25rem; padding: 0.375rem; background: linear-gradient(to top, rgba(0,0,0,0.65), transparent); }',
@@ -825,6 +901,11 @@
     '.mr-up__draft-accept { background: var(--color-accent, #00d47e); color: #fff; }',
     '.mr-up__draft-discard { background: rgba(255,255,255,0.85); color: rgba(0,0,0,0.8); }',
     '.mr-up__draft-tile.is-failed .mr-up__draft-discard { position: static; margin-top: 0.5rem; align-self: center; flex: 0 0 auto; padding: 0.375rem 0.875rem; }',
+
+    /* Single-mode collapses input area once a photo is in (headshot, logo) */
+    '.mr-uploader--single.has-items .mr-up__tabs,',
+    '.mr-uploader--single.has-items .mr-up__panels { display: none; }',
+    '.mr-uploader--single.has-items .mr-up__grid { margin-top: 0; }',
 
     '.mr-up__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.625rem; }',
     '.mr-uploader--single .mr-up__grid { grid-template-columns: minmax(180px, 240px); }',
