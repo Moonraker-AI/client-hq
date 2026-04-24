@@ -577,6 +577,18 @@ body.contact-locked .autosave-status { display: none !important; }
       <p style="color:var(--color-muted)">This information helps us build your service pages, write content in your voice, and target the right audience. Separate multiple items with commas.</p>
 
       <div class="form-section">
+        <h3>Practice Logo</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:.75rem;">Upload your practice logo. PNG with a transparent background works best. We use this in your site header, NEO images, and emails.</p>
+        <div id="pd_logo_uploader" data-uploader-mount="logo"></div>
+      </div>
+
+      <div class="form-section">
+        <h3>Practice Photos</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:.75rem;">Upload photos of your practice — office, lobby, exterior, neighborhood, team candids. We pick from these for your service pages, About page, and location pages. You can also pick from our library or generate one. Add as many as you like, you can edit anytime.</p>
+        <div id="pd_photos_uploader" data-uploader-mount="practice"></div>
+      </div>
+
+      <div class="form-section">
         <h3>Clinical Focus</h3>
         <div class="form-group"><label>Specialties</label><input type="text" id="pd_specialties" placeholder="e.g. Anxiety, Trauma, PTSD, Couples"><div class="help-text">Separate with commas</div></div>
         <div class="form-group"><label>Modalities / Treatment Approaches</label><input type="text" id="pd_modalities" placeholder="e.g. EMDR, CBT, Gottman, Somatic Experiencing"><div class="help-text">Separate with commas</div></div>
@@ -661,6 +673,13 @@ body.contact-locked .autosave-status { display: none !important; }
 
       <div class="form-section">
         <h3>Primary Therapist</h3>
+
+        <div class="form-group">
+          <label>Headshot</label>
+          <div class="help-text" style="margin-bottom:.5rem;">A professional headshot for your bio page. Drag-drop, pick from our library, or generate one.</div>
+          <div id="bio_primary_headshot_uploader" data-uploader-mount="headshot"></div>
+        </div>
+
         <div class="form-row">
           <div class="form-group"><label>Full Name</label><input type="text" id="bio_name"></div>
           <div class="form-group"><label>Credentials</label><input type="text" id="bio_credentials" placeholder="e.g. PhD, LCSW, LMFT"></div>
@@ -668,6 +687,11 @@ body.contact-locked .autosave-status { display: none !important; }
         <div class="form-group"><label>NPI Number (US) or Registration Number</label><input type="text" id="bio_npi" placeholder="e.g. 1234567890"><div class="help-text">We use this to verify your profile in the NPI Registry and add it to schema</div></div>
         <div class="form-group"><label>Professional Bio</label><textarea id="bio_professional_bio" style="min-height:120px" placeholder="A narrative description of your background, approach, and what drives your work. This becomes the main content of your bio page."></textarea></div>
         <div class="form-group"><label>Clinical Approach Keywords</label><input type="text" id="bio_clinical_approach" placeholder="e.g. trauma-informed, attachment-based, holistic, mind-body"><div class="help-text">How you describe your therapeutic style, separated with commas</div></div>
+        <div class="form-group">
+          <label>Booking Embed (optional)</label>
+          <textarea id="bio_booking_embed" style="min-height:80px;font-family:monospace;font-size:.8125rem;" placeholder="If you have a separate booking calendar for this clinician (different from the practice-wide one), paste the embed code from your EHR here. Otherwise leave blank — we'll use the practice-wide booking on this bio page."></textarea>
+          <div class="help-text">Optional. Most practices use one booking method for everyone. Use this only if this clinician has their own EHR calendar widget.</div>
+        </div>
       </div>
 
       <div class="form-section" style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:1.5rem;margin-bottom:2rem;">
@@ -838,50 +862,68 @@ body.contact-locked .autosave-status { display: none !important; }
 
       <div class="step-actions">
         <button class="btn btn-outline" onclick="goToStep(6)">&#8592; Back</button>
-        <button class="btn btn-primary" onclick="completeAndAdvance('social_profiles', 8)">Continue: Google Drive &#8594;</button>
+        <button class="btn btn-primary" onclick="completeAndAdvance('social_profiles', 8)">Continue: Contact Setup &#8594;</button>
       </div>
     </div>
 
     <!-- STEP 9: Google Drive -->
-    <div class="step-panel" data-step="checkins_and_drive">
+    <div class="step-panel" data-step="contact_setup">
       <span class="step-badge">Step 9 of 10</span>
-      <h1>Your Google Drive Folder</h1>
-      <p style="color:var(--color-muted)">Your shared Google Drive folder is where you can upload creative assets, documents, and images for your campaign. We check this folder regularly.</p>
+      <h1>Contact Setup <span class="autosave-status" id="cs_autosave"><span class="autosave-dot"></span> <span class="autosave-text"></span></span></h1>
+      <p style="color:var(--color-muted)">How clients reach you. We pull most of your contact info from your website and Google Business Profile automatically once we have access. The fields below are the things we can't pull on our own.</p>
 
-      <div id="driveFolderSection">
-        <a id="driveFolderLink" href="#" target="_blank" class="drive-card" style="margin-bottom:2rem;display:block;text-decoration:none;cursor:pointer;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 28px rgba(0,0,0,.07)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" alt="Google Drive" style="width:48px;height:48px;margin:0 auto .75rem;display:block;">
-          <h4>Open Your Shared Folder</h4>
-          <p style="color:var(--color-muted);font-size:.875rem;margin:0;">Tap here to open your shared Google Drive folder</p>
-        </a>
+      <div class="form-section">
+        <h3>How clients book with you</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:.75rem;">Pick one or more. We embed your EHR's calendar or form directly so booking goes through your HIPAA-compliant system, never through us.</p>
+
+        <div class="form-group">
+          <label>Primary booking method</label>
+          <select id="cs_contact_method_pref">
+            <option value="">Select...</option>
+            <option value="ehr_booking">Embedded calendar from my EHR</option>
+            <option value="ehr_intake">Embedded intake form from my EHR</option>
+            <option value="both">Both calendar and intake form</option>
+            <option value="phone_only">Phone or text only (no embed)</option>
+            <option value="engage_later">Engage chatbot — coming soon, use phone for now</option>
+          </select>
+          <div class="help-text">Choose the option that matches how you prefer new clients to reach you.</div>
+        </div>
+
+        <div class="form-group" id="cs_booking_embed_group" style="display:none;">
+          <label>EHR Booking Calendar Embed Code</label>
+          <textarea id="cs_ehr_booking_embed" style="min-height:120px;font-family:monospace;font-size:.8125rem;" placeholder="Paste the embed code from your EHR (SimplePractice, Jane, TherapyNotes, Headway, etc.). Usually starts with &lt;iframe or &lt;script."></textarea>
+          <div class="help-text">Most EHRs have a "share" or "embed" option that gives you a snippet to paste. We'll embed it on your contact page exactly as your EHR provides it.</div>
+        </div>
+
+        <div class="form-group" id="cs_intake_embed_group" style="display:none;">
+          <label>EHR Intake Form Embed Code</label>
+          <textarea id="cs_ehr_intake_embed" style="min-height:120px;font-family:monospace;font-size:.8125rem;" placeholder="Optional. Paste the embed code from your EHR's intake form."></textarea>
+          <div class="help-text">If you have a separate intake form embed (in addition to or instead of a calendar), paste it here.</div>
+        </div>
       </div>
 
       <div class="form-section">
-        <h3>What to Upload</h3>
-        <p style="color:var(--color-muted);font-size:.875rem;">The more materials you provide, the stronger your campaign will be. Here is what helps most:</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0;">
-          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1.25rem;">
-            <strong style="display:block;margin-bottom:.35rem;">&#128247; Headshots &amp; Photos</strong>
-            <p style="font-size:.8125rem;color:var(--color-muted);margin:0;">Professional headshot for your bio page, team photos, office photos. Real images build trust with clients and AI systems.</p>
-          </div>
-          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1.25rem;">
-            <strong style="display:block;margin-bottom:.35rem;">&#127891; Diplomas &amp; Licenses</strong>
-            <p style="font-size:.8125rem;color:var(--color-muted);margin:0;">Photos of diplomas, license certificates, and certifications. These serve as visual verification on your bio page.</p>
-          </div>
-          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1.25rem;">
-            <strong style="display:block;margin-bottom:.35rem;">&#127912; Logos &amp; Branding</strong>
-            <p style="font-size:.8125rem;color:var(--color-muted);margin:0;">Practice logo, brand colors, any existing design assets you would like us to incorporate.</p>
-          </div>
-          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:1.25rem;">
-            <strong style="display:block;margin-bottom:.35rem;">&#128196; Documents</strong>
-            <p style="font-size:.8125rem;color:var(--color-muted);margin:0;">Endorsement letters, media features, published articles, or any other materials that showcase your expertise.</p>
-          </div>
+        <h3>Hours of Operation</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:.75rem;">Plain text is fine. We'll structure these for your contact page and schema markup.</p>
+        <div class="form-group">
+          <label>Hours</label>
+          <textarea id="cs_hours_text" style="min-height:120px;" placeholder="e.g.&#10;Monday – Friday: 9am – 6pm&#10;Saturday: 10am – 2pm&#10;Sunday: closed&#10;&#10;If you have multiple locations with different hours, group them by location."></textarea>
+          <div class="help-text">If you have multiple locations, list each location's hours separately.</div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Google Maps Embed (optional)</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:.75rem;">If you'd like a map shown on your contact page, paste a Google Maps embed code here. Otherwise we'll generate one automatically from your GBP listing.</p>
+        <div class="form-group">
+          <label>Google Maps Embed Code (optional)</label>
+          <textarea id="cs_gbp_maps_embed" style="min-height:80px;font-family:monospace;font-size:.8125rem;" placeholder="Optional. From Google Maps → Share → Embed a map → Copy HTML."></textarea>
         </div>
       </div>
 
       <div class="step-actions">
         <button class="btn btn-outline" onclick="goToStep(7)">&#8592; Back</button>
-        <button class="btn btn-primary" onclick="completeAndAdvance('checkins_and_drive', 9)">Continue: Performance Guarantee &#8594;</button>
+        <button class="btn btn-primary" onclick="completeAndAdvance('contact_setup', 9)">Continue: Performance Guarantee &#8594;</button>
       </div>
     </div>
 
@@ -1138,7 +1180,7 @@ body.contact-locked .autosave-status { display: none !important; }
     { key: 'site_map', label: 'Site Map', num: 6 },
     { key: 'bio_materials', label: 'Bio Materials', num: 7 },
     { key: 'social_profiles', label: 'Social Profiles', num: 8 },
-    { key: 'checkins_and_drive', label: 'Google Drive', num: 9 },
+    { key: 'contact_setup', label: 'Contact Setup', num: 9 },
     { key: 'performance_guarantee', label: 'Guarantee', num: 10 }
   ];
 
@@ -1264,7 +1306,8 @@ body.contact-locked .autosave-status { display: none !important; }
       'confirm_info': saveConfirmInfo,
       'practice_details': savePracticeDetails,
       'bio_materials': saveBioMaterials,
-      'social_profiles': saveSocialProfiles
+      'social_profiles': saveSocialProfiles,
+      'contact_setup': saveContactSetup
     };
     var fn = saveFns[stepKey];
     if (fn) {
@@ -1617,6 +1660,10 @@ body.contact-locked .autosave-status { display: none !important; }
       if (b.therapist_credentials) document.getElementById('bio_credentials').value = b.therapist_credentials;
       if (b.professional_bio) document.getElementById('bio_professional_bio').value = b.professional_bio;
       if (b.clinical_approach) document.getElementById('bio_clinical_approach').value = b.clinical_approach;
+      if (b.booking_embed) {
+        var bbe = document.getElementById('bio_booking_embed');
+        if (bbe) bbe.value = b.booking_embed;
+      }
       // NPI from contact
       if (contact.npi_number) document.getElementById('bio_npi').value = contact.npi_number;
       // Restore JSONB array fields as newline-separated text
@@ -1632,6 +1679,25 @@ body.contact-locked .autosave-status { display: none !important; }
       if (fullName) document.getElementById('bio_name').value = fullName;
       if (contact.credentials) document.getElementById('bio_credentials').value = contact.credentials;
       if (contact.npi_number) document.getElementById('bio_npi').value = contact.npi_number;
+    }
+
+    // Step 9: Contact Setup hydration (lives on practice_details)
+    if (practiceData) {
+      var pdSetup = practiceData;
+      var csFields = {
+        cs_contact_method_pref: pdSetup.contact_method_pref || '',
+        cs_ehr_booking_embed: pdSetup.ehr_booking_embed || '',
+        cs_ehr_intake_embed: pdSetup.ehr_intake_embed || '',
+        cs_gbp_maps_embed: pdSetup.gbp_maps_embed || '',
+        cs_hours_text: (pdSetup.hours_of_operation && pdSetup.hours_of_operation.freeform) || ''
+      };
+      Object.keys(csFields).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && csFields[id] != null && csFields[id] !== '') el.value = csFields[id];
+      });
+      if (typeof window.bindContactSetupToggles === 'function') window.bindContactSetupToggles();
+    } else {
+      if (typeof window.bindContactSetupToggles === 'function') window.bindContactSetupToggles();
     }
 
     // Show additional clinicians section once primary has a name
@@ -1673,12 +1739,6 @@ body.contact-locked .autosave-status { display: none !important; }
           if (el) el.value = dirs[id];
         });
       } catch(e) { console.error('Could not parse directory data', e); }
-    }
-
-    // Step 8: Drive folder link
-    if (contact.drive_folder_url) {
-      var driveLink = document.getElementById('driveFolderLink');
-      if (driveLink) { driveLink.href = contact.drive_folder_url; }
     }
 
 
@@ -1771,6 +1831,7 @@ body.contact-locked .autosave-status { display: none !important; }
       therapist_credentials: document.getElementById('bio_credentials').value.trim(),
       professional_bio: document.getElementById('bio_professional_bio').value.trim(),
       clinical_approach: document.getElementById('bio_clinical_approach').value.trim(),
+      booking_embed: (document.getElementById('bio_booking_embed') ? document.getElementById('bio_booking_embed').value.trim() : '') || null,
       education_details: textareaToArray('bio_education'),
       license_details: textareaToArray('bio_licenses'),
       certification_details: textareaToArray('bio_certifications'),
@@ -1876,6 +1937,115 @@ body.contact-locked .autosave-status { display: none !important; }
       }
     });
   };
+
+  // ============================================================
+  // FORM: Save Step 9 - Contact Setup
+  // ============================================================
+  window.saveContactSetup = function() {
+    var pref = document.getElementById('cs_contact_method_pref').value || null;
+    var bookingEmbed = document.getElementById('cs_ehr_booking_embed').value.trim() || null;
+    var intakeEmbed = document.getElementById('cs_ehr_intake_embed').value.trim() || null;
+    var hoursText = document.getElementById('cs_hours_text').value.trim();
+    var mapsEmbed = document.getElementById('cs_gbp_maps_embed').value.trim() || null;
+
+    var hoursOfOp = hoursText ? { freeform: hoursText } : null;
+
+    var data = {
+      contact_method_pref: pref,
+      ehr_booking_embed: bookingEmbed,
+      ehr_intake_embed: intakeEmbed,
+      hours_of_operation: hoursOfOp,
+      gbp_maps_embed: mapsEmbed,
+    };
+
+    if (practiceData) {
+      return apiAction('update_record', 'practice_details', { contact_id: contact.id }, data)
+        .then(function(res) { practiceData = Object.assign({}, practiceData, (res.data && res.data[0]) || data); });
+    } else {
+      data.contact_id = contact.id;
+      return apiAction('create_record', 'practice_details', null, data)
+        .then(function(res) { practiceData = (res.data && res.data[0]) || res.data || data; });
+    }
+  };
+
+  // ============================================================
+  // CONTACT SETUP: Toggle embed code visibility based on method
+  // ============================================================
+  window.bindContactSetupToggles = function() {
+    var sel = document.getElementById('cs_contact_method_pref');
+    var bookingGrp = document.getElementById('cs_booking_embed_group');
+    var intakeGrp = document.getElementById('cs_intake_embed_group');
+    if (!sel || !bookingGrp || !intakeGrp) return;
+    function applyVisibility() {
+      var v = sel.value;
+      var showBooking = (v === 'ehr_booking' || v === 'both');
+      var showIntake = (v === 'ehr_intake' || v === 'both');
+      bookingGrp.style.display = showBooking ? '' : 'none';
+      intakeGrp.style.display = showIntake ? '' : 'none';
+    }
+    sel.addEventListener('change', applyVisibility);
+    applyVisibility();
+  };
+
+  // ============================================================
+  // IMAGE UPLOADER MOUNTS
+  // ============================================================
+  // Practice Details: logo (max 1) + practice photos (unlimited)
+  // Bio Materials: primary headshot (max 1)
+  // image-uploader.js loads with `defer`, may not be ready at first call —
+  // poll briefly for the global before mounting.
+  function mountImageUploaders() {
+    if (!contact || !contact.id) return;
+    var attempts = 0;
+    var maxAttempts = 30;  // ~3s at 100ms interval
+    function tryMount() {
+      if (typeof window.MRImageUploader === 'undefined' || !window.MRImageUploader.mount) {
+        if (++attempts < maxAttempts) return setTimeout(tryMount, 100);
+        console.warn('[onboarding] MRImageUploader did not load');
+        return;
+      }
+      try {
+        var logoEl = document.getElementById('pd_logo_uploader');
+        if (logoEl && !logoEl._mounted) {
+          window.MRImageUploader.mount(logoEl, {
+            contactId: contact.id,
+            category: 'logo',
+            maxFiles: 1,
+            allowStock: false,
+            allowGenerate: false
+          });
+          logoEl._mounted = true;
+        }
+        var photosEl = document.getElementById('pd_photos_uploader');
+        if (photosEl && !photosEl._mounted) {
+          window.MRImageUploader.mount(photosEl, {
+            contactId: contact.id,
+            category: 'practice',
+            maxFiles: 0,
+            allowStock: true,
+            allowGenerate: true
+          });
+          photosEl._mounted = true;
+        }
+        var headshotEl = document.getElementById('bio_primary_headshot_uploader');
+        if (headshotEl && !headshotEl._mounted) {
+          window.MRImageUploader.mount(headshotEl, {
+            contactId: contact.id,
+            category: 'headshot',
+            maxFiles: 1,
+            allowStock: false,
+            allowGenerate: true,
+            bioMaterialId: (bioData && bioData.id) || null
+          });
+          headshotEl._mounted = true;
+        }
+      } catch (e) {
+        console.warn('[onboarding] uploader mount error:', e);
+      }
+    }
+    tryMount();
+  }
+  window.mountImageUploaders = mountImageUploaders;
 
   // ============================================================
   // FORM: Step 9 - Performance Guarantee
@@ -2390,7 +2560,13 @@ body.contact-locked .autosave-status { display: none !important; }
           setupAutosave('[data-step="practice_details"]', savePracticeDetails, 'pd_autosave', 1500);
           setupAutosave('[data-step="bio_materials"]', saveBioMaterials, 'bio_autosave', 1500);
           setupAutosave('[data-step="social_profiles"]', saveSocialProfiles, 'sp_autosave', 1500);
+          setupAutosave('[data-step="contact_setup"]', saveContactSetup, 'cs_autosave', 1500);
         }
+
+        // Mount image-uploader widgets (works for locked accounts too — they
+        // still see existing pool images, just can't add new ones because the
+        // upload routes will reject if contact is lost/inactive)
+        mountImageUploaders();
 
         // Load performance guarantee data
         loadGuaranteeData();
@@ -2684,6 +2860,7 @@ body.contact-locked .autosave-status { display: none !important; }
 <script src="/shared/csa-content.js"></script>
 <script src="/shared/guarantee-content.js"></script>
 <script src="/shared/offline-banner.js" defer></script>
+<script src="/shared/image-uploader.js" defer></script>
 </body>
 </html>
 
