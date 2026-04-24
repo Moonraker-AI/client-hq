@@ -676,7 +676,7 @@ body.contact-locked .autosave-status { display: none !important; }
 
         <div class="form-group">
           <label>Headshot</label>
-          <div class="help-text" style="margin-bottom:.5rem;">A professional headshot for your bio page. Drag-drop, pick from our library, or generate one.</div>
+          <div class="help-text" style="margin-bottom:.5rem;">A professional headshot for your bio page.</div>
           <div id="bio_primary_headshot_uploader" data-uploader-mount="headshot"></div>
         </div>
 
@@ -700,6 +700,12 @@ body.contact-locked .autosave-status { display: none !important; }
         <p style="font-size:.875rem;margin-bottom:.35rem;"><strong style="color:var(--color-success);">Best:</strong> A link to your public profile on the issuing organization's website (e.g. your EMDRIA profile page, your state license board lookup, your NPI Registry entry). This is the strongest proof because it comes directly from the source.</p>
         <p style="font-size:.875rem;margin-bottom:.35rem;"><strong style="color:var(--color-warning);">Good:</strong> A unique image of your actual diploma, license certificate, or certification document. Universities and programs may not have public directories, so a photo of the document itself is the next best thing.</p>
         <p style="font-size:.875rem;margin-bottom:0;"><strong style="color:var(--color-info);">Helpful:</strong> A link to the landing page of a program or training (e.g. a CE course). Even if it does not prove your attendance, it shows AI that the program is real and you are referencing legitimate training.</p>
+      </div>
+
+      <div class="form-section">
+        <h3>Credential Photos</h3>
+        <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:.75rem;">Upload photos of diplomas, license certificates, board certifications, or training completion certificates. These give AI systems and visitors visual proof of your qualifications. Optional but recommended.</p>
+        <div id="bio_primary_credentials_uploader" data-uploader-mount="credential"></div>
       </div>
 
       <div class="form-section">
@@ -880,11 +886,11 @@ body.contact-locked .autosave-status { display: none !important; }
           <label>Primary booking method</label>
           <select id="cs_contact_method_pref">
             <option value="">Select...</option>
-            <option value="ehr_booking">Embedded calendar from my EHR</option>
-            <option value="ehr_intake">Embedded intake form from my EHR</option>
-            <option value="both">Both calendar and intake form</option>
+            <option value="ehr_booking">EHR Calendar Embed</option>
+            <option value="ehr_intake">EHR Contact Form Embed</option>
+            <option value="both">Both EHR Calendar and Contact Form</option>
             <option value="phone_only">Phone or text only (no embed)</option>
-            <option value="engage_later">Engage chatbot — coming soon, use phone for now</option>
+            <option value="engage_later">Engage AI Chatbot (coming soon)</option>
           </select>
           <div class="help-text">Choose the option that matches how you prefer new clients to reach you.</div>
         </div>
@@ -909,15 +915,6 @@ body.contact-locked .autosave-status { display: none !important; }
           <label>Hours</label>
           <textarea id="cs_hours_text" style="min-height:120px;" placeholder="e.g.&#10;Monday – Friday: 9am – 6pm&#10;Saturday: 10am – 2pm&#10;Sunday: closed&#10;&#10;If you have multiple locations with different hours, group them by location."></textarea>
           <div class="help-text">If you have multiple locations, list each location's hours separately.</div>
-        </div>
-      </div>
-
-      <div class="form-section">
-        <h3>Google Maps Embed (optional)</h3>
-        <p style="color:var(--color-muted);font-size:.875rem;margin-bottom:.75rem;">If you'd like a map shown on your contact page, paste a Google Maps embed code here. Otherwise we'll generate one automatically from your GBP listing.</p>
-        <div class="form-group">
-          <label>Google Maps Embed Code (optional)</label>
-          <textarea id="cs_gbp_maps_embed" style="min-height:80px;font-family:monospace;font-size:.8125rem;" placeholder="Optional. From Google Maps → Share → Embed a map → Copy HTML."></textarea>
         </div>
       </div>
 
@@ -1688,7 +1685,6 @@ body.contact-locked .autosave-status { display: none !important; }
         cs_contact_method_pref: pdSetup.contact_method_pref || '',
         cs_ehr_booking_embed: pdSetup.ehr_booking_embed || '',
         cs_ehr_intake_embed: pdSetup.ehr_intake_embed || '',
-        cs_gbp_maps_embed: pdSetup.gbp_maps_embed || '',
         cs_hours_text: (pdSetup.hours_of_operation && pdSetup.hours_of_operation.freeform) || ''
       };
       Object.keys(csFields).forEach(function(id) {
@@ -1946,7 +1942,6 @@ body.contact-locked .autosave-status { display: none !important; }
     var bookingEmbed = document.getElementById('cs_ehr_booking_embed').value.trim() || null;
     var intakeEmbed = document.getElementById('cs_ehr_intake_embed').value.trim() || null;
     var hoursText = document.getElementById('cs_hours_text').value.trim();
-    var mapsEmbed = document.getElementById('cs_gbp_maps_embed').value.trim() || null;
 
     var hoursOfOp = hoursText ? { freeform: hoursText } : null;
 
@@ -1955,7 +1950,6 @@ body.contact-locked .autosave-status { display: none !important; }
       ehr_booking_embed: bookingEmbed,
       ehr_intake_embed: intakeEmbed,
       hours_of_operation: hoursOfOp,
-      gbp_maps_embed: mapsEmbed,
     };
 
     if (practiceData) {
@@ -2034,10 +2028,22 @@ body.contact-locked .autosave-status { display: none !important; }
             category: 'headshot',
             maxFiles: 1,
             allowStock: false,
-            allowGenerate: true,
+            allowGenerate: false,
             bioMaterialId: (bioData && bioData.id) || null
           });
           headshotEl._mounted = true;
+        }
+        var credentialEl = document.getElementById('bio_primary_credentials_uploader');
+        if (credentialEl && !credentialEl._mounted) {
+          window.MRImageUploader.mount(credentialEl, {
+            contactId: contact.id,
+            category: 'credential',
+            maxFiles: 0,
+            allowStock: false,
+            allowGenerate: false,
+            bioMaterialId: (bioData && bioData.id) || null
+          });
+          credentialEl._mounted = true;
         }
       } catch (e) {
         console.warn('[onboarding] uploader mount error:', e);
