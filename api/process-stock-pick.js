@@ -24,7 +24,7 @@ var monitor = require('./_lib/monitor');
 var crypto = require('crypto');
 
 var BUCKET = 'images';
-var ALLOWED_CATEGORIES = ['practice', 'logo', 'headshot', 'hero', 'misc'];
+var ALLOWED_CATEGORIES = ['practice', 'logo', 'headshot', 'credential', 'hero', 'misc'];
 var MAX_BATCH = 25;
 var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
