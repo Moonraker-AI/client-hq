@@ -79,20 +79,7 @@
   position: relative;
   transition: color 0.2s ease;
 }
-.nav-link::after, .nav-trigger::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: -2px;
-  width: 100%;
-  height: 2px;
-  background: var(--color-accent, var(--color-primary));
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
-}
 .nav-link:hover, .nav-trigger:hover { color: var(--color-accent, var(--color-primary)); }
-.nav-link:hover::after, .nav-trigger:hover::after { transform: scaleX(1); }
 .nav-caret { font-size: 0.7em; margin-left: 0.25em; opacity: 0.6; transition: transform 0.25s ease; }
 .nav-dropdown:hover .nav-caret, .nav-dropdown:focus-within .nav-caret { transform: rotate(180deg); }
 
@@ -176,16 +163,36 @@
     text-align: left;
     width: 100%;
     border-bottom: 1px solid rgba(0,0,0,0.06);
+    transition: none;
   }
+  .nav-link:hover, .nav-trigger:hover { color: var(--color-body-text); }
   .nav-dropdown { width: 100%; }
   .nav-menu {
     position: static;
     box-shadow: none;
     padding: 0 0 0.5rem;
-    display: block;
+    min-width: 0;
+    /* Override desktop's opacity/transform/visibility — always shown on mobile inside open menu */
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: none;
     background: transparent;
   }
-  .nav-menu-item { padding-left: 1.5rem; }
-  .nav-cta { margin: 0.75rem 0 0; text-align: center; }
+  .nav-menu-item {
+    padding-left: 1.5rem;
+    transition: none;
+  }
+  .nav-menu-item:hover {
+    transform: none;
+    background: transparent;
+  }
+  .nav-cta {
+    margin: 0.75rem 0 0;
+    text-align: center;
+    width: 100%;
+  }
+  .nav-caret { transition: none; }
+  .nav-dropdown:hover .nav-caret, .nav-dropdown:focus-within .nav-caret { transform: none; }
 }
 </style>
