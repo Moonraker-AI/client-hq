@@ -71,6 +71,13 @@ a:hover { text-decoration: underline; }
   margin-bottom: 1rem;
   font-weight: 600;
 }
+.hero-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
 
 /* Buttons */
 .btn {
@@ -158,16 +165,21 @@ a:hover { text-decoration: underline; }
 .faqs { padding: 4rem 0; background: var(--color-surface, #fafafa); }
 .faqs h2 { text-align: center; margin-bottom: 2.5rem; }
 .faq-list { max-width: 780px; margin: 0 auto; }
+
+/* Modern smooth-collapse using interpolate-size (Chrome 129+, Safari 18+).
+   Falls back to instant for older browsers — accordion still works, just snaps. */
+:root { interpolate-size: allow-keywords; }
+
 .faq-item {
   background: var(--color-background, #fff);
   border-radius: 12px;
   margin-bottom: 0.75rem;
-  overflow: hidden;
   border: 1px solid rgba(0,0,0,0.06);
   transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  overflow: hidden;
 }
 .faq-item:hover { border-color: rgba(0,0,0,0.12); }
-.faq-item[open] { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+.faq-item.is-open { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
 .faq-item summary {
   padding: 1.25rem 1.5rem;
   font-weight: 600;
@@ -185,37 +197,34 @@ a:hover { text-decoration: underline; }
 .faq-item summary::-webkit-details-marker { display: none; }
 .faq-item summary::after {
   content: '';
-  width: 12px;
-  height: 12px;
+  width: 11px;
+  height: 11px;
   border-right: 2px solid var(--color-accent, var(--color-primary));
   border-bottom: 2px solid var(--color-accent, var(--color-primary));
   transform: rotate(45deg) translate(-2px, -2px);
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.4s cubic-bezier(0.34, 1.4, 0.5, 1);
   flex-shrink: 0;
   margin-left: 1rem;
 }
+.faq-item.is-open summary::after,
 .faq-item[open] summary::after {
   transform: rotate(-135deg) translate(-2px, -2px);
 }
-/* Smooth expand using grid-template-rows trick */
+
+/* Animated content area: JS sets explicit height during transition,
+   then 'auto' settles after. interpolate-size handles 'auto' smoothly
+   in supporting browsers. */
 .faq-content {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.faq-item[open] .faq-content {
-  grid-template-rows: 1fr;
-}
-.faq-content > div {
+  height: 0;
   overflow: hidden;
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.faq-item.is-open .faq-content {
+  height: auto;
 }
 .faq-answer {
-  padding: 0 1.5rem 1.25rem;
+  padding: 0 1.5rem 1.5rem;
   color: var(--color-body-text);
-}
-.faq-item:not([open]) .faq-answer {
-  padding-top: 0;
-  padding-bottom: 0;
 }
 
 /* NEO block (above footer, side-by-side) */
@@ -245,6 +254,8 @@ a:hover { text-decoration: underline; }
   .hero { padding: 3rem 0 2.5rem; }
   .neo-grid { grid-template-columns: 1fr; gap: 1.5rem; }
   .body-content { padding: 2.5rem 0; }
+  .hero-ctas { flex-direction: column; align-items: stretch; gap: 0.875rem; }
+  .hero-ctas .btn { width: 100%; text-align: center; }
 }
 
 /* Crisis disclaimer */
@@ -297,10 +308,12 @@ a:hover { text-decoration: underline; }
       <h1>{{hero.heading}}</h1>
       {{#if hero.subheading}}<p class="subheading">{{hero.subheading}}</p>{{/if}}
       {{#if cta.primary_label}}
-      <a href="{{cta.primary_href}}" class="btn btn-primary">{{cta.primary_label}}</a>
-      {{/if}}
-      {{#if cta.secondary_label}}
-      &nbsp;<a href="{{cta.secondary_href}}" class="btn btn-outline">{{cta.secondary_label}}</a>
+      <div class="hero-ctas">
+        <a href="{{cta.primary_href}}" class="btn btn-primary">{{cta.primary_label}}</a>
+        {{#if cta.secondary_label}}
+        <a href="{{cta.secondary_href}}" class="btn btn-outline">{{cta.secondary_label}}</a>
+        {{/if}}
+      </div>
       {{/if}}
     </div>
   </section>
@@ -331,7 +344,9 @@ a:hover { text-decoration: underline; }
         {{#each faqs}}
         <details class="faq-item"{{#if @first}} open{{/if}}>
           <summary>{{question}}</summary>
-          <div class="faq-content"><div><div class="faq-answer">{{{answer}}}</div></div></div>
+          <div class="faq-content">
+            <div class="faq-answer">{{{answer}}}</div>
+          </div>
         </details>
         {{/each}}
       </div>
@@ -368,6 +383,65 @@ a:hover { text-decoration: underline; }
 </div>
 
 {{> footer}}
+
+<script>
+// Smooth accordion: intercept <details> toggle to animate height.
+// Uses interpolate-size when supported, falls back to explicit-height transition.
+(function() {
+  var items = document.querySelectorAll('.faq-item');
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i];
+    var summary = item.querySelector('summary');
+    var content = item.querySelector('.faq-content');
+    if (!summary || !content) continue;
+
+    // Initial state: if [open] in HTML, mark is-open and let height settle to auto
+    if (item.hasAttribute('open')) {
+      item.classList.add('is-open');
+    }
+
+    summary.addEventListener('click', (function(item, content) {
+      return function(e) {
+        e.preventDefault();
+        var isOpen = item.hasAttribute('open');
+
+        if (isOpen) {
+          // Closing: set explicit height first, then transition to 0
+          var h = content.scrollHeight;
+          content.style.height = h + 'px';
+          // Force reflow
+          content.offsetHeight;
+          item.classList.remove('is-open');
+          requestAnimationFrame(function() {
+            content.style.height = '0px';
+          });
+          var onEnd = function() {
+            item.removeAttribute('open');
+            content.style.height = '';
+            content.removeEventListener('transitionend', onEnd);
+          };
+          content.addEventListener('transitionend', onEnd);
+        } else {
+          // Opening: open first to measure, then animate from 0 to target
+          item.setAttribute('open', '');
+          var target = content.scrollHeight;
+          content.style.height = '0px';
+          content.offsetHeight;
+          item.classList.add('is-open');
+          requestAnimationFrame(function() {
+            content.style.height = target + 'px';
+          });
+          var onEndOpen = function() {
+            content.style.height = '';
+            content.removeEventListener('transitionend', onEndOpen);
+          };
+          content.addEventListener('transitionend', onEndOpen);
+        }
+      };
+    })(item, content));
+  }
+})();
+</script>
 
 </body>
 </html>
