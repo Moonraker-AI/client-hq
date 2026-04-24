@@ -20,11 +20,6 @@
 // Query:    none
 // Returns:  200 { contacts: [...], onboarding_steps: [...] }
 //           500 generic
-//
-// Column set matches what the page renders today. Extra columns
-// (onboarding_paid_at, onboarding_started_at, onboarding_completed_at) noted
-// in the task spec are included as a superset; harmless to the existing
-// render code and a real improvement if the page adds timestamps later.
 
 var auth = require('../_lib/auth');
 var sb = require('../_lib/supabase');
@@ -40,8 +35,6 @@ var CONTACT_COLS = [
   'website_url',
   'status',
   'onboarding_completed',
-  'onboarding_paid_at',
-  'onboarding_started_at',
   'onboarding_completed_at',
   'agreement_signed',
   'campaign_start'
