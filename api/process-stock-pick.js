@@ -52,7 +52,9 @@ module.exports = async function handler(req, res) {
 
   try {
     // Auth: page-token first (typical), admin fallback
-    var token = pageToken.getTokenFromRequest(req, 'onboarding');
+    var tokenStr = pageToken.getTokenFromRequest(req, 'onboarding');
+    var token = null;
+    if (tokenStr) { try { token = pageToken.verify(tokenStr, 'onboarding'); } catch (_) { token = null; } }
     var actor;
     if (token && token.contact_id === contactId) {
       actor = 'client';
