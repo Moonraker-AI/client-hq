@@ -1,18 +1,20 @@
 // /shared/image-uploader.js
 //
-// Pagemaster v2 reusable image uploader widget.
+// Pagemaster v2 reusable image uploader widget (v2 — tabbed UI).
 //
-// Renders into a container element with a fluid drag-drop zone, "pick from
-// library" modal trigger, and "generate" prompt option. Manages all three
-// upload paths through a single component:
+// Renders into a container element with three tabbed input modes (Upload,
+// Library, Generate), an inline-extending grid below, and per-tile remove.
+// AI generations stage as drafts that the user must Accept or Discard before
+// they enter the pool.
 //
-//   1. Direct upload   → /api/upload-image-init → Storage PUT → /api/upload-image-complete
-//   2. Stock pick      → /api/process-stock-pick (after picker selection)
-//   3. AI generate     → /api/generate-pool-image
+//   1. Upload   → /api/upload-image-init → Storage PUT → /api/upload-image-complete
+//   2. Library  → /api/search-stock-images → /api/process-stock-pick
+//   3. Generate → /api/generate-pool-image  (status='draft' until accepted)
 //
-// All three result in client_image_pool rows with status='pending'. The
-// widget polls /api/upload-image-status to flip thumbnails from
-// "processing..." to "ready" with the final hosted_url.
+// All three result in client_image_pool rows. Direct uploads + accepted
+// stock + accepted generations land as status='pending' and the widget
+// polls /api/upload-image-status to flip thumbnails to 'ready' with the
+// final hosted_url.
 //
 // Usage:
 //   <div id="my-uploader" data-contact-id="..." data-category="practice"></div>
@@ -20,11 +22,11 @@
 //   <script>
 //     window.MRImageUploader.mount('#my-uploader', {
 //       contactId: '...',
-//       category: 'practice',           // 'practice' | 'logo' | 'headshot' | 'hero' | 'misc'
+//       category: 'practice',           // 'practice'|'logo'|'headshot'|'credential'|'hero'|'misc'
 //       maxFiles: 0,                    // 0 = unlimited
 //       allowStock: true,
 //       allowGenerate: true,
-//       onChange: function(items) { ... },  // Fired after any pool change
+//       onChange: function(items) { ... },
 //     });
 //   </script>
 //
@@ -40,6 +42,19 @@
   var pendingByContact = {};   // contactId -> Set of pool_ids
   var pollTimer = null;
   var POLL_INTERVAL_MS = 2200;
+
+  // Stock library categories shown as chips in the Library tab.
+  // Ordered by frequency of use for therapy practices.
+  var STOCK_CATEGORIES = [
+    { value: 'office',       label: 'Office' },
+    { value: 'lobby',        label: 'Lobby & waiting' },
+    { value: 'exterior',     label: 'Exterior' },
+    { value: 'nature',       label: 'Nature' },
+    { value: 'hands',        label: 'Hands & connection' },
+    { value: 'abstract',     label: 'Abstract' },
+    { value: 'people',       label: 'People' },
+    { value: 'wellness',     label: 'Wellness' }
+  ];
 
   function escapeHtml(s) {
     return String(s == null ? '' : s)
@@ -82,7 +97,6 @@
     });
   }
 
-  // PUT raw bytes to a Supabase Storage signed URL
   function putToSignedUrl(uploadUrl, file) {
     return fetch(uploadUrl, {
       method: 'PUT',
@@ -133,13 +147,11 @@
           stopPollingIfIdle();
         })
         .catch(function (err) {
-          // Network blip — retry next tick
           console.warn('[image-uploader] poll error:', err.message);
         });
     });
   }
 
-  // Per-contact subscriber list to broadcast status updates to widgets
   var subscribersByContact = {};
 
   function subscribe(contactId, fn) {
@@ -180,22 +192,31 @@
     var allowGenerate = opts.allowGenerate !== false;
     var onChange = opts.onChange || function () {};
 
-    // Local state — items array of { id, status, hosted_url, filename, etc. }
+    // Pool items (accepted, in client_image_pool).
+    // Drafts (AI generations awaiting accept/discard) live separately so
+    // they don't pollute the persistent grid until the user commits.
     var items = [];
+    var drafts = [];   // [{ id (gen_xxx), pool_id, hosted_url, prompt, status, error }]
+    var stockResults = [];   // last library search results
+    var stockLoading = false;
+    var activeTab = null;    // null = tabs collapsed; default for first open
 
     el.classList.add('mr-uploader');
-    el.innerHTML = renderShell({ category: category, allowStock: allowStock, allowGenerate: allowGenerate });
+    if (maxFiles === 1) el.classList.add('mr-uploader--single');
+    var tabCount = 1 + (allowStock ? 1 : 0) + (allowGenerate ? 1 : 0);
+    if (tabCount === 1) el.setAttribute('data-single-mode', 'true');
+    el.innerHTML = renderShell({
+      category: category,
+      allowStock: allowStock,
+      allowGenerate: allowGenerate
+    });
 
-    var dropZone = el.querySelector('.mr-uploader__drop');
-    var fileInput = el.querySelector('.mr-uploader__file-input');
-    var grid = el.querySelector('.mr-uploader__grid');
-    var stockBtn = el.querySelector('.mr-uploader__stock-btn');
-    var genBtn = el.querySelector('.mr-uploader__gen-btn');
+    var tabsEl = el.querySelector('.mr-up__tabs');
+    var panelsEl = el.querySelector('.mr-up__panels');
+    var grid = el.querySelector('.mr-up__grid');
 
-    // Initial fetch — load any existing pool images for this category
     refreshExisting();
 
-    // Subscribe to status updates for any pending items
     var unsubscribe = subscribe(contactId, function (statusItem) {
       var idx = items.findIndex(function (it) { return it.id === statusItem.id; });
       if (idx === -1) return;
@@ -204,40 +225,213 @@
       onChange(items);
     });
 
-    // Drag-drop handlers
-    ['dragenter', 'dragover'].forEach(function (ev) {
-      dropZone.addEventListener(ev, function (e) {
-        e.preventDefault(); e.stopPropagation();
-        dropZone.classList.add('is-dragover');
-      });
-    });
-    ['dragleave', 'drop'].forEach(function (ev) {
-      dropZone.addEventListener(ev, function (e) {
-        e.preventDefault(); e.stopPropagation();
-        dropZone.classList.remove('is-dragover');
-      });
-    });
-    dropZone.addEventListener('drop', function (e) {
-      var files = e.dataTransfer && e.dataTransfer.files;
-      if (files && files.length) handleFiles(files);
-    });
-    dropZone.addEventListener('click', function () { fileInput.click(); });
-    fileInput.addEventListener('change', function (e) {
-      if (e.target.files && e.target.files.length) handleFiles(e.target.files);
-      e.target.value = '';
-    });
+    bindTabs();
+    // Default: open Upload tab so the drop zone is immediately visible.
+    openTab('upload');
 
-    if (stockBtn) stockBtn.addEventListener('click', openStockPicker);
-    if (genBtn) genBtn.addEventListener('click', openGenerator);
+    // ── Tab switching ──────────────────────────────────────
 
-    // ── handlers ───────────────────────────────────────────
+    function bindTabs() {
+      tabsEl.querySelectorAll('.mr-up__tab').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          openTab(btn.dataset.tab);
+        });
+      });
+    }
+
+    function openTab(tab) {
+      activeTab = tab;
+      tabsEl.querySelectorAll('.mr-up__tab').forEach(function (b) {
+        b.classList.toggle('is-active', b.dataset.tab === activeTab);
+      });
+      renderPanels();
+    }
+
+    // ── Panel rendering ────────────────────────────────────
+
+    function renderPanels() {
+      if (!activeTab) {
+        panelsEl.innerHTML = '';
+        panelsEl.classList.remove('is-open');
+        return;
+      }
+      panelsEl.classList.add('is-open');
+      if (activeTab === 'upload') panelsEl.innerHTML = renderUploadPanel();
+      else if (activeTab === 'library') panelsEl.innerHTML = renderLibraryPanel();
+      else if (activeTab === 'generate') panelsEl.innerHTML = renderGeneratePanel();
+      bindPanelHandlers();
+    }
+
+    function renderUploadPanel() {
+      var hint = {
+        practice: 'Drop photos of your practice — office, lobby, exterior, neighborhood, team candids.',
+        logo: 'Drop your practice logo. PNG with a transparent background works best.',
+        headshot: 'Drop a professional headshot.',
+        credential: 'Drop photos of diplomas, certificates, or licenses.',
+        hero: 'Drop a hero or banner image.',
+        misc: 'Drop any image.'
+      }[category] || 'Drop photos here.';
+      return [
+        '<div class="mr-up__drop">',
+        '  <input type="file" class="mr-up__file-input" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple style="display:none;">',
+        '  <div class="mr-up__drop-icon">📷</div>',
+        '  <div class="mr-up__drop-title">Drop photos here or tap to choose</div>',
+        '  <div class="mr-up__drop-hint">' + escapeHtml(hint) + '</div>',
+        '</div>'
+      ].join('');
+    }
+
+    function renderLibraryPanel() {
+      var chips = STOCK_CATEGORIES.map(function (c) {
+        return '<button type="button" class="mr-up__chip" data-stock-cat="' + escapeHtml(c.value) + '">' + escapeHtml(c.label) + '</button>';
+      }).join('');
+      var gridHtml;
+      if (stockLoading) {
+        gridHtml = '<div class="mr-up__lib-empty">Loading…</div>';
+      } else if (!stockResults.length) {
+        gridHtml = '<div class="mr-up__lib-empty">Pick a category or search to browse the library.</div>';
+      } else {
+        gridHtml = stockResults.map(function (s) {
+          var alreadyAdded = items.some(function (it) { return it.stock_image_id === s.id; });
+          return [
+            '<div class="mr-up__lib-tile' + (alreadyAdded ? ' is-added' : '') + '" data-stock-id="' + s.id + '">',
+            '  <img src="' + escapeHtml(s.hosted_url) + '" alt="' + escapeHtml(s.rich_description || '') + '" loading="lazy">',
+            '  <div class="mr-up__lib-check">' + (alreadyAdded ? '✓ Added' : '+ Add') + '</div>',
+            '</div>'
+          ].join('');
+        }).join('');
+      }
+      return [
+        '<div class="mr-up__lib">',
+        '  <div class="mr-up__lib-bar">',
+        '    <input type="text" class="mr-up__lib-search" placeholder="Search the library…" value="">',
+        '    <button type="button" class="mr-up__lib-search-btn">Search</button>',
+        '  </div>',
+        '  <div class="mr-up__lib-chips">' + chips + '</div>',
+        '  <div class="mr-up__lib-grid">' + gridHtml + '</div>',
+        '</div>'
+      ].join('');
+    }
+
+    function renderGeneratePanel() {
+      var draftsHtml = drafts.length ? [
+        '<div class="mr-up__draft-label">Drafts — accept the ones you want, discard the rest:</div>',
+        '<div class="mr-up__draft-grid">',
+        drafts.map(function (d) {
+          if (d.status === 'failed') {
+            return [
+              '<div class="mr-up__draft-tile is-failed" data-draft-id="' + escapeHtml(d.id) + '">',
+              '  <div class="mr-up__draft-fail">Generation failed' + (d.error ? '<br><span>' + escapeHtml(d.error) + '</span>' : '') + '</div>',
+              '  <button type="button" class="mr-up__draft-discard" data-draft-id="' + escapeHtml(d.id) + '">Dismiss</button>',
+              '</div>'
+            ].join('');
+          }
+          if (d.status === 'generating') {
+            return [
+              '<div class="mr-up__draft-tile is-loading" data-draft-id="' + escapeHtml(d.id) + '">',
+              '  <div class="mr-up__draft-spin">✨ Generating…</div>',
+              '</div>'
+            ].join('');
+          }
+          return [
+            '<div class="mr-up__draft-tile" data-draft-id="' + escapeHtml(d.id) + '">',
+            '  <img src="' + escapeHtml(d.hosted_url) + '" alt="">',
+            '  <div class="mr-up__draft-actions">',
+            '    <button type="button" class="mr-up__draft-accept" data-draft-id="' + escapeHtml(d.id) + '">Accept</button>',
+            '    <button type="button" class="mr-up__draft-discard" data-draft-id="' + escapeHtml(d.id) + '">Discard</button>',
+            '  </div>',
+            '</div>'
+          ].join('');
+        }).join(''),
+        '</div>'
+      ].join('') : '';
+
+      return [
+        '<div class="mr-up__gen">',
+        '  <label class="mr-up__gen-label">Describe the image you want</label>',
+        '  <textarea class="mr-up__gen-prompt" rows="2" placeholder="e.g. warm therapy office with plants and natural light, soft morning sun"></textarea>',
+        '  <div class="mr-up__gen-bar">',
+        '    <span class="mr-up__gen-hint">Generates a draft. Accept it to add to your photos.</span>',
+        '    <button type="button" class="mr-up__gen-btn">Generate ✨</button>',
+        '  </div>',
+        '  ' + draftsHtml,
+        '</div>'
+      ].join('');
+    }
+
+    function bindPanelHandlers() {
+      if (activeTab === 'upload') {
+        var dropZone = panelsEl.querySelector('.mr-up__drop');
+        var fileInput = panelsEl.querySelector('.mr-up__file-input');
+        ['dragenter', 'dragover'].forEach(function (ev) {
+          dropZone.addEventListener(ev, function (e) {
+            e.preventDefault(); e.stopPropagation();
+            dropZone.classList.add('is-dragover');
+          });
+        });
+        ['dragleave', 'drop'].forEach(function (ev) {
+          dropZone.addEventListener(ev, function (e) {
+            e.preventDefault(); e.stopPropagation();
+            dropZone.classList.remove('is-dragover');
+          });
+        });
+        dropZone.addEventListener('drop', function (e) {
+          var files = e.dataTransfer && e.dataTransfer.files;
+          if (files && files.length) handleFiles(files);
+        });
+        dropZone.addEventListener('click', function () { fileInput.click(); });
+        fileInput.addEventListener('change', function (e) {
+          if (e.target.files && e.target.files.length) handleFiles(e.target.files);
+          e.target.value = '';
+        });
+      } else if (activeTab === 'library') {
+        var searchBtn = panelsEl.querySelector('.mr-up__lib-search-btn');
+        var searchInput = panelsEl.querySelector('.mr-up__lib-search');
+        searchBtn.addEventListener('click', function () { runStockSearch(searchInput.value.trim()); });
+        searchInput.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') { e.preventDefault(); runStockSearch(searchInput.value.trim()); }
+        });
+        panelsEl.querySelectorAll('.mr-up__chip').forEach(function (chip) {
+          chip.addEventListener('click', function () {
+            panelsEl.querySelectorAll('.mr-up__chip').forEach(function (c) { c.classList.remove('is-active'); });
+            chip.classList.add('is-active');
+            runStockSearch(chip.dataset.stockCat);
+          });
+        });
+        panelsEl.querySelectorAll('.mr-up__lib-tile').forEach(function (tile) {
+          tile.addEventListener('click', function () {
+            if (tile.classList.contains('is-added')) return;
+            var stockId = parseInt(tile.dataset.stockId, 10);
+            var stock = stockResults.find(function (s) { return s.id === stockId; });
+            if (stock) addStockOne(stock, tile);
+          });
+        });
+      } else if (activeTab === 'generate') {
+        var genBtn = panelsEl.querySelector('.mr-up__gen-btn');
+        var promptEl = panelsEl.querySelector('.mr-up__gen-prompt');
+        genBtn.addEventListener('click', function () {
+          var p = promptEl.value.trim();
+          if (!p) return;
+          startGenerate(p);
+          promptEl.value = '';
+        });
+        panelsEl.querySelectorAll('.mr-up__draft-accept').forEach(function (btn) {
+          btn.addEventListener('click', function () { acceptDraft(btn.dataset.draftId); });
+        });
+        panelsEl.querySelectorAll('.mr-up__draft-discard').forEach(function (btn) {
+          btn.addEventListener('click', function () { discardDraft(btn.dataset.draftId); });
+        });
+      }
+    }
+
+    // ── Direct upload flow ─────────────────────────────────
 
     function handleFiles(fileList) {
       var arr = Array.from(fileList);
       if (maxFiles > 0) {
         var remaining = Math.max(0, maxFiles - items.length);
         if (remaining === 0) {
-          alert('Maximum ' + maxFiles + ' image(s) allowed in this section.');
+          alert('Maximum ' + maxFiles + ' image(s) allowed in this section. Remove one first.');
           return;
         }
         arr = arr.slice(0, remaining);
@@ -246,7 +440,6 @@
     }
 
     function uploadOne(file) {
-      // Show optimistic placeholder
       var localId = 'local-' + Math.random().toString(36).slice(2, 8);
       var localUrl = URL.createObjectURL(file);
       var placeholder = {
@@ -267,7 +460,6 @@
         mime_type: file.type || 'image/jpeg',
         bytes: file.size,
       }).then(function (initResp) {
-        // Replace local id with server pool_id
         var idx = items.findIndex(function (it) { return it.id === localId; });
         if (idx !== -1) {
           items[idx] = Object.assign({}, items[idx], { id: initResp.pool_id, status: 'uploading' });
@@ -281,7 +473,6 @@
             });
           })
           .then(function () {
-            // Mark local as 'processing' and start polling
             var i2 = items.findIndex(function (it) { return it.id === initResp.pool_id; });
             if (i2 !== -1) {
               items[i2] = Object.assign({}, items[i2], { status: 'pending', local: false });
@@ -299,113 +490,197 @@
       });
     }
 
-    function openStockPicker() {
-      var query = window.prompt('Search our library (e.g. "office", "nature", "hands"):');
-      if (!query) return;
-      apiPost('/api/search-stock-images', { query: query, contact_id: contactId, limit: 30 })
+    // ── Stock library flow ─────────────────────────────────
+
+    function runStockSearch(query) {
+      stockLoading = true;
+      renderPanels();
+      apiPost('/api/search-stock-images', { query: query || '', contact_id: contactId, limit: 60 })
         .then(function (resp) {
-          var stock = resp.stock || [];
-          if (!stock.length) {
-            alert('No matches found. Try different keywords.');
-            return;
-          }
-          showStockModal(stock, function (picked) {
-            if (!picked.length) return;
-            var loadingItems = picked.map(function (s) {
-              return {
-                id: 'stock-' + s.id,
-                status: 'uploading',
-                hosted_url: s.hosted_url,
-                filename: 'stock-' + s.id,
-                local: true,
-              };
-            });
-            items = items.concat(loadingItems);
-            renderGrid();
-            apiPost('/api/process-stock-pick', {
-              contact_id: contactId,
-              category: category,
-              stock_image_ids: picked.map(function (s) { return s.id; }),
-            }).then(function (pickResp) {
-              (pickResp.items || []).forEach(function (r, i) {
-                var localId = 'stock-' + picked[i].id;
-                var idx = items.findIndex(function (it) { return it.id === localId; });
-                if (idx === -1) return;
-                if (r.ok) {
-                  items[idx] = Object.assign({}, items[idx], {
-                    id: r.pool_id,
-                    status: r.existing ? 'ready' : 'pending',
-                    local: false,
-                  });
-                  if (!r.existing) trackPending(contactId, r.pool_id);
-                } else {
-                  items[idx] = Object.assign({}, items[idx], {
-                    status: 'failed',
-                    error: r.error,
-                  });
-                }
-              });
-              renderGrid();
-              onChange(items);
-            }).catch(function (err) {
-              alert('Could not add stock images: ' + err.message);
-            });
-          });
-        }).catch(function (err) { alert('Search failed: ' + err.message); });
+          stockLoading = false;
+          stockResults = resp.stock || [];
+          renderPanels();
+        })
+        .catch(function (err) {
+          stockLoading = false;
+          stockResults = [];
+          renderPanels();
+          alert('Library search failed: ' + err.message);
+        });
     }
 
-    function openGenerator() {
-      var prompt = window.prompt('Describe the image you want (e.g. "warm therapy office with plants and natural light"):');
-      if (!prompt) return;
-      var localId = 'gen-' + Math.random().toString(36).slice(2, 8);
+    function addStockOne(stock, tile) {
+      if (maxFiles > 0 && items.length >= maxFiles) {
+        alert('Maximum ' + maxFiles + ' image(s) allowed. Remove one first.');
+        return;
+      }
+      tile.classList.add('is-adding');
+      var localId = 'stock-' + stock.id;
       items.push({
         id: localId,
         status: 'uploading',
-        hosted_url: '',
-        filename: 'generating...',
+        hosted_url: stock.hosted_url,
+        filename: 'stock-' + stock.id,
+        stock_image_id: stock.id,
         local: true,
-        generating: true,
       });
       renderGrid();
-      apiPost('/api/generate-pool-image', {
+      apiPost('/api/process-stock-pick', {
         contact_id: contactId,
         category: category,
-        prompt: prompt,
-      }).then(function (resp) {
+        stock_image_ids: [stock.id],
+      }).then(function (pickResp) {
+        var r = (pickResp.items || [])[0];
         var idx = items.findIndex(function (it) { return it.id === localId; });
-        if (idx !== -1) {
+        if (idx === -1) return;
+        if (r && r.ok) {
           items[idx] = Object.assign({}, items[idx], {
-            id: resp.pool_id,
-            status: 'pending',
+            id: r.pool_id,
+            status: r.existing ? 'ready' : 'pending',
             local: false,
+            stock_image_id: stock.id,
           });
-          renderGrid();
+          if (!r.existing) trackPending(contactId, r.pool_id);
+          tile.classList.remove('is-adding');
+          tile.classList.add('is-added');
+          var label = tile.querySelector('.mr-up__lib-check');
+          if (label) label.textContent = '✓ Added';
+        } else {
+          items[idx] = Object.assign({}, items[idx], {
+            status: 'failed',
+            error: r && r.error || 'Failed',
+          });
+          tile.classList.remove('is-adding');
         }
-        trackPending(contactId, resp.pool_id);
+        renderGrid();
+        onChange(items);
       }).catch(function (err) {
         var idx = items.findIndex(function (it) { return it.id === localId; });
         if (idx !== -1) {
           items[idx] = Object.assign({}, items[idx], { status: 'failed', error: err.message });
           renderGrid();
         }
+        tile.classList.remove('is-adding');
+        alert('Could not add: ' + err.message);
       });
     }
+
+    // ── AI generate flow (drafts) ──────────────────────────
+
+    function startGenerate(prompt) {
+      var draftId = 'gen-' + Math.random().toString(36).slice(2, 8);
+      drafts.push({ id: draftId, status: 'generating', hosted_url: '', prompt: prompt });
+      renderPanels();
+      apiPost('/api/generate-pool-image', {
+        contact_id: contactId,
+        category: category,
+        prompt: prompt,
+        as_draft: true,
+      }).then(function (resp) {
+        var d = drafts.find(function (x) { return x.id === draftId; });
+        if (!d) return;
+        d.pool_id = resp.pool_id;
+        d.hosted_url = resp.hosted_url || '';
+        if (resp.hosted_url) {
+          d.status = 'ready';
+          renderPanels();
+        } else {
+          pollDraft(draftId, resp.pool_id);
+        }
+      }).catch(function (err) {
+        var d = drafts.find(function (x) { return x.id === draftId; });
+        if (d) { d.status = 'failed'; d.error = err.message; renderPanels(); }
+      });
+    }
+
+    function pollDraft(draftId, poolId) {
+      var attempts = 0;
+      var maxAttempts = 60;   // ~2 min at 2s
+      var iv = setInterval(function () {
+        attempts++;
+        apiGet('/api/upload-image-status?contact_id=' + encodeURIComponent(contactId) + '&pool_ids=' + poolId)
+          .then(function (resp) {
+            var item = (resp.items || [])[0];
+            if (!item) return;
+            var d = drafts.find(function (x) { return x.id === draftId; });
+            if (!d) { clearInterval(iv); return; }
+            if (item.status === 'ready') {
+              d.status = 'ready';
+              d.hosted_url = item.hosted_url;
+              clearInterval(iv);
+              renderPanels();
+            } else if (item.status === 'failed') {
+              d.status = 'failed';
+              d.error = item.error || 'Generation failed';
+              clearInterval(iv);
+              renderPanels();
+            }
+          })
+          .catch(function () { /* retry next tick */ });
+        if (attempts >= maxAttempts) {
+          clearInterval(iv);
+          var d = drafts.find(function (x) { return x.id === draftId; });
+          if (d && d.status === 'generating') {
+            d.status = 'failed';
+            d.error = 'Timed out waiting for generation';
+            renderPanels();
+          }
+        }
+      }, 2000);
+    }
+
+    function acceptDraft(draftId) {
+      if (maxFiles > 0 && items.length >= maxFiles) {
+        alert('Maximum ' + maxFiles + ' image(s) allowed. Remove one first.');
+        return;
+      }
+      var d = drafts.find(function (x) { return x.id === draftId; });
+      if (!d || d.status !== 'ready' || !d.pool_id) return;
+      apiPost('/api/accept-pool-draft', {
+        contact_id: contactId,
+        pool_id: d.pool_id,
+      }).then(function () {
+        items.push({
+          id: d.pool_id,
+          status: 'ready',
+          hosted_url: d.hosted_url,
+          filename: 'generated',
+          generated: true,
+        });
+        drafts = drafts.filter(function (x) { return x.id !== draftId; });
+        renderGrid();
+        renderPanels();
+        onChange(items);
+      }).catch(function (err) {
+        alert('Could not accept: ' + err.message);
+      });
+    }
+
+    function discardDraft(draftId) {
+      var d = drafts.find(function (x) { return x.id === draftId; });
+      drafts = drafts.filter(function (x) { return x.id !== draftId; });
+      renderPanels();
+      if (d && d.pool_id) {
+        apiPost('/api/archive-pool-image', { contact_id: contactId, pool_id: d.pool_id })
+          .catch(function () { /* non-critical */ });
+      }
+    }
+
+    // ── Initial fetch + grid render ────────────────────────
 
     function refreshExisting() {
       apiGet('/api/list-pool-images?contact_id=' + encodeURIComponent(contactId) + '&category=' + encodeURIComponent(category))
         .then(function (resp) {
           var existing = (resp.items || []).filter(function (it) {
-            // For headshot category, optionally further filter by bio_material_id
+            // Drafts (unaccepted AI generations) don't show in the main grid
+            if (it.status === 'draft') return false;
             if (opts.bioMaterialId && it.bio_material_id !== opts.bioMaterialId) return false;
             return true;
           });
-          // Merge with any session-added items, but server is source of truth
-          // for ids that match
           var sessionIds = new Set(items.map(function (it) { return it.id; }));
           existing.forEach(function (it) {
             if (!sessionIds.has(it.id)) items.push(it);
           });
-          // Track any still-pending items for polling
           existing.forEach(function (it) {
             if (it.status === 'pending') trackPending(contactId, it.id);
           });
@@ -418,42 +693,43 @@
     }
 
     function renderGrid() {
+      if (!items.length) {
+        grid.innerHTML = '<div class="mr-up__grid-empty">No photos yet. Add some using the options above.</div>';
+        return;
+      }
       grid.innerHTML = items.map(function (it) {
         var statusBadge =
-          it.status === 'failed' ? '<span class="mr-uploader__badge mr-uploader__badge--failed">Failed</span>' :
-          it.status === 'pending' ? '<span class="mr-uploader__badge mr-uploader__badge--pending">Processing…</span>' :
-          it.status === 'uploading' ? '<span class="mr-uploader__badge mr-uploader__badge--pending">Uploading…</span>' :
+          it.status === 'failed' ? '<span class="mr-up__badge mr-up__badge--failed">Failed</span>' :
+          it.status === 'pending' ? '<span class="mr-up__badge mr-up__badge--pending">Processing…</span>' :
+          it.status === 'uploading' ? '<span class="mr-up__badge mr-up__badge--pending">Uploading…</span>' :
           '';
         var imgHtml = it.hosted_url
           ? '<img src="' + escapeHtml(it.hosted_url) + '" alt="' + escapeHtml(it.alt_text || it.filename || '') + '">'
-          : '<div class="mr-uploader__no-img">' + (it.generating ? '✨' : '⏳') + '</div>';
-        var bytesLabel = it.bytes ? '<span class="mr-uploader__bytes">' + escapeHtml(fmtBytes(it.bytes)) + '</span>' : '';
+          : '<div class="mr-up__no-img">⏳</div>';
+        var bytesLabel = it.bytes ? '<span class="mr-up__bytes">' + escapeHtml(fmtBytes(it.bytes)) + '</span>' : '';
         return [
-          '<div class="mr-uploader__tile' + (it.status === 'failed' ? ' is-failed' : '') + (it.status === 'pending' || it.status === 'uploading' ? ' is-loading' : '') + '" data-id="' + escapeHtml(it.id) + '">',
+          '<div class="mr-up__tile' + (it.status === 'failed' ? ' is-failed' : '') + (it.status === 'pending' || it.status === 'uploading' ? ' is-loading' : '') + '" data-id="' + escapeHtml(it.id) + '">',
           imgHtml,
           statusBadge,
-          '<button class="mr-uploader__remove" type="button" aria-label="Remove" data-id="' + escapeHtml(it.id) + '">×</button>',
+          '<button class="mr-up__remove" type="button" aria-label="Remove" data-id="' + escapeHtml(it.id) + '">×</button>',
           bytesLabel,
           '</div>',
         ].join('');
       }).join('');
 
-      // Bind remove buttons
-      grid.querySelectorAll('.mr-uploader__remove').forEach(function (btn) {
+      grid.querySelectorAll('.mr-up__remove').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
           e.stopPropagation();
           var id = btn.dataset.id;
-          // Soft remove from UI; archive on server handled separately by admin tools
           var idx = items.findIndex(function (it) { return it.id === id; });
-          if (idx !== -1) {
-            items.splice(idx, 1);
-            renderGrid();
-            onChange(items);
-            // Mark archived on server (best-effort, fire-and-forget)
-            if (!String(id).startsWith('local-') && !String(id).startsWith('stock-') && !String(id).startsWith('gen-')) {
-              apiPost('/api/archive-pool-image', { contact_id: contactId, pool_id: id })
-                .catch(function () { /* non-critical */ });
-            }
+          if (idx === -1) return;
+          items.splice(idx, 1);
+          renderGrid();
+          if (activeTab === 'library') renderPanels();   // refresh "Added" badges
+          onChange(items);
+          if (!String(id).startsWith('local-') && !String(id).startsWith('stock-') && !String(id).startsWith('gen-')) {
+            apiPost('/api/archive-pool-image', { contact_id: contactId, pool_id: id })
+              .catch(function () { /* non-critical */ });
           }
         });
       });
@@ -471,95 +747,18 @@
   }
 
   function renderShell(opts) {
-    var hint = {
-      practice: 'Office, lobby, exterior, neighborhood',
-      logo: 'Your practice logo (PNG with transparent background works best)',
-      headshot: 'Professional headshot for the bio page',
-      hero: 'Hero / banner image',
-      misc: 'Any image',
-    }[opts.category] || 'Photos';
-
-    var sideButtons = [];
-    if (opts.allowStock) {
-      sideButtons.push('<button type="button" class="mr-uploader__side-btn mr-uploader__stock-btn">Pick from library</button>');
-    }
-    if (opts.allowGenerate) {
-      sideButtons.push('<button type="button" class="mr-uploader__side-btn mr-uploader__gen-btn">Generate ✨</button>');
-    }
+    var tabs = [];
+    tabs.push('<button type="button" class="mr-up__tab" data-tab="upload">⬆ Upload</button>');
+    if (opts.allowStock) tabs.push('<button type="button" class="mr-up__tab" data-tab="library">📚 Library</button>');
+    if (opts.allowGenerate) tabs.push('<button type="button" class="mr-up__tab" data-tab="generate">✨ Generate</button>');
 
     return [
-      '<div class="mr-uploader__zone">',
-      '  <div class="mr-uploader__drop">',
-      '    <input type="file" class="mr-uploader__file-input" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple style="display:none;">',
-      '    <div class="mr-uploader__drop-icon">📷</div>',
-      '    <div class="mr-uploader__drop-title">Drop photos here or tap to choose</div>',
-      '    <div class="mr-uploader__drop-hint">' + escapeHtml(hint) + '</div>',
-      '  </div>',
-      sideButtons.length ? '<div class="mr-uploader__side">' + sideButtons.join('') + '</div>' : '',
-      '</div>',
-      '<div class="mr-uploader__grid"></div>',
+      '<div class="mr-up__tabs">' + tabs.join('') + '</div>',
+      '<div class="mr-up__panels"></div>',
+      '<div class="mr-up__grid"></div>',
     ].join('');
   }
 
-  function showStockModal(stock, onPick) {
-    var picked = new Set();
-    var modal = document.createElement('div');
-    modal.className = 'mr-uploader-modal';
-    modal.innerHTML = [
-      '<div class="mr-uploader-modal__backdrop"></div>',
-      '<div class="mr-uploader-modal__panel">',
-      '  <div class="mr-uploader-modal__header">',
-      '    <h3>Pick from library</h3>',
-      '    <button type="button" class="mr-uploader-modal__close" aria-label="Close">×</button>',
-      '  </div>',
-      '  <div class="mr-uploader-modal__grid">',
-      stock.map(function (s) {
-        return [
-          '<div class="mr-uploader-modal__tile" data-id="' + s.id + '">',
-          '  <img src="' + escapeHtml(s.hosted_url) + '" alt="' + escapeHtml(s.rich_description || '') + '" loading="lazy">',
-          '  <div class="mr-uploader-modal__check">✓</div>',
-          '</div>',
-        ].join('');
-      }).join(''),
-      '  </div>',
-      '  <div class="mr-uploader-modal__footer">',
-      '    <button type="button" class="mr-uploader-modal__cancel">Cancel</button>',
-      '    <button type="button" class="mr-uploader-modal__confirm" disabled>Add (0)</button>',
-      '  </div>',
-      '</div>',
-    ].join('');
-    document.body.appendChild(modal);
-
-    var grid = modal.querySelector('.mr-uploader-modal__grid');
-    var confirmBtn = modal.querySelector('.mr-uploader-modal__confirm');
-    var close = function () { modal.remove(); };
-
-    grid.querySelectorAll('.mr-uploader-modal__tile').forEach(function (tile) {
-      tile.addEventListener('click', function () {
-        var id = parseInt(tile.dataset.id, 10);
-        if (picked.has(id)) {
-          picked.delete(id);
-          tile.classList.remove('is-picked');
-        } else {
-          picked.add(id);
-          tile.classList.add('is-picked');
-        }
-        confirmBtn.disabled = picked.size === 0;
-        confirmBtn.textContent = 'Add (' + picked.size + ')';
-      });
-    });
-
-    modal.querySelector('.mr-uploader-modal__close').addEventListener('click', close);
-    modal.querySelector('.mr-uploader-modal__cancel').addEventListener('click', close);
-    modal.querySelector('.mr-uploader-modal__backdrop').addEventListener('click', close);
-    confirmBtn.addEventListener('click', function () {
-      var pickedItems = stock.filter(function (s) { return picked.has(s.id); });
-      close();
-      onPick(pickedItems);
-    });
-  }
-
-  // Inject the widget styles once (idempotent)
   function injectStyles() {
     if (document.getElementById('mr-uploader-styles')) return;
     var style = document.createElement('style');
@@ -569,47 +768,80 @@
   }
 
   var MR_UPLOADER_CSS = [
-    '.mr-uploader { display: flex; flex-direction: column; gap: 1rem; }',
-    '.mr-uploader__zone { display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; align-items: stretch; }',
-    '@media (max-width: 600px) { .mr-uploader__zone { grid-template-columns: 1fr; } }',
-    '.mr-uploader__drop { border: 2px dashed rgba(0,0,0,0.18); border-radius: 12px; padding: 2rem 1.5rem; text-align: center; cursor: pointer; transition: border-color 0.2s ease, background 0.2s ease; background: rgba(0,0,0,0.015); }',
-    '.mr-uploader__drop:hover, .mr-uploader__drop.is-dragover { border-color: var(--color-accent, #00d47e); background: rgba(0,212,126,0.06); }',
-    '.mr-uploader__drop-icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.7; }',
-    '.mr-uploader__drop-title { font-weight: 600; margin-bottom: 0.25rem; }',
-    '.mr-uploader__drop-hint { font-size: 0.875rem; opacity: 0.7; }',
-    '.mr-uploader__side { display: flex; flex-direction: column; gap: 0.5rem; justify-content: center; }',
-    '.mr-uploader__side-btn { padding: 0.625rem 1rem; border-radius: 8px; border: 1px solid rgba(0,0,0,0.12); background: #fff; cursor: pointer; font-weight: 500; font-size: 0.875rem; transition: background 0.18s ease, border-color 0.18s ease; }',
-    '.mr-uploader__side-btn:hover { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.2); }',
-    '.mr-uploader__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; }',
-    '.mr-uploader__tile { position: relative; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.06); }',
-    '.mr-uploader__tile img { width: 100%; height: 100%; object-fit: cover; display: block; }',
-    '.mr-uploader__tile.is-loading img { opacity: 0.6; filter: blur(2px); }',
-    '.mr-uploader__tile.is-failed { border-color: rgba(220, 38, 38, 0.3); }',
-    '.mr-uploader__no-img { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 2rem; opacity: 0.5; }',
-    '.mr-uploader__badge { position: absolute; bottom: 0.5rem; left: 0.5rem; right: 0.5rem; text-align: center; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: rgba(0,0,0,0.7); color: #fff; }',
-    '.mr-uploader__badge--failed { background: rgba(220, 38, 38, 0.9); }',
-    '.mr-uploader__remove { position: absolute; top: 0.375rem; right: 0.375rem; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(0,0,0,0.6); color: #fff; cursor: pointer; font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.18s ease; }',
-    '.mr-uploader__tile:hover .mr-uploader__remove { opacity: 1; }',
-    '.mr-uploader__bytes { position: absolute; top: 0.5rem; left: 0.5rem; font-size: 0.7rem; color: #fff; background: rgba(0,0,0,0.55); padding: 0.125rem 0.375rem; border-radius: 4px; }',
-    /* Modal */
-    '.mr-uploader-modal { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1rem; }',
-    '.mr-uploader-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.55); }',
-    '.mr-uploader-modal__panel { position: relative; background: #fff; border-radius: 14px; max-width: 920px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }',
-    '.mr-uploader-modal__header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.08); }',
-    '.mr-uploader-modal__header h3 { margin: 0; font-size: 1.125rem; }',
-    '.mr-uploader-modal__close { background: none; border: 0; font-size: 1.5rem; cursor: pointer; opacity: 0.6; padding: 0.25rem 0.5rem; }',
-    '.mr-uploader-modal__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.625rem; padding: 1rem 1.25rem; overflow-y: auto; flex: 1; }',
-    '.mr-uploader-modal__tile { position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: border-color 0.18s ease, transform 0.18s ease; }',
-    '.mr-uploader-modal__tile img { width: 100%; height: 100%; object-fit: cover; display: block; }',
-    '.mr-uploader-modal__tile:hover { transform: translateY(-2px); }',
-    '.mr-uploader-modal__tile.is-picked { border-color: var(--color-accent, #00d47e); }',
-    '.mr-uploader-modal__check { position: absolute; top: 0.375rem; right: 0.375rem; width: 24px; height: 24px; border-radius: 50%; background: var(--color-accent, #00d47e); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 700; opacity: 0; transition: opacity 0.18s ease; }',
-    '.mr-uploader-modal__tile.is-picked .mr-uploader-modal__check { opacity: 1; }',
-    '.mr-uploader-modal__footer { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem 1.25rem; border-top: 1px solid rgba(0,0,0,0.08); }',
-    '.mr-uploader-modal__cancel, .mr-uploader-modal__confirm { padding: 0.625rem 1.25rem; border-radius: 8px; border: 0; cursor: pointer; font-weight: 600; }',
-    '.mr-uploader-modal__cancel { background: rgba(0,0,0,0.06); }',
-    '.mr-uploader-modal__confirm { background: var(--color-accent, #00d47e); color: #fff; }',
-    '.mr-uploader-modal__confirm:disabled { opacity: 0.4; cursor: not-allowed; }',
+    '.mr-uploader { display: flex; flex-direction: column; gap: 0.875rem; }',
+
+    '.mr-up__tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; }',
+    '.mr-uploader[data-single-mode="true"] .mr-up__tabs { display: none; }',
+    '.mr-uploader[data-single-mode="true"] .mr-up__panels.is-open { padding: 0; border: 0; background: transparent; }',
+    '.mr-up__tab { padding: 0.5rem 0.875rem; border-radius: 8px; border: 1px solid var(--color-border, rgba(0,0,0,0.12)); background: var(--color-surface, #fff); cursor: pointer; font-weight: 500; font-size: 0.875rem; color: var(--color-body, inherit); transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease; }',
+    '.mr-up__tab:hover { background: rgba(0,212,126,0.06); border-color: var(--color-accent, #00d47e); }',
+    '.mr-up__tab.is-active { background: var(--color-accent, #00d47e); color: #fff; border-color: var(--color-accent, #00d47e); }',
+
+    '.mr-up__panels { display: none; }',
+    '.mr-up__panels.is-open { display: block; border: 1px solid var(--color-border, rgba(0,0,0,0.1)); border-radius: 12px; padding: 1rem; background: var(--color-surface, #fff); }',
+
+    '.mr-up__drop { border: 2px dashed rgba(0,0,0,0.18); border-radius: 10px; padding: 2rem 1.5rem; text-align: center; cursor: pointer; transition: border-color 0.2s ease, background 0.2s ease; background: rgba(0,0,0,0.015); }',
+    '.mr-up__drop:hover, .mr-up__drop.is-dragover { border-color: var(--color-accent, #00d47e); background: rgba(0,212,126,0.06); }',
+    '.mr-up__drop-icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.7; }',
+    '.mr-up__drop-title { font-weight: 600; margin-bottom: 0.25rem; color: var(--color-body, inherit); }',
+    '.mr-up__drop-hint { font-size: 0.875rem; opacity: 0.7; color: var(--color-muted, inherit); }',
+
+    '.mr-up__lib { display: flex; flex-direction: column; gap: 0.75rem; }',
+    '.mr-up__lib-bar { display: flex; gap: 0.5rem; }',
+    '.mr-up__lib-search { flex: 1; padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid var(--color-border, rgba(0,0,0,0.15)); background: var(--color-bg, #fff); color: var(--color-body, inherit); font-size: 0.875rem; }',
+    '.mr-up__lib-search-btn { padding: 0.5rem 1rem; border-radius: 8px; border: 0; background: var(--color-accent, #00d47e); color: #fff; cursor: pointer; font-weight: 600; font-size: 0.875rem; }',
+    '.mr-up__lib-chips { display: flex; gap: 0.375rem; flex-wrap: wrap; }',
+    '.mr-up__chip { padding: 0.3rem 0.7rem; border-radius: 999px; border: 1px solid var(--color-border, rgba(0,0,0,0.12)); background: transparent; cursor: pointer; font-size: 0.8125rem; color: var(--color-body, inherit); transition: background 0.18s ease, border-color 0.18s ease; }',
+    '.mr-up__chip:hover { border-color: var(--color-accent, #00d47e); }',
+    '.mr-up__chip.is-active { background: var(--color-accent, #00d47e); color: #fff; border-color: var(--color-accent, #00d47e); }',
+    '.mr-up__lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; }',
+    '.mr-up__lib-empty { grid-column: 1 / -1; padding: 1.5rem; text-align: center; color: var(--color-muted, rgba(0,0,0,0.5)); font-size: 0.875rem; }',
+    '.mr-up__lib-tile { position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: transform 0.18s ease, border-color 0.18s ease; }',
+    '.mr-up__lib-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }',
+    '.mr-up__lib-tile:hover { transform: translateY(-2px); border-color: var(--color-accent, #00d47e); }',
+    '.mr-up__lib-tile.is-added { opacity: 0.55; cursor: default; }',
+    '.mr-up__lib-tile.is-added:hover { transform: none; border-color: transparent; }',
+    '.mr-up__lib-tile.is-adding { opacity: 0.6; pointer-events: none; }',
+    '.mr-up__lib-check { position: absolute; bottom: 0.375rem; left: 0.375rem; right: 0.375rem; text-align: center; padding: 0.25rem 0.4rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; background: rgba(0,0,0,0.65); color: #fff; }',
+    '.mr-up__lib-tile.is-added .mr-up__lib-check { background: var(--color-accent, #00d47e); }',
+
+    '.mr-up__gen { display: flex; flex-direction: column; gap: 0.625rem; }',
+    '.mr-up__gen-label { font-size: 0.875rem; font-weight: 600; color: var(--color-body, inherit); }',
+    '.mr-up__gen-prompt { width: 100%; padding: 0.625rem 0.75rem; border-radius: 8px; border: 1px solid var(--color-border, rgba(0,0,0,0.15)); background: var(--color-bg, #fff); color: var(--color-body, inherit); font-family: inherit; font-size: 0.875rem; resize: vertical; min-height: 64px; box-sizing: border-box; }',
+    '.mr-up__gen-bar { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; }',
+    '.mr-up__gen-hint { font-size: 0.78rem; color: var(--color-muted, rgba(0,0,0,0.55)); }',
+    '.mr-up__gen-btn { padding: 0.5rem 1.1rem; border-radius: 8px; border: 0; background: var(--color-accent, #00d47e); color: #fff; cursor: pointer; font-weight: 600; font-size: 0.875rem; }',
+    '.mr-up__draft-label { font-size: 0.8125rem; font-weight: 600; margin-top: 0.5rem; color: var(--color-body, inherit); }',
+    '.mr-up__draft-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.625rem; }',
+    '.mr-up__draft-tile { position: relative; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; background: rgba(0,0,0,0.04); border: 2px dashed rgba(0,0,0,0.15); display: flex; flex-direction: column; }',
+    '.mr-up__draft-tile img { width: 100%; height: 100%; object-fit: cover; display: block; flex: 1; }',
+    '.mr-up__draft-tile.is-loading { align-items: center; justify-content: center; }',
+    '.mr-up__draft-tile.is-failed { align-items: center; justify-content: center; padding: 0.75rem; text-align: center; border-color: rgba(220,38,38,0.4); }',
+    '.mr-up__draft-spin { font-size: 0.875rem; color: var(--color-muted, rgba(0,0,0,0.5)); }',
+    '.mr-up__draft-fail { font-size: 0.78rem; color: rgba(220,38,38,0.85); }',
+    '.mr-up__draft-fail span { font-size: 0.7rem; opacity: 0.7; }',
+    '.mr-up__draft-actions { position: absolute; bottom: 0; left: 0; right: 0; display: flex; gap: 0.25rem; padding: 0.375rem; background: linear-gradient(to top, rgba(0,0,0,0.65), transparent); }',
+    '.mr-up__draft-accept, .mr-up__draft-discard { flex: 1; padding: 0.4rem 0.5rem; border-radius: 6px; border: 0; cursor: pointer; font-weight: 600; font-size: 0.78rem; }',
+    '.mr-up__draft-accept { background: var(--color-accent, #00d47e); color: #fff; }',
+    '.mr-up__draft-discard { background: rgba(255,255,255,0.85); color: rgba(0,0,0,0.8); }',
+    '.mr-up__draft-tile.is-failed .mr-up__draft-discard { position: static; margin-top: 0.5rem; align-self: center; flex: 0 0 auto; padding: 0.375rem 0.875rem; }',
+
+    '.mr-up__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.625rem; }',
+    '.mr-uploader--single .mr-up__grid { grid-template-columns: minmax(180px, 240px); }',
+    '.mr-up__grid-empty { grid-column: 1 / -1; padding: 0.75rem 0; text-align: center; color: var(--color-muted, rgba(0,0,0,0.45)); font-size: 0.82rem; font-style: italic; }',
+    '.mr-up__tile { position: relative; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.06); }',
+    '.mr-up__tile img { width: 100%; height: 100%; object-fit: cover; display: block; }',
+    '.mr-up__tile.is-loading img { opacity: 0.6; filter: blur(2px); }',
+    '.mr-up__tile.is-failed { border-color: rgba(220, 38, 38, 0.3); }',
+    '.mr-up__no-img { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 2rem; opacity: 0.5; }',
+    '.mr-up__badge { position: absolute; bottom: 0.5rem; left: 0.5rem; right: 0.5rem; text-align: center; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: rgba(0,0,0,0.7); color: #fff; }',
+    '.mr-up__badge--failed { background: rgba(220, 38, 38, 0.9); }',
+    '.mr-up__remove { position: absolute; top: 0.375rem; right: 0.375rem; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(0,0,0,0.7); color: #fff; cursor: pointer; font-size: 1.05rem; line-height: 1; display: flex; align-items: center; justify-content: center; opacity: 0.85; transition: opacity 0.18s ease, background 0.18s ease; }',
+    '.mr-up__tile:hover .mr-up__remove { opacity: 1; background: rgba(220,38,38,0.9); }',
+    '.mr-up__bytes { position: absolute; top: 0.5rem; left: 0.5rem; font-size: 0.7rem; color: #fff; background: rgba(0,0,0,0.55); padding: 0.125rem 0.375rem; border-radius: 4px; }',
+
+    'body[data-theme="dark"] .mr-up__drop { background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.18); }',
+    'body[data-theme="dark"] .mr-up__drop:hover, body[data-theme="dark"] .mr-up__drop.is-dragover { background: rgba(0,212,126,0.08); }',
   ].join('\n');
 
   injectStyles();
