@@ -38,6 +38,7 @@ module.exports = async function handler(req, res) {
   var contactId = body.contact_id;
   var promptRaw = body.prompt || '';
   var category = body.category || 'practice';
+  var asDraft = body.as_draft === true;
 
   if (!contactId || !UUID_RE.test(contactId)) return res.status(400).json({ error: 'Invalid contact_id' });
   if (!promptRaw || !String(promptRaw).trim()) return res.status(400).json({ error: 'prompt required' });
@@ -155,6 +156,7 @@ module.exports = async function handler(req, res) {
         original_filename: filename,
         upload_complete_at: new Date().toISOString(),
         origin: 'ai_generated',
+        is_draft: asDraft,
       },
     }, 'return=representation');
     var pool = Array.isArray(poolRow) ? poolRow[0] : poolRow;
