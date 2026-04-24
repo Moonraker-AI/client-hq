@@ -69,7 +69,9 @@ module.exports = async function handler(req, res) {
   try {
     // Auth: page-token (onboarding) bound to contact, OR admin
     var uploadedBy = 'system';
-    var token = pageToken.getTokenFromRequest(req, 'onboarding');
+    var tokenStr = pageToken.getTokenFromRequest(req, 'onboarding');
+    var token = null;
+    if (tokenStr) { try { token = pageToken.verify(tokenStr, 'onboarding'); } catch (_) { token = null; } }
     if (token && token.contact_id === contactId) {
       uploadedBy = 'client';
     } else {
