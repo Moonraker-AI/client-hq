@@ -28,7 +28,7 @@ var crypto = require('crypto');
 
 var ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 var MAX_BYTES = 25 * 1024 * 1024;  // 25MB hard cap; sharp will resize down
-var ALLOWED_CATEGORIES = ['practice', 'logo', 'headshot', 'hero', 'misc'];
+var ALLOWED_CATEGORIES = ['practice', 'logo', 'headshot', 'credential', 'hero', 'misc'];
 var ALLOWED_SOURCES = ['client', 'admin', 'system'];
 var BUCKET = 'images';
 
@@ -202,6 +202,7 @@ function sourceTagFor(category) {
     practice: 'photo',
     logo: 'logo',
     headshot: 'headshot',
+    credential: 'credential',
     hero: 'hero',
     misc: 'misc',
   };
