@@ -599,6 +599,58 @@ body {
 (function() {
   'use strict';
 
+  // ── DOM refs first ───────────────────────────────────────────
+  // Grab references before any code path that might call showErrorPage().
+  // (Earlier ordering had `if (!slug) showErrorPage(...)` running before
+  // the el* vars were assigned; var hoisting left them undefined and
+  // showErrorPage threw on `elErrorPageMsg.textContent = ...`.)
+  var $ = function(id) { return document.getElementById(id); };
+  var elLoading      = $('state-loading');
+  var elErrorPage    = $('state-error-page');
+  var elErrorPageMsg = $('error-page-msg');
+  var elForm         = $('state-form');
+  var elSuccess      = $('state-success');
+  var elErrorBanner  = $('error-banner');
+
+  function show(elShow) {
+    [elLoading, elErrorPage, elForm, elSuccess].forEach(function(e) {
+      if (!e) return;
+      if (e === elShow) e.classList.remove('is-hidden');
+      else e.classList.add('is-hidden');
+    });
+  }
+
+  function showErrorPage(msg) {
+    if (elErrorPageMsg) {
+      elErrorPageMsg.textContent = msg || 'This endorsement link isn\u2019t valid.';
+    }
+    show(elErrorPage);
+  }
+
+  function showInlineError(msg) {
+    if (!elErrorBanner) return;
+    elErrorBanner.textContent = msg;
+    elErrorBanner.classList.add('show');
+    elErrorBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function clearInlineError() {
+    if (!elErrorBanner) return;
+    elErrorBanner.classList.remove('show');
+    elErrorBanner.textContent = '';
+  }
+
+  // ── State ────────────────────────────────────────────────────
+  var state = {
+    contactId: null,
+    bioMaterialId: null,
+    clinicianName: '',
+    clinicianCredentials: '',
+    practiceName: '',
+    headshot: { id: null, url: null, status: 'idle' /* idle|uploading|done|error */ },
+    submitting: false
+  };
+
   // ── URL parsing ──────────────────────────────────────────────
   // Path is /<slug>/endorse/<clinician>. The Vercel rewrite leaves the
   // path intact for the template, so we read it from window.location.
@@ -613,49 +665,6 @@ body {
   if (!slug || !clinicianSlug) {
     showErrorPage('This endorsement link looks incomplete.');
     return;
-  }
-
-  // ── State + DOM refs ─────────────────────────────────────────
-  var state = {
-    contactId: null,
-    bioMaterialId: null,
-    clinicianName: '',
-    clinicianCredentials: '',
-    practiceName: '',
-    headshot: { id: null, url: null, status: 'idle' /* idle|uploading|done|error */ },
-    submitting: false
-  };
-
-  var $ = function(id) { return document.getElementById(id); };
-
-  var elLoading      = $('state-loading');
-  var elErrorPage    = $('state-error-page');
-  var elErrorPageMsg = $('error-page-msg');
-  var elForm         = $('state-form');
-  var elSuccess      = $('state-success');
-  var elErrorBanner  = $('error-banner');
-
-  function show(elShow) {
-    [elLoading, elErrorPage, elForm, elSuccess].forEach(function(e) {
-      if (e === elShow) e.classList.remove('is-hidden');
-      else e.classList.add('is-hidden');
-    });
-  }
-
-  function showErrorPage(msg) {
-    elErrorPageMsg.textContent = msg || 'This endorsement link isn\u2019t valid.';
-    show(elErrorPage);
-  }
-
-  function showInlineError(msg) {
-    elErrorBanner.textContent = msg;
-    elErrorBanner.classList.add('show');
-    elErrorBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-
-  function clearInlineError() {
-    elErrorBanner.classList.remove('show');
-    elErrorBanner.textContent = '';
   }
 
   // ── Init: hydrate clinician + mint cookie ────────────────────
