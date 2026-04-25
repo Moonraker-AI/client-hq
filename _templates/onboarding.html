@@ -177,7 +177,10 @@ body.site-map-wide .main-content { max-width: none; padding-left: 1.5rem; paddin
 .sig-consent input[type="checkbox"] { margin-top: .3rem; width: 18px; height: 18px; accent-color: var(--color-primary); flex-shrink: 0; }
 .sig-canvas-wrap { margin: 1.25rem 0; }
 .sig-canvas-wrap label { display: block; font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); margin-bottom: .35rem; }
-.sig-canvas-container { position: relative; border: 1px solid var(--color-border); border-radius: 8px; overflow: hidden; background: var(--color-surface); }
+/* Signature canvas always renders on a light surface so the dark ink stroke
+   reads consistently regardless of the user's theme. Switching theme won't
+   affect already-drawn strokes. */
+.sig-canvas-container { position: relative; border: 1px solid var(--color-border); border-radius: 8px; overflow: hidden; background: #ffffff; }
 .sig-canvas-container canvas { display: block; width: 100%; cursor: crosshair; touch-action: none; }
 .sig-canvas-placeholder { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; font-size: .875rem; color: #aaa; transition: opacity .2s; }
 .sig-canvas-container.has-signature .sig-canvas-placeholder { opacity: 0; }
@@ -663,8 +666,8 @@ body.contact-locked .autosave-status { display: none !important; }
     <!-- STEP 6: Site Map -->
     <div class="step-panel" data-step="site_map">
       <span class="step-badge">Step 6 of 10</span>
-      <h1>Review your site map</h1>
-      <p style="color:var(--color-muted)">We've scanned your current site. Review each page and tell us which ones we should keep, update as a target, or remove. Then propose any new pages you want built.</p>
+      <h1>Select your campaign targets</h1>
+      <p style="color:var(--color-muted)">We've scanned your current site. For each page, choose Keep, Update, or Remove, and add any new pages you want built. Submit when you've highlighted at least one service and one location. We'll review your picks and approve before moving to the next step.</p>
       <div class="site-map-iframe-wrap" style="border:1px solid var(--color-border); border-radius:12px; overflow:hidden; background:var(--color-surface); margin-top:1rem;">
         <iframe id="siteMapFrame" style="width:100%; min-height:800px; border:0;" title="Site map configurator"></iframe>
       </div>
@@ -1461,8 +1464,7 @@ body.contact-locked .autosave-status { display: none !important; }
       if (!drawing) return;
       e.preventDefault();
       var p = getPos(e);
-      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      ctx.strokeStyle = isDark ? '#E8F5EF' : '#111';
+      ctx.strokeStyle = '#111';
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(lastX, lastY);
@@ -2769,8 +2771,7 @@ body.contact-locked .autosave-status { display: none !important; }
       if (!drawing) return;
       e.preventDefault();
       var p = getPos(e);
-      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      ctx.strokeStyle = isDark ? '#E8F5EF' : '#111';
+      ctx.strokeStyle = '#111';
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(lastX, lastY);
