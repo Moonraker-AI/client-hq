@@ -99,6 +99,10 @@
       "destination": "/_templates/endorse"
     },
     {
+      "source": "/endorse-action/:token([a-f0-9]{64})",
+      "destination": "/_templates/endorse-action"
+    },
+    {
       "source": "/:slug([a-z0-9-]+)/onboarding",
       "destination": "/_templates/onboarding"
     },
