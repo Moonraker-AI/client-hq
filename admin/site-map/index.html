@@ -275,6 +275,11 @@
   .mini-chip.primary { background: rgba(139,92,246,.12); color: #8B5CF6; }
   .mini-chip.complete { background: rgba(0,212,126,.12); color: var(--color-success); }
   .mini-chip.pending { background: rgba(245,158,11,.12); color: var(--color-warning); }
+  .mini-chip.in-nav { background: rgba(0,212,126,.10); color: var(--color-success); letter-spacing: .02em; }
+  .mini-chip.in-nav::before { content: '⌂'; margin-right: .2rem; font-size: .85em; }
+  /* Subtle left accent on pages that appear in the client's main menu —
+     scannable at a glance, doesn't fight existing status colors. */
+  .page-node.is-in-nav { box-shadow: inset 3px 0 0 var(--color-success); }
 
   /* ── Modal (Trello-style detail card) ──────────────────────── */
   .modal-backdrop {
@@ -937,6 +942,12 @@
 
   function buildPageNode(p) {
     var labelEl = el('span', { class: 'page-label' }, labelFromPage(p));
+    if (p.in_nav) {
+      labelEl.appendChild(el('span', {
+        class: 'mini-chip in-nav',
+        title: 'This page appears in your site\'s main menu'
+      }, 'In menu'));
+    }
     if (p.category === 'bio' && p.bio_material) {
       if (p.bio_material.is_primary) {
         labelEl.appendChild(el('span', { class: 'mini-chip primary' }, 'Primary'));
@@ -948,6 +959,7 @@
     }
     var classes = 'page-node st-' + p.status;
     if (p.status === 'existing_remove') classes += ' removed';
+    if (p.in_nav) classes += ' is-in-nav';
 
     return el('div', {
       class: classes,
@@ -1035,12 +1047,19 @@
     content.innerHTML = '';
 
     // Head
+    var eyebrowChildren = [
+      el('span', { class: 'status-dot st-' + p.status, style: 'width:10px;height:10px;border-radius:50%;display:inline-block' }),
+      (CATEGORY_LABELS[p.category] || p.category)
+    ];
+    if (p.in_nav) {
+      eyebrowChildren.push(el('span', {
+        class: 'mini-chip in-nav',
+        title: 'This page appears in your site\'s main menu'
+      }, 'In menu'));
+    }
     var head = el('div', { class: 'modal-head' }, [
       el('div', { class: 'modal-head-content' }, [
-        el('div', { class: 'modal-eyebrow' }, [
-          el('span', { class: 'status-dot st-' + p.status, style: 'width:10px;height:10px;border-radius:50%;display:inline-block' }),
-          (CATEGORY_LABELS[p.category] || p.category)
-        ]),
+        el('div', { class: 'modal-eyebrow' }, eyebrowChildren),
         el('h2', { class: 'modal-title' }, labelFromPage(p))
       ]),
       el('button', { class: 'modal-close', onclick: function() { closeModal('page-modal'); }, 'aria-label': 'Close' }, '×')
