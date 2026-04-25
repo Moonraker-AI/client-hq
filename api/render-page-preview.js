@@ -234,13 +234,19 @@ function buildRenderData(args) {
   var nav = buildNav(allPages, bioList, contact);
   var footer = buildFooter(allPages, contact);
 
-  // Bio-page endorsements: this clinician's + practice-level (null bio_material_id).
-  // For non-bio pages, leave empty — endorsements aren't surfaced elsewhere yet.
+  // Bio-page endorsements: only this clinician's, where display_scope
+  // includes the bio (bio_only or both). Practice-wide endorsements with
+  // display_scope='homepage_only' are explicitly excluded — they belong on
+  // the homepage, not bios.
   var pageEndorsements = [];
   if (page.page_type === 'bio' && page.bio_material_id) {
-    pageEndorsements = endorsementsAll.filter(function (e) {
-      return e.bio_material_id === page.bio_material_id || !e.bio_material_id;
-    });
+    pageEndorsements = endorsementsAll
+      .filter(function (e) {
+        if (e.bio_material_id !== page.bio_material_id) return false;
+        var scope = e.display_scope || 'bio_only';
+        return scope === 'bio_only' || scope === 'both';
+      })
+      .map(normalizeEndorsement);
   }
 
   // Booking: prefer per-clinician embed, fall back to practice-level embed,
@@ -586,3 +592,58 @@ function buildBioContext(bio) {
 }
 
 module.exports.buildBioContext = buildBioContext;
+
+// Normalize an endorsement record for template rendering. The endorser_links
+// jsonb is expected as an ordered array of { kind, url, label? } objects.
+// Recognized kinds: practice, psychology_today, linkedin, google_scholar,
+// personal_site, other. Each gets a precomputed display label and a flag
+// the template uses to pick the right icon.
+var LINK_KINDS = {
+  practice:         { label: 'Practice website', icon: 'globe' },
+  psychology_today: { label: 'Psychology Today', icon: 'pt' },
+  linkedin:         { label: 'LinkedIn',         icon: 'linkedin' },
+  google_scholar:   { label: 'Google Scholar',   icon: 'scholar' },
+  personal_site:    { label: 'Personal site',    icon: 'globe' },
+  other:            { label: 'Profile',          icon: 'link' },
+};
+
+function normalizeEndorsement(e) {
+  var rawLinks = Array.isArray(e.endorser_links) ? e.endorser_links : [];
+  var links = rawLinks
+    .filter(function (l) { return l && typeof l === 'object' && l.url; })
+    .map(function (l) {
+      var kind = LINK_KINDS[l.kind] ? l.kind : 'other';
+      var spec = LINK_KINDS[kind];
+      return {
+        kind: kind,
+        url: l.url,
+        label: l.label || spec.label,
+        icon: spec.icon,
+        is_linkedin: kind === 'linkedin',
+        is_psychology_today: kind === 'psychology_today',
+        is_practice: kind === 'practice' || kind === 'personal_site',
+        is_scholar: kind === 'google_scholar',
+        is_other: kind === 'other',
+      };
+    });
+
+  return {
+    id: e.id,
+    content: e.content || '',
+    endorser_name: e.endorser_name || '',
+    endorser_credentials: e.endorser_credentials || '',
+    endorser_title: e.endorser_title || '',
+    endorser_org: e.endorser_org || '',
+    endorser_headshot_url: e.endorser_headshot_url || '',
+    has_headshot: !!e.endorser_headshot_url,
+    has_credentials: !!e.endorser_credentials,
+    has_title: !!e.endorser_title,
+    has_org: !!e.endorser_org,
+    has_meta: !!(e.endorser_title || e.endorser_org),
+    links: links,
+    has_links: links.length > 0,
+    is_verified: !!e.verified_at,
+  };
+}
+
+module.exports.normalizeEndorsement = normalizeEndorsement;
