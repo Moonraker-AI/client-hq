@@ -246,7 +246,7 @@ a:hover { text-decoration: underline; }
 .endorsements h2 { text-align: center; margin-bottom: 2.5rem; }
 .endorsement-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 1.5rem;
   max-width: 1080px;
   margin: 0 auto;
@@ -257,6 +257,12 @@ a:hover { text-decoration: underline; }
   border-radius: 14px;
   padding: 1.75rem;
   position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.endorsement-card.is-verified {
+  border-color: rgba(0,0,0,0.12);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 .endorsement-card::before {
   content: '\201C';
@@ -276,17 +282,101 @@ a:hover { text-decoration: underline; }
   margin-bottom: 1.25rem;
   color: var(--color-body-text);
   position: relative;
+  flex: 1;
 }
-.endorsement-author {
+.endorser {
+  display: flex;
+  gap: 0.875rem;
+  align-items: flex-start;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+.endorser-headshot {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--color-surface, #fafafa);
+}
+.endorser-headshot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.endorser-meta { flex: 1; min-width: 0; }
+.endorser-name {
   font-weight: 600;
   font-size: 0.9375rem;
   color: var(--color-heading-text);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
-.endorsement-meta {
+.endorser-credentials {
+  font-weight: 500;
+  color: var(--color-muted-text);
+}
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-accent, var(--color-primary));
+  background: rgba(0, 212, 126, 0.1);
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+.endorser-role {
   font-size: 0.8125rem;
   color: var(--color-muted-text);
   margin-top: 0.125rem;
 }
+.endorser-links {
+  list-style: none;
+  margin: 0.625rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.875rem;
+}
+.endorser-links li { margin: 0; }
+.endorser-link {
+  font-size: 0.75rem;
+  color: var(--color-muted-text);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: color 0.15s ease;
+}
+.endorser-link:hover {
+  color: var(--color-accent, var(--color-primary));
+  text-decoration: underline;
+}
+.endorser-link::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-color: currentColor;
+  -webkit-mask-position: center;
+          mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+          mask-size: contain;
+  flex-shrink: 0;
+}
+.endorser-link.link-globe::before { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='M2 12h20'/><path d='M12 2a15 15 0 0 1 0 20'/><path d='M12 2a15 15 0 0 0 0 20'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='M2 12h20'/><path d='M12 2a15 15 0 0 1 0 20'/><path d='M12 2a15 15 0 0 0 0 20'/></svg>"); }
+.endorser-link.link-linkedin::before { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'><path d='M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'><path d='M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z'/></svg>"); }
+.endorser-link.link-pt::before,
+.endorser-link.link-scholar::before,
+.endorser-link.link-link::before { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/><path d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/><path d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/></svg>"); }
 
 /* Booking */
 .booking-block {
@@ -576,17 +666,35 @@ a:hover { text-decoration: underline; }
   {{#if has_endorsements}}
   <section class="endorsements">
     <div class="container">
-      <h2>What People Say</h2>
+      <h2>What Colleagues Say</h2>
       <div class="endorsement-grid">
         {{#each endorsements}}
-        <div class="endorsement-card">
+        <article class="endorsement-card{{#if is_verified}} is-verified{{/if}}">
           <p class="endorsement-quote">{{content}}</p>
-          {{#if endorser_name}}
-          <div class="endorsement-author">{{endorser_name}}</div>
-          {{#if endorser_title}}<div class="endorsement-meta">{{endorser_title}}{{#if endorser_org}}, {{endorser_org}}{{/if}}</div>{{/if}}
-          {{#unless endorser_title}}{{#if endorser_org}}<div class="endorsement-meta">{{endorser_org}}</div>{{/if}}{{/unless}}
-          {{/if}}
-        </div>
+          <div class="endorser">
+            {{#if has_headshot}}
+            <div class="endorser-headshot">
+              <img src="{{endorser_headshot_url}}" alt="{{endorser_name}}" loading="lazy">
+            </div>
+            {{/if}}
+            <div class="endorser-meta">
+              <div class="endorser-name">
+                {{endorser_name}}{{#if has_credentials}}, <span class="endorser-credentials">{{endorser_credentials}}</span>{{/if}}
+                {{#if is_verified}}<span class="verified-badge" title="Identity verified">&#10003; Verified</span>{{/if}}
+              </div>
+              {{#if has_meta}}
+              <div class="endorser-role">{{endorser_title}}{{#if has_title}}{{#if has_org}}, {{/if}}{{/if}}{{endorser_org}}</div>
+              {{/if}}
+              {{#if has_links}}
+              <ul class="endorser-links">
+                {{#each links}}
+                <li><a href="{{url}}" target="_blank" rel="noopener nofollow" class="endorser-link link-{{icon}}">{{label}}</a></li>
+                {{/each}}
+              </ul>
+              {{/if}}
+            </div>
+          </div>
+        </article>
         {{/each}}
       </div>
     </div>
