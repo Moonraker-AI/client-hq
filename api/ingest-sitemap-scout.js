@@ -65,6 +65,24 @@ module.exports = async function(req, res) {
 
     await sb.mutate('sitemap_scouts?id=eq.' + scout.id, 'PATCH', patch, 'return=minimal');
 
+    // Refresh nav flags on any existing site_map for this contact. New clients
+    // (no site_map yet) get nav state seeded by site-map-from-scout when the
+    // configurator first materializes; this branch handles re-scouts where
+    // the configurator already exists and the badge state should refresh.
+    if (status === 'complete' && scout.contact_id) {
+      try {
+        await _refreshNavState(scout.contact_id, report);
+      } catch (navErr) {
+        // Non-fatal: scout itself ingested fine, nav refresh is a presentation
+        // layer concern. Log and move on.
+        console.error('ingest-sitemap-scout nav refresh failed:', navErr.message);
+        monitor.logError('ingest-sitemap-scout', navErr, {
+          client_slug: scout.client_slug,
+          detail: { stage: 'nav_refresh' }
+        });
+      }
+    }
+
     console.log('Sitemap scout ingested: ' + scout.client_slug + ' - ' + summary);
 
     return res.json({ success: true, scout_id: scout.id, summary: summary });
@@ -103,3 +121,79 @@ function _buildSummary(report) {
 
   return parts.join(' | ');
 }
+
+// Mirror of sitemap_scout.py's _normalize_nav_url — produces
+// 'scheme://lowercase-host/path' with no trailing slash, no query, no fragment.
+function _normalizeForNav(rawUrl) {
+  if (!rawUrl) return null;
+  try {
+    var u = new URL(rawUrl);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+    var path = (u.pathname || '/').replace(/\/+$/, '');
+    return (u.protocol + '//' + u.hostname.toLowerCase() + path).toLowerCase();
+  } catch (_) {
+    return null;
+  }
+}
+
+// Refresh in_nav flags on an existing site_map after a re-scout. If there's
+// no live site_map for this contact yet, we just record nav metadata on
+// nothing (no-op) — the seeder (site-map-from-scout) will pick up nav state
+// from the latest scout when the configurator is first materialized.
+async function _refreshNavState(contactId, report) {
+  var navUrls = Array.isArray(report.nav_urls) ? report.nav_urls : [];
+  var navMethod = report.nav_extraction_method || null;
+
+  // Find the live site_map (not abandoned, status not locked-down).
+  var siteMap = await sb.one(
+    'site_maps?contact_id=eq.' + encodeURIComponent(contactId)
+    + '&status=neq.abandoned'
+    + '&select=id,status'
+    + '&order=created_at.desc&limit=1'
+  );
+  if (!siteMap) return;  // no configurator yet — seeder will handle it
+
+  // Always update nav metadata on the parent site_map row, even when nav
+  // extraction returned nothing — admin needs to see "we tried, got 0" vs
+  // "we never tried" (null timestamp).
+  await sb.mutate('site_maps?id=eq.' + siteMap.id, 'PATCH', {
+    nav_extracted_at: new Date().toISOString(),
+    nav_extraction_method: navMethod
+  }, 'return=minimal');
+
+  // Pull all pages, decide which should flip.
+  var pages = await sb.query(
+    'site_map_pages?site_map_id=eq.' + siteMap.id
+    + '&select=id,url,in_nav'
+  );
+  if (!Array.isArray(pages) || pages.length === 0) return;
+
+  var navSet = {};
+  for (var i = 0; i < navUrls.length; i++) navSet[navUrls[i]] = true;
+
+  var setTrue = [];   // ids whose in_nav should be true and currently isn't
+  var setFalse = [];  // ids whose in_nav should be false and currently isn't
+  for (var p = 0; p < pages.length; p++) {
+    var page = pages[p];
+    var shouldBeInNav = !!navSet[_normalizeForNav(page.url)];
+    if (shouldBeInNav && !page.in_nav) setTrue.push(page.id);
+    else if (!shouldBeInNav && page.in_nav) setFalse.push(page.id);
+  }
+
+  // PostgREST in.() filter: flip the deltas only. Two batched PATCHes.
+  if (setTrue.length) {
+    await sb.mutate(
+      'site_map_pages?id=in.(' + setTrue.join(',') + ')',
+      'PATCH', { in_nav: true }, 'return=minimal'
+    );
+  }
+  if (setFalse.length) {
+    await sb.mutate(
+      'site_map_pages?id=in.(' + setFalse.join(',') + ')',
+      'PATCH', { in_nav: false }, 'return=minimal'
+    );
+  }
+
+  console.log('nav refresh for site_map ' + siteMap.id + ': +' + setTrue.length + ' / -' + setFalse.length + ' (method=' + navMethod + ')');
+}
+
