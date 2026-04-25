@@ -355,6 +355,61 @@ async function actionDeletePage(body, siteMap) {
   return { success: true, page_id: body.page_id };
 }
 
+// Admin-only. Recategorize a page (e.g. fix a sitemap-scout misclassification:
+// move a row out of 'other' into 'service' / 'location' / 'bio'). Validates
+// the destination category, enforces the plan cap if the page is currently
+// highlighted, and clears bio-only fields (bio_material_id, intake_status)
+// when moving away from category=bio. Note: this does NOT create a
+// bio_materials row when moving INTO bio — admin can create one manually if
+// needed, or use add_page for that flow. Re-classification only.
+async function actionSetPageCategory(body, siteMap) {
+  if (!isUuid(body.page_id)) return { error: 'page_id required', status: 400 };
+  if (VALID_CATEGORIES.indexOf(body.category) === -1) {
+    return { error: 'Invalid category: ' + body.category, status: 400 };
+  }
+
+  var page = await sb.one(
+    'site_map_pages?id=eq.' + body.page_id
+    + '&site_map_id=eq.' + siteMap.id
+    + '&select=id,category,status,bio_material_id,intake_status'
+  );
+  if (!page) return { error: 'Page not found', status: 404 };
+
+  if (page.category === body.category) return { success: true, noop: true };
+
+  // If the page is currently highlighted, moving it into a new category
+  // would push that category's highlighted count up by 1. Block if cap.
+  var isHighlighted = HIGHLIGHTED_STATUSES.indexOf(page.status) !== -1;
+  if (isHighlighted) {
+    var cap = PLAN_LIMITS[siteMap.source_type] && PLAN_LIMITS[siteMap.source_type][body.category];
+    if (cap) {
+      var highlightedCount = await countHighlightedInCategory(siteMap.id, body.category);
+      if (highlightedCount >= cap) {
+        return {
+          error: 'Already highlighting ' + cap + ' ' + body.category + ' page(s). Un-highlight one in that category first.',
+          status: 409
+        };
+      }
+    }
+  }
+
+  var patch = { category: body.category };
+  // Drop bio-only linkage when leaving the bio category. Don't delete the
+  // bio_materials row itself — admin can clean that up separately if needed.
+  if (page.category === 'bio' && body.category !== 'bio') {
+    patch.bio_material_id = null;
+    patch.intake_status = null;
+  }
+
+  await sb.mutate(
+    'site_map_pages?id=eq.' + body.page_id,
+    'PATCH',
+    patch,
+    'return=minimal'
+  );
+  return { success: true, page_id: body.page_id, new_category: body.category };
+}
+
 // ── Client onboarding review actions ────────────────────────────────────
 //
 // Client flow:
@@ -450,6 +505,7 @@ async function actionApproveReview(body, siteMap) {
 
 var ACTIONS = {
   set_page_status: actionSetPageStatus,
+  set_page_category: actionSetPageCategory,
   rename_page: actionRenamePage,
   reorder_pages: actionReorderPages,
   add_page: actionAddPage,
