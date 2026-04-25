@@ -243,12 +243,9 @@
   body.is-client-mode .header-card { margin-bottom: 1rem; }
   body.is-client-mode #content { padding-top: 1rem; max-width: 1200px; }
 
-  .client-callout { background:var(--color-surface); border:1px solid var(--color-border); border-left:4px solid var(--color-primary); border-radius:10px; padding:1rem 1.25rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
-  .client-callout-text { flex:1; min-width:240px; font-size:.9rem; color:var(--color-heading); line-height:1.4; }
-  .client-callout-text strong { color:var(--color-primary); }
-  .client-callout-progress { display:flex; gap:.75rem; flex-wrap:wrap; }
-  .client-callout-metric { font-size:.78rem; color:var(--color-muted); }
-  .client-callout-metric b { color:var(--color-heading); font-weight:600; }
+  .client-tally { background:var(--color-surface); border:1px solid var(--color-border); border-radius:12px; padding:.85rem 1.25rem; margin-bottom:1.25rem; display:flex; justify-content:center; align-items:center; gap:2rem; flex-wrap:wrap; }
+  .client-callout-metric { font-size:.85rem; color:var(--color-muted); }
+  .client-callout-metric b { color:var(--color-heading); font-weight:700; font-size:1rem; margin-right:.2rem; }
 
   .client-submit-bar { background:var(--color-surface); border:1px solid var(--color-border); border-radius:12px; padding:1.25rem 1.5rem; margin-top:1.5rem; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; }
   .client-submit-bar .hint { font-size:.82rem; color:var(--color-muted); flex:1; min-width:220px; }
@@ -389,22 +386,27 @@
   .empty-msg, .loading-msg { text-align: center; padding: 2.5rem 1rem; color: var(--color-muted); font-size: .88rem; }
   .empty-msg h3 { font-family: 'Outfit', sans-serif; font-size: 1rem; color: var(--color-heading); margin: 0 0 .5rem; }
 
-  /* Toast — canonical design-system pattern: top-center, solid fill, white text */
-  .toast {
-    position: fixed; top: 1.25rem; left: 50%; transform: translateX(-50%);
+  /* Toast — overrides admin-base.css .toast (which positions bottom-right
+     and uses translateY for animation). We position top-center and animate
+     opacity only, so transform stays as our centering translateX. */
+  body .toast,
+  body .toast.show {
+    position: fixed; top: 1.25rem; right: auto; bottom: auto; left: 50%;
+    transform: translateX(-50%);
     padding: .65rem 1.25rem; border-radius: 10px;
     font-size: .82rem; font-weight: 500;
     box-shadow: 0 4px 16px rgba(0,0,0,.15);
-    opacity: 0; pointer-events: none;
+    pointer-events: none;
     transition: opacity .3s;
     max-width: min(520px, 90vw);
-    width: auto; height: auto;
+    width: auto; height: auto; min-height: 0;
     white-space: nowrap;
     text-align: center; line-height: 1.4;
     z-index: 10000;
     display: inline-block;
   }
-  .toast.show { opacity: 1; pointer-events: auto; }
+  body .toast { opacity: 0; }
+  body .toast.show { opacity: 1; pointer-events: auto; }
   .toast.ok  { background: var(--color-primary); color: #fff; }
   .toast.err { background: var(--color-danger);  color: #fff; }
 </style>
@@ -523,8 +525,10 @@
     new: 'New page',
     drafting: 'Drafting'
   };
-  // Pages with these statuses count toward the highlight target.
-  var HIGHLIGHTED_STATUSES = ['existing_keep', 'existing_update', 'new', 'drafting'];
+  // Pages with these statuses count toward the highlight target. existing_keep
+  // is excluded so the default state ('discovered' = leave-alone) reads as
+  // unhighlighted, matching the new client UX where Keep is the default.
+  var HIGHLIGHTED_STATUSES = ['existing_update', 'new', 'drafting'];
 
   // Categories where the client/admin can ADD new pages from the configurator.
   // Other categories (FAQ, contact, blog, etc.) only show discovered pages —
@@ -748,7 +752,9 @@
       content.appendChild(reviewBanner);
     }
 
-    // Client-only: intro callout + progress metrics
+    // Client-only: budget tally bar centered above the tree. Instructions
+    // live in the parent onboarding page above the iframe — no need to
+    // repeat them here.
     if (CLIENT_MODE) {
       var svcCount = state.counts.service || { highlighted: 0, cap: 0 };
       var locCount = state.counts.location || { highlighted: 0, cap: 0 };
@@ -764,18 +770,12 @@
         ]);
       }
 
-      var callout = el('div', { class: 'client-callout' }, [
-        el('div', { class: 'client-callout-text' }, [
-          el('strong', {}, 'Select Your Campaign Targets. '),
-          'For each page, choose Keep, Update, or Remove, and add any new pages you want. Submit when you\'ve highlighted at least one service and one location.'
-        ]),
-        el('div', { class: 'client-callout-progress' }, [
-          metric('services highlighted', svcCount.highlighted || 0, svcCap),
-          metric('locations highlighted', locCount.highlighted || 0, locCap),
-          metric('bios highlighted',      bioCount.highlighted || 0, bioCap)
-        ])
+      var tally = el('div', { class: 'client-tally' }, [
+        metric('services highlighted', svcCount.highlighted || 0, svcCap),
+        metric('locations highlighted', locCount.highlighted || 0, locCap),
+        metric('bios highlighted',      bioCount.highlighted || 0, bioCap)
       ]);
-      content.appendChild(callout);
+      content.appendChild(tally);
     }
 
     // Header card — root URL + status chip + source tag (no internal site-map ID)
@@ -1093,22 +1093,27 @@
     }
 
     // Notes
+    var notesPlaceholder = CLIENT_MODE
+      ? 'Optional. e.g. "please update the URL to /couples-therapy" or "keep the title but rewrite the intro"'
+      : 'Secondary keywords, persona, context';
+    var notesLabel = CLIENT_MODE ? 'Note for our team (optional)' : 'Notes';
     body.appendChild(el('div', { class: 'field-group' }, [
-      el('label', { class: 'field-label' }, 'Notes'),
+      el('label', { class: 'field-label' }, notesLabel),
       el('textarea', {
         class: 'form-input', id: 'detail-notes-input',
-        placeholder: 'Secondary keywords, persona, context'
+        placeholder: notesPlaceholder
       }, p.notes || '')
     ]));
 
     // Status controls. Admin sees all status pills; clients see a simplified
-    // Trello-style 3-button bar (Keep / Update as target / Remove). Brand-new
-    // pages the client added don't show this bar — Delete in the footer handles
-    // removal for those.
+    // 2-button bar (Update as target / Remove). The default state is Keep —
+    // pages stay as discovered until the client explicitly chooses an action,
+    // and at submit time anything still discovered is coerced to existing_keep.
+    // Clicking an active button toggles back to default. Brand-new pages the
+    // client added don't show this bar; Delete in the footer handles those.
     if (CLIENT_MODE) {
       if (p.status !== 'new') {
         var CLIENT_ACTIONS = [
-          { act: 'keep',   status: 'existing_keep',   label: 'Keep as-is' },
           { act: 'update', status: 'existing_update', label: 'Update as target' },
           { act: 'remove', status: 'existing_remove', label: 'Remove' }
         ];
@@ -1118,12 +1123,16 @@
           var btn = el('button', {
             class: 'client-action-btn' + (isActive ? ' active' : ''),
             'data-act': a.act,
-            onclick: function() { changeStatus(p.id, a.status); }
+            onclick: function() {
+              // Toggle: if already this status, revert to discovered (default Keep)
+              changeStatus(p.id, isActive ? 'discovered' : a.status);
+            }
           }, a.label);
           barRow.appendChild(btn);
         });
         body.appendChild(el('div', { class: 'field-group' }, [
           el('label', { class: 'field-label' }, 'What should we do with this page?'),
+          el('div', { class: 'field-help', style: 'margin-top:0;margin-bottom:.5rem;' }, 'Leave this alone if you want to keep the page as-is. Pick an action only for pages you want changed.'),
           barRow
         ]));
       }
