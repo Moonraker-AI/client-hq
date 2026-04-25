@@ -144,6 +144,15 @@ module.exports = async function handler(req, res) {
         '&order=is_primary.desc,sort_order.asc.nullslast,therapist_name.asc' +
         '&select=id,therapist_name,page_url,sort_order,is_primary'
       ),
+      // Endorsements — only loaded for bio pages, filtered to this clinician
+      // (bio_material_id matches) plus practice-level (bio_material_id is null).
+      page.page_type === 'bio'
+        ? sb.query(
+            'endorsements?contact_id=eq.' + encContactId +
+            '&status=eq.approved' +
+            '&order=sort_order.asc.nullslast,submitted_at.desc'
+          )
+        : Promise.resolve([]),
     ]);
 
     var contact = (deps[0] && deps[0][0]) || null;
@@ -153,6 +162,7 @@ module.exports = async function handler(req, res) {
     var bioMaterial = (deps[4] && deps[4][0]) || null;
     var allPages = deps[5] || [];
     var bioList = deps[6] || [];
+    var endorsementsAll = deps[7] || [];
 
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
     if (contact.lost === true || contact.status === 'lost') {
@@ -169,6 +179,7 @@ module.exports = async function handler(req, res) {
       bioMaterial: bioMaterial,
       allPages: allPages,
       bioList: bioList,
+      endorsements: endorsementsAll,
     });
 
     // Render
@@ -217,10 +228,33 @@ function buildRenderData(args) {
   var bioMaterial = args.bioMaterial;
   var allPages = args.allPages || [];
   var bioList = args.bioList || [];
+  var endorsementsAll = args.endorsements || [];
 
   var content = page.content_jsonb || {};
   var nav = buildNav(allPages, bioList, contact);
   var footer = buildFooter(allPages, contact);
+
+  // Bio-page endorsements: this clinician's + practice-level (null bio_material_id).
+  // For non-bio pages, leave empty — endorsements aren't surfaced elsewhere yet.
+  var pageEndorsements = [];
+  if (page.page_type === 'bio' && page.bio_material_id) {
+    pageEndorsements = endorsementsAll.filter(function (e) {
+      return e.bio_material_id === page.bio_material_id || !e.bio_material_id;
+    });
+  }
+
+  // Booking: prefer per-clinician embed, fall back to practice-level embed,
+  // then a plain URL CTA. Template renders embed when has_embed, otherwise
+  // a button to url when has_url.
+  var bioEmbed = bioMaterial && bioMaterial.booking_embed;
+  var practiceEmbed = practice && practice.ehr_booking_embed;
+  var practiceUrl = practice && practice.booking_url;
+  var booking = {
+    has_embed: !!(bioEmbed || practiceEmbed),
+    embed: bioEmbed || practiceEmbed || '',
+    has_url: !!practiceUrl,
+    url: practiceUrl || '',
+  };
 
   return {
     // Page metadata
@@ -288,7 +322,14 @@ function buildRenderData(args) {
     } : null,
 
     // Bio material (bio pages only)
-    bio: bioMaterial || null,
+    bio: bioMaterial ? buildBioContext(bioMaterial) : null,
+
+    // Booking (bio pages — embed vs CTA fallback)
+    booking: booking,
+
+    // Endorsements (bio pages — filtered to this clinician + practice-level)
+    endorsements: pageEndorsements,
+    has_endorsements: pageEndorsements.length > 0,
 
     // JSON-LD schema (rendered raw inside <script type="application/ld+json">)
     schema_jsonb: page.schema_jsonb || null,
@@ -489,3 +530,59 @@ function buildCssVariables(spec) {
 
 module.exports.buildRenderData = buildRenderData;
 module.exports.buildCssVariables = buildCssVariables;
+
+// Bio-specific precomputation. Templates have no helpers, so we shape the
+// data here: initials for fallback hero, presence flags for conditional
+// blocks, normalized arrays for {{#each}} iteration.
+function buildBioContext(bio) {
+  if (!bio) return null;
+
+  var name = bio.therapist_name || '';
+  var parts = name.trim().split(/\s+/);
+  var initials = '';
+  if (parts.length >= 2) {
+    initials = (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  } else if (parts.length === 1 && parts[0]) {
+    initials = parts[0].charAt(0).toUpperCase();
+  }
+
+  // Normalize jsonb arrays — they come back as arrays of strings from PostgREST
+  // for license/education/cert/association/awards. Wrap each in { value } so
+  // {{#each}} can render them as <li>{{value}}</li>.
+  function asList(v) {
+    if (!Array.isArray(v)) return [];
+    return v.filter(function (s) { return s && typeof s === 'string'; })
+            .map(function (s) { return { value: s }; });
+  }
+
+  var licenses = asList(bio.license_details);
+  var education = asList(bio.education_details);
+  var certifications = asList(bio.certification_details);
+  var associations = asList(bio.association_details);
+  var media = asList(bio.media_publications);
+
+  return {
+    id: bio.id,
+    name: name,
+    credentials: bio.therapist_credentials || '',
+    initials: initials,
+    is_primary: !!bio.is_primary,
+    headshot_url: bio.headshot_url || '',
+    has_headshot: !!bio.headshot_url,
+    professional_bio: bio.professional_bio || '',
+    has_bio: !!bio.professional_bio,
+    clinical_approach: bio.clinical_approach || '',
+    has_approach: !!bio.clinical_approach,
+    awards: bio.awards || '',
+    has_awards: !!bio.awards,
+    licenses: licenses,
+    education: education,
+    certifications: certifications,
+    associations: associations,
+    media: media,
+    has_credentials: licenses.length + education.length + certifications.length + associations.length > 0,
+    has_media: media.length > 0,
+  };
+}
+
+module.exports.buildBioContext = buildBioContext;
