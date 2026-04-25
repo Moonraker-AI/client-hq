@@ -522,6 +522,19 @@
     legal_privacy: 'Privacy Policy', legal_terms: 'Terms of Service',
     legal_other: 'Other Legal', other: 'Other'
   };
+
+  // For existing-site adoptions (core_existing), the 'other' bucket is most
+  // usefully framed as "pages we found but you don't link to" — clients
+  // typically had a reason to leave them out. New builds and standalones
+  // shouldn't have orphan pages so we keep the literal 'Other' label there.
+  function categoryLabel(cat) {
+    if (cat === 'other'
+        && state.site_map
+        && state.site_map.source_type === 'core_existing') {
+      return 'Not Linked';
+    }
+    return CATEGORY_LABELS[cat] || cat;
+  }
   var STATUS_LABELS = {
     discovered: 'Needs review',
     existing_keep: 'Keep as-is',
@@ -909,7 +922,7 @@
       onclick: function() { /* clicking the cat node does nothing currently */ }
     }, [
       el('div', { class: 'cat-title' }, [
-        CATEGORY_LABELS[cat] || cat
+        categoryLabel(cat)
       ]),
       targetEl
     ]);
@@ -923,7 +936,7 @@
         class: 'page-rollup',
         onclick: function() { state.expandedRollups[cat] = true; render(); }
       }, [
-        el('span', { style: 'flex:1' }, pages.length + ' ' + (CATEGORY_LABELS[cat] || cat).toLowerCase()),
+        el('span', { style: 'flex:1' }, pages.length + ' ' + categoryLabel(cat).toLowerCase()),
         el('span', { style: 'font-size:.7rem' }, '▸ expand')
       ]));
     } else {
@@ -932,7 +945,7 @@
         var addBtn = el('button', {
           class: 'cat-add-inline',
           onclick: function(e) { e.stopPropagation(); openAddModal(cat); }
-        }, '+ Add ' + (CATEGORY_LABELS[cat] || cat).toLowerCase());
+        }, '+ Add ' + categoryLabel(cat).toLowerCase());
         pageList.appendChild(addBtn);
       }
     }
@@ -1049,7 +1062,7 @@
     // Head
     var eyebrowChildren = [
       el('span', { class: 'status-dot st-' + p.status, style: 'width:10px;height:10px;border-radius:50%;display:inline-block' }),
-      (CATEGORY_LABELS[p.category] || p.category)
+      categoryLabel(p.category)
     ];
     if (p.in_nav) {
       eyebrowChildren.push(el('span', {
@@ -1304,7 +1317,7 @@
         showToast(r.body.error || 'Failed to recategorize', 'err');
         return;
       }
-      showToast('Moved to ' + (CATEGORY_LABELS[newCategory] || newCategory), 'ok');
+      showToast('Moved to ' + categoryLabel(newCategory), 'ok');
       closeModal('page-modal');
       load();
     }).catch(function(e) {
