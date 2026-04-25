@@ -155,7 +155,7 @@ module.exports = async function handler(req, res) {
     bm = await sb.one(
       'bio_materials?id=eq.' + encodeURIComponent(bioMaterialId) +
       '&contact_id=eq.' + encodeURIComponent(contactId) +
-      '&select=id,therapist_name&limit=1'
+      '&select=id,therapist_name,email&limit=1'
     );
   } catch (e) {
     return res.status(500).json({ error: 'Lookup failed' });
@@ -331,7 +331,22 @@ async function sendClinicianNotification(args) {
   var contact = args.contact;
   var bm = args.bm;
   var endorsement = args.endorsement;
-  if (!contact || !contact.email) return;
+
+  // Recipients: practice contact + clinician's per-bio email if set, deduped
+  // and lowercased. Both get notified so the clinician and the practice
+  // owner can review together — usually the same person for solo practices,
+  // distinct for multi-clinician.
+  var recipients = [];
+  function addRecipient(addr) {
+    if (!addr) return;
+    var v = String(addr).trim().toLowerCase();
+    if (!v || recipients.indexOf(v) !== -1) return;
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return;
+    recipients.push(v);
+  }
+  addRecipient(contact && contact.email);
+  addRecipient(bm && bm.email);
+  if (recipients.length === 0) return;
 
   var resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) return;  // Soft-skip in dev / misconfigured envs
@@ -392,7 +407,7 @@ async function sendClinicianNotification(args) {
     headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from: email.FROM.notifications,
-      to: [contact.email],
+      to: recipients,
       reply_to: 'support@moonraker.ai',
       subject: args.cleanEndorserName + ' endorsed ' + (bm.therapist_name || 'your practice'),
       html: html
