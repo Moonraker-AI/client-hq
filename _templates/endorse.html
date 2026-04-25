@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Submit an endorsement</title>
+<link rel="icon" href="/assets/logo.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root, [data-theme="light"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00b86c;
+  --color-primary-subtle: #DDF8F2;
+  --color-bg: #F7FDFB;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F0FAF5;
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+  --color-heading: #1E2A5E;
+  --color-body: #333F70;
+  --color-muted: #6B7599;
+  --color-navy: #141C3A;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+}
+[data-theme="dark"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00f598;
+  --color-primary-subtle: #0D2E22;
+  --color-bg: #080F0B;
+  --color-surface: #0E1A14;
+  --color-surface-alt: #142420;
+  --color-border: #1E3530;
+  --color-border-strong: #2F4A43;
+  --color-heading: #E8F5EF;
+  --color-body: #C8D8D0;
+  --color-muted: #7A8E84;
+  --color-navy: #0A1630;
+  --color-success: #00D47E;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-body);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell { max-width: 720px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+/* Header */
+.brand { display: flex; align-items: center; gap: .65rem; margin-bottom: 2rem; }
+.brand img { width: 36px; height: 36px; border-radius: 8px; }
+.brand-text { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1.05rem; color: var(--color-heading); }
+.brand-text small { display: block; font-family: 'Inter', sans-serif; font-weight: 400; font-size: .75rem; color: var(--color-muted); margin-top: .1rem; }
+
+/* Hero */
+.hero { margin-bottom: 1.75rem; }
+.hero h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin-bottom: .5rem;
+  line-height: 1.25;
+}
+.hero h1 .clinician {
+  display: inline;
+  background: linear-gradient(transparent 60%, var(--color-primary-subtle) 60%);
+  padding: 0 .15em;
+}
+.hero p { font-size: .95rem; color: var(--color-muted); line-height: 1.6; max-width: 56ch; }
+
+/* Card */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 1.75rem;
+  margin-bottom: 1.25rem;
+}
+.card h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-heading);
+  margin-bottom: .25rem;
+}
+.card .section-hint {
+  font-size: .8rem;
+  color: var(--color-muted);
+  line-height: 1.55;
+  margin-bottom: 1.25rem;
+}
+
+/* Form */
+.form-group { margin-bottom: 1.1rem; }
+.form-group:last-child { margin-bottom: 0; }
+.form-group label {
+  display: block;
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-muted);
+  margin-bottom: .35rem;
+}
+.form-group label .req { color: var(--color-danger); margin-left: .15em; }
+.form-group label .opt { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--color-muted); margin-left: .35em; }
+.form-group .hint { font-size: .75rem; color: var(--color-muted); margin-bottom: .35rem; line-height: 1.5; }
+.form-group .hint.warn { color: var(--color-warning); }
+
+.form-input, .form-textarea, .form-select {
+  width: 100%;
+  padding: .6rem .8rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: .9rem;
+  color: var(--color-heading);
+  background: var(--color-bg);
+  transition: border-color .15s, box-shadow .15s;
+  outline: none;
+}
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0,212,126,0.12);
+}
+.form-textarea { resize: vertical; min-height: 120px; line-height: 1.55; }
+.form-select { cursor: pointer; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+.char-count { font-size: .7rem; color: var(--color-muted); text-align: right; margin-top: .2rem; }
+
+/* Headshot upload */
+.headshot-uploader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 2px dashed var(--color-border-strong);
+  border-radius: 10px;
+  transition: border-color .15s, background .15s;
+  cursor: pointer;
+  background: var(--color-bg);
+}
+.headshot-uploader:hover, .headshot-uploader.dragging {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+.headshot-uploader input[type=file] { display: none; }
+.headshot-preview {
+  width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
+  background: var(--color-surface-alt); display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.headshot-preview img { width: 100%; height: 100%; object-fit: cover; }
+.headshot-preview svg { width: 28px; height: 28px; color: var(--color-muted); }
+.headshot-info { flex: 1; min-width: 0; }
+.headshot-info .label { font-size: .85rem; font-weight: 500; color: var(--color-heading); margin-bottom: .15rem; }
+.headshot-info .meta { font-size: .75rem; color: var(--color-muted); line-height: 1.4; }
+.headshot-info .meta.has-error { color: var(--color-danger); }
+.headshot-info .progress {
+  margin-top: .4rem;
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.headshot-info .progress-bar {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width .2s ease;
+  width: 0;
+}
+.headshot-clear {
+  background: transparent;
+  border: 0;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: .8rem;
+  padding: .25rem .5rem;
+  border-radius: 4px;
+  transition: color .15s, background .15s;
+  display: none;
+}
+.headshot-clear:hover { color: var(--color-danger); background: rgba(239,68,68,.06); }
+.headshot-uploader.has-image .headshot-clear { display: inline-block; }
+
+/* Links */
+.links-list { display: flex; flex-direction: column; gap: .65rem; }
+.link-row {
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  gap: .5rem;
+  align-items: center;
+}
+@media (max-width: 600px) {
+  .link-row { grid-template-columns: 1fr; gap: .4rem; }
+  .link-row .link-remove { justify-self: end; margin-top: -.4rem; }
+}
+.link-remove {
+  background: transparent;
+  border: 0;
+  color: var(--color-muted);
+  cursor: pointer;
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color .15s, background .15s;
+}
+.link-remove:hover { color: var(--color-danger); background: rgba(239,68,68,.06); }
+.link-add {
+  margin-top: .5rem;
+  background: transparent;
+  border: 1px dashed var(--color-border-strong);
+  color: var(--color-muted);
+  font-size: .8rem;
+  font-weight: 500;
+  padding: .5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .15s;
+  display: inline-flex; align-items: center; gap: .35rem;
+}
+.link-add:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+.link-add:disabled { opacity: .35; cursor: not-allowed; }
+
+/* Checkbox */
+.checkbox-group {
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+  padding: .75rem .9rem;
+  background: var(--color-surface-alt);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.checkbox-group input[type=checkbox] {
+  width: 18px; height: 18px;
+  margin-top: 2px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.checkbox-group .checkbox-label {
+  font-size: .85rem;
+  color: var(--color-heading);
+  line-height: 1.45;
+}
+.checkbox-group .checkbox-label small {
+  display: block;
+  color: var(--color-muted);
+  font-size: .75rem;
+  margin-top: .15rem;
+}
+
+/* Submit */
+.submit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  padding: .75rem 1.75rem;
+  border-radius: 8px;
+  border: 0;
+  font-family: inherit;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-primary { background: var(--color-primary); color: #fff; }
+.btn-primary:hover { background: var(--color-primary-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,212,126,.25); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn .spinner {
+  width: 14px; height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-banner {
+  display: none;
+  padding: .75rem 1rem;
+  border-radius: 8px;
+  background: rgba(239,68,68,.08);
+  color: var(--color-danger);
+  font-size: .85rem;
+  margin-bottom: 1rem;
+  line-height: 1.45;
+}
+.error-banner.show { display: block; }
+
+/* Loading state */
+.state-loading, .state-error-page {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+.state-loading .spinner-large {
+  width: 32px; height: 32px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 0 auto 1rem;
+}
+.state-loading p, .state-error-page p { color: var(--color-muted); }
+
+/* Success state */
+.state-success {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+}
+.state-success .check {
+  width: 56px; height: 56px;
+  margin: 0 auto 1rem;
+  background: var(--color-primary-subtle);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.state-success .check svg { width: 28px; height: 28px; color: var(--color-primary); }
+.state-success h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin-bottom: .5rem;
+}
+.state-success p { color: var(--color-body); line-height: 1.6; max-width: 44ch; margin: 0 auto .75rem; }
+.state-success .clinician-note { color: var(--color-muted); font-size: .9rem; }
+
+.moonraker-card {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: var(--color-navy);
+  border-radius: 14px;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+.moonraker-card::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 140px; height: 140px;
+  background: radial-gradient(circle, rgba(0,212,126,.15), transparent 70%);
+  pointer-events: none;
+}
+.moonraker-card .mk-eyebrow {
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: .65rem;
+}
+.moonraker-card h3 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: .5rem;
+  line-height: 1.35;
+}
+.moonraker-card p {
+  font-size: .85rem;
+  color: rgba(232,245,239,.8);
+  line-height: 1.6;
+  margin-bottom: .85rem;
+}
+.moonraker-card .mk-services {
+  display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: 1rem;
+}
+.moonraker-card .mk-service {
+  font-size: .72rem;
+  font-weight: 500;
+  color: rgba(232,245,239,.85);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+  padding: .25rem .65rem;
+  border-radius: 999px;
+}
+.moonraker-card .mk-cta {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  padding: .5rem 0;
+}
+.moonraker-card .mk-cta:hover { color: #00f598; }
+.moonraker-card .mk-cta svg { width: 14px; height: 14px; transition: transform .2s; }
+.moonraker-card .mk-cta:hover svg { transform: translateX(3px); }
+
+/* Footer */
+.footer {
+  text-align: center;
+  margin-top: 2.5rem;
+  font-size: .72rem;
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+.footer a { color: inherit; text-decoration: underline; }
+
+/* Hide states */
+.is-hidden { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <div class="brand">
+    <img src="/assets/logo.png" alt="Moonraker">
+    <div class="brand-text">
+      Moonraker Endorsements
+      <small>Verified peer endorsements for therapy practices</small>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div class="state-loading" id="state-loading">
+    <div class="spinner-large"></div>
+    <p>Loading…</p>
+  </div>
+
+  <!-- Error page state -->
+  <div class="state-error-page is-hidden" id="state-error-page">
+    <h1 style="font-family:'Outfit',sans-serif;color:var(--color-heading);margin-bottom:.5rem;">Link not found</h1>
+    <p id="error-page-msg">This endorsement link isn't valid.</p>
+  </div>
+
+  <!-- Form state -->
+  <div id="state-form" class="is-hidden">
+    <div class="hero">
+      <h1>You're endorsing <span class="clinician" id="hero-clinician-name"></span></h1>
+      <p id="hero-subtext">Take a few minutes to share why a colleague might recommend them. Your endorsement will appear on their bio page once you submit.</p>
+    </div>
+
+    <div class="error-banner" id="error-banner"></div>
+
+    <form id="endorsement-form" novalidate>
+      <div class="card">
+        <h2>About you</h2>
+        <p class="section-hint">These details appear next to your endorsement so it's clear who's speaking.</p>
+
+        <div class="form-group">
+          <label for="endorser_name">Your name<span class="req">*</span></label>
+          <input class="form-input" type="text" id="endorser_name" name="endorser_name" required maxlength="200" autocomplete="name">
+        </div>
+
+        <div class="form-group">
+          <label for="endorser_credentials">Your credentials <span class="opt">(optional but recommended)</span></label>
+          <p class="hint">e.g. LCSW, MD, PhD, RP. Credentials lend professional weight to your endorsement.</p>
+          <input class="form-input" type="text" id="endorser_credentials" name="endorser_credentials" maxlength="200">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="endorser_title">Your title <span class="opt">(optional)</span></label>
+            <input class="form-input" type="text" id="endorser_title" name="endorser_title" maxlength="200" placeholder="e.g. Clinical Director">
+          </div>
+          <div class="form-group">
+            <label for="endorser_org">Your organization <span class="opt">(optional)</span></label>
+            <input class="form-input" type="text" id="endorser_org" name="endorser_org" maxlength="200" placeholder="e.g. Mount Sinai Hospital">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Your headshot <span class="opt">(optional)</span></label>
+          <p class="hint">A face makes the endorsement land. JPG, PNG, WEBP, or HEIC, up to 5MB.</p>
+          <label class="headshot-uploader" id="headshot-uploader">
+            <input type="file" id="headshot-input" accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif">
+            <div class="headshot-preview" id="headshot-preview">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+            </div>
+            <div class="headshot-info">
+              <div class="label" id="headshot-label">Click to upload</div>
+              <div class="meta" id="headshot-meta">or drag and drop</div>
+              <div class="progress is-hidden" id="headshot-progress">
+                <div class="progress-bar" id="headshot-progress-bar"></div>
+              </div>
+            </div>
+            <button type="button" class="headshot-clear" id="headshot-clear">Remove</button>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Your endorsement</h2>
+        <p class="section-hint">Share what you'd want a referral source or future client to know.</p>
+
+        <div class="form-group">
+          <label for="content">Endorsement<span class="req">*</span></label>
+          <p class="hint warn">Please write thoughtfully — once submitted, only metadata corrections (typos in your name, title, etc.) can be edited. The endorsement text itself is locked.</p>
+          <textarea class="form-textarea" id="content" name="content" required minlength="10" maxlength="5000" placeholder="Share your experience working with or referring to this clinician…"></textarea>
+          <div class="char-count" id="content-count">0 / 5000</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Verification links</h2>
+        <p class="section-hint">Add 1–3 links so readers can confirm you are who you say you are. A LinkedIn profile or your practice website is usually plenty.</p>
+
+        <div class="links-list" id="links-list">
+          <!-- Link rows injected by JS -->
+        </div>
+        <button type="button" class="link-add" id="link-add">+ Add another link</button>
+      </div>
+
+      <div class="card">
+        <h2>Sharing options</h2>
+        <p class="section-hint">By default, your endorsement appears on this clinician's bio page only.</p>
+        <label class="checkbox-group">
+          <input type="checkbox" id="include_on_homepage" name="include_on_homepage">
+          <div class="checkbox-label">
+            Also feature this endorsement on the practice homepage
+            <small>Practice-wide endorsements help new clients trust the whole team. Optional.</small>
+          </div>
+        </label>
+      </div>
+
+      <div class="submit-row">
+        <span style="font-size:.78rem;color:var(--color-muted);">Required fields marked <span style="color:var(--color-danger);">*</span></span>
+        <button type="submit" class="btn btn-primary" id="submit-btn">
+          <span class="btn-text">Submit endorsement</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Success state -->
+  <div class="state-success is-hidden" id="state-success">
+    <div class="check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h2>Thank you</h2>
+    <p>Your endorsement is live on <span id="success-clinician-name"></span>'s page right now.</p>
+    <p class="clinician-note" id="success-clinician-note">We'll notify them shortly so they can take a look.</p>
+
+    <div class="moonraker-card">
+      <div class="mk-eyebrow">Brought to you by Moonraker AI</div>
+      <h3>We help therapy practices stand out online.</h3>
+      <p>Verified peer endorsements are one piece. We also handle local SEO, a content engine that sounds like the practice, and the kind of digital infrastructure that turns referral traffic into booked sessions.</p>
+      <div class="mk-services">
+        <span class="mk-service">Local SEO</span>
+        <span class="mk-service">Peer endorsements</span>
+        <span class="mk-service">AI-driven content</span>
+        <span class="mk-service">Reputation tracking</span>
+        <span class="mk-service">Analytics</span>
+      </div>
+      <a href="https://moonraker.ai" class="mk-cta" target="_blank" rel="noopener">
+        See what we do
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    Powered by <a href="https://moonraker.ai" target="_blank" rel="noopener">Moonraker AI</a>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── URL parsing ──────────────────────────────────────────────
+  // Path is /<slug>/endorse/<clinician>. The Vercel rewrite leaves the
+  // path intact for the template, so we read it from window.location.
+  var pathParts = window.location.pathname.replace(/^\/+|\/+$/g,'').split('/');
+  var slug = '';
+  var clinicianSlug = '';
+  if (pathParts[1] === 'endorse' && pathParts[0] && pathParts[2]) {
+    slug = pathParts[0];
+    clinicianSlug = pathParts[2];
+  }
+
+  if (!slug || !clinicianSlug) {
+    showErrorPage('This endorsement link looks incomplete.');
+    return;
+  }
+
+  // ── State + DOM refs ─────────────────────────────────────────
+  var state = {
+    contactId: null,
+    bioMaterialId: null,
+    clinicianName: '',
+    clinicianCredentials: '',
+    practiceName: '',
+    headshot: { id: null, url: null, status: 'idle' /* idle|uploading|done|error */ },
+    submitting: false
+  };
+
+  var $ = function(id) { return document.getElementById(id); };
+
+  var elLoading      = $('state-loading');
+  var elErrorPage    = $('state-error-page');
+  var elErrorPageMsg = $('error-page-msg');
+  var elForm         = $('state-form');
+  var elSuccess      = $('state-success');
+  var elErrorBanner  = $('error-banner');
+
+  function show(elShow) {
+    [elLoading, elErrorPage, elForm, elSuccess].forEach(function(e) {
+      if (e === elShow) e.classList.remove('is-hidden');
+      else e.classList.add('is-hidden');
+    });
+  }
+
+  function showErrorPage(msg) {
+    elErrorPageMsg.textContent = msg || 'This endorsement link isn\u2019t valid.';
+    show(elErrorPage);
+  }
+
+  function showInlineError(msg) {
+    elErrorBanner.textContent = msg;
+    elErrorBanner.classList.add('show');
+    elErrorBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function clearInlineError() {
+    elErrorBanner.classList.remove('show');
+    elErrorBanner.textContent = '';
+  }
+
+  // ── Init: hydrate clinician + mint cookie ────────────────────
+  fetch('/api/endorse-init?slug=' + encodeURIComponent(slug) + '&clinician=' + encodeURIComponent(clinicianSlug), {
+    credentials: 'same-origin'
+  })
+  .then(function(r) {
+    return r.json().then(function(body) { return { ok: r.ok, status: r.status, body: body }; });
+  })
+  .then(function(res) {
+    if (!res.ok || !res.body || !res.body.ok) {
+      var msg = (res.body && res.body.error) || 'This endorsement link isn\u2019t valid.';
+      if (res.status === 404) msg = 'This endorsement link isn\u2019t valid. Check that you have the right URL.';
+      if (res.status === 403) msg = 'This practice isn\u2019t accepting endorsements right now.';
+      showErrorPage(msg);
+      return;
+    }
+    state.bioMaterialId        = res.body.clinician.bio_material_id;
+    state.clinicianName        = res.body.clinician.name || 'this clinician';
+    state.clinicianCredentials = res.body.clinician.credentials || '';
+    state.practiceName         = res.body.practice.name || '';
+    setupForm();
+  })
+  .catch(function(e) {
+    showErrorPage('Couldn\u2019t reach the server. Please check your connection and try again.');
+  });
+
+  function setupForm() {
+    $('hero-clinician-name').textContent = state.clinicianName;
+    $('success-clinician-name').textContent = state.clinicianName;
+
+    document.title = 'Endorse ' + state.clinicianName;
+
+    setupCharCount();
+    setupHeadshot();
+    setupLinks();
+    setupSubmit();
+
+    show(elForm);
+  }
+
+  // ── Char counter ─────────────────────────────────────────────
+  function setupCharCount() {
+    var ta = $('content');
+    var out = $('content-count');
+    function update() {
+      var n = ta.value.length;
+      out.textContent = n + ' / 5000';
+      out.style.color = n > 4500 ? 'var(--color-warning)' : '';
+    }
+    ta.addEventListener('input', update);
+    update();
+  }
+
+  // ── Headshot upload ──────────────────────────────────────────
+  function setupHeadshot() {
+    var dropZone = $('headshot-uploader');
+    var fileInput = $('headshot-input');
+    var preview = $('headshot-preview');
+    var label = $('headshot-label');
+    var meta = $('headshot-meta');
+    var progress = $('headshot-progress');
+    var progressBar = $('headshot-progress-bar');
+    var clearBtn = $('headshot-clear');
+
+    function reset() {
+      state.headshot = { id: null, url: null, status: 'idle' };
+      fileInput.value = '';
+      preview.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>';
+      label.textContent = 'Click to upload';
+      meta.textContent = 'or drag and drop';
+      meta.classList.remove('has-error');
+      progress.classList.add('is-hidden');
+      progressBar.style.width = '0%';
+      dropZone.classList.remove('has-image');
+    }
+
+    clearBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      reset();
+    });
+
+    function pickFile(file) {
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        meta.textContent = 'File is too large (max 5MB).';
+        meta.classList.add('has-error');
+        return;
+      }
+
+      // Local preview
+      var reader = new FileReader();
+      reader.onload = function() {
+        preview.innerHTML = '<img src="' + reader.result + '" alt="">';
+        dropZone.classList.add('has-image');
+      };
+      reader.readAsDataURL(file);
+
+      label.textContent = file.name;
+      meta.textContent = 'Uploading…';
+      meta.classList.remove('has-error');
+      progress.classList.remove('is-hidden');
+      progressBar.style.width = '10%';
+      state.headshot.status = 'uploading';
+
+      // Step 1: sign
+      fetch('/api/endorse-headshot', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'sign',
+          content_type: file.type || 'image/jpeg',
+          bytes: file.size,
+          bio_material_id: state.bioMaterialId
+        })
+      })
+      .then(function(r) {
+        return r.json().then(function(b) { return { ok: r.ok, body: b }; });
+      })
+      .then(function(res) {
+        if (!res.ok || !res.body.ok) throw new Error((res.body && res.body.error) || 'Upload failed');
+        progressBar.style.width = '30%';
+
+        // Step 2: PUT bytes to signed URL
+        return fetch(res.body.upload_url, {
+          method: res.body.upload_method || 'PUT',
+          headers: { 'Content-Type': res.body.content_type },
+          body: file
+        }).then(function(putResp) {
+          if (!putResp.ok) throw new Error('Upload failed (' + putResp.status + ')');
+          progressBar.style.width = '70%';
+          return res.body;
+        });
+      })
+      .then(function(signed) {
+        // Step 3: complete
+        return fetch('/api/endorse-headshot', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'complete', image_id: signed.image_id })
+        }).then(function(r) {
+          return r.json().then(function(b) { return { ok: r.ok, body: b, signed: signed }; });
+        });
+      })
+      .then(function(res) {
+        if (!res.ok || !res.body.ok) throw new Error((res.body && res.body.error) || 'Upload completion failed');
+        progressBar.style.width = '100%';
+        state.headshot.id = res.signed.image_id;
+        state.headshot.url = res.body.hosted_url || res.signed.hosted_url;
+        state.headshot.status = 'done';
+        meta.textContent = 'Uploaded';
+        setTimeout(function() { progress.classList.add('is-hidden'); }, 600);
+      })
+      .catch(function(err) {
+        state.headshot = { id: null, url: null, status: 'error' };
+        meta.textContent = err.message || 'Upload failed. Please try again.';
+        meta.classList.add('has-error');
+        progress.classList.add('is-hidden');
+        progressBar.style.width = '0%';
+        // Keep the preview so user can see what failed; clearBtn still works
+      });
+    }
+
+    fileInput.addEventListener('change', function() {
+      if (fileInput.files && fileInput.files[0]) pickFile(fileInput.files[0]);
+    });
+
+    // Drag and drop
+    ['dragover','dragenter'].forEach(function(ev) {
+      dropZone.addEventListener(ev, function(e) {
+        e.preventDefault(); e.stopPropagation();
+        dropZone.classList.add('dragging');
+      });
+    });
+    ['dragleave','drop'].forEach(function(ev) {
+      dropZone.addEventListener(ev, function(e) {
+        e.preventDefault(); e.stopPropagation();
+        dropZone.classList.remove('dragging');
+      });
+    });
+    dropZone.addEventListener('drop', function(e) {
+      var files = e.dataTransfer && e.dataTransfer.files;
+      if (files && files[0]) pickFile(files[0]);
+    });
+  }
+
+  // ── Links ────────────────────────────────────────────────────
+  var LINK_KINDS = [
+    { value: 'linkedin',         label: 'LinkedIn' },
+    { value: 'practice',         label: 'Practice website' },
+    { value: 'psychology_today', label: 'Psychology Today' },
+    { value: 'google_scholar',   label: 'Google Scholar' },
+    { value: 'personal_site',    label: 'Personal site' },
+    { value: 'other',            label: 'Other' }
+  ];
+  var MAX_LINKS = 5;
+
+  function setupLinks() {
+    var list = $('links-list');
+    var addBtn = $('link-add');
+
+    function render() {
+      // Re-render preserving values
+      var current = readRows();
+      list.innerHTML = '';
+      var rows = current.length ? current : [{ kind: 'linkedin', url: '' }];
+      rows.forEach(function(row, i) { list.appendChild(makeRow(row, i, rows.length > 1)); });
+      addBtn.disabled = rows.length >= MAX_LINKS;
+    }
+
+    function readRows() {
+      var rows = [];
+      list.querySelectorAll('.link-row').forEach(function(r) {
+        rows.push({
+          kind: r.querySelector('select').value,
+          url:  r.querySelector('input').value
+        });
+      });
+      return rows;
+    }
+
+    function makeRow(row, idx, allowRemove) {
+      var div = document.createElement('div');
+      div.className = 'link-row';
+
+      var sel = document.createElement('select');
+      sel.className = 'form-select';
+      LINK_KINDS.forEach(function(k) {
+        var opt = document.createElement('option');
+        opt.value = k.value; opt.textContent = k.label;
+        if (k.value === row.kind) opt.selected = true;
+        sel.appendChild(opt);
+      });
+
+      var url = document.createElement('input');
+      url.className = 'form-input';
+      url.type = 'url';
+      url.maxLength = 1000;
+      url.placeholder = 'https://…';
+      url.value = row.url || '';
+
+      div.appendChild(sel);
+      div.appendChild(url);
+
+      if (allowRemove) {
+        var rm = document.createElement('button');
+        rm.type = 'button';
+        rm.className = 'link-remove';
+        rm.title = 'Remove link';
+        rm.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        rm.addEventListener('click', function() {
+          div.remove();
+          // Sync state
+          var rows = readRows();
+          list.innerHTML = '';
+          (rows.length ? rows : [{ kind: 'linkedin', url: '' }]).forEach(function(r, i) {
+            list.appendChild(makeRow(r, i, (rows.length > 1)));
+          });
+          addBtn.disabled = readRows().length >= MAX_LINKS;
+        });
+        div.appendChild(rm);
+      }
+
+      return div;
+    }
+
+    addBtn.addEventListener('click', function() {
+      var current = readRows();
+      if (current.length >= MAX_LINKS) return;
+      current.push({ kind: 'other', url: '' });
+      list.innerHTML = '';
+      current.forEach(function(r, i) { list.appendChild(makeRow(r, i, current.length > 1)); });
+      addBtn.disabled = current.length >= MAX_LINKS;
+    });
+
+    render();
+  }
+
+  function collectLinks() {
+    var rows = [];
+    document.querySelectorAll('#links-list .link-row').forEach(function(r) {
+      var kind = r.querySelector('select').value;
+      var url = (r.querySelector('input').value || '').trim();
+      if (url) rows.push({ kind: kind, url: url });
+    });
+    return rows;
+  }
+
+  // ── Submit ───────────────────────────────────────────────────
+  function setupSubmit() {
+    var form = $('endorsement-form');
+    var btn = $('submit-btn');
+    var btnText = btn.querySelector('.btn-text');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (state.submitting) return;
+      clearInlineError();
+
+      // Block submit if headshot is mid-upload
+      if (state.headshot.status === 'uploading') {
+        showInlineError('Please wait for your headshot to finish uploading.');
+        return;
+      }
+
+      var name    = $('endorser_name').value.trim();
+      var content = $('content').value.trim();
+      if (!name) { showInlineError('Please enter your name.'); return; }
+      if (content.length < 10) { showInlineError('Your endorsement is too short. Please share a bit more.'); return; }
+
+      state.submitting = true;
+      btn.disabled = true;
+      btnText.textContent = 'Submitting';
+      btn.insertBefore(makeSpinner(), btnText);
+
+      var payload = {
+        slug: slug,
+        bio_material_id: state.bioMaterialId,
+        endorser_name:        name,
+        endorser_credentials: $('endorser_credentials').value.trim(),
+        endorser_title:       $('endorser_title').value.trim(),
+        endorser_org:         $('endorser_org').value.trim(),
+        content:              content,
+        links:                collectLinks(),
+        include_on_homepage:  $('include_on_homepage').checked,
+        endorser_image_id:    state.headshot.id,
+        endorser_image_url:   state.headshot.url
+      };
+
+      fetch('/api/endorse-submit', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(function(r) {
+        return r.json().then(function(b) { return { ok: r.ok, body: b }; });
+      })
+      .then(function(res) {
+        if (!res.ok || !res.body.success) {
+          throw new Error((res.body && res.body.error) || 'Submission failed. Please try again.');
+        }
+        // Replace clinician name in success state with what server returns
+        // (in case the form-load capitalization was inaccurate).
+        if (res.body.clinician_name) {
+          $('success-clinician-name').textContent = res.body.clinician_name;
+        }
+        show(elSuccess);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      })
+      .catch(function(err) {
+        state.submitting = false;
+        btn.disabled = false;
+        var sp = btn.querySelector('.spinner');
+        if (sp) sp.remove();
+        btnText.textContent = 'Submit endorsement';
+        showInlineError(err.message || 'Submission failed. Please try again.');
+      });
+    });
+  }
+
+  function makeSpinner() {
+    var s = document.createElement('span');
+    s.className = 'spinner';
+    return s;
+  }
+
+})();
+</script>
+
+</body>
+</html>
