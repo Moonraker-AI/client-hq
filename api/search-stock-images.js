@@ -41,8 +41,8 @@ module.exports = async function(req, res) {
     // 1. Stock images: query → FTS; no query → browse (recent / asset_id order)
     if (query) {
       var searchTerms = query.toLowerCase()
-        .replace(/emdr|cbt|dbt|act|ifs/gi, 'therapy')
-        .replace(/fibromyalgia|chronic pain/gi, 'wellness health care')
+        .replace(/\b(emdr|cbt|dbt|act|ifs)\b/gi, 'therapy')
+        .replace(/\b(fibromyalgia|chronic pain)\b/gi, 'wellness health care')
         .trim();
 
       var ftsUrl = sb.url() + '/rest/v1/rpc/search_stock_images';
