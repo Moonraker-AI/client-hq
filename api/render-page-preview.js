@@ -132,21 +132,30 @@ module.exports = async function handler(req, res) {
       page.bio_material_id
         ? sb.query('bio_materials?id=eq.' + encodeURIComponent(page.bio_material_id) + '&limit=1')
         : Promise.resolve([]),
-      // Nav + footer source: all of this contact's nav-visible / footer-visible pages
+      // Nav + footer source: all of this contact's nav-visible / footer-visible pages.
+      // target_keyword is pulled so the homepage template can build a "Services
+      // we offer" section without an extra query. Per-service summaries live
+      // inside content_jsonb and would require a heavier select; the template
+      // falls back to page_name as the card label and target_keyword as a
+      // simple sub-label.
       sb.query(
         'content_pages?contact_id=eq.' + encContactId +
-        '&select=id,page_type,page_name,page_slug,nav_visible,nav_label,nav_section,nav_order,footer_visible,footer_section' +
+        '&select=id,page_type,page_name,page_slug,target_keyword,nav_visible,nav_label,nav_section,nav_order,footer_visible,footer_section' +
         '&order=nav_order.asc.nullslast,page_name.asc'
       ),
       // Bio materials list — used for nav (Our Team / individual bios sub-items)
+      // and the homepage team grid. Extra fields are cheap; render uses what
+      // it needs.
       sb.query(
         'bio_materials?contact_id=eq.' + encContactId +
         '&order=is_primary.desc,sort_order.asc.nullslast,therapist_name.asc' +
-        '&select=id,therapist_name,page_url,sort_order,is_primary'
+        '&select=id,therapist_name,therapist_credentials,headshot_url,slug,professional_bio,sort_order,is_primary,page_url'
       ),
-      // Endorsements — only loaded for bio pages, filtered to this clinician
-      // (bio_material_id matches) plus practice-level (bio_material_id is null).
-      page.page_type === 'bio'
+      // Endorsements — loaded for bio + homepage pages.
+      //   bio:      filter to this clinician's where scope is bio_only/both
+      //   homepage: filter to scope homepage_only/both
+      // Done in buildRenderData so we don't double-query.
+      (page.page_type === 'bio' || page.page_type === 'homepage')
         ? sb.query(
             'endorsements?contact_id=eq.' + encContactId +
             '&status=eq.approved' +
@@ -247,9 +256,83 @@ function buildRenderData(args) {
         return scope === 'bio_only' || scope === 'both';
       })
       .map(normalizeEndorsement);
+  } else if (page.page_type === 'homepage') {
+    // Homepage endorsements: scope homepage_only or both, ordered by
+    // homepage_sort_order then submitted_at desc as a tiebreaker.
+    pageEndorsements = endorsementsAll
+      .filter(function (e) {
+        var scope = e.display_scope || 'bio_only';
+        return scope === 'homepage_only' || scope === 'both';
+      })
+      .sort(function (a, b) {
+        var aOrder = a.homepage_sort_order;
+        var bOrder = b.homepage_sort_order;
+        if (aOrder == null && bOrder == null) return 0;
+        if (aOrder == null) return 1;
+        if (bOrder == null) return -1;
+        return aOrder - bOrder;
+      })
+      .map(normalizeEndorsement);
   }
 
-  // Booking: prefer per-clinician embed, fall back to practice-level embed,
+  // Homepage-specific context: services list, team grid, location summary.
+  // For non-home pages this just isn't used; the lookup is cheap.
+  var homeContext = null;
+  if (page.page_type === 'homepage') {
+    var services = (allPages || [])
+      .filter(function (p) { return p.page_type === 'service' && p.nav_visible; })
+      .map(function (p) {
+        return {
+          name: p.page_name || p.target_keyword || '',
+          slug: p.page_slug || '',
+          keyword: p.target_keyword || '',
+          url: p.page_slug ? ('/' + contact.slug + '/' + p.page_slug) : '#',
+        };
+      });
+
+    var team = (bioList || []).map(function (b) {
+      return {
+        id: b.id,
+        name: b.therapist_name || '',
+        credentials: b.therapist_credentials || '',
+        headshot_url: b.headshot_url || '',
+        slug: b.slug || '',
+        url: b.page_url || (b.slug ? ('/' + contact.slug + '/' + b.slug) : '#'),
+        // Bio snippet — first ~180 chars of professional_bio, clipped at a
+        // word boundary. The home grid is teaser-only; clicking goes to bio.
+        snippet: clipText(b.professional_bio || '', 180),
+        is_primary: !!b.is_primary,
+      };
+    });
+
+    homeContext = {
+      services: services,
+      services_count: services.length,
+      has_services: services.length > 0,
+      team: team,
+      team_count: team.length,
+      has_team: team.length > 0,
+      // Practice address as a single coherent location object — the template
+      // can render this as the only location, or as the "headquarters" if
+      // multi-location is added later via a locations table.
+      primary_location: {
+        line1: contact.practice_address_line1 || '',
+        line2: contact.practice_address_line2 || '',
+        city: contact.city || '',
+        state: contact.state_province || '',
+        postal_code: contact.postal_code || '',
+        country: contact.country || '',
+        full: [
+          contact.practice_address_line1,
+          contact.practice_address_line2,
+          [contact.city, contact.state_province].filter(Boolean).join(', '),
+          contact.postal_code,
+        ].filter(Boolean).join(', '),
+        has_address: !!(contact.practice_address_line1 || contact.city),
+      },
+    };
+  }
+
   // then a plain URL CTA. Template renders embed when has_embed, otherwise
   // a button to url when has_url.
   var bioEmbed = bioMaterial && bioMaterial.booking_embed;
@@ -333,9 +416,14 @@ function buildRenderData(args) {
     // Booking (bio pages — embed vs CTA fallback)
     booking: booking,
 
-    // Endorsements (bio pages — filtered to this clinician + practice-level)
+    // Endorsements (bio pages — filtered to this clinician + practice-level;
+    // homepage — filtered to scope homepage_only/both, sorted by homepage_sort_order)
     endorsements: pageEndorsements,
     has_endorsements: pageEndorsements.length > 0,
+
+    // Homepage-specific context (services, team, primary location).
+    // null on non-home pages so templates can defensively check truthy.
+    home: homeContext,
 
     // JSON-LD schema (rendered raw inside <script type="application/ld+json">)
     schema_jsonb: page.schema_jsonb || null,
@@ -647,3 +735,17 @@ function normalizeEndorsement(e) {
 }
 
 module.exports.normalizeEndorsement = normalizeEndorsement;
+
+// Word-boundary clip for teaser snippets (homepage team grid, service cards).
+// Avoids cutting words mid-syllable. Returns a plain string with trailing
+// ellipsis if the source was longer than maxLen.
+function clipText(text, maxLen) {
+  var s = String(text || '').replace(/<[^>]*>/g, '').trim();
+  if (s.length <= maxLen) return s;
+  var clipped = s.slice(0, maxLen);
+  var lastSpace = clipped.lastIndexOf(' ');
+  if (lastSpace > maxLen * 0.6) clipped = clipped.slice(0, lastSpace);
+  return clipped.replace(/[.,;:\s]+$/, '') + '\u2026';
+}
+
+module.exports.clipText = clipText;
