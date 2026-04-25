@@ -145,9 +145,10 @@ async function signUpload(req, res, contact, body, serviceKey) {
   var SB_URL = sb.url();
 
   // Insert pool row first with placeholder storage_path + hosted_url, both
-  // updated below once we know the row's id. hosted_url is NOT NULL on this
-  // table by an older constraint — we satisfy it with the predicted public
-  // URL, which the cron later overwrites with the optimized version's URL.
+  // updated below once we know the row's id. hosted_url + filename are
+  // NOT NULL on this table by older constraints; filename gets a sensible
+  // default; hosted_url placeholder is overwritten by the cron with the
+  // optimized version's URL.
   var poolRow;
   try {
     var rows = await sb.mutate('client_image_pool', 'POST', {
@@ -161,6 +162,7 @@ async function signUpload(req, res, contact, body, serviceKey) {
       status: 'pending',
       storage_path: 'pending',  // placeholder; updated below
       hosted_url: 'pending',    // placeholder; updated below
+      filename: 'endorser-headshot.' + ext,  // cron may rename based on detected format
       uploaded_by: 'endorser_form',
       metadata_json: { uploaded_via: 'endorse-headshot' },
     });
