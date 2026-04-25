@@ -35,6 +35,24 @@ var pageToken = require('./_lib/page-token');
 var rateLimit = require('./_lib/rate-limit');
 var sanitizer = require('./_lib/html-sanitizer');
 var monitor   = require('./_lib/monitor');
+var fetchT    = require('./_lib/fetch-with-timeout');
+var email     = require('./_lib/email-template');
+
+var BASE_URL = 'https://clients.moonraker.ai';
+
+// slugify: lowercase, ASCII only, hyphen-separated. Strips diacritics so
+// "André O'Brien" -> "andre-obrien", matching how bio_materials.slug works.
+function slugify(s) {
+  return String(s || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase()
+    .substring(0, 60);   // cap so the full filename never blows past disk limits
+}
 
 var LIMITS = {
   endorser_name:        200,
@@ -102,7 +120,7 @@ module.exports = async function handler(req, res) {
   try {
     contact = await sb.one(
       'contacts?id=eq.' + encodeURIComponent(contactId) +
-      '&select=id,slug,practice_name,status&limit=1'
+      '&select=id,slug,practice_name,status,email&limit=1'
     );
   } catch (e) {
     return res.status(500).json({ error: 'Lookup failed' });
@@ -222,14 +240,168 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Submission failed. Please try again.' });
   }
 
-  // Clinician notification email is sent by the cron / a separate route
-  // (Layer D). Fire-and-forget here: include the action_token in the
-  // response so the next layer can hook it. For now the endorsement is
-  // live; the clinician will see it on the next render of the bio page.
+  if (!row || !row.id) {
+    monitor.logError('endorse-submit', new Error('Insert returned no row'), {
+      client_slug: contact.slug, detail: { stage: 'insert_no_row' }
+    });
+    return res.status(500).json({ error: 'Submission failed. Please try again.' });
+  }
+
+  // ── 10. Rename + retag the headshot pool row ─────────────────────
+  // Cron processes the pool row asynchronously and reads `filename` for the
+  // EXIF ImageDescription + storage path. We patch in the human-readable
+  // filename + per-row exif_overrides AFTER the endorsement insert so the
+  // override is keyed to a real submitted endorsement, not just an upload.
+  // Pattern: <practice-slug>-<endorser-slug>-endorses-<clinician-slug>.<ext>
+  // e.g. sky-therapies-maya-lin-endorses-anna-skomorovskaia.jpg
+  if (endorserImageId) {
+    try {
+      var img = await sb.one(
+        'client_image_pool?id=eq.' + encodeURIComponent(endorserImageId) +
+        '&select=id,filename,storage_path,metadata_json,status&limit=1'
+      );
+      if (img && img.status === 'pending') {
+        // Extract extension from current filename (set during sign step)
+        var extMatch = (img.filename || '').match(/\.([a-z0-9]+)$/i);
+        var ext = extMatch ? extMatch[1].toLowerCase() : 'jpg';
+
+        var practiceSlug  = slugify(contact.practice_name) || contact.slug || 'practice';
+        var endorserSlug  = slugify(clean.endorser_name)   || 'endorser';
+        var clinicianSlug = slugify(bm.therapist_name)     || 'clinician';
+        var newFilename = practiceSlug + '-' + endorserSlug + '-endorses-' + clinicianSlug + '.' + ext;
+
+        var description = clean.endorser_name + "'s endorsement of " +
+                          (bm.therapist_name || 'a clinician') +
+                          (contact.practice_name ? ' at ' + contact.practice_name : '');
+
+        await sb.mutate('client_image_pool?id=eq.' + endorserImageId, 'PATCH', {
+          filename: newFilename,
+          title: description,
+          metadata_json: Object.assign({}, img.metadata_json || {}, {
+            endorsement_id: row.id,
+            exif_overrides: {
+              artist: clean.endorser_name,         // endorser is the photo subject
+              description: description             // human-readable EXIF ImageDescription
+            }
+          })
+        }, 'return=minimal');
+      }
+    } catch (renameErr) {
+      // Non-fatal — endorsement is already inserted; cron will still process
+      // the image with the default Practice-as-Artist EXIF.
+      monitor.logError('endorse-submit', renameErr, {
+        client_slug: contact.slug,
+        detail: { stage: 'pool_rename', endorsement_id: row.id, image_id: endorserImageId }
+      });
+    }
+  }
+
+  // ── 11. Notify the practice via Resend (best-effort) ─────────────
+  // Sent to contact.email — for multi-clinician practices that's the practice
+  // owner, who's the right gatekeeper for the edit/reject capability. We may
+  // add bio_materials.email later for direct-to-clinician routing.
+  // Failures here are non-fatal: the endorsement is live regardless.
+  sendClinicianNotification({
+    contact: contact,
+    bm: bm,
+    endorsement: row,
+    cleanContent: clean.content,
+    cleanEndorserName: clean.endorser_name,
+    cleanEndorserCredentials: clean.endorser_credentials,
+    cleanEndorserTitle: clean.endorser_title,
+    cleanEndorserOrg: clean.endorser_org,
+  }).catch(function (mailErr) {
+    monitor.logError('endorse-submit', mailErr, {
+      client_slug: contact.slug,
+      detail: { stage: 'notify_clinician', endorsement_id: row.id }
+    });
+  });
+
   return res.status(201).json({
     success: true,
-    id: row ? row.id : null,
+    id: row.id,
     practice_name: contact.practice_name || '',
     clinician_name: bm.therapist_name || ''
   });
 };
+
+// ── Notification helper ─────────────────────────────────────────────
+
+async function sendClinicianNotification(args) {
+  var contact = args.contact;
+  var bm = args.bm;
+  var endorsement = args.endorsement;
+  if (!contact || !contact.email) return;
+
+  var resendKey = process.env.RESEND_API_KEY;
+  if (!resendKey) return;  // Soft-skip in dev / misconfigured envs
+
+  // Refetch action_token — the trigger generates it during INSERT but PostgREST
+  // won't include it unless we request it. Cheaper to refetch than complicate
+  // the insert representation.
+  var fresh = await sb.one(
+    'endorsements?id=eq.' + encodeURIComponent(endorsement.id) +
+    '&select=action_token,bio_material_id&limit=1'
+  );
+  var token = fresh && fresh.action_token;
+  if (!token) return;
+
+  var bioPageUrl = BASE_URL + '/' + contact.slug;            // best-guess landing
+  var actionUrl  = BASE_URL + '/endorse-action/' + token;
+
+  var endorserDisplay = args.cleanEndorserName +
+    (args.cleanEndorserCredentials ? ', ' + args.cleanEndorserCredentials : '');
+  var endorserContext = [args.cleanEndorserTitle, args.cleanEndorserOrg]
+    .filter(Boolean).join(' at ') || '';
+
+  var clinicianFirst = (bm && bm.therapist_name || '').split(/\s+/)[0] || 'there';
+  var preview = (args.cleanContent || '').substring(0, 280) +
+                (args.cleanContent && args.cleanContent.length > 280 ? '…' : '');
+
+  var html = email.wrap({
+    headerLabel: 'Peer Endorsement',
+    content:
+      email.greeting('Hi ' + clinicianFirst) +
+      email.p('Good news. ' + args.cleanEndorserName + ' just submitted a peer endorsement for you. It\'s already live on your bio page.') +
+      email.sectionHeading('What they wrote') +
+      email.pRaw(
+        '<div style="background:#F1F8F5;border-left:3px solid #00D47E;padding:14px 18px;border-radius:6px;margin:0 0 16px;font-style:italic;color:#333F70;line-height:1.6;font-size:15px;">' +
+        email.esc(preview) +
+        '</div>'
+      ) +
+      email.pRaw(
+        '<p style="font-family:Inter,sans-serif;font-size:14px;color:#6B7599;margin:0 0 18px;">' +
+        '<strong style="color:#1E2A5E;">From:</strong> ' + email.esc(endorserDisplay) +
+        (endorserContext ? '<br><strong style="color:#1E2A5E;">Role:</strong> ' + email.esc(endorserContext) : '') +
+        '</p>'
+      ) +
+      email.cta(actionUrl, 'Review, edit details, or remove') +
+      email.p('You can fix typos in the endorser\'s name, title, or organization. The endorsement text itself stays as written, to keep it authentic.') +
+      email.divider() +
+      email.pRaw(
+        '<p style="font-family:Inter,sans-serif;font-size:13px;color:#6B7599;margin:0;">' +
+        'Want to see it in context? <a href="' + email.esc(bioPageUrl) + '" style="color:#00D47E;">Visit the practice site &rarr;</a>' +
+        '</p>'
+      ),
+    footerNoteRaw: 'You\'re receiving this because someone submitted a peer endorsement for your practice. We send these so you stay in control of what appears on your pages.',
+    year: new Date().getFullYear()
+  });
+
+  var resp = await fetchT('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: email.FROM.notifications,
+      to: [contact.email],
+      reply_to: 'support@moonraker.ai',
+      subject: args.cleanEndorserName + ' endorsed ' + (bm.therapist_name || 'your practice'),
+      html: html
+    })
+  }, 15000);
+
+  if (!resp.ok) {
+    var errText = '';
+    try { errText = await resp.text(); } catch (_) {}
+    throw new Error('Resend ' + resp.status + ': ' + String(errText).substring(0, 200));
+  }
+}
