@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{seo.title}} | {{practice.name}}</title>
+  <meta name="description" content="{{seo.description}}">
+  {{#if seo.canonical}}<link rel="canonical" href="{{seo.canonical}}">{{/if}}
+
+  {{#if design.typography.heading_font}}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family={{design.typography.heading_font}}:wght@400;500;600;700&display=swap" rel="stylesheet">
+  {{/if}}
+
+  <style>
+{{{design.css_variables}}}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: var(--font-body-size, 1rem);
+  line-height: var(--line-height, 1.65);
+  color: var(--color-body-text, #1a1a1a);
+  background: var(--color-background, #ffffff);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-heading, var(--font-body));
+  color: var(--color-heading-text, var(--color-primary, #1a1a1a));
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+h1 { font-size: var(--font-h1, 3rem); }
+h2 { font-size: var(--font-h2, 2.25rem); }
+h3 { font-size: var(--font-h3, 1.5rem); }
+h4 { font-size: 1.15rem; }
+
+p { margin-bottom: 1rem; }
+a { color: var(--color-accent, var(--color-primary)); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+img { max-width: 100%; height: auto; display: block; }
+
+.container {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.section {
+  padding: clamp(3rem, 6vw, 5rem) 0;
+}
+
+.section-eyebrow {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-accent, var(--color-primary));
+  margin-bottom: 0.65rem;
+  display: block;
+}
+
+.section-heading {
+  margin-bottom: 1rem;
+}
+
+.section-intro {
+  max-width: 620px;
+  font-size: 1.05rem;
+  color: var(--color-muted-text, #555);
+  margin-bottom: 2.25rem;
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  padding: 0.85rem 1.75rem;
+  border-radius: var(--btn-radius, 8px);
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  text-decoration: none;
+}
+.btn-primary {
+  background: var(--color-accent, var(--color-primary, #00D47E));
+  color: var(--color-on-accent, #ffffff);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  text-decoration: none;
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--color-heading-text, var(--color-primary));
+  border: 1px solid var(--color-border, rgba(0,0,0,0.15));
+}
+.btn-secondary:hover {
+  border-color: var(--color-accent, var(--color-primary));
+  text-decoration: none;
+}
+
+/* ── HERO ──────────────────────────────────────────────────── */
+
+.hero {
+  padding: clamp(3rem, 8vw, 6rem) 0 clamp(2.5rem, 6vw, 4.5rem);
+  background: var(--color-hero-bg, var(--color-background));
+  position: relative;
+  overflow: hidden;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 3.5rem;
+  align-items: center;
+}
+@media (max-width: 860px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 2rem; }
+}
+.hero-text h1 {
+  font-size: clamp(2rem, 4.5vw, 3.25rem);
+  margin-bottom: 1.1rem;
+  letter-spacing: -0.02em;
+}
+.hero-eyebrow {
+  display: inline-block;
+  background: var(--color-primary-subtle, rgba(0,212,126,0.12));
+  color: var(--color-accent, var(--color-primary, #00D47E));
+  font-weight: 600;
+  font-size: 0.72rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 100px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.85rem;
+}
+.hero-subhead {
+  font-size: 1.15rem;
+  color: var(--color-muted-text, #555);
+  max-width: 560px;
+  line-height: 1.55;
+  margin-bottom: 1.75rem;
+}
+.hero-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.hero-trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 2rem;
+  font-size: 0.85rem;
+  color: var(--color-muted-text, #666);
+}
+.hero-trust-item { display: flex; align-items: center; gap: 0.4rem; }
+.hero-trust-item::before {
+  content: '✓';
+  color: var(--color-accent, var(--color-primary, #00D47E));
+  font-weight: 700;
+}
+.hero-image {
+  border-radius: 18px;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  background: var(--color-surface-alt, #f4f4f4);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.10);
+}
+.hero-image img { width: 100%; height: 100%; object-fit: cover; }
+@media (max-width: 860px) {
+  .hero-image { aspect-ratio: 16 / 10; }
+}
+
+/* ── SERVICES ─────────────────────────────────────────────── */
+
+.services {
+  background: var(--color-surface-alt, #fafafa);
+}
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+.service-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, rgba(0,0,0,0.06));
+  border-radius: 14px;
+  padding: 1.5rem 1.5rem 1.65rem;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  min-height: 160px;
+}
+.service-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  border-color: var(--color-accent, var(--color-primary, #00D47E));
+  text-decoration: none;
+}
+.service-card-name {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: var(--color-heading-text, var(--color-primary));
+}
+.service-card-keyword {
+  font-size: 0.85rem;
+  color: var(--color-muted-text, #666);
+  flex: 1;
+  margin-bottom: 1rem;
+}
+.service-card-arrow {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-accent, var(--color-primary, #00D47E));
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.service-card:hover .service-card-arrow { gap: 0.55rem; }
+
+/* ── TEAM ─────────────────────────────────────────────────── */
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+.team-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, rgba(0,0,0,0.06));
+  border-radius: 14px;
+  padding: 1.75rem 1.5rem;
+  text-align: center;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.team-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.08);
+  border-color: var(--color-accent, var(--color-primary, #00D47E));
+  text-decoration: none;
+}
+.team-headshot {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--color-surface-alt, #f0f0f0);
+  margin: 0 auto 1.1rem;
+  overflow: hidden;
+  border: 3px solid var(--color-primary-subtle, rgba(0,212,126,0.12));
+}
+.team-headshot img { width: 100%; height: 100%; object-fit: cover; }
+.team-headshot-fallback {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.4rem; font-weight: 700;
+  color: var(--color-accent, var(--color-primary));
+  background: var(--color-primary-subtle, rgba(0,212,126,0.08));
+}
+.team-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-heading-text, var(--color-primary));
+  margin-bottom: 0.2rem;
+}
+.team-credentials {
+  font-size: 0.8rem;
+  color: var(--color-muted-text, #777);
+  margin-bottom: 0.85rem;
+  letter-spacing: 0.02em;
+}
+.team-snippet {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--color-body-text, #333);
+  margin-bottom: 1rem;
+}
+.team-link {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-accent, var(--color-primary, #00D47E));
+}
+
+/* ── ENDORSEMENTS (homepage variant) ──────────────────────── */
+
+.endorsements {
+  background: var(--color-surface-alt, #fafafa);
+}
+.endorsement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+.endorsement-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, rgba(0,0,0,0.06));
+  border-radius: 14px;
+  padding: 1.85rem;
+  display: flex;
+  flex-direction: column;
+}
+.endorsement-quote {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--color-body-text, #333);
+  margin-bottom: 1.5rem;
+  quotes: "\201C" "\201D";
+  position: relative;
+}
+.endorsement-quote::before {
+  content: open-quote;
+  font-size: 3rem;
+  font-family: Georgia, serif;
+  color: var(--color-accent, var(--color-primary, #00D47E));
+  line-height: 0.5;
+  margin-right: 0.15em;
+  vertical-align: -0.4em;
+}
+.endorser {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: auto;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border, rgba(0,0,0,0.06));
+}
+.endorser-headshot {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--color-surface-alt, #f0f0f0);
+}
+.endorser-headshot img { width: 100%; height: 100%; object-fit: cover; }
+.endorser-meta { flex: 1; min-width: 0; }
+.endorser-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--color-heading-text, var(--color-primary));
+}
+.endorser-credentials {
+  font-weight: 400;
+  color: var(--color-muted-text, #666);
+}
+.endorser-role {
+  font-size: 0.8rem;
+  color: var(--color-muted-text, #777);
+  margin-top: 0.15rem;
+}
+.verified-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-accent, var(--color-primary));
+  background: var(--color-primary-subtle, rgba(0,212,126,0.12));
+  padding: 0.1rem 0.5rem;
+  border-radius: 100px;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+.endorser-links {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+.endorser-link {
+  font-size: 0.72rem;
+  color: var(--color-muted-text, #666);
+  text-decoration: underline;
+}
+
+/* ── ABOUT TEASER ─────────────────────────────────────────── */
+
+.about-teaser {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+@media (max-width: 860px) {
+  .about-teaser { grid-template-columns: 1fr; gap: 2rem; }
+}
+.about-teaser-text h2 { margin-bottom: 1rem; }
+.about-teaser-text p { font-size: 1rem; line-height: 1.75; color: var(--color-body-text); }
+.about-teaser-image {
+  border-radius: 18px;
+  overflow: hidden;
+  aspect-ratio: 5 / 4;
+  background: var(--color-surface-alt, #f4f4f4);
+}
+.about-teaser-image img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── LOCATION ─────────────────────────────────────────────── */
+
+.location {
+  background: var(--color-surface-alt, #fafafa);
+}
+.location-block {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+@media (max-width: 860px) {
+  .location-block { grid-template-columns: 1fr; gap: 2rem; }
+}
+.location-text h2 { margin-bottom: 1rem; }
+.location-address {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--color-body-text);
+  margin-bottom: 1.25rem;
+  white-space: pre-line;
+}
+.location-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  font-size: 0.9rem;
+  color: var(--color-muted-text, #555);
+  margin-bottom: 1.5rem;
+}
+.location-meta-item { display: flex; align-items: center; gap: 0.4rem; }
+.location-map {
+  border-radius: 18px;
+  overflow: hidden;
+  aspect-ratio: 5 / 4;
+  background: var(--color-surface-alt, #f0f0f0);
+  border: 1px solid var(--color-border, rgba(0,0,0,0.06));
+}
+.location-map iframe { width: 100%; height: 100%; border: 0; }
+
+/* ── FINAL CTA BAND ───────────────────────────────────────── */
+
+.cta-band {
+  background: var(--color-primary, #141C3A);
+  color: var(--color-on-primary, #ffffff);
+  text-align: center;
+}
+.cta-band h2 {
+  color: var(--color-on-primary, #ffffff);
+  margin-bottom: 0.85rem;
+}
+.cta-band p {
+  font-size: 1.05rem;
+  color: var(--color-on-primary-muted, rgba(255,255,255,0.78));
+  max-width: 560px;
+  margin: 0 auto 1.5rem;
+}
+.cta-band .btn-primary {
+  background: var(--color-accent, #00D47E);
+  color: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+  </style>
+
+  {{#if schema_json}}
+  <script type="application/ld+json">
+{{{schema_json}}}
+  </script>
+  {{/if}}
+</head>
+<body>
+
+{{> nav}}
+
+<main>
+
+  {{!-- ── HERO ────────────────────────────────────────────────── --}}
+  <section class="hero">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-text">
+          {{#if hero.eyebrow}}<span class="hero-eyebrow">{{hero.eyebrow}}</span>{{/if}}
+          <h1>{{#if hero.heading}}{{hero.heading}}{{else}}{{practice.name}}{{/if}}</h1>
+          {{#if hero.subheading}}<p class="hero-subhead">{{hero.subheading}}</p>{{/if}}
+
+          <div class="hero-ctas">
+            {{#if cta.primary_label}}
+              <a href="{{cta.primary_href}}" class="btn btn-primary">{{cta.primary_label}}</a>
+            {{/if}}
+            {{#unless cta.primary_label}}
+              {{#if booking.has_url}}
+                <a href="{{booking.url}}" class="btn btn-primary" target="_blank" rel="noopener">Book a session</a>
+              {{/if}}
+            {{/unless}}
+            {{#if cta.secondary_label}}
+              <a href="{{cta.secondary_href}}" class="btn btn-secondary">{{cta.secondary_label}}</a>
+            {{/if}}
+            {{#unless cta.secondary_label}}
+              {{#if practice.phone}}
+                <a href="tel:{{practice.phone}}" class="btn btn-secondary">{{practice.phone}}</a>
+              {{/if}}
+            {{/unless}}
+          </div>
+
+          {{#if hero.trust_items}}
+          <div class="hero-trust">
+            {{#each hero.trust_items}}
+            <span class="hero-trust-item">{{value}}</span>
+            {{/each}}
+          </div>
+          {{/if}}
+        </div>
+
+        <div class="hero-image">
+          {{#if hero.image_url}}
+            <img src="{{hero.image_url}}" alt="{{practice.name}}" loading="eager">
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {{!-- ── SERVICES ────────────────────────────────────────────── --}}
+  {{#if home.has_services}}
+  <section class="section services">
+    <div class="container">
+      <span class="section-eyebrow">{{#if content.services_eyebrow}}{{content.services_eyebrow}}{{else}}What We Treat{{/if}}</span>
+      <h2 class="section-heading">{{#if content.services_heading}}{{content.services_heading}}{{else}}Therapy services we offer{{/if}}</h2>
+      {{#if content.services_intro}}<p class="section-intro">{{content.services_intro}}</p>{{/if}}
+      <div class="services-grid">
+        {{#each home.services}}
+        <a href="{{url}}" class="service-card">
+          <div class="service-card-name">{{name}}</div>
+          {{#if keyword}}<div class="service-card-keyword">Specialized {{keyword}} support, tailored to you.</div>{{/if}}
+          <span class="service-card-arrow">Learn more &rarr;</span>
+        </a>
+        {{/each}}
+      </div>
+    </div>
+  </section>
+  {{/if}}
+
+  {{!-- ── TEAM ────────────────────────────────────────────────── --}}
+  {{#if home.has_team}}
+  <section class="section team">
+    <div class="container">
+      <span class="section-eyebrow">{{#if content.team_eyebrow}}{{content.team_eyebrow}}{{else}}Meet the Team{{/if}}</span>
+      <h2 class="section-heading">{{#if content.team_heading}}{{content.team_heading}}{{else}}Therapists who get it{{/if}}</h2>
+      {{#if content.team_intro}}<p class="section-intro">{{content.team_intro}}</p>{{/if}}
+      <div class="team-grid">
+        {{#each home.team}}
+        <a href="{{url}}" class="team-card">
+          <div class="team-headshot">
+            {{#if headshot_url}}
+              <img src="{{headshot_url}}" alt="{{name}}{{#if credentials}}, {{credentials}}{{/if}}" loading="lazy">
+            {{/if}}
+            {{#unless headshot_url}}
+              <div class="team-headshot-fallback">{{name.[0]}}</div>
+            {{/unless}}
+          </div>
+          <div class="team-name">{{name}}</div>
+          {{#if credentials}}<div class="team-credentials">{{credentials}}</div>{{/if}}
+          {{#if snippet}}<p class="team-snippet">{{snippet}}</p>{{/if}}
+          <span class="team-link">Read full bio &rarr;</span>
+        </a>
+        {{/each}}
+      </div>
+    </div>
+  </section>
+  {{/if}}
+
+  {{!-- ── ENDORSEMENTS ────────────────────────────────────────── --}}
+  {{#if has_endorsements}}
+  <section class="section endorsements">
+    <div class="container">
+      <span class="section-eyebrow">{{#if content.endorsements_eyebrow}}{{content.endorsements_eyebrow}}{{else}}Peer Endorsements{{/if}}</span>
+      <h2 class="section-heading">{{#if content.endorsements_heading}}{{content.endorsements_heading}}{{else}}What colleagues say{{/if}}</h2>
+      {{#if content.endorsements_intro}}<p class="section-intro">{{content.endorsements_intro}}</p>{{/if}}
+      <div class="endorsement-grid">
+        {{#each endorsements}}
+        <article class="endorsement-card{{#if is_verified}} is-verified{{/if}}">
+          <p class="endorsement-quote">{{content}}</p>
+          <div class="endorser">
+            {{#if has_headshot}}
+            <div class="endorser-headshot">
+              <img src="{{endorser_headshot_url}}" alt="{{endorser_name}}" loading="lazy">
+            </div>
+            {{/if}}
+            <div class="endorser-meta">
+              <div class="endorser-name">
+                {{endorser_name}}{{#if has_credentials}}, <span class="endorser-credentials">{{endorser_credentials}}</span>{{/if}}
+                {{#if is_verified}}<span class="verified-badge" title="Identity verified">&#10003; Verified</span>{{/if}}
+              </div>
+              {{#if has_meta}}
+              <div class="endorser-role">{{endorser_title}}{{#if has_title}}{{#if has_org}}, {{/if}}{{/if}}{{endorser_org}}</div>
+              {{/if}}
+              {{#if has_links}}
+              <ul class="endorser-links">
+                {{#each links}}
+                <li><a href="{{url}}" target="_blank" rel="noopener nofollow" class="endorser-link">{{label}}</a></li>
+                {{/each}}
+              </ul>
+              {{/if}}
+            </div>
+          </div>
+        </article>
+        {{/each}}
+      </div>
+    </div>
+  </section>
+  {{/if}}
+
+  {{!-- ── ABOUT TEASER ────────────────────────────────────────── --}}
+  {{#if content.about_text}}
+  <section class="section about">
+    <div class="container">
+      <div class="about-teaser">
+        <div class="about-teaser-text">
+          <span class="section-eyebrow">{{#if content.about_eyebrow}}{{content.about_eyebrow}}{{else}}About the practice{{/if}}</span>
+          <h2>{{#if content.about_heading}}{{content.about_heading}}{{else}}Therapy that meets you where you are{{/if}}</h2>
+          <p>{{content.about_text}}</p>
+          {{#if content.about_link_label}}
+            <a href="{{content.about_link_href}}" class="btn btn-secondary" style="margin-top:1rem;">{{content.about_link_label}}</a>
+          {{/if}}
+        </div>
+        {{#if content.about_image_url}}
+        <div class="about-teaser-image">
+          <img src="{{content.about_image_url}}" alt="{{practice.name}}" loading="lazy">
+        </div>
+        {{/if}}
+      </div>
+    </div>
+  </section>
+  {{/if}}
+
+  {{!-- ── LOCATION ────────────────────────────────────────────── --}}
+  {{#if home.primary_location.has_address}}
+  <section class="section location">
+    <div class="container">
+      <div class="location-block">
+        <div class="location-text">
+          <span class="section-eyebrow">Visit Us</span>
+          <h2>{{#if content.location_heading}}{{content.location_heading}}{{else}}{{practice.city}}{{/if}}</h2>
+          <p class="location-address">{{home.primary_location.full}}</p>
+          <div class="location-meta">
+            {{#if practice.phone}}<span class="location-meta-item"><strong>Phone:</strong> <a href="tel:{{practice.phone}}">{{practice.phone}}</a></span>{{/if}}
+            {{#if practice.email}}<span class="location-meta-item"><strong>Email:</strong> <a href="mailto:{{practice.email}}">{{practice.email}}</a></span>{{/if}}
+          </div>
+          {{#if practice.gbp_url}}
+            <a href="{{practice.gbp_url}}" class="btn btn-secondary" target="_blank" rel="noopener">Get directions</a>
+          {{/if}}
+        </div>
+        <div class="location-map">
+          <iframe
+            src="https://www.google.com/maps?q={{home.primary_location.full}}&output=embed"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="{{practice.name}} location"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+  {{/if}}
+
+  {{!-- ── FINAL CTA BAND ──────────────────────────────────────── --}}
+  <section class="section cta-band">
+    <div class="container">
+      <h2>{{#if cta.band_heading}}{{cta.band_heading}}{{else}}Ready to take the next step?{{/if}}</h2>
+      <p>{{#if cta.band_subheading}}{{cta.band_subheading}}{{else}}Reach out for a brief consultation. We'll listen, answer your questions, and match you with the right clinician.{{/if}}</p>
+      {{#if cta.band_label}}
+        <a href="{{cta.band_href}}" class="btn btn-primary">{{cta.band_label}}</a>
+      {{/if}}
+      {{#unless cta.band_label}}
+        {{#if booking.has_url}}
+          <a href="{{booking.url}}" class="btn btn-primary" target="_blank" rel="noopener">Schedule a consultation</a>
+        {{/if}}
+        {{#unless booking.has_url}}
+          {{#if practice.phone}}
+            <a href="tel:{{practice.phone}}" class="btn btn-primary">Call {{practice.phone}}</a>
+          {{/if}}
+        {{/unless}}
+      {{/unless}}
+    </div>
+  </section>
+
+</main>
+
+{{> footer}}
+
+</body>
+</html>
