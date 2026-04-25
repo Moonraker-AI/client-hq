@@ -40,7 +40,9 @@ var REMOVED_STATUSES = ['existing_remove'];
 // Pages that count toward the plan cap. Discovered pages are inventory awaiting
 // triage and don't count; once the admin/client commits to keep/update/draft/new
 // they enter the highlighted set.
-var HIGHLIGHTED_STATUSES = ['existing_keep', 'existing_update', 'new', 'drafting'];
+// Statuses that count toward the budget cap. existing_keep dropped — it's
+// the default no-op state (alongside discovered) and shouldn't consume budget.
+var HIGHLIGHTED_STATUSES = ['existing_update', 'new', 'drafting'];
 
 function isUuid(s) {
   return typeof s === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
