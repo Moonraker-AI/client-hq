@@ -922,7 +922,7 @@
     '@media (prefers-reduced-motion: reduce) { .mr-up__pill::before { animation: none; } }',
     '.mr-up__remove { position: absolute; top: 0.375rem; right: 0.375rem; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(0,0,0,0.7); color: #fff; cursor: pointer; font-size: 1.05rem; line-height: 1; display: flex; align-items: center; justify-content: center; opacity: 0.85; transition: opacity 0.18s ease, background 0.18s ease; }',
     '.mr-up__tile:hover .mr-up__remove { opacity: 1; background: rgba(220,38,38,0.9); }',
-    '.mr-up__bytes { position: absolute; top: 0.5rem; left: 0.5rem; font-size: 0.7rem; color: #fff; background: rgba(0,0,0,0.55); padding: 0.125rem 0.375rem; border-radius: 4px; }',
+    '.mr-up__bytes { position: absolute; bottom: 0.5rem; left: 0.5rem; font-size: 0.7rem; color: #fff; background: rgba(0,0,0,0.55); padding: 0.125rem 0.375rem; border-radius: 4px; }',
 
     'body[data-theme="dark"] .mr-up__drop { background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.18); }',
     'body[data-theme="dark"] .mr-up__drop:hover, body[data-theme="dark"] .mr-up__drop.is-dragover { background: rgba(0,212,126,0.08); }',
