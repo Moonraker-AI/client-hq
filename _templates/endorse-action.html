@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Review your endorsement</title>
+<link rel="icon" type="image/png" href="/assets/logo.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root,[data-theme="light"]{--color-primary:#00D47E;--color-primary-hover:#00b86c;--color-primary-light:#B4EEE0;--color-primary-subtle:#DDF8F2;--color-bg:#F7FDFB;--color-surface:#FFFFFF;--color-surface-alt:#F1F8F5;--color-border:#E2E8F0;--color-border-strong:#CBD5E1;--color-heading:#1E2A5E;--color-body:#333F70;--color-muted:#6B7599;--color-navy:#141C3A;--color-success:#00D47E;--color-warning:#F59E0B;--color-danger:#EF4444}
+[data-theme="dark"]{--color-primary:#00D47E;--color-primary-hover:#00f598;--color-primary-light:#1A4A38;--color-primary-subtle:#0D2E22;--color-bg:#080F0B;--color-surface:#0E1A14;--color-surface-alt:#14241B;--color-border:#1E3530;--color-border-strong:#2F4A43;--color-heading:#E8F5EF;--color-body:#C8D8D0;--color-muted:#7A8E84;--color-navy:#0A1630}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-weight:400;color:var(--color-body);background:var(--color-bg);line-height:1.7;-webkit-font-smoothing:antialiased;}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.25s}
+h1,h2,h3,h4{font-family:'Outfit',sans-serif;font-weight:700;color:var(--color-heading);line-height:1.15}
+a{color:var(--color-primary);text-decoration:none;transition:color .2s}
+a:hover{color:var(--color-primary-hover)}
+strong{font-weight:600;color:var(--color-heading)}
+
+.theme-toggle{position:fixed;top:1.25rem;right:1.25rem;z-index:200;background:var(--color-surface);border:1px solid var(--color-border);border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.15rem;transition:all .25s;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.theme-toggle:hover{border-color:var(--color-primary)}
+
+.header{background:var(--color-navy);padding:2rem 0;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;top:-60%;right:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(0,212,126,.08) 0%,transparent 70%);pointer-events:none}
+.header-inner{max-width:1060px;margin:0 auto;padding:0 3rem;display:flex;justify-content:space-between;align-items:center}
+.header img{height:36px}
+.header-meta p{margin:0;font-size:.8125rem;color:rgba(232,245,239,.45)}
+.header-meta .name{color:#E8F5EF;font-weight:600;font-size:.9375rem}
+@media (max-width:768px){.header-inner{padding:0 1.5rem}}
+
+.container{max-width:1060px;margin:0 auto;padding:0 3rem}
+@media (max-width:768px){.container{padding:0 1.5rem}}
+
+.hero{padding:3.5rem 0 1.5rem;text-align:center}
+.badge{display:inline-block;background:var(--color-primary-subtle);color:var(--color-primary);font-weight:600;font-size:.7rem;padding:.3rem .75rem;border-radius:100px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:.75rem}
+.hero h1{font-size:2rem;margin-bottom:.5rem;letter-spacing:-0.02em}
+.hero .subtitle{color:var(--color-muted);font-size:1rem;max-width:620px;margin:0 auto;line-height:1.6}
+
+.doc-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:2.25rem;margin-bottom:1.5rem;box-shadow:0 2px 12px rgba(20,28,58,.04)}
+@media (max-width:640px){.doc-card{padding:1.5rem}}
+.doc-card h2{font-family:'Outfit',sans-serif;font-size:1.2rem;font-weight:700;color:var(--color-heading);margin-bottom:.35rem}
+.doc-card .section-hint{font-size:.875rem;color:var(--color-muted);line-height:1.55;margin-bottom:1.25rem}
+
+.notice-box{background:var(--color-primary-subtle);border-radius:10px;padding:.85rem 1.1rem;margin:0 0 1.25rem;display:flex;align-items:flex-start;gap:.65rem}
+.notice-box svg{width:18px;height:18px;flex-shrink:0;color:var(--color-primary);margin-top:.15rem}
+.notice-box p{margin:0;font-size:.85rem;color:var(--color-body);line-height:1.55}
+.notice-box strong{color:var(--color-heading)}
+
+.notice-box.is-warning{background:rgba(245,158,11,.08)}
+.notice-box.is-warning svg{color:var(--color-warning)}
+
+.quote-block{background:var(--color-surface-alt);border-left:3px solid var(--color-primary);border-radius:6px;padding:1.1rem 1.25rem;margin-bottom:1.25rem;font-style:italic;color:var(--color-body);line-height:1.6}
+
+.endorser-row{display:flex;align-items:center;gap:1rem;margin-bottom:.75rem}
+.endorser-headshot-display{width:56px;height:56px;border-radius:50%;flex-shrink:0;background:var(--color-surface-alt);overflow:hidden}
+.endorser-headshot-display img{width:100%;height:100%;object-fit:cover;display:block}
+.endorser-text{flex:1;min-width:0}
+.endorser-text .name{font-weight:600;color:var(--color-heading);font-size:.95rem}
+.endorser-text .role{font-size:.825rem;color:var(--color-muted);margin-top:.1rem}
+
+.form-group{margin-bottom:1.1rem}
+.form-group:last-child{margin-bottom:0}
+.form-group label{display:block;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);margin-bottom:.35rem}
+.form-input{width:100%;padding:.6rem .8rem;border:1px solid var(--color-border-strong);border-radius:8px;font-family:inherit;font-size:.9rem;color:var(--color-heading);background:var(--color-bg);transition:border-color .15s,box-shadow .15s;outline:none}
+.form-input:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px rgba(0,212,126,0.12)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media (max-width:600px){.form-row{grid-template-columns:1fr}}
+
+.actions-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:1.5rem;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.7rem 1.5rem;border-radius:8px;border:0;font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--color-primary);color:#fff}
+.btn-primary:hover{background:var(--color-primary-hover);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,212,126,.25)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-danger{background:transparent;color:var(--color-danger);border:1px solid rgba(239,68,68,.4)}
+.btn-danger:hover{background:rgba(239,68,68,.08);border-color:var(--color-danger)}
+.btn .spinner{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.error-banner{display:none;padding:.75rem 1rem;border-radius:8px;background:rgba(239,68,68,.08);color:var(--color-danger);font-size:.85rem;margin-bottom:1rem;line-height:1.45}
+.error-banner.show{display:block}
+.success-banner{display:none;padding:.75rem 1rem;border-radius:8px;background:var(--color-primary-subtle);color:var(--color-primary);font-size:.85rem;margin-bottom:1rem;line-height:1.45}
+.success-banner.show{display:block}
+
+.state-loading,.state-error-page{text-align:center;padding:4rem 1rem}
+.state-loading .spinner-large{width:32px;height:32px;border:3px solid var(--color-border);border-top-color:var(--color-primary);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 1rem}
+.state-loading p,.state-error-page p{color:var(--color-muted)}
+
+.state-removed{text-align:center;padding:2.5rem 1.75rem;background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;box-shadow:0 2px 12px rgba(20,28,58,.04);margin-top:2rem}
+.state-removed .icon{width:56px;height:56px;margin:0 auto 1rem;background:rgba(0,0,0,.04);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.state-removed .icon svg{width:24px;height:24px;color:var(--color-muted)}
+.state-removed h2{font-family:'Outfit',sans-serif;font-size:1.4rem;color:var(--color-heading);margin-bottom:.5rem}
+.state-removed p{color:var(--color-body);line-height:1.6;max-width:46ch;margin:0 auto}
+
+.footer{background:var(--color-navy);padding:3rem 0;text-align:center;color:rgba(232,245,239,.4);font-size:.8125rem;margin-top:3rem}
+.footer img{height:28px;margin-bottom:.75rem;opacity:.6}
+
+.is-hidden{display:none !important}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" aria-label="Toggle theme" onclick="toggleTheme()">&#x1F319;</button>
+
+<div class="header">
+  <div class="header-inner">
+    <a href="https://moonraker.ai"><img src="/assets/logo.png" alt="Moonraker"></a>
+    <div class="header-meta">
+      <p class="name">Endorsement Review</p>
+      <p>Verified by Moonraker AI</p>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="state-loading" id="state-loading">
+    <div class="spinner-large"></div>
+    <p>Loading.</p>
+  </div>
+
+  <div class="state-error-page is-hidden" id="state-error-page">
+    <div class="hero">
+      <span class="badge">Link Issue</span>
+      <h1>Link not found</h1>
+      <p class="subtitle" id="error-page-msg">This link is no longer valid.</p>
+    </div>
+  </div>
+
+  <div id="state-form" class="is-hidden">
+    <div class="hero">
+      <span class="badge">Endorsement Review</span>
+      <h1 id="hero-heading">Review your endorsement</h1>
+      <p class="subtitle">Fix any typos in the endorser's details, or remove the endorsement if you'd rather it not appear.</p>
+    </div>
+
+    <div class="error-banner" id="error-banner"></div>
+    <div class="success-banner" id="success-banner"></div>
+
+    <div class="doc-card">
+      <h2>The endorsement</h2>
+      <p class="section-hint">This is what was submitted. The text itself is locked to keep it authentic.</p>
+      <div class="quote-block" id="quote-display"></div>
+      <div class="endorser-row">
+        <div class="endorser-headshot-display" id="endorser-headshot-display"></div>
+        <div class="endorser-text">
+          <div class="name" id="endorser-display-name"></div>
+          <div class="role" id="endorser-display-role"></div>
+        </div>
+      </div>
+    </div>
+
+    <form id="edit-form">
+      <div class="doc-card">
+        <h2>Edit details</h2>
+        <p class="section-hint">Fix typos in the endorser's name, credentials, title, or organization. Save your changes when you're done.</p>
+
+        <div class="form-group">
+          <label for="endorser_name">Endorser name</label>
+          <input class="form-input" type="text" id="endorser_name" maxlength="200">
+        </div>
+
+        <div class="form-group">
+          <label for="endorser_credentials">Credentials</label>
+          <input class="form-input" type="text" id="endorser_credentials" maxlength="200">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="endorser_title">Title</label>
+            <input class="form-input" type="text" id="endorser_title" maxlength="200">
+          </div>
+          <div class="form-group">
+            <label for="endorser_org">Organization</label>
+            <input class="form-input" type="text" id="endorser_org" maxlength="200">
+          </div>
+        </div>
+
+        <div class="actions-row">
+          <button type="button" class="btn btn-danger" id="reject-btn">Remove this endorsement</button>
+          <button type="submit" class="btn btn-primary" id="save-btn">
+            <span class="btn-text">Save changes</span>
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <div class="doc-card">
+      <div class="notice-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        <p><strong>Why can't I edit the endorsement text?</strong> The endorser's words are locked to preserve trust. If something in the text is genuinely wrong, removing the endorsement and asking the endorser to resubmit is the right path.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="state-removed is-hidden" id="state-removed">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"></path><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"></path></svg>
+    </div>
+    <h2>Endorsement removed</h2>
+    <p>The endorsement is no longer visible on your bio page or homepage. If you'd like to bring it back, contact <a href="mailto:support@moonraker.ai">support@moonraker.ai</a>.</p>
+  </div>
+
+</div>
+
+<footer class="footer"><div class="container"><img src="/assets/logo.png" alt="Moonraker"><br>moonraker.ai</div></footer>
+
+<script>
+window.toggleTheme = function() {
+  var curr = document.documentElement.getAttribute('data-theme') || 'light';
+  var next = curr === 'light' ? 'dark' : 'light';
+  if (document.startViewTransition) {
+    document.startViewTransition(function() {
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('moonraker-theme', next); } catch (e) {}
+    });
+  } else {
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('moonraker-theme', next); } catch (e) {}
+  }
+};
+
+(function() {
+  'use strict';
+
+  var $ = function(id) { return document.getElementById(id); };
+
+  var elLoading      = $('state-loading');
+  var elErrorPage    = $('state-error-page');
+  var elErrorPageMsg = $('error-page-msg');
+  var elForm         = $('state-form');
+  var elRemoved      = $('state-removed');
+  var elErrorBanner  = $('error-banner');
+  var elSuccessBanner= $('success-banner');
+
+  function show(elShow) {
+    [elLoading, elErrorPage, elForm, elRemoved].forEach(function(e) {
+      if (!e) return;
+      if (e === elShow) e.classList.remove('is-hidden');
+      else e.classList.add('is-hidden');
+    });
+  }
+  function showErrorPage(msg) {
+    if (elErrorPageMsg) elErrorPageMsg.textContent = msg || 'This link is no longer valid.';
+    show(elErrorPage);
+  }
+  function showInlineError(msg) {
+    elSuccessBanner.classList.remove('show');
+    elErrorBanner.textContent = msg;
+    elErrorBanner.classList.add('show');
+    elErrorBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function showInlineSuccess(msg) {
+    elErrorBanner.classList.remove('show');
+    elSuccessBanner.textContent = msg;
+    elSuccessBanner.classList.add('show');
+    setTimeout(function(){ elSuccessBanner.classList.remove('show'); }, 4000);
+  }
+
+  // ── URL parsing: /endorse-action/<token> ────────────────────
+  var pathParts = window.location.pathname.replace(/^\/+|\/+$/g,'').split('/');
+  var token = '';
+  if (pathParts[0] === 'endorse-action' && pathParts[1]) token = pathParts[1];
+  if (!/^[0-9a-f]{64}$/i.test(token)) {
+    showErrorPage('This link looks incomplete or has been tampered with.');
+    return;
+  }
+
+  var state = { endorsement: null, clinician: null, practice: null };
+
+  // ── Load endorsement ────────────────────────────────────────
+  fetch('/api/endorse-action?token=' + encodeURIComponent(token), {
+    credentials: 'same-origin'
+  })
+  .then(function(r) { return r.json().then(function(b) { return { ok: r.ok, status: r.status, body: b }; }); })
+  .then(function(res) {
+    if (!res.ok || !res.body || !res.body.ok) {
+      var msg = (res.body && res.body.error) || 'This link is no longer valid.';
+      if (res.status === 404) msg = 'This endorsement is no longer accessible. It may have already been removed.';
+      showErrorPage(msg);
+      return;
+    }
+    state.endorsement = res.body.endorsement;
+    state.clinician   = res.body.clinician;
+    state.practice    = res.body.practice;
+
+    if (state.endorsement.status === 'rejected') {
+      show(elRemoved);
+      return;
+    }
+
+    populateForm();
+    show(elForm);
+  })
+  .catch(function() {
+    showErrorPage('Could not load this endorsement. Please check your connection and try again.');
+  });
+
+  function populateForm() {
+    var e = state.endorsement;
+    var c = state.clinician;
+
+    document.title = 'Review endorsement';
+    if (c && c.name) {
+      $('hero-heading').textContent = 'Review the endorsement for ' + c.name;
+      document.title = 'Endorsement for ' + c.name;
+    }
+
+    $('quote-display').textContent = e.content;
+
+    if (e.endorser_headshot_url) {
+      $('endorser-headshot-display').innerHTML = '<img src="' + e.endorser_headshot_url + '" alt="">';
+    }
+
+    var displayName = e.endorser_name + (e.endorser_credentials ? ', ' + e.endorser_credentials : '');
+    $('endorser-display-name').textContent = displayName;
+
+    var roleParts = [e.endorser_title, e.endorser_org].filter(function(s) { return s; });
+    $('endorser-display-role').textContent = roleParts.join(' at ');
+
+    $('endorser_name').value        = e.endorser_name        || '';
+    $('endorser_credentials').value = e.endorser_credentials || '';
+    $('endorser_title').value       = e.endorser_title       || '';
+    $('endorser_org').value         = e.endorser_org         || '';
+  }
+
+  // ── Save (edit) ─────────────────────────────────────────────
+  var saveBtn = $('save-btn');
+  var saveBtnText = saveBtn.querySelector('.btn-text');
+
+  $('edit-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    elErrorBanner.classList.remove('show');
+    elSuccessBanner.classList.remove('show');
+
+    var name = $('endorser_name').value.trim();
+    if (!name) { showInlineError('Endorser name cannot be empty.'); return; }
+
+    saveBtn.disabled = true;
+    saveBtnText.textContent = 'Saving';
+    var sp = document.createElement('span');
+    sp.className = 'spinner';
+    saveBtn.insertBefore(sp, saveBtnText);
+
+    var payload = {
+      token: token,
+      op: 'edit',
+      endorser_name:        name,
+      endorser_credentials: $('endorser_credentials').value.trim(),
+      endorser_title:       $('endorser_title').value.trim(),
+      endorser_org:         $('endorser_org').value.trim()
+    };
+
+    fetch('/api/endorse-action', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(function(r) { return r.json().then(function(b) { return { ok: r.ok, body: b }; }); })
+    .then(function(res) {
+      if (!res.ok || !res.body.ok) throw new Error((res.body && res.body.error) || 'Could not save changes.');
+      // Update local state to match
+      state.endorsement.endorser_name        = payload.endorser_name;
+      state.endorsement.endorser_credentials = payload.endorser_credentials;
+      state.endorsement.endorser_title       = payload.endorser_title;
+      state.endorsement.endorser_org         = payload.endorser_org;
+      populateForm();
+      var changed = (res.body.changed && res.body.changed.length) || 0;
+      showInlineSuccess(changed > 0 ? 'Saved.' : 'Nothing to update.');
+    })
+    .catch(function(err) {
+      showInlineError(err.message || 'Could not save changes.');
+    })
+    .finally(function() {
+      saveBtn.disabled = false;
+      var s = saveBtn.querySelector('.spinner');
+      if (s) s.remove();
+      saveBtnText.textContent = 'Save changes';
+    });
+  });
+
+  // ── Reject ──────────────────────────────────────────────────
+  $('reject-btn').addEventListener('click', function() {
+    var clinName = (state.clinician && state.clinician.name) || 'this clinician';
+    var ok = window.confirm(
+      'Remove this endorsement?\n\nIt will no longer appear on ' + clinName + "'s bio page or the practice homepage. " +
+      'This cannot be undone from this email link, contact support if you change your mind.'
+    );
+    if (!ok) return;
+
+    var btn = $('reject-btn');
+    btn.disabled = true;
+    btn.textContent = 'Removing.';
+
+    fetch('/api/endorse-action', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: token, op: 'reject' })
+    })
+    .then(function(r) { return r.json().then(function(b) { return { ok: r.ok, body: b }; }); })
+    .then(function(res) {
+      if (!res.ok || !res.body.ok) throw new Error((res.body && res.body.error) || 'Could not remove the endorsement.');
+      show(elRemoved);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = 'Remove this endorsement';
+      showInlineError(err.message || 'Could not remove the endorsement.');
+    });
+  });
+
+})();
+</script>
+
+</body>
+</html>
