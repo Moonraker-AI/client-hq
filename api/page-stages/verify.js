@@ -53,8 +53,11 @@ async function runHandler(req, res) {
       gate: { status: gateStatus, blocking_findings: blocking }
     });
   } catch (e) {
-    if (e.code === 'STATUS_MISMATCH') {
-      return res.status(409).json({ error: e.message });
+    if (e.code === 'STATUS_MISMATCH' || e.code === 'CONTRACT_REQUIRED') {
+      return res.status(409).json({ error: e.message, code: e.code });
+    }
+    if (e.code === 'STAGE_NOT_APPLICABLE') {
+      return res.status(400).json({ error: e.message, code: e.code });
     }
     console.error('[page-stages/verify]', e.message);
     return res.status(500).json({ error: 'Verify run failed', detail: e.message });
