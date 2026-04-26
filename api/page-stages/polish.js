@@ -1,5 +1,5 @@
-// /api/page-stages/polish.js — audit stage entry point.
-// POST                              — run the audit stage on a content_page.
+// /api/page-stages/polish.js — polish stage entry point.
+// POST                              — run the polish stage on a content_page.
 // PATCH ?run_id=...&action=accept   — accept a completed run.
 //
 // Auth: admin JWT (admin UI) or CRON_SECRET (chain orchestrator / internal).
