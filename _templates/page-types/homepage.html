@@ -180,6 +180,120 @@ img { max-width: 100%; height: auto; display: block; }
   .hero-image { aspect-ratio: 16 / 10; }
 }
 
+/* ── EMPATHY LEAD ─────────────────────────────────────────── */
+/* Soft, centered "we get it" section — fills the gap between
+   hero (action) and services (substance) so the page feels
+   warm rather than transactional. */
+
+.empathy {
+  background: var(--color-surface-alt, #fafafa);
+  text-align: center;
+}
+.empathy-inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.empathy h2 {
+  margin-bottom: 1.25rem;
+  font-size: clamp(1.6rem, 3.5vw, 2.25rem);
+  letter-spacing: -0.015em;
+}
+.empathy-lead {
+  font-size: 1.1rem;
+  line-height: 1.75;
+  color: var(--color-body-text, #333);
+  margin-bottom: 1.25rem;
+}
+.empathy-lead:last-child { margin-bottom: 0; }
+.empathy-divider {
+  width: 60px;
+  height: 3px;
+  background: var(--color-accent, var(--color-primary, #00D47E));
+  border-radius: 2px;
+  margin: 0 auto 1.75rem;
+  opacity: 0.85;
+}
+
+/* ── PROCESS / HOW IT WORKS ──────────────────────────────── */
+/* Numbered steps — high-conversion pattern for therapy sites.
+   Three to four steps, horizontal on desktop, stacked on mobile. */
+
+.process-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  position: relative;
+}
+.process-step {
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, rgba(0,0,0,0.06));
+  border-radius: 14px;
+  padding: 2rem 1.5rem 1.75rem;
+  position: relative;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.process-step:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+}
+.process-step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--color-primary-subtle, rgba(0,212,126,0.12));
+  color: var(--color-accent, var(--color-primary, #00D47E));
+  font-weight: 700;
+  font-size: 1.15rem;
+  font-family: var(--font-heading, var(--font-body));
+  margin-bottom: 1rem;
+}
+.process-step h3 {
+  font-size: 1.15rem;
+  margin-bottom: 0.5rem;
+}
+.process-step-body {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--color-body-text, #444);
+}
+
+/* ── WHY US / VALUES ──────────────────────────────────────── */
+/* Soft-sell trust block before final CTA. Icon + heading + 1 line. */
+
+.values {
+  background: var(--color-surface-alt, #fafafa);
+}
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+.value-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.value-icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  background: var(--color-primary-subtle, rgba(0,212,126,0.12));
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-accent, var(--color-primary, #00D47E));
+}
+.value-icon svg { width: 22px; height: 22px; }
+.value-item h3 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.value-item p {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--color-body-text, #555);
+  margin: 0;
+}
+
 /* ── SERVICES ─────────────────────────────────────────────── */
 
 .services {
@@ -534,6 +648,21 @@ img { max-width: 100%; height: auto; display: block; }
     </div>
   </section>
 
+  <!-- ── EMPATHY LEAD ──────────────────────────────────────── -->
+  {{#if content.empathy.heading}}
+  <section class="section empathy">
+    <div class="container">
+      <div class="empathy-inner">
+        <div class="empathy-divider"></div>
+        <h2>{{content.empathy.heading}}</h2>
+        {{#each content.empathy.paragraphs}}
+        <p class="empathy-lead">{{value}}</p>
+        {{/each}}
+      </div>
+    </div>
+  </section>
+  {{/if}}
+
   <!-- ── SERVICES ────────────────────────────────────────────── -->
   {{#if home.has_services}}
   <section class="section services">
@@ -647,6 +776,27 @@ img { max-width: 100%; height: auto; display: block; }
   </section>
   {{/if}}
 
+  <!-- ── PROCESS / HOW IT WORKS ────────────────────────────── -->
+  {{#if content.process.steps}}
+  <section class="section process">
+    <div class="container">
+      {{#if content.process.eyebrow}}<span class="section-eyebrow">{{content.process.eyebrow}}</span>{{/if}}
+      {{#unless content.process.eyebrow}}<span class="section-eyebrow">How it works</span>{{/unless}}
+      <h2 class="section-heading">{{#if content.process.heading}}{{content.process.heading}}{{/if}}{{#unless content.process.heading}}How to get started{{/unless}}</h2>
+      {{#if content.process.intro}}<p class="section-intro">{{content.process.intro}}</p>{{/if}}
+      <div class="process-steps">
+        {{#each content.process.steps}}
+        <div class="process-step">
+          <div class="process-step-number">{{number}}</div>
+          <h3>{{title}}</h3>
+          <p class="process-step-body">{{body}}</p>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+  </section>
+  {{/if}}
+
   <!-- ── LOCATION ────────────────────────────────────────────── -->
   {{#if home.primary_location.has_address}}
   <section class="section location">
@@ -671,6 +821,35 @@ img { max-width: 100%; height: auto; display: block; }
             referrerpolicy="no-referrer-when-downgrade"
             title="{{practice.name}} location"></iframe>
         </div>
+      </div>
+    </div>
+  </section>
+  {{/if}}
+
+  <!-- ── VALUES / WHY US ───────────────────────────────────── -->
+  {{#if content.values.items}}
+  <section class="section values">
+    <div class="container">
+      {{#if content.values.eyebrow}}<span class="section-eyebrow">{{content.values.eyebrow}}</span>{{/if}}
+      {{#unless content.values.eyebrow}}<span class="section-eyebrow">Why work with us</span>{{/unless}}
+      <h2 class="section-heading">{{#if content.values.heading}}{{content.values.heading}}{{/if}}{{#unless content.values.heading}}What sets us apart{{/unless}}</h2>
+      {{#if content.values.intro}}<p class="section-intro">{{content.values.intro}}</p>{{/if}}
+      <div class="values-grid">
+        {{#each content.values.items}}
+        <div class="value-item">
+          <div class="value-icon">
+            {{#if icon_heart}}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>{{/if}}
+            {{#if icon_shield}}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>{{/if}}
+            {{#if icon_users}}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>{{/if}}
+            {{#if icon_clock}}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>{{/if}}
+            {{#if icon_book}}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>{{/if}}
+            {{#if icon_compass}}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>{{/if}}
+            {{#if icon_default}}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{/if}}
+          </div>
+          <h3>{{title}}</h3>
+          {{#if body}}<p>{{body}}</p>{{/if}}
+        </div>
+        {{/each}}
       </div>
     </div>
   </section>
