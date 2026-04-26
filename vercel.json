@@ -249,10 +249,6 @@
     "api/design-audit.js": {
       "maxDuration": 75,
       "memory": 512
-    },
-    "api/audit-trigger.js": {
-      "maxDuration": 75,
-      "memory": 512
     }
   },
   "crons": [
