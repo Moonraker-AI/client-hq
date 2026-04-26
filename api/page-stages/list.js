@@ -114,7 +114,10 @@ module.exports = async function handler(req, res) {
         if (source && source.findings_summary) {
           var fs = source.findings_summary;
           if (Array.isArray(fs.clarifying_questions)) {
-            clarifyingQuestions = fs.clarifying_questions.length;
+            // Only count questions the operator hasn't acknowledged yet.
+            clarifyingQuestions = fs.clarifying_questions.filter(function(q) {
+              return q && !q.acknowledged_at;
+            }).length;
             clarifyingTotal += clarifyingQuestions;
           }
           if (s === 'verify' && fs.counts) {
@@ -198,21 +201,20 @@ function deriveUiState(page, stage, latest, accepted) {
   if (latest.run_status === 'running') return 'running';
   if (latest.run_status === 'failed' || latest.run_status === 'timeout') return 'failed';
   if (latest.run_status === 'complete' && !latest.accepted_at && !latest.rejected_at) {
-    // Distinguish "review" from "questions": questions take priority visually.
-    var fs = latest.findings_summary || {};
-    if (Array.isArray(fs.clarifying_questions) && fs.clarifying_questions.length > 0) {
-      return 'questions';
-    }
+    if (hasUnacknowledgedQuestions(latest)) return 'questions';
     return 'review';
   }
   if (accepted) {
-    var fs2 = accepted.findings_summary || {};
-    if (Array.isArray(fs2.clarifying_questions) && fs2.clarifying_questions.length > 0) {
-      return 'questions';
-    }
+    if (hasUnacknowledgedQuestions(accepted)) return 'questions';
     return 'accepted';
   }
   return 'pending';
+}
+
+function hasUnacknowledgedQuestions(run) {
+  var fs = (run && run.findings_summary) || {};
+  if (!Array.isArray(fs.clarifying_questions)) return false;
+  return fs.clarifying_questions.some(function(q) { return q && !q.acknowledged_at; });
 }
 
 // Statuses that indicate the page is somewhere in the chain (not pre-chain or post-delivery).
