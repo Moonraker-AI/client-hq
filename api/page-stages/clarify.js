@@ -1,6 +1,8 @@
-// /api/page-stages/clarify.js — audit stage entry point.
-// POST                              — run the audit stage on a content_page.
-// PATCH ?run_id=...&action=accept   — accept a completed run.
+// /api/page-stages/clarify.js — clarify stage entry point.
+// POST                              — run the clarify stage on a content_page.
+// PATCH ?run_id=...&action=accept   — accept a completed run; auto-fires
+//                                     verify gate (homepage → ready_for_contract,
+//                                     subsequent → ready_for_client).
 //
 // Auth: admin JWT (admin UI) or CRON_SECRET (chain orchestrator / internal).
 // See api/_lib/page-stage.js for the underlying logic.
@@ -31,7 +33,7 @@ async function runHandler(req, res) {
       contentPageId: contentPageId,
       operatorNotes: body.operator_notes,
       operatorId: req.user && req.user.sub,
-      previewUrl: body.preview_url,            // optional: detector target URL
+      previewUrl: body.preview_url,
       baseUrl: getBaseUrl(req),
       cronSecret: process.env.CRON_SECRET,
       viewportWidth: body.viewport_width,
@@ -55,7 +57,16 @@ async function acceptHandler(req, res) {
   if (action !== 'accept') return res.status(400).json({ error: 'unsupported action' });
 
   try {
-    var accepted = await pageStage.acceptRun(runId);
+    // Forward verify context — accept of clarify auto-fires the verify gate.
+    var accepted = await pageStage.acceptRun(runId, {
+      operatorId: req.user && req.user.sub,
+      previewUrl: (req.body && req.body.preview_url) || (req.query && req.query.preview_url),
+      baseUrl: getBaseUrl(req),
+      cronSecret: process.env.CRON_SECRET,
+      viewportWidth: req.body && req.body.viewport_width,
+      viewportHeight: req.body && req.body.viewport_height,
+      autoVerify: !(req.body && req.body.skip_auto_verify === true)
+    });
     return res.status(200).json({ success: true, run: accepted });
   } catch (e) {
     console.error('[page-stages/clarify accept]', e.message);
