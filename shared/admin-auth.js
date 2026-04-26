@@ -22,6 +22,20 @@
   var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
   var STORAGE_KEY = 'sb-ofmmwcjhdrhvxxkhcuww-auth-token';
 
+  // Build the login URL preserving the current path as ?return_to so deep
+  // links survive a login bounce. Skip when already at /admin/login or when
+  // the current path is just /admin (the default post-login destination).
+  function _loginUrl() {
+    try {
+      var here = window.location.pathname + window.location.search;
+      if (here.indexOf('/admin/login') === 0) return '/admin/login';
+      if (here === '/admin' || here === '/admin/') return '/admin/login';
+      return '/admin/login?return_to=' + encodeURIComponent(here);
+    } catch (e) {
+      return '/admin/login';
+    }
+  }
+
   // ── Step 1: Synchronous token read from localStorage ───────────
   // Only redirect if there is NO stored session at all (no refresh token).
   // If the access token is expired but a session exists, let the async
@@ -46,7 +60,7 @@
 
   // Only redirect if there is truly nothing to work with
   if (!_hasStoredSession) {
-    window.location.href = '/admin/login';
+    window.location.href = _loginUrl();
     document.documentElement.style.display = 'none';
   }
 
@@ -173,7 +187,7 @@
     try {
       fetch('/api/auth/session', { method: 'DELETE', credentials: 'same-origin' }).catch(function() {});
     } catch (_) {}
-    window.location.href = '/admin/login';
+    window.location.href = _loginUrl();
   }
 
   // Mirror the current Supabase access token into the mr_admin_sess HttpOnly
