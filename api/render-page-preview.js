@@ -83,8 +83,10 @@ module.exports = async function handler(req, res) {
       page = await sb.one('content_pages?id=eq.' + encodeURIComponent(pageId) + '&limit=1');
     } else if (slug && pagePath) {
       // Public path: page token gate
-      var tokenData = pageToken.getTokenFromRequest(req, 'content_preview');
-      if (!tokenData) return res.status(401).json({ error: 'Token required' });
+      var rawToken = pageToken.getTokenFromRequest(req, 'content_preview');
+      if (!rawToken) return res.status(401).json({ error: 'Token required' });
+      var tokenData = pageToken.verify(rawToken, 'content_preview');
+      if (!tokenData) return res.status(401).json({ error: 'Invalid or expired token' });
       authMode = 'public';
       // Slug + path lookup
       var encSlug = encodeURIComponent(slug);
