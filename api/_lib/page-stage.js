@@ -574,7 +574,40 @@ async function acceptRun(runId, opts) {
     );
   }
 
-  return accepted && accepted[0] ? accepted[0] : run;
+  var result = accepted && accepted[0] ? accepted[0] : run;
+
+  // Auto-fire the verify gate when clarify is accepted. This closes the
+  // chain loop: admin accepts the final rewriting stage, the deterministic
+  // detector runs, and the gate verdict is ready for the admin's next
+  // action without a separate click. Failures are non-fatal: the verify
+  // run is logged, but admin sees a status='clarified' page in the UI
+  // and can manually rerun verify if needed.
+  if (run.stage === 'clarify' && opts && opts.autoVerify !== false) {
+    try {
+      var verifyRun = await runStage('verify', {
+        contentPageId: run.content_page_id,
+        operatorNotes: 'Auto-triggered after clarify acceptance',
+        operatorId: opts && opts.operatorId,
+        previewUrl: opts && opts.previewUrl,
+        baseUrl: opts && opts.baseUrl,
+        cronSecret: opts && opts.cronSecret,
+        viewportWidth: opts && opts.viewportWidth,
+        viewportHeight: opts && opts.viewportHeight
+      });
+      result.auto_verify_run = verifyRun;
+    } catch (verifyErr) {
+      // Don't fail the clarify accept just because verify couldn't run.
+      // Common reasons: no preview_url provided, detector unreachable.
+      // Admin can manually trigger via POST /api/page-stages/verify.
+      monitor.warn('page-stage:auto-verify', verifyErr.message, {
+        content_page_id: run.content_page_id,
+        clarify_run_id: runId
+      });
+      result.auto_verify_error = verifyErr.message;
+    }
+  }
+
+  return result;
 }
 
 function severityToP(severity) {
