@@ -122,6 +122,24 @@ img { max-width: 100%; height: auto; display: block; }
   gap: 3.5rem;
   align-items: center;
 }
+.hero-grid.no-image {
+  /* Single-column, centered text, narrower max-width so the line lengths
+     stay readable when there's no image to balance against. The hero
+     section itself already provides ample vertical breathing room; we
+     just collapse the right column entirely. */
+  grid-template-columns: 1fr;
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+}
+.hero-grid.no-image .hero-subhead { margin-left: auto; margin-right: auto; }
+.hero-grid.no-image .hero-ctas    { justify-content: center; }
+.hero-grid.no-image .hero-trust   { justify-content: center; }
+.hero-grid.has-image .hero-image img.is-clinician-portrait,
+.hero-grid.has-image .hero-image .clinician-portrait-frame {
+  /* Reserved for if/when we want a different treatment for clinician vs
+     practice-photography hero images — kept as a hook, currently unused. */
+}
 @media (max-width: 860px) {
   .hero-grid { grid-template-columns: 1fr; gap: 2rem; }
 }
@@ -376,14 +394,24 @@ img { max-width: 100%; height: auto; display: block; }
   margin: 0 auto 1.1rem;
   overflow: hidden;
   border: 3px solid var(--color-primary-subtle, rgba(0,212,126,0.12));
+  position: relative;
 }
 .team-headshot img { width: 100%; height: 100%; object-fit: cover; }
 .team-headshot-fallback {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 2.4rem; font-weight: 700;
-  color: var(--color-accent, var(--color-primary));
-  background: var(--color-primary-subtle, rgba(0,212,126,0.08));
+  font-family: var(--font-heading, var(--font-body));
+  font-size: 2.6rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  /* Subtle two-stop gradient using the brand accent — gives the fallback
+     a feeling of intent rather than "image failed to load". */
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-subtle, rgba(0,212,126,0.18)) 0%,
+    var(--color-surface-alt, rgba(0,212,126,0.04)) 100%
+  );
+  color: var(--color-accent, var(--color-primary, #00D47E));
 }
 .team-name {
   font-size: 1.1rem;
@@ -507,6 +535,29 @@ img { max-width: 100%; height: auto; display: block; }
   gap: 3rem;
   align-items: center;
 }
+.about-teaser.no-image {
+  /* Founder-note pattern: centered text, narrower max-width, leading
+     quote mark to give it visual weight without an image. */
+  grid-template-columns: 1fr;
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+.about-teaser.no-image::before {
+  content: '\201C';
+  display: block;
+  font-family: Georgia, serif;
+  font-size: 5rem;
+  line-height: 0.5;
+  color: var(--color-accent, var(--color-primary, #00D47E));
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+.about-teaser.no-image .about-teaser-text p {
+  font-size: 1.15rem;
+  line-height: 1.8;
+}
 @media (max-width: 860px) {
   .about-teaser { grid-template-columns: 1fr; gap: 2rem; }
 }
@@ -605,7 +656,7 @@ img { max-width: 100%; height: auto; display: block; }
   <!-- ── HERO ────────────────────────────────────────────────── -->
   <section class="hero">
     <div class="container">
-      <div class="hero-grid">
+      <div class="hero-grid {{#if hero.has_image}}has-image{{/if}}{{#unless hero.has_image}}no-image{{/unless}}">
         <div class="hero-text">
           {{#if hero.eyebrow}}<span class="hero-eyebrow">{{hero.eyebrow}}</span>{{/if}}
           <h1>{{#if hero.heading}}{{hero.heading}}{{/if}}{{#unless hero.heading}}{{practice.name}}{{/unless}}</h1>
@@ -639,11 +690,11 @@ img { max-width: 100%; height: auto; display: block; }
           {{/if}}
         </div>
 
+        {{#if hero.has_image}}
         <div class="hero-image">
-          {{#if hero.image_url}}
-            <img src="{{hero.image_url}}" alt="{{practice.name}}" loading="eager">
-          {{/if}}
+          <img src="{{hero.image_url}}" alt="{{#if hero.image_alt}}{{hero.image_alt}}{{/if}}{{#unless hero.image_alt}}{{practice.name}}{{/unless}}" loading="eager">
         </div>
+        {{/if}}
       </div>
     </div>
   </section>
@@ -757,7 +808,7 @@ img { max-width: 100%; height: auto; display: block; }
   {{#if content.about_text}}
   <section class="section about">
     <div class="container">
-      <div class="about-teaser">
+      <div class="about-teaser {{#if content.about_image_url}}has-image{{/if}}{{#unless content.about_image_url}}no-image{{/unless}}">
         <div class="about-teaser-text">
           <span class="section-eyebrow">{{#if content.about_eyebrow}}{{content.about_eyebrow}}{{/if}}{{#unless content.about_eyebrow}}About the practice{{/unless}}</span>
           <h2>{{#if content.about_heading}}{{content.about_heading}}{{/if}}{{#unless content.about_heading}}Therapy that meets you where you are{{/unless}}</h2>
