@@ -57,7 +57,18 @@ async function snapshot(runId, opts) {
     if (Object.keys(patch).length === 0) return;
     await sb.mutate('cron_runs?id=eq.' + runId, 'PATCH', patch, 'return=minimal');
   } catch (e) {
-    console.error('cron-runs.snapshot failed: ' + (e && e.message ? e.message : ''));
+    // 2026-04-26: log full diagnostic. Previous catch printed only e.message,
+    // which was empty when fetches died on lambda freeze (the fire-and-forget
+    // IIFE outlived the response). Include name/status/detail so any future
+    // failure surfaces something useful in stdout.
+    var bits = [];
+    if (e && e.name) bits.push('name=' + e.name);
+    if (e && e.message) bits.push('msg=' + String(e.message).substring(0, 240));
+    else bits.push('msg=<empty>');
+    if (e && e.status) bits.push('http=' + e.status);
+    if (e && e.code) bits.push('code=' + e.code);
+    if (e && e.cause && e.cause.code) bits.push('causeCode=' + e.cause.code);
+    console.error('cron-runs.snapshot failed: ' + bits.join(' '));
   }
 }
 
@@ -140,6 +151,19 @@ function withTracking(name, innerHandler) {
       await innerHandler(req, res);
     } catch (e) {
       capturedErr = e;
+    }
+
+    // 2026-04-26: if the handler kicked off a parallel snapshot promise via
+    // req._snapshotPromise (Pattern B in cron snapshot rewrite), wait for it
+    // to settle BEFORE we flush the response. Previously snapshots were
+    // fire-and-forget, which meant they'd lose their in-flight Supabase fetch
+    // when the lambda froze right after the response — producing the
+    // 'cron-runs.snapshot failed: ' empty-message log spam. Snapshot is
+    // self-bounded by sb.mutate's 25s default timeout, and snapshot() never
+    // throws (it catches and logs), so awaiting here can't slow or break
+    // the cron beyond the fetchT timeout in the worst case.
+    if (req && req._snapshotPromise && typeof req._snapshotPromise.then === 'function') {
+      try { await req._snapshotPromise; } catch (e) { /* snapshot logs its own */ }
     }
 
     // Determine terminal status. Handler-thrown exceptions always count as
