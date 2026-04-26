@@ -50,9 +50,14 @@ async function handler(req, res) {
   if (!sb.isConfigured()) return res.status(500).json({ error: 'Not configured' });
 
   try {
-    // Queue snapshot (fire-and-forget for telemetry)
+    // CR-M3 (revised 2026-04-26): Queue snapshot runs in parallel with the
+    // claim work below. withTracking now awaits req._snapshotPromise before
+    // flushing the response, so the snapshot can no longer die mid-fetch
+    // when the lambda freezes. Snapshot still doesn't block claim work
+    // (both promises proceed concurrently); only the eventual response
+    // flush waits for both to settle.
     if (req._cronRunId) {
-      (async function snapshotAsync() {
+      req._snapshotPromise = (async function snapshotAsync() {
         try {
           var qRows = await sb.query(
             "client_image_pool?status=eq.pending&select=created_at&order=created_at.asc&limit=200"
