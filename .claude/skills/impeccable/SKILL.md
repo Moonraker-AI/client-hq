@@ -141,8 +141,10 @@ Default behavior: read the relevant reference file(s) for the surface in questio
 
 ## Notes on this vendoring
 
-This is `pbakaus/impeccable` adapted for Moonraker. The reference files in `reference/` are unmodified from upstream. The SKILL.md is rewritten to drop upstream's `PRODUCT.md` / `DESIGN.md` / `load-context.mjs` machinery (we use Supabase `design_specs` instead) and to override the reflex-font reject list for our brand fonts.
+This is `pbakaus/impeccable` adapted for Moonraker. The 7 domain references in `reference/` (typography, color-and-contrast, spatial-design, motion-design, interaction-design, responsive-design, ux-writing) are unmodified from upstream. The SKILL.md is rewritten to drop upstream's `PRODUCT.md` / `DESIGN.md` / `load-context.mjs` machinery (we use Supabase `design_specs` instead) and to override the reflex-font reject list for our brand fonts.
 
-Upstream commands like `/audit`, `/critique`, `/polish` are not yet wired into this vendoring. To be added in a follow-up step.
+The 5 workflow references in `reference/` (audit, critique, polish, harden, clarify) are Moonraker-adapted from upstream — they swap upstream's `npx impeccable` CLI for our `/api/design-audit` endpoint, replace generic personas with therapy-prospect personas, and layer in Moonraker-specific reminders (no em-dashes, `ready()`-guard, design system lives in `/admin/design` for admin or `design_specs` for client pages).
+
+Slash-command shortcuts at `.claude/commands/*` invoke each workflow: `/audit`, `/critique`, `/polish`, `/harden`, `/clarify`. The remaining upstream commands (bolder, quieter, distill, typeset, layout, colorize, delight, animate, etc.) are not yet wired up; add them as the need arises.
 
 See `docs/impeccable-integration.md` for the integration plan and what's deferred.
