@@ -342,6 +342,25 @@ async function runStage(stage, opts) {
       'client_design_contracts?contact_id=eq.' + page.contact_id +
       '&status=eq.active&select=*&limit=1'
     );
+    // Subsequent pages MUST have an active contract before running any chain
+    // stage. Without it, the page would derive its own design choices and
+    // drift from the homepage. Block the run and surface a clear next step.
+    if (!contract) {
+      var contractErr = new Error(
+        'No active design contract for this client. The homepage chain must complete and the contract must be extracted before subsequent pages can run stages. ' +
+        'Run /api/page-stages/extract-contract on the homepage first.'
+      );
+      contractErr.code = 'CONTRACT_REQUIRED';
+      throw contractErr;
+    }
+    // Subsequent-page chain skips critique — design judgment is locked.
+    if (stage === 'critique') {
+      var critiqueErr = new Error(
+        'critique stage is homepage-only. Subsequent pages inherit design judgment from the active contract. Skip to polish.'
+      );
+      critiqueErr.code = 'STAGE_NOT_APPLICABLE';
+      throw critiqueErr;
+    }
   }
 
   // Resolve html_before. Reject if there's nothing to operate on.
