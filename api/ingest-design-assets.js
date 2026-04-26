@@ -125,10 +125,123 @@ module.exports = async function(req, res) {
       });
     }
 
+    // 2026-04-26: chain Claude-driven token distillation inline. Capture
+    // gives us computed_css (raw style fingerprint); analyze-design-spec
+    // distills that into typography + color_palette tokens (with WCAG AA
+    // clamp). Without this chain, design_specs sits half-populated until
+    // an admin clicks "Re-analyze" in the UI.
+    //
+    // We invoke the route module directly (same Vercel function instance,
+    // no extra HTTP roundtrip), with a synthetic req carrying CRON_SECRET
+    // so analyze's auth.requireAdminOrInternal accepts it. Analyze takes
+    // ~10-25s; agent's callback timeout is 60s. If analyze fails or times
+    // out, capture data is already persisted — ingest just records the
+    // analyze_status='failed' and returns success on the capture side.
+    //
+    // We only chain analyze when capture actually produced computed_css.
+    // No CSS = nothing to distill = no point.
+    var hasCss = body.computed_css && Object.keys(body.computed_css).length > 0;
+    var analyzeStatus = null;
+    var analyzeError = null;
+    if (hasCss && status !== 'failed') {
+      // Mark analyze pending in the row so observability shows the chain
+      // started even if it crashes mid-flight.
+      try {
+        await sb.mutate(
+          'design_specs?id=eq.' + encodeURIComponent(body.design_spec_id),
+          'PATCH',
+          { analyze_status: 'running', analyze_error: null },
+          'return=minimal'
+        );
+      } catch (e) { /* non-fatal */ }
+
+      // Pull contact for client_slug + site_url (analyze requires both).
+      var spec, contact;
+      try {
+        spec = await sb.one('design_specs?id=eq.' + encodeURIComponent(body.design_spec_id) + '&limit=1&select=contact_id,client_slug');
+        if (spec && spec.contact_id) {
+          contact = await sb.one('contacts?id=eq.' + encodeURIComponent(spec.contact_id) + '&limit=1&select=website_url,website_platform');
+        }
+      } catch (e) {
+        analyzeStatus = 'failed';
+        analyzeError = 'lookup failed: ' + (e.message || '').substring(0, 200);
+      }
+
+      if (!analyzeStatus && spec && spec.client_slug) {
+        var screenshotUrls = [];
+        if (updateData.screenshot_homepage) screenshotUrls.push(updateData.screenshot_homepage);
+        if (updateData.screenshot_service) screenshotUrls.push(updateData.screenshot_service);
+        if (updateData.screenshot_about) screenshotUrls.push(updateData.screenshot_about);
+
+        var syntheticReq = {
+          method: 'POST',
+          headers: { authorization: 'Bearer ' + (process.env.CRON_SECRET || '') },
+          body: {
+            contact_id: spec.contact_id,
+            client_slug: spec.client_slug,
+            computed_css: body.computed_css,
+            site_url: (contact && contact.website_url) || '',
+            platform: (contact && contact.website_platform) || '',
+            existing_spec_id: body.design_spec_id,
+            source: 'automated_capture',
+            screenshot_urls: screenshotUrls
+          },
+          query: {},
+          cookies: {}
+        };
+        var captured = { status: 200, body: null };
+        var syntheticRes = {
+          status: function(c) { captured.status = c; return syntheticRes; },
+          setHeader: function() { return syntheticRes; },
+          json: function(b) { captured.body = b; return syntheticRes; },
+          send: function(b) { captured.body = b; return syntheticRes; },
+          end: function(b) { if (b != null) captured.body = b; return syntheticRes; }
+        };
+
+        try {
+          var analyzeHandler = require('./analyze-design-spec');
+          await analyzeHandler(syntheticReq, syntheticRes);
+          if (captured.status === 200 && captured.body && captured.body.success) {
+            analyzeStatus = 'complete';
+          } else {
+            analyzeStatus = 'failed';
+            analyzeError = (captured.body && captured.body.error)
+              ? String(captured.body.error).substring(0, 500)
+              : 'analyze returned HTTP ' + captured.status;
+          }
+        } catch (e) {
+          analyzeStatus = 'failed';
+          analyzeError = (e.message || 'analyze threw').substring(0, 500);
+        }
+      } else if (!analyzeStatus) {
+        analyzeStatus = 'failed';
+        analyzeError = 'design_spec missing client_slug or contact_id';
+      }
+
+      // Persist final analyze state. analyze-design-spec already wrote
+      // typography/color_palette directly to the row on success; we only
+      // need to set the status/error fields here.
+      try {
+        await sb.mutate(
+          'design_specs?id=eq.' + encodeURIComponent(body.design_spec_id),
+          'PATCH',
+          { analyze_status: analyzeStatus, analyze_error: analyzeError },
+          'return=minimal'
+        );
+      } catch (e) { /* non-fatal */ }
+
+      if (analyzeStatus === 'failed') {
+        monitor.logError('ingest-design-assets', new Error('Analyze chain failed'), {
+          detail: { design_spec_id: body.design_spec_id, analyze_error: analyzeError }
+        });
+      }
+    }
+
     return res.status(200).json({
       success: true,
       design_spec_id: body.design_spec_id,
       capture_status: status,
+      analyze_status: analyzeStatus,
       screenshots_received: Object.keys(screenshots).filter(function(k){ return !!screenshots[k]; }).length,
       has_css: !!(body.computed_css && Object.keys(body.computed_css).length > 0),
       has_text: !!(body.crawled_text)
