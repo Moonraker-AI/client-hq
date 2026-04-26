@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<script>try{var st=localStorage.getItem('moonraker-theme');if(st){document.documentElement.setAttribute('data-theme',st)}}catch(e){}</script>
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="/assets/logo.png">
+<title>Pages Chain - Client HQ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root, [data-theme="light"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00b86c;
+  --color-primary-light: #B4EEE0;
+  --color-primary-subtle: #DDF8F2;
+  --color-bg: #F7FDFB;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-heading: #1E2A5E;
+  --color-body: #333F70;
+  --color-muted: #6B7599;
+  --color-navy: #141C3A;
+  --color-success: #00D47E;
+  --color-warning: #F59E0B;
+  --color-amber-deep: #D97706;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+  --color-violet: #8B5CF6;
+}
+[data-theme="dark"] {
+  --color-primary: #00D47E;
+  --color-primary-hover: #00f598;
+  --color-primary-light: #1A4A38;
+  --color-primary-subtle: #0D2E22;
+  --color-bg: #080F0B;
+  --color-surface: #0E1A14;
+  --color-border: #1E3530;
+  --color-heading: #E8F5EF;
+  --color-body: #C8D8D0;
+  --color-muted: #5A7A6E;
+  --color-navy: #0A1630;
+  --color-warning: #F59E0B;
+  --color-amber-deep: #FBBF24;
+  --color-danger: #FF6B6B;
+  --color-info: #60A5FA;
+  --color-violet: #A78BFA;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; color: var(--color-body); background: var(--color-bg); line-height: 1.6; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
+h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); }
+
+a { color: var(--color-primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.page { max-width: 1200px; margin: 0 auto; padding: 1.5rem 2rem 4rem; }
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid var(--color-primary); }
+.page-header h1 { font-size: 1.5rem; line-height: 1.2; margin-bottom: .15rem; }
+.page-header .subtitle { font-size: .85rem; color: var(--color-muted); }
+.client-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .6rem; background: var(--color-primary-subtle); color: var(--color-primary-hover); border-radius: 6px; font-size: .78rem; font-weight: 600; font-family: 'SF Mono', 'Fira Code', monospace; }
+
+.theme-toggle { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+.theme-toggle:hover { border-color: var(--color-primary); }
+
+.summary-row { display: flex; gap: .75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.summary-pill { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; padding: .5rem .85rem; font-size: .82rem; }
+.summary-pill .num { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--color-heading); font-size: 1rem; margin-right: .35rem; }
+.summary-pill .label { color: var(--color-muted); }
+.summary-pill.contract { background: var(--color-primary-subtle); border-color: var(--color-primary-light); }
+.summary-pill.contract .num { color: var(--color-primary-hover); }
+
+/* Card list */
+.card-list { display: flex; flex-direction: column; gap: .65rem; }
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color .15s, box-shadow .15s;
+}
+.card:hover { border-color: var(--color-primary-light); }
+.card.expanded { border-color: var(--color-primary); box-shadow: 0 4px 16px rgba(0,212,126,.08); }
+
+.card-header {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto auto auto;
+  gap: 1rem;
+  align-items: center;
+  padding: .85rem 1rem;
+  cursor: pointer;
+  user-select: none;
+}
+.card-header:hover { background: var(--color-bg); }
+.card.expanded .card-header { background: var(--color-bg); border-bottom: 1px solid var(--color-border); }
+
+.page-name {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  color: var(--color-heading);
+  font-size: .95rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  min-width: 0;
+}
+.page-name .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.page-type-pill {
+  display: inline-block;
+  padding: .12rem .4rem;
+  border-radius: 4px;
+  font-size: .68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  flex-shrink: 0;
+}
+.page-type-pill.homepage { background: var(--color-primary-subtle); color: var(--color-primary-hover); }
+.page-type-pill.service { background: rgba(59,130,246,.1); color: var(--color-info); }
+.page-type-pill.location { background: rgba(139,92,246,.1); color: var(--color-violet); }
+.page-type-pill.faq { background: rgba(107,117,153,.1); color: var(--color-muted); }
+.page-type-pill.bio { background: rgba(245,158,11,.12); color: var(--color-amber-deep); }
+
+/* Stage track */
+.stage-track {
+  display: flex;
+  gap: .35rem;
+  align-items: center;
+}
+.stage-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .58rem;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: transform .1s;
+  position: relative;
+}
+.stage-dot:hover { transform: scale(1.12); }
+.stage-dot.pending { /* default */ }
+.stage-dot.running {
+  border-color: var(--color-info);
+  color: var(--color-info);
+  background: rgba(59,130,246,.08);
+}
+.stage-dot.running::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-info);
+  border-top-color: transparent;
+  animation: spin .9s linear infinite;
+}
+.stage-dot.review {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+  background: rgba(245,158,11,.1);
+}
+.stage-dot.questions {
+  border-color: var(--color-amber-deep);
+  color: var(--color-amber-deep);
+  background: rgba(245,158,11,.16);
+}
+.stage-dot.accepted {
+  border-color: var(--color-primary);
+  color: var(--color-primary-hover);
+  background: var(--color-primary-subtle);
+}
+.stage-dot.failed {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: rgba(239,68,68,.1);
+}
+.stage-dot[data-skipped="1"] { opacity: .35; }
+.stage-dot[data-skipped="1"]:hover { transform: none; cursor: not-allowed; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.stage-track-label { font-size: .68rem; color: var(--color-muted); margin-left: .25rem; }
+
+/* Status badge */
+.status-badge {
+  font-size: .72rem;
+  font-weight: 600;
+  padding: .2rem .55rem;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.status-badge.pre { background: rgba(107,117,153,.12); color: var(--color-muted); }
+.status-badge.chain { background: rgba(59,130,246,.1); color: var(--color-info); }
+.status-badge.ready { background: var(--color-primary-subtle); color: var(--color-primary-hover); }
+.status-badge.client { background: rgba(139,92,246,.12); color: var(--color-violet); }
+.status-badge.delivered { background: rgba(0,212,126,.15); color: var(--color-primary-hover); }
+.status-badge.lost { background: rgba(239,68,68,.1); color: var(--color-danger); }
+
+.notif-cluster { display: flex; gap: .35rem; }
+.notif-badge {
+  font-size: .68rem;
+  font-weight: 600;
+  padding: .15rem .45rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  white-space: nowrap;
+}
+.notif-badge.questions { background: rgba(245,158,11,.16); color: var(--color-amber-deep); border: 1px solid rgba(245,158,11,.3); }
+.notif-badge.review { background: rgba(59,130,246,.1); color: var(--color-info); border: 1px solid rgba(59,130,246,.3); }
+.notif-badge.gate { background: rgba(239,68,68,.1); color: var(--color-danger); border: 1px solid rgba(239,68,68,.3); }
+
+.expand-caret {
+  font-size: .65rem;
+  color: var(--color-muted);
+  transition: transform .2s;
+}
+.card.expanded .expand-caret { transform: rotate(180deg); }
+
+/* Expanded body */
+.card-body {
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .25s ease;
+}
+.card.expanded .card-body { max-height: 4000px; padding: 1rem 1.25rem 1.25rem; }
+
+.body-placeholder {
+  background: var(--color-bg);
+  border: 1px dashed var(--color-border);
+  border-radius: 10px;
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--color-muted);
+  font-size: .85rem;
+}
+.body-placeholder strong { color: var(--color-heading); display: block; margin-bottom: .25rem; }
+.body-placeholder code { background: var(--color-surface); padding: .12rem .35rem; border-radius: 4px; font-size: .78rem; color: var(--color-heading); }
+
+.body-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: .65rem;
+  margin-bottom: 1rem;
+  font-size: .8rem;
+}
+.body-meta-grid .meta { background: var(--color-bg); padding: .55rem .75rem; border-radius: 8px; }
+.body-meta-grid .meta-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); margin-bottom: .15rem; }
+.body-meta-grid .meta-value { font-weight: 500; color: var(--color-heading); font-size: .85rem; }
+.body-meta-grid .meta-value.mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: .78rem; }
+
+/* Empty state / loading */
+.empty-state { text-align: center; padding: 3rem 1.5rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; }
+.empty-state h3 { font-size: 1.05rem; margin-bottom: .35rem; }
+.empty-state p { color: var(--color-muted); font-size: .9rem; max-width: 480px; margin: 0 auto; }
+
+.loading { padding: 2rem; text-align: center; color: var(--color-muted); font-size: .9rem; }
+
+/* Mobile */
+@media (max-width: 720px) {
+  .page { padding: 1rem; }
+  .card-header { grid-template-columns: 1fr auto; gap: .5rem; }
+  .stage-track { grid-column: 1 / -1; }
+  .status-badge, .notif-cluster { grid-column: 1 / -1; justify-self: start; }
+}
+</style>
+<script src="/shared/admin-auth.js" defer></script>
+<script src="/shared/offline-banner.js" defer></script>
+</head>
+<body>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Pages Chain</h1>
+      <div class="subtitle" id="subtitle">Audit, critique, polish, harden, clarify — then verify and send for review.</div>
+    </div>
+    <div style="display:flex;gap:.65rem;align-items:center;flex-shrink:0;">
+      <span id="clientPill" class="client-pill" style="display:none;"></span>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#127769;</button>
+    </div>
+  </div>
+
+  <div class="summary-row" id="summaryRow" style="display:none;"></div>
+
+  <div id="content">
+    <div class="loading">Loading pages…</div>
+  </div>
+</div>
+
+<script>
+// Stage definitions, ordered. The track on the collapsed card renders these
+// in order. Each dot becomes a one-letter glyph: A C P H L V (audit, critique,
+// polish, harden, cLarify, verify). Cleaner than full names at small size.
+var STAGES = [
+  { key: 'audit',    glyph: 'A', label: 'Audit' },
+  { key: 'critique', glyph: 'C', label: 'Critique' },
+  { key: 'polish',   glyph: 'P', label: 'Polish' },
+  { key: 'harden',   glyph: 'H', label: 'Harden' },
+  { key: 'clarify',  glyph: 'L', label: 'Clarify' },
+  { key: 'verify',   glyph: 'V', label: 'Verify' }
+];
+
+// Subsequent-page chain skips critique. Show the dot but mark it skipped.
+function isStageSkipped(page, stageKey) {
+  return stageKey === 'critique' && page.page_type !== 'homepage';
+}
+
+// Status → badge classification.
+function classifyStatus(status) {
+  switch (status) {
+    case 'pending_audit':
+    case 'audit_loaded':
+    case 'generating': return { cls: 'pre', label: prettyStatus(status) };
+    case 'review':
+    case 'audited':
+    case 'critiqued':
+    case 'polished':
+    case 'hardened':
+    case 'clarified': return { cls: 'chain', label: prettyStatus(status) };
+    case 'ready_for_contract':
+    case 'ready_for_client': return { cls: 'ready', label: prettyStatus(status) };
+    case 'client_review':
+    case 'client_revising': return { cls: 'client', label: prettyStatus(status) };
+    case 'approved':
+    case 'delivered': return { cls: 'delivered', label: prettyStatus(status) };
+    default: return { cls: 'pre', label: prettyStatus(status) };
+  }
+}
+
+function prettyStatus(s) {
+  return (s || '').replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, function(ch) {
+    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch];
+  });
+}
+
+function timeAgo(iso) {
+  if (!iso) return '—';
+  var then = new Date(iso).getTime();
+  var diff = (Date.now() - then) / 1000;
+  if (diff < 60) return Math.round(diff) + 's ago';
+  if (diff < 3600) return Math.round(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.round(diff / 3600) + 'h ago';
+  return Math.round(diff / 86400) + 'd ago';
+}
+
+// Theme
+function toggleTheme() {
+  function flip() {
+    var cur = document.documentElement.getAttribute('data-theme') || 'light';
+    var next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('moonraker-theme', next); } catch (e) {}
+  }
+  if (document.startViewTransition) document.startViewTransition(flip); else flip();
+}
+
+// State
+var state = {
+  slug: null,
+  pages: [],
+  contract: null,
+  expanded: new Set(),
+  pollTimer: null,
+  loading: false
+};
+
+function getSlugFromUrl() {
+  var p = new URLSearchParams(window.location.search);
+  return p.get('slug') || p.get('client') || '';
+}
+
+async function load() {
+  if (state.loading) return;
+  state.loading = true;
+  try {
+    var resp = await fetch('/api/page-stages/list?slug=' + encodeURIComponent(state.slug), {
+      credentials: 'same-origin'
+    });
+    if (!resp.ok) {
+      if (resp.status === 401) {
+        document.getElementById('content').innerHTML =
+          '<div class="empty-state"><h3>Not signed in</h3>' +
+          '<p>Sign in to the admin to view this client\'s pages.</p></div>';
+        return;
+      }
+      var t = await resp.text();
+      document.getElementById('content').innerHTML =
+        '<div class="empty-state"><h3>Failed to load</h3><p>' + escapeHtml(t.slice(0, 200)) + '</p></div>';
+      return;
+    }
+    var data = await resp.json();
+    state.pages = data.pages || [];
+    state.contract = data.contract;
+    render(data);
+    schedulePoll();
+  } catch (e) {
+    document.getElementById('content').innerHTML =
+      '<div class="empty-state"><h3>Error</h3><p>' + escapeHtml(e.message) + '</p></div>';
+  } finally {
+    state.loading = false;
+  }
+}
+
+function schedulePoll() {
+  if (state.pollTimer) clearTimeout(state.pollTimer);
+  // Only poll if any stage is currently running. Otherwise the data is static
+  // until the operator does something, and load() will refresh on action.
+  var anyRunning = state.pages.some(function(p) {
+    return Object.keys(p.stages || {}).some(function(s) {
+      return p.stages[s].latest && p.stages[s].latest.run_status === 'running';
+    });
+  });
+  if (anyRunning) {
+    state.pollTimer = setTimeout(load, 5000);
+  }
+}
+
+function render(data) {
+  var content = document.getElementById('content');
+
+  // Header pieces
+  var clientPill = document.getElementById('clientPill');
+  clientPill.textContent = state.slug;
+  clientPill.style.display = '';
+
+  // Summary row
+  var c = data.counts || {};
+  var summary = document.getElementById('summaryRow');
+  var summaryHtml = '';
+  summaryHtml += pill(c.total || 0, 'pages');
+  summaryHtml += pill(c.in_chain || 0, 'in chain');
+  summaryHtml += pill(c.ready_for_client || 0, 'ready for client');
+  summaryHtml += pill(c.delivered || 0, 'delivered');
+  if (state.contract) {
+    summaryHtml += '<div class="summary-pill contract" title="Active contract">' +
+      '<span class="num">●</span><span class="label">design contract active</span></div>';
+  } else {
+    summaryHtml += '<div class="summary-pill" title="No contract yet"><span class="num" style="color:var(--color-muted);">○</span>' +
+      '<span class="label">no contract yet</span></div>';
+  }
+  summary.innerHTML = summaryHtml;
+  summary.style.display = '';
+
+  // Card list
+  if (state.pages.length === 0) {
+    content.innerHTML =
+      '<div class="empty-state"><h3>No pages yet</h3>' +
+      '<p>Create pages from this client\'s keywords on the Content tab to start the chain.</p></div>';
+    return;
+  }
+
+  var cardsHtml = state.pages.map(renderCard).join('');
+  content.innerHTML = '<div class="card-list">' + cardsHtml + '</div>';
+}
+
+function pill(num, label) {
+  return '<div class="summary-pill"><span class="num">' + num + '</span><span class="label">' +
+    escapeHtml(label) + '</span></div>';
+}
+
+function renderCard(page) {
+  var expanded = state.expanded.has(page.id);
+  var status = classifyStatus(page.status);
+  var notif = page.notifications || {};
+
+  var dotsHtml = STAGES.map(function(s) {
+    var stage = (page.stages && page.stages[s.key]) || { ui_state: 'pending' };
+    var skipped = isStageSkipped(page, s.key);
+    var cls = skipped ? 'pending' : (stage.ui_state || 'pending');
+    var title = s.label;
+    if (skipped) title += ' (skipped — homepage only)';
+    else if (stage.latest) title += ' — ' + stage.ui_state + ' (' + timeAgo(stage.latest.created_at) + ')';
+    return '<div class="stage-dot ' + cls + '" data-skipped="' + (skipped ? 1 : 0) + '" title="' + escapeHtml(title) + '" ' +
+      'onclick="event.stopPropagation();expandCard(\'' + page.id + '\', \'' + s.key + '\');">' +
+      s.glyph + '</div>';
+  }).join('');
+
+  var badgesHtml = '';
+  if (notif.clarifying_questions > 0) {
+    badgesHtml += '<span class="notif-badge questions" title="Clarifying questions to review">' +
+      '? ' + notif.clarifying_questions + '</span>';
+  }
+  if (notif.pending_review > 0) {
+    badgesHtml += '<span class="notif-badge review" title="Stage runs awaiting accept/rerun">' +
+      '↺ ' + notif.pending_review + '</span>';
+  }
+  if (notif.verify_gate_failures > 0) {
+    badgesHtml += '<span class="notif-badge gate" title="Verify gate failures">' +
+      '✕ ' + notif.verify_gate_failures + '</span>';
+  }
+
+  var pageType = page.page_type || 'service';
+  var lastTouched = page.updated_at || page.created_at;
+
+  return '' +
+    '<div class="card' + (expanded ? ' expanded' : '') + '" data-page-id="' + page.id + '">' +
+      '<div class="card-header" onclick="toggleCard(\'' + page.id + '\')">' +
+        '<div class="page-name">' +
+          '<span class="page-type-pill ' + escapeHtml(pageType) + '">' + escapeHtml(pageType) + '</span>' +
+          '<span class="name" title="' + escapeHtml(page.page_name || '') + '">' + escapeHtml(page.page_name || '(unnamed)') + '</span>' +
+        '</div>' +
+        '<div class="stage-track">' + dotsHtml + '</div>' +
+        '<span class="status-badge ' + status.cls + '">' + escapeHtml(status.label) + '</span>' +
+        '<div class="notif-cluster">' + badgesHtml + '</div>' +
+        '<span class="expand-caret">▼</span>' +
+      '</div>' +
+      '<div class="card-body">' +
+        renderCardBody(page) +
+      '</div>' +
+    '</div>';
+}
+
+function renderCardBody(page) {
+  // Session 1 scope: metadata strip + placeholder for the stage timeline.
+  // Session 2 will replace .body-placeholder with the full stage panels +
+  // tabs + run/accept/rerun controls.
+  var lastTouched = page.updated_at || page.created_at;
+  var keyword = page.target_keyword || '—';
+
+  return '' +
+    '<div class="body-meta-grid">' +
+      '<div class="meta"><div class="meta-label">Page slug</div><div class="meta-value mono">/' + escapeHtml(page.page_slug || '') + '</div></div>' +
+      '<div class="meta"><div class="meta-label">Target keyword</div><div class="meta-value">' + escapeHtml(keyword) + '</div></div>' +
+      '<div class="meta"><div class="meta-label">Template</div><div class="meta-value mono">' + escapeHtml(page.template_version || 'v1') + '</div></div>' +
+      '<div class="meta"><div class="meta-label">Last activity</div><div class="meta-value">' + escapeHtml(timeAgo(lastTouched)) + '</div></div>' +
+    '</div>' +
+    '<div class="body-placeholder">' +
+      '<strong>Stage timeline coming next push</strong>' +
+      'Run / accept / rerun controls, before/after preview tabs, clarifying-question modals all wire in here. ' +
+      'For now, fire stages with: <code>POST /api/page-stages/&lt;stage&gt;</code> ' +
+      '<code>{ "content_page_id": "' + escapeHtml(page.id) + '" }</code>' +
+    '</div>';
+}
+
+// Card interactions
+function toggleCard(pageId) {
+  if (state.expanded.has(pageId)) state.expanded.delete(pageId);
+  else state.expanded.add(pageId);
+  // Re-render only the affected card to preserve scroll
+  var el = document.querySelector('.card[data-page-id="' + pageId + '"]');
+  if (el) el.classList.toggle('expanded');
+}
+
+function expandCard(pageId, stageHint) {
+  if (!state.expanded.has(pageId)) {
+    state.expanded.add(pageId);
+    var el = document.querySelector('.card[data-page-id="' + pageId + '"]');
+    if (el) el.classList.add('expanded');
+  }
+  // Stage hint reserved for session 2: scroll to the relevant stage panel.
+}
+
+// Boot
+window.addEventListener('DOMContentLoaded', function() {
+  state.slug = getSlugFromUrl();
+  if (!state.slug) {
+    document.getElementById('content').innerHTML =
+      '<div class="empty-state"><h3>No client selected</h3>' +
+      '<p>Add <code>?slug=&lt;client-slug&gt;</code> to the URL to view that client\'s pages.</p>' +
+      '<p style="margin-top:.5rem;font-size:.8rem;">Example: <a href="?slug=mark-obrien">mark-obrien</a> &bull; <a href="?slug=anna-skomorovskaia">anna-skomorovskaia</a></p>' +
+      '</div>';
+    return;
+  }
+  document.getElementById('subtitle').textContent =
+    'Pages chain for ' + state.slug + ' — automated audit, critique, polish, harden, clarify, then verify and queue for client review.';
+  load();
+});
+</script>
+
+</body>
+</html>
