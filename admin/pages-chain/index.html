@@ -526,6 +526,32 @@ var STAGES = [
   { key: 'verify',   glyph: 'V', label: 'Verify' }
 ];
 
+// Mirrors api/_lib/page-stage.js PRE_STAGE_STATUS. Used to determine whether
+// a stage's Run button should be enabled. Keep in sync with the server.
+var PRE_STAGE_STATUS = {
+  audit:    ['review', 'generating', 'audited'],
+  critique: ['audited', 'critiqued'],
+  polish:   ['audited', 'critiqued', 'polished'],
+  harden:   ['polished', 'hardened'],
+  clarify:  ['hardened', 'clarified'],
+  verify:   ['clarified']
+};
+
+// Statuses a page must reach before it can enter the chain at all.
+// Anything before 'review' (i.e. pending_audit, audit_loaded) means the page
+// hasn't been generated yet. The chain audits and improves an existing draft;
+// the upstream generator (api/generate-content-page) is what produces it.
+var PRE_CHAIN_STATUSES = ['pending_audit', 'audit_loaded', 'generating'];
+
+function isPageInChain(page) {
+  return !PRE_CHAIN_STATUSES.includes(page.status);
+}
+
+function isStageEligible(page, stageKey) {
+  var allowed = PRE_STAGE_STATUS[stageKey] || [];
+  return allowed.indexOf(page.status) !== -1;
+}
+
 // Subsequent-page chain skips critique. Show the dot but mark it skipped.
 function isStageSkipped(page, stageKey) {
   return stageKey === 'critique' && page.page_type !== 'homepage';
@@ -662,9 +688,9 @@ async function load() {
 
 function schedulePoll() {
   if (state.pollTimer) clearTimeout(state.pollTimer);
-  // Only poll if any stage is currently running. Otherwise the data is static
-  // until the operator does something, and load() will refresh on action.
+  // Poll if any stage run is in flight OR a page is currently generating.
   var anyRunning = state.pages.some(function(p) {
+    if (p.status === 'generating') return true;
     return Object.keys(p.stages || {}).some(function(s) {
       return p.stages[s].latest && p.stages[s].latest.run_status === 'running';
     });
@@ -772,6 +798,7 @@ function renderCard(page) {
 function renderCardBody(page) {
   var lastTouched = page.updated_at || page.created_at;
   var keyword = page.target_keyword || '—';
+  var notInChain = !isPageInChain(page);
 
   // Promote action: visible at the top of the body when status warrants it.
   var promoteHtml = '';
@@ -797,6 +824,28 @@ function renderCardBody(page) {
       '</div>';
   }
 
+  // Pre-chain CTA: page hasn't been generated yet. The chain audits and
+  // refines an existing draft — the upstream Pagemaster generator produces
+  // the initial HTML. Surface that here so it's not surprising.
+  var preChainHtml = '';
+  if (notInChain) {
+    var generating = (page.status === 'generating');
+    preChainHtml =
+      '<div class="promote-bar" style="background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.4);">' +
+        '<div class="promote-bar-text">' +
+          '<strong style="color:var(--color-amber-deep);">' +
+            (generating ? 'Generating draft…' : 'Page not yet generated') +
+          '</strong>' +
+          (generating
+            ? 'Pagemaster is building the initial HTML. The chain will be runnable once status flips to <code>review</code>.'
+            : 'The chain audits and refines an existing draft. Generate an initial HTML draft from this client\'s design spec, brief, and Surge audit before the audit/critique/polish/harden/clarify chain can run.') +
+        '</div>' +
+        (generating ? ''
+          : '<button class="btn btn-primary" onclick="event.stopPropagation();generateDraft(\'' + page.id + '\');">' +
+              'Generate draft →</button>') +
+      '</div>';
+  }
+
   var stagePanelsHtml = STAGES.map(function(s) {
     return renderStagePanel(page, s);
   }).join('');
@@ -808,8 +857,9 @@ function renderCardBody(page) {
       '<div class="meta"><div class="meta-label">Template</div><div class="meta-value mono">' + escapeHtml(page.template_version || 'v1') + '</div></div>' +
       '<div class="meta"><div class="meta-label">Last activity</div><div class="meta-value">' + escapeHtml(timeAgo(lastTouched)) + '</div></div>' +
     '</div>' +
+    preChainHtml +
     promoteHtml +
-    '<div class="stage-panels">' + stagePanelsHtml + '</div>';
+    '<div class="stage-panels"' + (notInChain ? ' style="opacity:.45;pointer-events:none;"' : '') + '>' + stagePanelsHtml + '</div>';
 }
 
 // Render a single stage panel (collapsed by default; opens to show tabs).
@@ -871,23 +921,48 @@ function renderStageActions(page, stageDef, stage, skipped) {
   if (skipped) return '';
   var latest = stage.latest;
 
-  // Eligibility for "Run": page must be at the right preceding status.
-  // Simplest model: for each stage, runnable when there's no in-flight run.
-  var canRun = !latest || (latest.run_status !== 'running');
   // Eligibility for "Accept" / "Rerun": latest is complete and unaccepted.
   var canReview = latest && latest.run_status === 'complete' && !latest.accepted_at && !latest.rejected_at;
+  // Eligibility for "Run": page status must permit this stage AND no in-flight run.
+  var eligible = isStageEligible(page, stageDef.key);
+  var inFlight = latest && latest.run_status === 'running';
 
   var html = '';
   if (canReview) {
     html += '<button class="btn btn-primary" onclick="acceptRun(\'' + latest.id + '\', \'' + stageDef.key + '\');">Accept</button>';
-    html += '<button class="btn btn-ghost" onclick="rerunStage(\'' + page.id + '\', \'' + stageDef.key + '\');">Rerun</button>';
-  } else if (latest && latest.run_status === 'running') {
+    if (eligible) {
+      html += '<button class="btn btn-ghost" onclick="rerunStage(\'' + page.id + '\', \'' + stageDef.key + '\');">Rerun</button>';
+    }
+  } else if (inFlight) {
     html += '<button class="btn btn-ghost" disabled>Running…</button>';
-  } else if (canRun) {
+  } else if (eligible) {
     html += '<button class="btn btn-primary" onclick="rerunStage(\'' + page.id + '\', \'' + stageDef.key + '\');">' +
             (latest ? 'Rerun' : 'Run') + '</button>';
+  } else {
+    // Not eligible: render a quiet "locked" hint instead of a button so the
+    // operator sees why and where to start.
+    html += '<span style="font-size:.72rem;color:var(--color-muted);font-style:italic;">' +
+            stageGateHint(page, stageDef.key) + '</span>';
   }
   return html;
+}
+
+function stageGateHint(page, stageKey) {
+  if (PRE_CHAIN_STATUSES.includes(page.status)) {
+    return 'page not yet generated';
+  }
+  var allowed = PRE_STAGE_STATUS[stageKey] || [];
+  // Find the prior stage that needs accepting first.
+  var idx = STAGES.findIndex(function(s) { return s.key === stageKey; });
+  if (idx > 0) {
+    var prior = STAGES[idx - 1];
+    if (isStageSkipped(page, prior.key)) {
+      // Skip back another step
+      if (idx > 1) prior = STAGES[idx - 2];
+    }
+    return 'awaiting ' + prior.label.toLowerCase();
+  }
+  return 'not available at status: ' + page.status;
 }
 
 // Render the full body of an open stage panel.
@@ -1255,6 +1330,26 @@ async function promotePage(pageId) {
   if (page.status === 'ready_for_client') {
     alert('Client review portal queueing endpoint coming in the next session. For now, status is correct and the page is ready.');
     return;
+  }
+}
+
+async function generateDraft(pageId) {
+  var page = state.pages.find(function(p) { return p.id === pageId; });
+  if (!page) return;
+  if (!confirm('Generate an initial HTML draft for "' + (page.page_name || 'this page') + '"? This uses the client\'s design spec, brief, and Surge audit. Takes 1-3 minutes.')) return;
+  // The endpoint streams NDJSON. We don't need to consume it — just fire and
+  // refresh; the status flip from pending_audit/audit_loaded → generating →
+  // review will surface in the list endpoint as the run progresses.
+  try {
+    fetch('/api/generate-content-page', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ content_page_id: pageId })
+    }).catch(function() {}); // swallow — server keeps working
+    setTimeout(load, 1500);
+  } catch (e) {
+    setTimeout(load, 1500);
   }
 }
 
