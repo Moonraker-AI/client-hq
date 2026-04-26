@@ -250,7 +250,7 @@
       "maxDuration": 75,
       "memory": 512
     },
-    "api/_audit-trigger.js": {
+    "api/audit-trigger.js": {
       "maxDuration": 75,
       "memory": 512
     }
