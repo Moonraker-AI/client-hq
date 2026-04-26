@@ -245,6 +245,10 @@
     "api/upload-image-init.js": {
       "maxDuration": 30,
       "memory": 512
+    },
+    "api/design-audit.js": {
+      "maxDuration": 75,
+      "memory": 512
     }
   },
   "crons": [
