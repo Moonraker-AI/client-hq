@@ -19,7 +19,10 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  var user = await auth.requireAdmin(req, res);
+  // 2026-04-26: dual-pathway auth so audit cycles and post-capture
+  // automation can invoke this without an admin JWT in the browser.
+  // Admin UI flow is unchanged (cookie-based admin JWT).
+  var user = await auth.requireAdminOrInternal(req, res);
   if (!user) return;
 
   var anthropicKey = process.env.ANTHROPIC_API_KEY;
