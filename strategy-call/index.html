@@ -343,13 +343,13 @@ section { padding: 5rem 0; }
         <div class="form-row">
           <label for="hasGbp">Do you have a Google Business Profile?</label>
           <select id="hasGbp" onchange="toggleGbpLink()" required>
-            <option value="">Select one</option>
+            <option value="">Select an option</option>
             <option value="yes">Yes</option>
             <option value="no">No</option>
           </select>
         </div>
         <div class="form-row form-row-conditional" id="gbpLinkRow">
-          <label for="gbpLink">Google Business Profile Share Link</label>
+          <label for="gbpLink">Google Business Profile Share Link <span style="font-weight:400;opacity:.5;font-size:.75rem;">Required</span></label>
           <input type="url" id="gbpLink" placeholder="https://g.page/...">
         </div>
         <label class="form-consent">
@@ -495,6 +495,12 @@ section { padding: 5rem 0; }
       if (link) link.value = '';
     }
   };
+  // Sync conditional row with the select's current value on initial load and
+  // on bfcache restore. Browsers (Brave/Chrome on mobile especially) often
+  // restore the select to a previously chosen "Yes" without firing change,
+  // which left the share-link row hidden until the user toggled the select.
+  toggleGbpLink();
+  window.addEventListener('pageshow', toggleGbpLink);
 
   // ── Step 1: intake submission ──
   window.submitIntake = function() {
