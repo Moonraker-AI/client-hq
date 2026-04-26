@@ -42,8 +42,11 @@ async function runHandler(req, res) {
     });
     return res.status(200).json({ success: true, run: run });
   } catch (e) {
-    if (e.code === 'STATUS_MISMATCH') {
-      return res.status(409).json({ error: e.message });
+    if (e.code === 'STATUS_MISMATCH' || e.code === 'CONTRACT_REQUIRED') {
+      return res.status(409).json({ error: e.message, code: e.code });
+    }
+    if (e.code === 'STAGE_NOT_APPLICABLE') {
+      return res.status(400).json({ error: e.message, code: e.code });
     }
     console.error('[page-stages/clarify]', e.message);
     return res.status(500).json({ error: 'Stage run failed', detail: e.message });
