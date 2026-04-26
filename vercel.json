@@ -132,8 +132,31 @@
       "maxDuration": 120,
       "memory": 1024
     },
+    "api/admin/attribution-sync.js": {
+      "maxDuration": 120,
+      "memory": 1024
+    },
+    "api/admin/reprocess-entity-audit.js": {
+      "maxDuration": 300,
+      "memory": 1024
+    },
+    "api/agreement-chat.js": {
+      "maxDuration": 120
+    },
+    "api/backfill-gbp-warehouse.js": {
+      "maxDuration": 300,
+      "memory": 1024
+    },
     "api/bootstrap-access.js": {
       "maxDuration": 120,
+      "memory": 1024
+    },
+    "api/campaign-summary-chat.js": {
+      "maxDuration": 120,
+      "memory": 1024
+    },
+    "api/campaign-summary.js": {
+      "maxDuration": 300,
       "memory": 1024
     },
     "api/chat.js": {
@@ -143,6 +166,39 @@
     "api/compile-report.js": {
       "maxDuration": 300,
       "memory": 1024
+    },
+    "api/content-chat.js": {
+      "maxDuration": 120
+    },
+    "api/cron/backfill-gbp-daily.js": {
+      "maxDuration": 300,
+      "memory": 1024
+    },
+    "api/cron/check-surge-blocks.js": {
+      "maxDuration": 120
+    },
+    "api/cron/process-audit-queue.js": {
+      "maxDuration": 60
+    },
+    "api/cron/process-batch-pages.js": {
+      "maxDuration": 120,
+      "memory": 1024
+    },
+    "api/cron/process-image-pool.js": {
+      "maxDuration": 300,
+      "memory": 3008
+    },
+    "api/cron/process-queue.js": {
+      "maxDuration": 300,
+      "memory": 1024
+    },
+    "api/cron/sync-attribution-sheets.js": {
+      "maxDuration": 300,
+      "memory": 1024
+    },
+    "api/design-audit.js": {
+      "maxDuration": 75,
+      "memory": 512
     },
     "api/digest.js": {
       "maxDuration": 120,
@@ -168,86 +224,58 @@
       "maxDuration": 300,
       "memory": 1024
     },
-    "api/process-entity-audit.js": {
+    "api/page-stages/audit.js": {
       "maxDuration": 300,
       "memory": 1024
     },
-    "api/admin/reprocess-entity-audit.js": {
+    "api/page-stages/clarify.js": {
       "maxDuration": 300,
       "memory": 1024
     },
-    "api/report-chat.js": {
-      "maxDuration": 120,
-      "memory": 1024
-    },
-    "api/send-newsletter.js": {
-      "maxDuration": 120,
-      "memory": 1024
-    },
-    "api/agreement-chat.js": {
-      "maxDuration": 120
-    },
-    "api/content-chat.js": {
-      "maxDuration": 120
-    },
-    "api/proposal-chat.js": {
-      "maxDuration": 120
-    },
-    "api/seed-batch-audits.js": {
-      "maxDuration": 120
-    },
-    "api/cron/check-surge-blocks.js": {
-      "maxDuration": 120
-    },
-    "api/cron/process-queue.js": {
+    "api/page-stages/critique.js": {
       "maxDuration": 300,
       "memory": 1024
     },
-    "api/cron/process-batch-pages.js": {
-      "maxDuration": 120,
-      "memory": 1024
-    },
-    "api/cron/process-audit-queue.js": {
-      "maxDuration": 60
-    },
-    "api/campaign-summary.js": {
+    "api/page-stages/extract-contract.js": {
       "maxDuration": 300,
       "memory": 1024
     },
-    "api/campaign-summary-chat.js": {
-      "maxDuration": 120,
+    "api/page-stages/harden.js": {
+      "maxDuration": 300,
+      "memory": 1024
+    },
+    "api/page-stages/polish.js": {
+      "maxDuration": 300,
+      "memory": 1024
+    },
+    "api/page-stages/verify.js": {
+      "maxDuration": 300,
       "memory": 1024
     },
     "api/probe-gbp.js": {
       "maxDuration": 120,
       "memory": 1024
     },
-    "api/backfill-gbp-warehouse.js": {
+    "api/process-entity-audit.js": {
       "maxDuration": 300,
       "memory": 1024
     },
-    "api/cron/backfill-gbp-daily.js": {
-      "maxDuration": 300,
-      "memory": 1024
+    "api/proposal-chat.js": {
+      "maxDuration": 120
     },
-    "api/admin/attribution-sync.js": {
+    "api/report-chat.js": {
       "maxDuration": 120,
       "memory": 1024
     },
-    "api/cron/sync-attribution-sheets.js": {
-      "maxDuration": 300,
-      "memory": 1024
+    "api/seed-batch-audits.js": {
+      "maxDuration": 120
     },
-    "api/cron/process-image-pool.js": {
-      "maxDuration": 300,
-      "memory": 3008
+    "api/send-newsletter.js": {
+      "maxDuration": 120,
+      "memory": 1024
     },
     "api/upload-image-init.js": {
       "maxDuration": 30,
-      "memory": 512
-    },
-    "api/design-audit.js": {
-      "maxDuration": 75,
       "memory": 512
     }
   },
