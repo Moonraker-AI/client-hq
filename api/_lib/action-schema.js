@@ -63,6 +63,11 @@ var TABLES = {
   social_platforms:        { read: true, write: true, delete: true },
   directory_listings:      { read: true, write: true, delete: true },
 
+  // Page stage chain (audit→critique→polish→harden→clarify)
+  page_stage_runs:         { read: true, write: true, delete: true },
+  client_design_contracts: { read: true, write: true, delete: false }, // mark superseded; never DELETE
+  page_review_queue:       { read: true, write: true, delete: true },
+
   // Proposals
   proposals:               { read: true, write: true, delete: true },
   proposal_followups:      { read: true, write: true, delete: true },
