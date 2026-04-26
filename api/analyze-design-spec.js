@@ -6,6 +6,7 @@
 var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
 var monitor = require('./_lib/monitor');
+var contrast = require('./_lib/contrast');
 
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -207,12 +208,23 @@ Important rules:
       return res.status(500).json({ error: 'Incomplete design analysis', spec: spec });
     }
 
+    // 2026-04-26: clamp palette text colors to AA contrast before persisting.
+    // Source palettes captured from real client sites frequently fail WCAG
+    // (e.g. Mark O'Brien's #9ea7a7 muted text is 2.4:1 on his cream
+    // background). Without this, every page rendered against design_specs
+    // inherits the failure. Helper preserves hue + saturation, walks
+    // lightness only. See api/_lib/contrast.js.
+    var clampedPalette = contrast.clampPalette(spec.color_palette);
+    if (clampedPalette && clampedPalette._contrast_clamp) {
+      console.log('[analyze-design-spec] palette clamped for contact ' + contactId + ': ' + JSON.stringify(clampedPalette._contrast_clamp));
+    }
+
     // Save to Supabase
     var specRecord = {
       contact_id: contactId,
       client_slug: clientSlug,
       typography: spec.typography,
-      color_palette: spec.color_palette,
+      color_palette: clampedPalette,
       layout_patterns: spec.layout_patterns || {},
       button_styles: spec.button_styles || {},
       voice_dna: spec.voice_dna || {},
