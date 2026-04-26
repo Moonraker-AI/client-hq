@@ -35,13 +35,14 @@ async function handler(req, res) {
   if (!sb.isConfigured()) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' });
 
   try {
-    // CR-M3: Queue snapshot for cron_runs telemetry is fire-and-forget now.
-    // Previously blocked the claim path on the sb.query; a degraded Supabase
-    // read could eat the maxDuration budget before we even attempted to
-    // claim a row. withTracking.finish() records the terminal counts on its
-    // own, so losing a snapshot is harmless.
+    // CR-M3 (revised 2026-04-26): Queue snapshot runs in parallel with the
+    // claim RPC below. withTracking now awaits req._snapshotPromise before
+    // flushing the response, so the snapshot can no longer die mid-fetch
+    // when the lambda freezes. Snapshot still doesn't block claim work
+    // (both promises proceed concurrently); only the response flush waits
+    // for both to settle.
     if (req._cronRunId) {
-      (async function snapshotAsync() {
+      req._snapshotPromise = (async function snapshotAsync() {
         try {
           var nowIso = new Date().toISOString();
           var qRows = await sb.query(
