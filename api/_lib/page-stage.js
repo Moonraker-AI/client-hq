@@ -74,7 +74,7 @@ var REFERENCE_DIR = path.join(__dirname, 'page-stage-references');
 // at 15KB plus 8KB of context plus ~6KB of reference is well under the cap.
 var MAX_INPUT_CHARS  = 120000;   // ~30K tokens
 var MAX_OUTPUT_TOKENS = 6000;    // headroom for full HTML rewrite of homepage
-var DEFAULT_CLAUDE_TIMEOUT_MS = 50000;
+var DEFAULT_CLAUDE_TIMEOUT_MS = 240000;
 var CLAUDE_MODEL = 'claude-sonnet-4-6';
 
 // Cache for reference markdown — loaded synchronously at module init.
