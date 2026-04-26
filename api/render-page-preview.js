@@ -18,6 +18,7 @@ var pageToken = require('./_lib/page-token');
 var monitor = require('./_lib/monitor');
 var pageTypes = require('./_lib/page-types');
 var tplRender = require('./_lib/template-render');
+var contrast = require('./_lib/contrast');
 
 // Templates and partials live in /_templates/page-types/ and /_templates/partials/
 // In Vercel serverless, files are bundled — we read from the deployed file path.
@@ -240,6 +241,17 @@ function buildRenderData(args) {
   var allPages = args.allPages || [];
   var bioList = args.bioList || [];
   var endorsementsAll = args.endorsements || [];
+
+  // 2026-04-26: defensive contrast clamp for legacy design_specs rows
+  // analyzed before /api/analyze-design-spec started clamping at write
+  // time, plus any rows manually edited via admin UI. Clamp is idempotent,
+  // so if the row is already AA-clean, the palette is returned unchanged.
+  // See api/_lib/contrast.js for strategy.
+  if (spec && spec.color_palette) {
+    spec = Object.assign({}, spec, {
+      color_palette: contrast.clampPalette(spec.color_palette)
+    });
+  }
 
   var content = page.content_jsonb || {};
   decorateContent(content);
@@ -629,8 +641,11 @@ function buildCssVariables(spec) {
   var t = spec.typography || {};
   var b = spec.button_styles || {};
   var lines = [':root {'];
-  // Colors
+  // Colors — skip metadata keys (e.g. _contrast_clamp) and any non-string
+  // values (some palettes carry section_alternating arrays which aren't
+  // single-color CSS variables).
   Object.keys(c).forEach(function(k) {
+    if (k.charAt(0) === '_') return;
     if (typeof c[k] === 'string') {
       lines.push('  --color-' + k.replace(/_/g, '-') + ': ' + c[k] + ';');
     }
