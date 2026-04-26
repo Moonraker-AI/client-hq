@@ -1,5 +1,5 @@
-// /api/page-stages/critique.js — audit stage entry point.
-// POST                              — run the audit stage on a content_page.
+// /api/page-stages/critique.js — critique stage entry point.
+// POST                              — run the critique stage on a content_page.
 // PATCH ?run_id=...&action=accept   — accept a completed run.
 //
 // Auth: admin JWT (admin UI) or CRON_SECRET (chain orchestrator / internal).
