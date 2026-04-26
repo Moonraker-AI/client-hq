@@ -72,10 +72,24 @@ var REFERENCE_DIR = path.join(__dirname, 'page-stage-references');
 // Defensive caps. Token-cost is not the constraint per Q1 discussion, but
 // runaway prompts are. ~30K tokens of input ≈ 120KB of plain text; html_before
 // at 15KB plus 8KB of context plus ~6KB of reference is well under the cap.
+// Output cap is per-stage:
+//   - audit/critique/verify: judgment stages, 6K is plenty
+//   - polish/harden/clarify: full HTML rewrite as JSON string. The HTML
+//     itself can be 15KB; with JSON escaping (every \n becomes \\n, every "
+//     becomes \") plus the surrounding contract fields and changes array,
+//     the output can hit 8K-12K tokens easily. 16K leaves headroom.
 var MAX_INPUT_CHARS  = 120000;   // ~30K tokens
-var MAX_OUTPUT_TOKENS = 6000;    // headroom for full HTML rewrite of homepage
+var MAX_OUTPUT_TOKENS_JUDGMENT = 6000;
+var MAX_OUTPUT_TOKENS_REWRITE  = 16000;
 var DEFAULT_CLAUDE_TIMEOUT_MS = 240000;
 var CLAUDE_MODEL = 'claude-sonnet-4-6';
+
+function maxTokensForStage(stage) {
+  if (stage === 'audit' || stage === 'verify' || stage === 'critique') {
+    return MAX_OUTPUT_TOKENS_JUDGMENT;
+  }
+  return MAX_OUTPUT_TOKENS_REWRITE;
+}
 
 // Cache for reference markdown — loaded synchronously at module init.
 // Vercel bundles files referenced via __dirname-relative reads.
@@ -178,6 +192,12 @@ function buildPrompt(opts) {
 
 // What each stage must return. Keeps parsing deterministic and lets us reject
 // off-contract responses without burning a re-run.
+//
+// Three contract shapes:
+//   - audit/verify: structured findings + 5-dim score, NO html_after
+//   - critique:     Nielsen-10 score + persona red flags + recommendations,
+//                   NO html_after (critique is judgment, not rewriting)
+//   - polish/harden/clarify: full html_after + diff_summary + changes
 function outputContract(stage) {
   if (stage === 'audit' || stage === 'verify') {
     return [
@@ -189,6 +209,21 @@ function outputContract(stage) {
       '  "findings": [ { "severity": "P0"|"P1"|"P2"|"P3", "category": "string", "location": "string", "impact": "string", "recommendation": "string", "suggested_command": "string" } ],',
       '  "patterns_systemic": [ "string" ],',
       '  "positive_findings": [ "string" ]',
+      '}'
+    ].join('\n');
+  }
+  if (stage === 'critique') {
+    return [
+      'Return ONLY valid JSON, no markdown fences. Critique is a judgment stage — do NOT rewrite HTML; document findings and recommendations only. Match this shape:',
+      '{',
+      '  "design_health_score": { "visibility_status": 0-4, "match_real_world": 0-4, "user_control": 0-4, "consistency": 0-4, "error_prevention": 0-4, "recognition": 0-4, "flexibility": 0-4, "aesthetic_minimalist": 0-4, "error_recovery": 0-4, "help_documentation": 0-4, "total": 0-40 },',
+      '  "anti_patterns_verdict": "string — would a stranger believe this was AI-made?",',
+      '  "overall_impression": "string — gut reaction, biggest opportunity",',
+      '  "whats_working": [ "string", "..." ],',
+      '  "priority_issues": [ { "severity": "P0"|"P1"|"P2"|"P3", "what": "string", "why_it_matters": "string", "fix": "string", "suggested_command": "string" } ],',
+      '  "persona_red_flags": [ { "persona": "string (e.g. Anna\'s Anxious Prospect)", "flags": [ "string", "..." ] } ],',
+      '  "minor_observations": [ "string" ],',
+      '  "questions_to_consider": [ "string" ]',
       '}'
     ].join('\n');
   }
@@ -250,7 +285,7 @@ async function callClaude(opts) {
     },
     body: JSON.stringify({
       model: CLAUDE_MODEL,
-      max_tokens: MAX_OUTPUT_TOKENS,
+      max_tokens: opts.maxTokens || MAX_OUTPUT_TOKENS_JUDGMENT,
       system: opts.system,
       messages: [{ role: 'user', content: opts.user }]
     })
@@ -420,7 +455,8 @@ async function runStage(stage, opts) {
     claudeResult = await callClaude({
       system: prompt.system,
       user: prompt.user,
-      timeoutMs: opts.timeoutMs
+      timeoutMs: opts.timeoutMs,
+      maxTokens: maxTokensForStage(stage)
     });
   } catch (e) {
     // Mark the run as failed. Distinguish timeout from other failures.
@@ -493,6 +529,31 @@ async function runStage(stage, opts) {
       counts: countSeverities(findings)
     };
     diffSummary = parsed.executive_summary || null;
+  } else if (stage === 'critique') {
+    // Critique is a judgment stage. Findings come from priority_issues; the
+    // Nielsen-10 score and persona_red_flags go into findings_summary for
+    // the admin UI to render.
+    findings = (parsed.priority_issues || []).map(function(p) {
+      return {
+        severity: p.severity || 'P2',
+        category: 'critique',
+        location: p.what || '',
+        impact: p.why_it_matters || '',
+        recommendation: p.fix || '',
+        suggested_command: p.suggested_command || 'polish'
+      };
+    });
+    findingsSummary = {
+      design_health_score: parsed.design_health_score || null,
+      anti_patterns_verdict: parsed.anti_patterns_verdict || null,
+      overall_impression: parsed.overall_impression || null,
+      whats_working: parsed.whats_working || [],
+      persona_red_flags: parsed.persona_red_flags || [],
+      minor_observations: parsed.minor_observations || [],
+      questions_to_consider: parsed.questions_to_consider || [],
+      counts: countSeverities(findings)
+    };
+    diffSummary = parsed.overall_impression || null;
   } else {
     // Rewriting stages.
     htmlAfter = typeof parsed.html_after === 'string' ? parsed.html_after : null;
@@ -582,7 +643,10 @@ async function acceptRun(runId, opts) {
     var pageUpdate = { status: nextStatus, updated_at: nowIso };
     // For rewriting stages, also update content_pages.generated_html so the
     // preview endpoint reflects the latest accepted state.
-    if (run.html_after && run.stage !== 'audit' && run.stage !== 'verify') {
+    if (run.html_after &&
+        run.stage !== 'audit' &&
+        run.stage !== 'verify' &&
+        run.stage !== 'critique') {
       pageUpdate.generated_html = run.html_after;
     }
     await sb.mutate(
