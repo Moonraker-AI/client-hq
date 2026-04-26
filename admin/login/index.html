@@ -185,6 +185,19 @@ var SB_URL = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
 var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
 var sb = window.supabase.createClient(SB_URL, SB_ANON);
 
+// Honor ?return_to=<absolute-path> from the URL so deep-link admin pages
+// (e.g. /admin/pages-chain/?slug=mark-obrien) can survive the login bounce.
+// The helper hard-restricts to same-origin paths so it can't be used as an
+// open-redirect vector — anything that doesn't start with '/' or starts with
+// '//' is rejected and the user falls back to /admin.
+function postLoginDest() {
+  try {
+    var p = new URLSearchParams(window.location.search).get('return_to');
+    if (p && p.charAt(0) === '/' && p.charAt(1) !== '/') return p;
+  } catch (e) {}
+  return '/admin';
+}
+
 // If already logged in with a valid session, redirect
 sb.auth.getSession().then(function(result) {
   if (result.data.session) {
@@ -217,7 +230,7 @@ async function checkProfileAndRoute(session) {
     if (data && data.must_change_password) {
       showPasswordView();
     } else {
-      window.location.href = '/admin';
+      window.location.href = postLoginDest();
     }
   } catch (e) {}
 }
@@ -300,7 +313,7 @@ async function handleLogin() {
     if (profile && profile.must_change_password) {
       showPasswordView();
     } else {
-      window.location.href = '/admin';
+      window.location.href = postLoginDest();
     }
 
   } catch (e) {
@@ -376,7 +389,7 @@ async function handlePasswordChange() {
       return;
     }
 
-    window.location.href = '/admin';
+    window.location.href = postLoginDest();
 
   } catch (e) {
     errEl.textContent = 'Something went wrong. Please try again.';
