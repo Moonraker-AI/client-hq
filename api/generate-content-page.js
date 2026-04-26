@@ -8,6 +8,7 @@ var sb = require('./_lib/supabase');
 var auth = require('./_lib/auth');
 var sanitizer = require('./_lib/html-sanitizer');
 var monitor = require('./_lib/monitor');
+var designBans = require('./_lib/design-bans');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -313,6 +314,10 @@ PLATFORM: ${platform.toUpperCase()} (Hybrid Styling Mode)
 - Only custom/branded elements (CTA bands, FAQ accordion, NEO section, schema) receive inline or embedded styles.
 - Import Google Fonts only if different from what the site theme provides.`;
   }
+
+  // Append impeccable-derived anti-patterns + required practices.
+  // Keep this last so it's the most recent context Claude sees before generating.
+  prompt += '\n\n' + designBans.MOONRAKER_DESIGN_BANS;
 
   return prompt;
 }
