@@ -293,10 +293,17 @@ function buildRenderData(args) {
 
     var team = (bioList || []).map(function (b) {
       var nm = b.therapist_name || '';
+      var parts = nm.trim().split(/\s+/).filter(Boolean);
+      var initials = '?';
+      if (parts.length >= 2) {
+        initials = (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+      } else if (parts.length === 1) {
+        initials = parts[0].charAt(0).toUpperCase();
+      }
       return {
         id: b.id,
         name: nm,
-        initial: nm ? nm.trim().charAt(0).toUpperCase() : '?',
+        initial: initials,    // 1-2 char fallback for headshot-less team cards
         credentials: b.therapist_credentials || '',
         headshot_url: b.headshot_url || '',
         slug: b.slug || '',
@@ -396,8 +403,27 @@ function buildRenderData(args) {
 
     // Page content (whatever the template type expects under content_jsonb)
     content: content,
-    // Common content sections, hoisted for convenience in templates
-    hero: content.hero || {},
+    // Common content sections, hoisted for convenience in templates.
+    //
+    // Hero image fallback for solo practices: if no hero.image_url is set
+    // AND the practice has exactly one bio AND that bio has a headshot, use
+    // the headshot as the hero image. The clinician *is* the practice for
+    // solo, so showing their face makes the hero feel real instead of
+    // half-built. Multi-clinician practices skip this — no single "face"
+    // captures the whole team, and a headshot would be misleading.
+    hero: (function () {
+      var h = Object.assign({}, content.hero || {});
+      if (!h.image_url && (bioList || []).length === 1) {
+        var primary = bioList[0];
+        if (primary && primary.headshot_url) {
+          h.image_url = primary.headshot_url;
+          h.image_alt = primary.therapist_name || '';
+          h.image_is_clinician = true;
+        }
+      }
+      h.has_image = !!h.image_url;
+      return h;
+    })(),
     sections: content.sections || [],
     body_html: content.body_html || '',  // rich text, rendered via {{{body_html}}}
     cta: content.cta || {},
