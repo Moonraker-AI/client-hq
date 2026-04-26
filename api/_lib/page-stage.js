@@ -208,7 +208,8 @@ function outputContract(stage) {
       '  "executive_summary": "string",',
       '  "findings": [ { "severity": "P0"|"P1"|"P2"|"P3", "category": "string", "location": "string", "impact": "string", "recommendation": "string", "suggested_command": "string" } ],',
       '  "patterns_systemic": [ "string" ],',
-      '  "positive_findings": [ "string" ]',
+      '  "positive_findings": [ "string" ],',
+      '  "clarifying_questions": [ { "topic": "string", "question": "string — what you would ask the operator if you could", "options": [ "string", "..." ], "decision_taken": "string — assumption you made for this audit" } ]',
       '}'
     ].join('\n');
   }
@@ -223,20 +224,28 @@ function outputContract(stage) {
       '  "priority_issues": [ { "severity": "P0"|"P1"|"P2"|"P3", "what": "string", "why_it_matters": "string", "fix": "string", "suggested_command": "string" } ],',
       '  "persona_red_flags": [ { "persona": "string (e.g. Anna\'s Anxious Prospect)", "flags": [ "string", "..." ] } ],',
       '  "minor_observations": [ "string" ],',
-      '  "questions_to_consider": [ "string" ]',
+      '  "questions_to_consider": [ "string" ],',
+      '  "clarifying_questions": [ { "topic": "string", "question": "string — what you would ask the operator", "options": [ "string", "..." ], "decision_taken": "string — assumption you made for this critique" } ]',
       '}'
     ].join('\n');
   }
   // Rewriting stages return both the new HTML and a structured diff summary.
   return [
-    'Return ONLY valid JSON, no markdown fences, matching this shape:',
+    'Return ONLY valid JSON, no markdown fences, no preamble, no questions back to the user. Match this shape:',
     '{',
     '  "html_after": "the rewritten HTML, full document",',
     '  "diff_summary": "1-3 sentence plain-English summary of what changed and why",',
     '  "changes": [ { "section": "string", "before": "string (short snippet)", "after": "string (short snippet)", "reason": "string" } ],',
     '  "findings_resolved": [ "string — descriptions of prior findings this pass addressed" ],',
-    '  "findings_new": [ { "severity": "P0"|"P1"|"P2"|"P3", "category": "string", "location": "string", "impact": "string", "recommendation": "string" } ]',
-    '}'
+    '  "findings_new": [ { "severity": "P0"|"P1"|"P2"|"P3", "category": "string", "location": "string", "impact": "string", "recommendation": "string" } ],',
+    '  "clarifying_questions": [ { "topic": "string — short label", "question": "string — the question you would ask the operator", "options": [ "string", "..." ], "decision_taken": "string — what you chose to do for this pass and why" } ]',
+    '}',
+    '',
+    'IMPORTANT — best-effort policy:',
+    '- Always produce a complete html_after. NEVER return prose, NEVER ask the operator questions in lieu of a rewrite.',
+    '- When the input has missing or ambiguous information (unverified claims, placeholder testimonials, unspecified credentials, missing photos, ambiguous service names), make the safest defensible choice and ship the rewrite. Examples: remove an unverifiable statistic; remove a placeholder testimonial entirely; soften an unverified credential claim to an honest descriptor; use an initials placeholder for a missing photo.',
+    '- Surface the concern as a clarifying_questions entry so the admin sees it and can correct it on a rerun. The decision_taken field captures what you did.',
+    '- Concerns surfaced this way are notifications, not blockers. The chain continues. Admin can rerun with operator_notes if a different decision is needed.'
   ].join('\n');
 }
 
@@ -459,6 +468,48 @@ async function runStage(stage, opts) {
       maxTokens: maxTokensForStage(stage)
     });
   } catch (e) {
+    // Special-case: a rewriting stage returned prose instead of JSON.
+    // This usually means Claude wanted to ask the operator questions before
+    // committing to a rewrite. Treat as a "needs review" outcome rather than
+    // a hard failure: pass html_before through unchanged, surface the prose
+    // as a clarifying_question, and mark the run complete so the admin sees
+    // the question and can rerun with operator_notes if desired.
+    var isRewriteStage = (stage === 'polish' || stage === 'harden' || stage === 'clarify');
+    var isParseError = (e.message === 'Claude response not valid JSON');
+    if (isRewriteStage && isParseError && e.rawResponse) {
+      var salvageBody = {
+        run_status: 'complete',
+        html_after: htmlBefore, // pass-through; nothing changed
+        diff_summary: 'Stage returned questions instead of a rewrite — see clarifying_questions. html_after passes html_before through unchanged.',
+        findings: [],
+        findings_summary: {
+          changes: [],
+          findings_resolved: [],
+          clarifying_questions: [{
+            topic: 'Stage requested operator input before rewriting',
+            question: e.rawResponse.slice(0, 4000),
+            options: [],
+            decision_taken: 'No rewrite performed — html_before passed through unchanged. Rerun with operator_notes to commit a decision.'
+          }],
+          counts: { P0: 0, P1: 0, P2: 0, P3: 0 }
+        },
+        input_tokens: null,
+        output_tokens: null,
+        duration_ms: e.durationMs || null,
+        claude_request_id: e.requestId || null,
+        model: CLAUDE_MODEL,
+        completed_at: new Date().toISOString()
+      };
+      await sb.mutate('page_stage_runs?id=eq.' + runId, 'PATCH', salvageBody, 'return=minimal').catch(function(){});
+      monitor.warn('page-stage:' + stage, 'Rewrite stage returned prose; salvaged as clarifying_questions', {
+        content_page_id: opts.contentPageId,
+        run_id: runId,
+        request_id: e.requestId
+      });
+      // Return synthesized run record for the route handler.
+      return Object.assign({ id: runId, content_page_id: opts.contentPageId, stage: stage }, salvageBody);
+    }
+
     // Mark the run as failed. Distinguish timeout from other failures.
     var runStatus = 'failed';
     if (e.name === 'AbortError' || /timeout/i.test(e.message || '')) {
@@ -526,6 +577,7 @@ async function runStage(stage, opts) {
       anti_patterns_verdict: parsed.anti_patterns_verdict || null,
       executive_summary: parsed.executive_summary || null,
       detector_summary: detectorResult ? detectorResult.summary : null,
+      clarifying_questions: parsed.clarifying_questions || [],
       counts: countSeverities(findings)
     };
     diffSummary = parsed.executive_summary || null;
@@ -551,6 +603,7 @@ async function runStage(stage, opts) {
       persona_red_flags: parsed.persona_red_flags || [],
       minor_observations: parsed.minor_observations || [],
       questions_to_consider: parsed.questions_to_consider || [],
+      clarifying_questions: parsed.clarifying_questions || [],
       counts: countSeverities(findings)
     };
     diffSummary = parsed.overall_impression || null;
@@ -562,6 +615,7 @@ async function runStage(stage, opts) {
     findingsSummary = {
       changes: parsed.changes || [],
       findings_resolved: parsed.findings_resolved || [],
+      clarifying_questions: parsed.clarifying_questions || [],
       counts: countSeverities(findings)
     };
     if (!htmlAfter || htmlAfter.length < 200) {
