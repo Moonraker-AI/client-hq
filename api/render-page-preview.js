@@ -240,6 +240,7 @@ function buildRenderData(args) {
   var endorsementsAll = args.endorsements || [];
 
   var content = page.content_jsonb || {};
+  decorateContent(content);
   var nav = buildNav(allPages, bioList, contact);
   var footer = buildFooter(allPages, contact);
 
@@ -751,3 +752,47 @@ function clipText(text, maxLen) {
 }
 
 module.exports.clipText = clipText;
+
+// Allowed icon names for value-section items. Anything not in this set is
+// rendered as the generic check icon. Keep this list aligned with the
+// homepage.html template's {{#if icon_X}}…{{/if}} branches.
+var VALUE_ICONS = ['heart', 'shield', 'users', 'clock', 'book', 'compass'];
+
+// Walk content_jsonb and normalize structures that the template can't
+// derive on its own. Keeps the renderer a pure string substitutor and
+// concentrates "shape" logic in one place.
+//
+// Today this handles:
+//   content.process.steps[].number      – '01', '02' style display number
+//   content.values.items[].icon_<name>  – truthy flag per icon name
+//
+// Mutates `content` in place. Safe on undefined sections.
+function decorateContent(content) {
+  if (!content || typeof content !== 'object') return;
+
+  // Process steps: pad index to two digits for the numeric badge.
+  if (content.process && Array.isArray(content.process.steps)) {
+    content.process.steps.forEach(function (step, i) {
+      if (!step || typeof step !== 'object') return;
+      var n = i + 1;
+      step.number = (n < 10 ? '0' : '') + n;
+    });
+  }
+
+  // Value items: precompute icon_<name> flags. Falls back to icon_default
+  // when the icon name is missing or unrecognized so the SVG slot is never
+  // empty.
+  if (content.values && Array.isArray(content.values.items)) {
+    content.values.items.forEach(function (item) {
+      if (!item || typeof item !== 'object') return;
+      var name = (item.icon || '').toLowerCase();
+      if (VALUE_ICONS.indexOf(name) !== -1) {
+        item['icon_' + name] = true;
+      } else {
+        item.icon_default = true;
+      }
+    });
+  }
+}
+
+module.exports.decorateContent = decorateContent;
