@@ -237,17 +237,229 @@ a:hover { text-decoration: underline; }
 }
 .card.expanded .card-body { max-height: 4000px; padding: 1rem 1.25rem 1.25rem; }
 
-.body-placeholder {
-  background: var(--color-bg);
-  border: 1px dashed var(--color-border);
+/* ── Stage timeline ────────────────────────────────────── */
+.stage-panels { display: flex; flex-direction: column; gap: .5rem; margin-top: .5rem; }
+
+.stage-panel {
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  padding: 1.5rem;
-  text-align: center;
-  color: var(--color-muted);
-  font-size: .85rem;
+  background: var(--color-surface);
+  overflow: hidden;
 }
-.body-placeholder strong { color: var(--color-heading); display: block; margin-bottom: .25rem; }
-.body-placeholder code { background: var(--color-surface); padding: .12rem .35rem; border-radius: 4px; font-size: .78rem; color: var(--color-heading); }
+.stage-panel.skipped { opacity: .55; }
+
+.stage-panel-header {
+  display: grid;
+  grid-template-columns: 24px minmax(140px, auto) 1fr auto;
+  gap: .85rem;
+  align-items: center;
+  padding: .65rem .9rem;
+  cursor: pointer;
+  user-select: none;
+}
+.stage-panel-header:hover { background: var(--color-bg); }
+.stage-panel.open .stage-panel-header { background: var(--color-bg); border-bottom: 1px solid var(--color-border); }
+
+.stage-panel-glyph {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .65rem;
+  border: 1.5px solid var(--color-border);
+  color: var(--color-muted);
+  background: var(--color-surface);
+}
+.stage-panel-glyph.running { border-color: var(--color-info); color: var(--color-info); background: rgba(59,130,246,.08); }
+.stage-panel-glyph.review { border-color: var(--color-warning); color: var(--color-warning); background: rgba(245,158,11,.1); }
+.stage-panel-glyph.questions { border-color: var(--color-amber-deep); color: var(--color-amber-deep); background: rgba(245,158,11,.16); }
+.stage-panel-glyph.accepted { border-color: var(--color-primary); color: var(--color-primary-hover); background: var(--color-primary-subtle); }
+.stage-panel-glyph.failed { border-color: var(--color-danger); color: var(--color-danger); background: rgba(239,68,68,.1); }
+
+.stage-panel-name { font-family: 'Outfit', sans-serif; font-weight: 600; color: var(--color-heading); font-size: .92rem; }
+.stage-panel-summary { font-size: .78rem; color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stage-panel-actions { display: flex; gap: .35rem; align-items: center; }
+
+.btn { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .76rem; padding: .35rem .75rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; white-space: nowrap; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-primary { background: var(--color-primary); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+.btn-ghost { background: transparent; color: var(--color-body); border-color: var(--color-border); }
+.btn-ghost:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary-hover); }
+.btn-danger-ghost { background: transparent; color: var(--color-danger); border-color: var(--color-border); }
+.btn-danger-ghost:hover:not(:disabled) { border-color: var(--color-danger); }
+
+.stage-panel-body {
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .25s ease;
+}
+.stage-panel.open .stage-panel-body { max-height: 6000px; padding: 1rem 1.1rem 1.1rem; }
+
+/* Tabs inside a stage panel */
+.tab-strip { display: flex; gap: 0; border-bottom: 1.5px solid var(--color-border); margin-bottom: .85rem; flex-wrap: wrap; }
+.tab-btn {
+  padding: .45rem 1rem; font-family: 'Outfit', sans-serif; font-size: .82rem; font-weight: 600;
+  color: var(--color-muted); background: none; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; margin-bottom: -1.5px; transition: color .15s, border-color .15s;
+}
+.tab-btn:hover { color: var(--color-heading); }
+.tab-btn.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* Findings list */
+.findings-list { display: flex; flex-direction: column; gap: .4rem; }
+.finding {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: .65rem;
+  padding: .55rem .75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: .82rem;
+}
+.finding-sev {
+  font-family: 'Outfit', sans-serif; font-weight: 700; font-size: .7rem;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 4px; padding: .15rem .25rem;
+}
+.finding-sev.P0 { background: rgba(239,68,68,.18); color: var(--color-danger); }
+.finding-sev.P1 { background: rgba(245,158,11,.2); color: var(--color-amber-deep); }
+.finding-sev.P2 { background: rgba(59,130,246,.15); color: var(--color-info); }
+.finding-sev.P3 { background: rgba(107,117,153,.15); color: var(--color-muted); }
+.finding-body { min-width: 0; }
+.finding-title { font-weight: 600; color: var(--color-heading); margin-bottom: .15rem; font-size: .82rem; }
+.finding-loc { font-family: 'SF Mono', 'Fira Code', monospace; font-size: .72rem; color: var(--color-muted); margin-bottom: .25rem; word-break: break-all; }
+.finding-rec { color: var(--color-body); font-size: .8rem; line-height: 1.45; }
+
+/* Score block */
+.score-block {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: .5rem;
+  background: var(--color-bg);
+  padding: .75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  margin-bottom: .85rem;
+}
+.score-cell { text-align: center; padding: .35rem 0; }
+.score-cell .num { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.15rem; color: var(--color-heading); display: block; }
+.score-cell .label { font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); }
+.score-cell.total .num { color: var(--color-primary-hover); }
+.score-cell.bad .num { color: var(--color-danger); }
+.score-cell.warn .num { color: var(--color-amber-deep); }
+
+/* Persona red flags */
+.persona-block { background: var(--color-bg); padding: .75rem .85rem; border: 1px solid var(--color-border); border-radius: 8px; margin-bottom: .5rem; }
+.persona-block h4 { font-size: .82rem; margin-bottom: .35rem; color: var(--color-heading); }
+.persona-block ul { margin: 0; padding-left: 1.25rem; font-size: .8rem; line-height: 1.55; }
+.persona-block li { color: var(--color-body); margin-bottom: .15rem; }
+
+/* HTML preview iframe */
+.preview-wrap {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  height: 600px;
+}
+.preview-wrap iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+.preview-empty { padding: 2rem; text-align: center; color: var(--color-muted); font-size: .85rem; }
+
+/* Diff */
+.diff-summary { background: var(--color-primary-subtle); border: 1px solid var(--color-primary-light); border-radius: 8px; padding: .65rem .85rem; margin-bottom: .85rem; font-size: .85rem; line-height: 1.5; }
+.diff-changes { display: flex; flex-direction: column; gap: .4rem; }
+.diff-change {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: .55rem .75rem;
+  font-size: .82rem;
+}
+.diff-change-section { font-weight: 600; color: var(--color-heading); margin-bottom: .25rem; }
+.diff-change-reason { color: var(--color-body); font-size: .78rem; line-height: 1.5; }
+
+/* Source HTML viewer */
+.source-html-pre {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: .75rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: .72rem;
+  line-height: 1.55;
+  max-height: 500px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-body);
+}
+
+/* Clarifying questions strip */
+.questions-strip {
+  background: rgba(245,158,11,.08);
+  border: 1px solid rgba(245,158,11,.3);
+  border-radius: 8px;
+  padding: .55rem .85rem;
+  margin-bottom: .85rem;
+  font-size: .82rem;
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  flex-wrap: wrap;
+}
+.questions-strip-icon { font-size: 1rem; color: var(--color-amber-deep); }
+.questions-strip-text { color: var(--color-heading); flex: 1; }
+.questions-strip a { color: var(--color-amber-deep); font-weight: 600; cursor: pointer; }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(20,28,58,.55); z-index: 500;
+  display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+}
+.modal {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: 14px; max-width: 580px; width: 100%; max-height: 86vh;
+  overflow: auto; box-shadow: 0 24px 60px rgba(20,28,58,.35);
+}
+.modal-header { padding: 1rem 1.25rem .65rem; border-bottom: 1px solid var(--color-border); }
+.modal-header h3 { font-size: 1rem; margin-bottom: .15rem; }
+.modal-header .topic { font-size: .75rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: .04em; }
+.modal-body { padding: 1rem 1.25rem; }
+.modal-body .question { font-size: .9rem; color: var(--color-heading); margin-bottom: .75rem; line-height: 1.5; }
+.modal-body .options { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 8px; padding: .65rem .85rem; margin-bottom: .75rem; }
+.modal-body .options-label { font-size: .68rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: .35rem; }
+.modal-body .option-row { display: flex; align-items: flex-start; gap: .5rem; padding: .35rem 0; cursor: pointer; }
+.modal-body .option-row:hover { color: var(--color-primary-hover); }
+.modal-body .option-row input { margin-top: .35rem; flex-shrink: 0; }
+.modal-body .option-row label { font-size: .82rem; cursor: pointer; line-height: 1.45; }
+.modal-body .decision { background: var(--color-primary-subtle); border: 1px solid var(--color-primary-light); border-radius: 8px; padding: .55rem .75rem; font-size: .8rem; line-height: 1.5; margin-bottom: .65rem; }
+.modal-body .decision strong { color: var(--color-primary-hover); }
+.modal-body textarea { width: 100%; min-height: 60px; padding: .5rem .65rem; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); color: var(--color-body); font-family: 'Inter', sans-serif; font-size: .82rem; resize: vertical; }
+.modal-body textarea:focus { outline: 2px solid var(--color-primary); outline-offset: -1px; border-color: var(--color-primary); }
+.modal-actions { display: flex; gap: .5rem; justify-content: flex-end; padding: .75rem 1.25rem 1rem; border-top: 1px solid var(--color-border); }
+
+/* Promote bar */
+.promote-bar {
+  background: var(--color-primary-subtle);
+  border: 1px solid var(--color-primary);
+  border-radius: 10px;
+  padding: .85rem 1rem;
+  margin-top: .85rem;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  flex-wrap: wrap;
+}
+.promote-bar-text { flex: 1; font-size: .85rem; }
+.promote-bar-text strong { color: var(--color-primary-hover); display: block; font-family: 'Outfit', sans-serif; font-size: .9rem; margin-bottom: .15rem; }
+
+/* Empty state for stage with no run */
+.stage-empty { padding: .85rem 1rem; color: var(--color-muted); font-size: .82rem; background: var(--color-bg); border: 1px dashed var(--color-border); border-radius: 8px; }
+.stage-empty .hint { font-size: .75rem; margin-top: .25rem; }
 
 .body-meta-grid {
   display: grid;
@@ -379,6 +591,8 @@ var state = {
   pages: [],
   contract: null,
   expanded: new Set(),
+  openStages: new Set(),
+  runDetailCache: {},
   pollTimer: null,
   loading: false
 };
@@ -410,7 +624,33 @@ async function load() {
     var data = await resp.json();
     state.pages = data.pages || [];
     state.contract = data.contract;
+    // If a clarifying-question modal is open, defer rerender to avoid blowing
+    // away the operator's in-progress input. Reschedule the poll instead.
+    if (document.getElementById('cqModal')) {
+      schedulePoll();
+      return;
+    }
     render(data);
+    // After full rerender, restore any open stage panels' tab content. The
+    // panel HTML is regenerated empty and hydrated in toggleStagePanel; we
+    // need to repaint open ones now.
+    state.openStages.forEach(function(key) {
+      var parts = key.split(':');
+      var pageId = parts[0]; var stageKey = parts[1];
+      var panel = document.querySelector('.stage-panel[data-page-id="' + pageId + '"][data-stage="' + stageKey + '"]');
+      if (!panel) return;
+      panel.classList.add('open');
+      var body = panel.querySelector('.stage-panel-body');
+      if (!body) return;
+      var page = state.pages.find(function(p) { return p.id === pageId; });
+      var stageDef = STAGES.find(function(s) { return s.key === stageKey; });
+      var stage = page && page.stages ? page.stages[stageKey] : null;
+      if (page && stage && stageDef) {
+        body.innerHTML = renderStageBody(page, stageDef, stage);
+        var firstTab = body.querySelector('.tab-btn.active') || body.querySelector('.tab-btn');
+        if (firstTab) loadTabContent(pageId, stageKey, firstTab.getAttribute('data-tab'));
+      }
+    });
     schedulePoll();
   } catch (e) {
     document.getElementById('content').innerHTML =
@@ -530,11 +770,36 @@ function renderCard(page) {
 }
 
 function renderCardBody(page) {
-  // Session 1 scope: metadata strip + placeholder for the stage timeline.
-  // Session 2 will replace .body-placeholder with the full stage panels +
-  // tabs + run/accept/rerun controls.
   var lastTouched = page.updated_at || page.created_at;
   var keyword = page.target_keyword || '—';
+
+  // Promote action: visible at the top of the body when status warrants it.
+  var promoteHtml = '';
+  if (page.status === 'ready_for_contract') {
+    promoteHtml =
+      '<div class="promote-bar">' +
+        '<div class="promote-bar-text">' +
+          '<strong>Ready to extract design contract</strong>' +
+          'Homepage chain complete. Extract the contract so subsequent pages inherit the locked tokens, voice, and copy conventions.' +
+        '</div>' +
+        '<button class="btn btn-primary" onclick="event.stopPropagation();promotePage(\'' + page.id + '\');">' +
+          'Extract contract →</button>' +
+      '</div>';
+  } else if (page.status === 'ready_for_client') {
+    promoteHtml =
+      '<div class="promote-bar">' +
+        '<div class="promote-bar-text">' +
+          '<strong>Ready for client review</strong>' +
+          'Page is verified and contract-aligned. Queue it for the client review portal.' +
+        '</div>' +
+        '<button class="btn btn-primary" onclick="event.stopPropagation();promotePage(\'' + page.id + '\');">' +
+          'Queue for client →</button>' +
+      '</div>';
+  }
+
+  var stagePanelsHtml = STAGES.map(function(s) {
+    return renderStagePanel(page, s);
+  }).join('');
 
   return '' +
     '<div class="body-meta-grid">' +
@@ -543,12 +808,565 @@ function renderCardBody(page) {
       '<div class="meta"><div class="meta-label">Template</div><div class="meta-value mono">' + escapeHtml(page.template_version || 'v1') + '</div></div>' +
       '<div class="meta"><div class="meta-label">Last activity</div><div class="meta-value">' + escapeHtml(timeAgo(lastTouched)) + '</div></div>' +
     '</div>' +
-    '<div class="body-placeholder">' +
-      '<strong>Stage timeline coming next push</strong>' +
-      'Run / accept / rerun controls, before/after preview tabs, clarifying-question modals all wire in here. ' +
-      'For now, fire stages with: <code>POST /api/page-stages/&lt;stage&gt;</code> ' +
-      '<code>{ "content_page_id": "' + escapeHtml(page.id) + '" }</code>' +
+    promoteHtml +
+    '<div class="stage-panels">' + stagePanelsHtml + '</div>';
+}
+
+// Render a single stage panel (collapsed by default; opens to show tabs).
+function renderStagePanel(page, stageDef) {
+  var stage = (page.stages && page.stages[stageDef.key]) || { ui_state: 'pending', latest: null, accepted: null, history_count: 0 };
+  var skipped = isStageSkipped(page, stageDef.key);
+  var ui = skipped ? 'pending' : (stage.ui_state || 'pending');
+  var open = state.openStages.has(page.id + ':' + stageDef.key);
+
+  var summaryHtml = renderStageSummary(stage, skipped);
+  var actionsHtml = renderStageActions(page, stageDef, stage, skipped);
+
+  var bodyId = 'sp-body-' + page.id + '-' + stageDef.key;
+  var bodyHtml = open ? renderStageBody(page, stageDef, stage) : '';
+
+  return '' +
+    '<div class="stage-panel ' + (skipped ? 'skipped ' : '') + (open ? 'open' : '') + '" ' +
+         'data-page-id="' + page.id + '" data-stage="' + stageDef.key + '">' +
+      '<div class="stage-panel-header" onclick="toggleStagePanel(\'' + page.id + '\', \'' + stageDef.key + '\');">' +
+        '<div class="stage-panel-glyph ' + ui + '">' + stageDef.glyph + '</div>' +
+        '<div class="stage-panel-name">' + escapeHtml(stageDef.label) + '</div>' +
+        '<div class="stage-panel-summary">' + summaryHtml + '</div>' +
+        '<div class="stage-panel-actions" onclick="event.stopPropagation();">' + actionsHtml + '</div>' +
+      '</div>' +
+      '<div class="stage-panel-body" id="' + bodyId + '">' + bodyHtml + '</div>' +
     '</div>';
+}
+
+function renderStageSummary(stage, skipped) {
+  if (skipped) return '<em>skipped — homepage only</em>';
+  var latest = stage.latest;
+  if (!latest) return 'not yet run';
+  var fs = latest.findings_summary || {};
+  var counts = fs.counts || {};
+  var parts = [];
+  if (latest.run_status === 'running') parts.push('running…');
+  else if (latest.run_status === 'failed') parts.push('failed');
+  else if (latest.run_status === 'timeout') parts.push('timed out');
+  else {
+    if (latest.duration_ms) parts.push(Math.round(latest.duration_ms / 1000) + 's');
+    if (latest.input_tokens && latest.output_tokens) {
+      parts.push(latest.input_tokens.toLocaleString() + '→' + latest.output_tokens.toLocaleString() + 'tok');
+    }
+    if (counts.P0 || counts.P1) {
+      var bad = (counts.P0 || 0) + (counts.P1 || 0);
+      parts.push(bad + ' blocking');
+    }
+    if (fs.claude_score && fs.claude_score.total != null) {
+      parts.push(fs.claude_score.total + '/20');
+    } else if (fs.design_health_score && fs.design_health_score.total != null) {
+      parts.push(fs.design_health_score.total + '/40');
+    }
+  }
+  if (stage.history_count > 1) parts.push(stage.history_count + ' runs');
+  return parts.join(' · ');
+}
+
+function renderStageActions(page, stageDef, stage, skipped) {
+  if (skipped) return '';
+  var latest = stage.latest;
+
+  // Eligibility for "Run": page must be at the right preceding status.
+  // Simplest model: for each stage, runnable when there's no in-flight run.
+  var canRun = !latest || (latest.run_status !== 'running');
+  // Eligibility for "Accept" / "Rerun": latest is complete and unaccepted.
+  var canReview = latest && latest.run_status === 'complete' && !latest.accepted_at && !latest.rejected_at;
+
+  var html = '';
+  if (canReview) {
+    html += '<button class="btn btn-primary" onclick="acceptRun(\'' + latest.id + '\', \'' + stageDef.key + '\');">Accept</button>';
+    html += '<button class="btn btn-ghost" onclick="rerunStage(\'' + page.id + '\', \'' + stageDef.key + '\');">Rerun</button>';
+  } else if (latest && latest.run_status === 'running') {
+    html += '<button class="btn btn-ghost" disabled>Running…</button>';
+  } else if (canRun) {
+    html += '<button class="btn btn-primary" onclick="rerunStage(\'' + page.id + '\', \'' + stageDef.key + '\');">' +
+            (latest ? 'Rerun' : 'Run') + '</button>';
+  }
+  return html;
+}
+
+// Render the full body of an open stage panel.
+function renderStageBody(page, stageDef, stage) {
+  var run = stage.latest;
+  if (!run) {
+    return '<div class="stage-empty">No run yet.<div class="hint">Click <strong>Run</strong> above to fire this stage.</div></div>';
+  }
+  if (run.run_status === 'running') {
+    return '<div class="stage-empty">Running…<div class="hint">This panel will refresh automatically when the run completes.</div></div>';
+  }
+  if (run.run_status === 'failed' || run.run_status === 'timeout') {
+    return '<div class="stage-empty" style="color:var(--color-danger);">' +
+      escapeHtml(run.error_message || 'Run failed') +
+      '<div class="hint" style="color:var(--color-muted);">Click <strong>Rerun</strong> to try again.</div></div>';
+  }
+
+  // Tabs depend on stage type.
+  var tabs = stageTabsFor(stageDef.key);
+  var stripHtml = renderQuestionsStrip(page, stageDef, run);
+
+  // Content for each tab. Most tabs need run.html_before / html_after which are
+  // not in the list payload — fetch on demand. Initially render placeholders;
+  // ensureRunDetail() will fill them in.
+  var tabContent = tabs.map(function(t, i) {
+    var paneId = 'pane-' + page.id + '-' + stageDef.key + '-' + t.key;
+    return '<div class="tab-pane' + (i === 0 ? ' active' : '') + '" id="' + paneId + '">' +
+      renderTabPlaceholder(t.key) +
+      '</div>';
+  }).join('');
+
+  var tabBtns = tabs.map(function(t, i) {
+    return '<button class="tab-btn' + (i === 0 ? ' active' : '') + '" ' +
+           'data-tab="' + t.key + '" ' +
+           'onclick="switchTab(this, \'' + page.id + '\', \'' + stageDef.key + '\', \'' + t.key + '\');">' +
+           escapeHtml(t.label) + '</button>';
+  }).join('');
+
+  return stripHtml +
+    '<div class="tab-strip">' + tabBtns + '</div>' +
+    tabContent;
+}
+
+function stageTabsFor(stageKey) {
+  if (stageKey === 'audit' || stageKey === 'verify') {
+    return [
+      { key: 'findings', label: 'Findings' },
+      { key: 'source',   label: 'Source HTML' }
+    ];
+  }
+  if (stageKey === 'critique') {
+    return [
+      { key: 'findings', label: 'Findings' },
+      { key: 'personas', label: 'Persona red flags' },
+      { key: 'source',   label: 'Source HTML' }
+    ];
+  }
+  // polish, harden, clarify
+  return [
+    { key: 'before',   label: 'Before' },
+    { key: 'after',    label: 'After' },
+    { key: 'diff',     label: 'Diff' },
+    { key: 'findings', label: 'Findings' }
+  ];
+}
+
+function renderTabPlaceholder(tabKey) {
+  if (tabKey === 'before' || tabKey === 'after' || tabKey === 'source') {
+    return '<div class="preview-empty">Loading…</div>';
+  }
+  return '<div class="stage-empty">Loading…</div>';
+}
+
+function renderQuestionsStrip(page, stageDef, run) {
+  var fs = run.findings_summary || {};
+  var qs = (fs.clarifying_questions || []).filter(function(q) { return q && !q.acknowledged_at; });
+  if (qs.length === 0) return '';
+  return '<div class="questions-strip">' +
+    '<span class="questions-strip-icon">?</span>' +
+    '<div class="questions-strip-text">' +
+      '<strong>' + qs.length + ' clarifying question' + (qs.length === 1 ? '' : 's') + '</strong> from this run — Claude made best-effort choices and surfaced these for your review.' +
+    '</div>' +
+    '<a onclick="openQuestionsModal(\'' + run.id + '\', \'' + page.id + '\', \'' + stageDef.key + '\');">Review →</a>' +
+    '</div>';
+}
+
+// ── Tab switching with on-demand run-detail fetching ──────────
+
+function switchTab(btn, pageId, stageKey, tabKey) {
+  var panel = document.querySelector('.stage-panel[data-page-id="' + pageId + '"][data-stage="' + stageKey + '"]');
+  if (!panel) return;
+  panel.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  panel.querySelectorAll('.tab-pane').forEach(function(p) { p.classList.remove('active'); });
+  var paneId = 'pane-' + pageId + '-' + stageKey + '-' + tabKey;
+  var pane = document.getElementById(paneId);
+  if (pane) pane.classList.add('active');
+  loadTabContent(pageId, stageKey, tabKey);
+}
+
+async function loadTabContent(pageId, stageKey, tabKey) {
+  var page = state.pages.find(function(p) { return p.id === pageId; });
+  if (!page) return;
+  var stage = page.stages && page.stages[stageKey];
+  if (!stage || !stage.latest) return;
+  var runId = stage.latest.id;
+  var paneId = 'pane-' + pageId + '-' + stageKey + '-' + tabKey;
+  var pane = document.getElementById(paneId);
+  if (!pane) return;
+
+  // Fetch run detail (cached) when we need html_before/html_after/findings.
+  var detail = state.runDetailCache[runId];
+  if (!detail) {
+    try {
+      var resp = await fetch('/api/page-stages/run?id=' + encodeURIComponent(runId), { credentials: 'same-origin' });
+      if (!resp.ok) {
+        pane.innerHTML = '<div class="stage-empty" style="color:var(--color-danger);">Failed to fetch run detail (' + resp.status + ')</div>';
+        return;
+      }
+      var data = await resp.json();
+      detail = data.run;
+      state.runDetailCache[runId] = detail;
+    } catch (e) {
+      pane.innerHTML = '<div class="stage-empty" style="color:var(--color-danger);">' + escapeHtml(e.message) + '</div>';
+      return;
+    }
+  }
+
+  pane.innerHTML = renderTab(tabKey, detail, stageKey);
+}
+
+function renderTab(tabKey, run, stageKey) {
+  if (tabKey === 'findings') return renderFindingsTab(run, stageKey);
+  if (tabKey === 'source')   return renderSourceTab(run);
+  if (tabKey === 'before')   return renderHtmlPreview(run.html_before, 'before');
+  if (tabKey === 'after')    return renderHtmlPreview(run.html_after, 'after');
+  if (tabKey === 'diff')     return renderDiffTab(run);
+  if (tabKey === 'personas') return renderPersonasTab(run);
+  return '<div class="stage-empty">Unknown tab.</div>';
+}
+
+function renderFindingsTab(run, stageKey) {
+  var fs = run.findings_summary || {};
+  var html = '';
+
+  // Stage-specific score blocks at the top.
+  if (stageKey === 'audit' || stageKey === 'verify') {
+    var s = fs.claude_score || {};
+    if (s.total != null) {
+      var totalCls = s.total >= 16 ? '' : (s.total >= 12 ? 'warn' : 'bad');
+      html += '<div class="score-block">' +
+        '<div class="score-cell total ' + totalCls + '"><span class="num">' + s.total + '/20</span><span class="label">Total</span></div>' +
+        '<div class="score-cell"><span class="num">' + (s.theming != null ? s.theming : '—') + '/4</span><span class="label">Theming</span></div>' +
+        '<div class="score-cell"><span class="num">' + (s.responsive != null ? s.responsive : '—') + '/4</span><span class="label">Responsive</span></div>' +
+        '<div class="score-cell"><span class="num">' + (s.performance != null ? s.performance : '—') + '/4</span><span class="label">Perf</span></div>' +
+        '<div class="score-cell"><span class="num">' + (s.accessibility != null ? s.accessibility : '—') + '/4</span><span class="label">A11y</span></div>' +
+        '<div class="score-cell"><span class="num">' + (s.anti_patterns != null ? s.anti_patterns : '—') + '/4</span><span class="label">Anti-patterns</span></div>' +
+      '</div>';
+    }
+    if (fs.executive_summary) {
+      html += '<div class="diff-summary" style="background:var(--color-bg);border-color:var(--color-border);">' +
+        escapeHtml(fs.executive_summary) + '</div>';
+    }
+  }
+  if (stageKey === 'critique') {
+    var ds = fs.design_health_score || {};
+    if (ds.total != null) {
+      var dCls = ds.total >= 32 ? '' : (ds.total >= 22 ? 'warn' : 'bad');
+      html += '<div class="score-block">' +
+        '<div class="score-cell total ' + dCls + '"><span class="num">' + ds.total + '/40</span><span class="label">Nielsen 10</span></div>' +
+      '</div>';
+    }
+    if (fs.overall_impression) {
+      html += '<div class="diff-summary" style="background:var(--color-bg);border-color:var(--color-border);">' +
+        escapeHtml(fs.overall_impression) + '</div>';
+    }
+  }
+
+  // Findings array.
+  var findings = run.findings || [];
+  if (findings.length === 0) {
+    html += '<div class="stage-empty">No findings recorded.</div>';
+    return html;
+  }
+  var findingsHtml = findings.map(function(f) {
+    var sev = (f.severity || 'P3').toString().toUpperCase();
+    return '<div class="finding">' +
+      '<div class="finding-sev ' + sev + '">' + sev + '</div>' +
+      '<div class="finding-body">' +
+        '<div class="finding-title">' + escapeHtml(f.category || f.title || 'Finding') + '</div>' +
+        (f.location ? '<div class="finding-loc">' + escapeHtml(f.location) + '</div>' : '') +
+        (f.impact ? '<div class="finding-rec">' + escapeHtml(f.impact) + '</div>' : '') +
+        (f.recommendation ? '<div class="finding-rec" style="margin-top:.25rem;color:var(--color-primary-hover);"><strong>Fix:</strong> ' + escapeHtml(f.recommendation) + '</div>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+  html += '<div class="findings-list">' + findingsHtml + '</div>';
+  return html;
+}
+
+function renderSourceTab(run) {
+  var src = run.html_before || '';
+  if (!src) return '<div class="preview-empty">No source HTML on this run.</div>';
+  return '<div class="source-html-pre">' + escapeHtml(src) + '</div>';
+}
+
+function renderHtmlPreview(html, label) {
+  if (!html) return '<div class="preview-empty">No ' + escapeHtml(label) + ' HTML on this run.</div>';
+  // Render via srcdoc — full HTML doc inside an iframe, sandboxed.
+  var safeDoc = html.replace(/"/g, '&quot;');
+  return '<div class="preview-wrap">' +
+    '<iframe sandbox="allow-same-origin" srcdoc="' + safeDoc + '"></iframe>' +
+    '</div>';
+}
+
+function renderDiffTab(run) {
+  var fs = run.findings_summary || {};
+  var html = '';
+  if (run.diff_summary) {
+    html += '<div class="diff-summary">' + escapeHtml(run.diff_summary) + '</div>';
+  }
+  var changes = fs.changes || [];
+  if (changes.length === 0 && (fs.findings_resolved || []).length === 0) {
+    if (!html) html = '<div class="stage-empty">No structured diff recorded.</div>';
+    return html;
+  }
+  if (fs.findings_resolved && fs.findings_resolved.length) {
+    html += '<div style="margin-bottom:.65rem;font-size:.8rem;font-weight:600;color:var(--color-heading);">Resolved findings</div>';
+    html += '<ul style="margin:0 0 .85rem 1.25rem;font-size:.8rem;line-height:1.55;color:var(--color-body);">' +
+      fs.findings_resolved.map(function(r) { return '<li>' + escapeHtml(r) + '</li>'; }).join('') +
+      '</ul>';
+  }
+  if (changes.length) {
+    html += '<div style="margin-bottom:.4rem;font-size:.8rem;font-weight:600;color:var(--color-heading);">Section-by-section</div>';
+    html += '<div class="diff-changes">' +
+      changes.map(function(c) {
+        return '<div class="diff-change">' +
+          '<div class="diff-change-section">' + escapeHtml(c.section || 'Section') + '</div>' +
+          '<div class="diff-change-reason">' + escapeHtml(c.reason || '') + '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+  return html;
+}
+
+function renderPersonasTab(run) {
+  var personas = (run.findings_summary || {}).persona_red_flags || [];
+  if (personas.length === 0) return '<div class="stage-empty">No persona red flags recorded.</div>';
+  return personas.map(function(p) {
+    return '<div class="persona-block">' +
+      '<h4>' + escapeHtml(p.persona || 'Persona') + '</h4>' +
+      '<ul>' + (p.flags || []).map(function(f) { return '<li>' + escapeHtml(f) + '</li>'; }).join('') + '</ul>' +
+    '</div>';
+  }).join('');
+}
+
+// ── Stage panel toggle ─────────────────────────────────────
+function toggleStagePanel(pageId, stageKey) {
+  var key = pageId + ':' + stageKey;
+  var panel = document.querySelector('.stage-panel[data-page-id="' + pageId + '"][data-stage="' + stageKey + '"]');
+  if (!panel) return;
+  if (state.openStages.has(key)) {
+    state.openStages.delete(key);
+    panel.classList.remove('open');
+    // Don't blow away rendered content — keep it for instant re-open.
+    return;
+  }
+  state.openStages.add(key);
+  panel.classList.add('open');
+  // Render body if not yet rendered.
+  var body = panel.querySelector('.stage-panel-body');
+  if (body && body.innerHTML.trim() === '') {
+    var page = state.pages.find(function(p) { return p.id === pageId; });
+    var stageDef = STAGES.find(function(s) { return s.key === stageKey; });
+    var stage = page && page.stages ? page.stages[stageKey] : null;
+    if (page && stage && stageDef) {
+      body.innerHTML = renderStageBody(page, stageDef, stage);
+      // Auto-load first tab.
+      var firstTab = body.querySelector('.tab-btn');
+      if (firstTab) {
+        var tabKey = firstTab.getAttribute('data-tab');
+        loadTabContent(pageId, stageKey, tabKey);
+      }
+    }
+  }
+}
+
+// ── Run / accept / rerun actions ───────────────────────────
+async function rerunStage(pageId, stageKey, operatorNotes) {
+  var page = state.pages.find(function(p) { return p.id === pageId; });
+  if (!page) return;
+  try {
+    var body = { content_page_id: pageId };
+    if (operatorNotes) body.operator_notes = operatorNotes;
+    var resp = await fetch('/api/page-stages/' + stageKey, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(body)
+    });
+    // Don't await the full body — Claude takes minutes. Just fire and refresh.
+    // The list endpoint will show the running row.
+    setTimeout(load, 1000);
+    if (!resp.ok && resp.status !== 504) {
+      // 504 is expected if we hit edge timeout; the run continues server-side.
+      try { var err = await resp.json(); alert(err.error || ('HTTP ' + resp.status)); } catch (_) {}
+    }
+  } catch (e) {
+    // Fetch may abort with a network error after the server keeps working —
+    // that's fine, the row was created. Refresh shortly.
+    setTimeout(load, 1000);
+  }
+}
+
+async function acceptRun(runId, stageKey, override) {
+  var url = '/api/page-stages/' + stageKey + '?run_id=' + encodeURIComponent(runId) + '&action=accept';
+  var body = override ? { override: true } : {};
+  try {
+    var resp = await fetch(url, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(body)
+    });
+    var data = await resp.json();
+    if (!resp.ok) {
+      // Verify gate failure path — offer override.
+      if (data.error && /gate failed/i.test(data.error)) {
+        if (confirm(data.error + '\n\nOverride and continue?')) {
+          return acceptRun(runId, stageKey, true);
+        }
+        return;
+      }
+      alert(data.error || ('HTTP ' + resp.status));
+      return;
+    }
+    // Wipe cached run detail for this run since accept can flip its accepted_at
+    // status; force fresh fetch on next tab open.
+    delete state.runDetailCache[runId];
+    load();
+  } catch (e) {
+    alert('Network error: ' + e.message);
+  }
+}
+
+async function promotePage(pageId) {
+  var page = state.pages.find(function(p) { return p.id === pageId; });
+  if (!page) return;
+  if (page.status === 'ready_for_contract') {
+    if (!confirm('Extract design contract for ' + (page.client_slug || 'this client') + '? This locks the homepage tokens, voice, and copy conventions for all subsequent pages.')) return;
+    try {
+      var resp = await fetch('/api/page-stages/extract-contract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ content_page_id: pageId })
+      });
+      var data = await resp.json();
+      if (!resp.ok) { alert(data.error || 'Extract failed'); return; }
+      load();
+    } catch (e) { alert('Network error: ' + e.message); }
+    return;
+  }
+  if (page.status === 'ready_for_client') {
+    alert('Client review portal queueing endpoint coming in the next session. For now, status is correct and the page is ready.');
+    return;
+  }
+}
+
+// ── Clarifying questions modal ─────────────────────────────
+async function openQuestionsModal(runId, pageId, stageKey) {
+  // Need full run detail to render questions.
+  var detail = state.runDetailCache[runId];
+  if (!detail) {
+    try {
+      var resp = await fetch('/api/page-stages/run?id=' + encodeURIComponent(runId), { credentials: 'same-origin' });
+      var data = await resp.json();
+      detail = data.run;
+      state.runDetailCache[runId] = detail;
+    } catch (e) { alert('Failed to load run detail: ' + e.message); return; }
+  }
+  var qs = ((detail.findings_summary || {}).clarifying_questions || []);
+  // Open the first unacknowledged question; for multiple, surface them sequentially.
+  var firstUnack = qs.findIndex(function(q) { return q && !q.acknowledged_at; });
+  if (firstUnack === -1) { alert('All questions on this run are already resolved.'); return; }
+  showQuestionModal(detail, firstUnack, pageId, stageKey);
+}
+
+function showQuestionModal(run, qIdx, pageId, stageKey) {
+  var q = (run.findings_summary || {}).clarifying_questions[qIdx];
+  if (!q) return;
+  var optionsHtml = '';
+  if (Array.isArray(q.options) && q.options.length) {
+    optionsHtml = '<div class="options"><div class="options-label">Options Claude offered</div>' +
+      q.options.map(function(opt, i) {
+        var optId = 'opt-' + run.id + '-' + qIdx + '-' + i;
+        return '<div class="option-row">' +
+          '<input type="radio" name="cq-opt-' + run.id + '-' + qIdx + '" id="' + optId + '" value="' + escapeHtml(opt) + '">' +
+          '<label for="' + optId + '">' + escapeHtml(opt) + '</label>' +
+        '</div>';
+      }).join('') +
+      '</div>';
+  }
+
+  var modalHtml =
+    '<div class="modal-backdrop" id="cqModal" onclick="if(event.target.id===\'cqModal\')closeQuestionModal();">' +
+      '<div class="modal" role="dialog" aria-modal="true">' +
+        '<div class="modal-header">' +
+          '<div class="topic">' + escapeHtml(q.topic || 'Clarifying question') + '</div>' +
+          '<h3>' + escapeHtml(stageKey) + ' — question ' + (qIdx + 1) + '</h3>' +
+        '</div>' +
+        '<div class="modal-body">' +
+          '<div class="question">' + escapeHtml(q.question || '') + '</div>' +
+          (q.decision_taken ? '<div class="decision"><strong>Claude\'s choice:</strong> ' + escapeHtml(q.decision_taken) + '</div>' : '') +
+          optionsHtml +
+          '<label style="font-size:.7rem;color:var(--color-muted);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:.25rem;">Optional note for the rerun</label>' +
+          '<textarea id="cqNote" placeholder="Add any extra context Claude should consider on the rerun…"></textarea>' +
+        '</div>' +
+        '<div class="modal-actions">' +
+          '<button class="btn btn-ghost" onclick="closeQuestionModal();">Cancel</button>' +
+          '<button class="btn btn-ghost" onclick="acknowledgeQuestion(\'' + run.id + '\', ' + qIdx + ', \'' + pageId + '\', \'' + stageKey + '\');">Accept Claude\'s choice</button>' +
+          '<button class="btn btn-primary" onclick="rerunWithChoice(\'' + run.id + '\', ' + qIdx + ', \'' + pageId + '\', \'' + stageKey + '\');">Rerun with this answer</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  // Insert
+  var existing = document.getElementById('cqModal');
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function closeQuestionModal() {
+  var m = document.getElementById('cqModal');
+  if (m) m.remove();
+}
+
+async function acknowledgeQuestion(runId, qIdx, pageId, stageKey) {
+  try {
+    var resp = await fetch('/api/page-stages/clarifying-question', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ run_id: runId, question_index: qIdx, action: 'acknowledge' })
+    });
+    var data = await resp.json();
+    if (!resp.ok) { alert(data.error || 'Failed'); return; }
+    closeQuestionModal();
+    delete state.runDetailCache[runId];
+    load();
+  } catch (e) { alert('Network error: ' + e.message); }
+}
+
+async function rerunWithChoice(runId, qIdx, pageId, stageKey) {
+  var modal = document.getElementById('cqModal');
+  if (!modal) return;
+  var picked = modal.querySelector('input[name="cq-opt-' + runId + '-' + qIdx + '"]:checked');
+  var choice = picked ? picked.value : '';
+  var noteEl = document.getElementById('cqNote');
+  var note = noteEl ? noteEl.value.trim() : '';
+  if (!choice && !note) {
+    alert('Pick an option or add a note for the rerun.');
+    return;
+  }
+  try {
+    var resp = await fetch('/api/page-stages/clarifying-question', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ run_id: runId, question_index: qIdx, action: 'rerun_with_choice', choice: choice, note: note })
+    });
+    var data = await resp.json();
+    if (!resp.ok) { alert(data.error || 'Failed'); return; }
+    closeQuestionModal();
+    delete state.runDetailCache[runId];
+    // Now fire the rerun with the operator_notes returned by the endpoint.
+    await rerunStage(pageId, stageKey, data.rerun_notes);
+  } catch (e) { alert('Network error: ' + e.message); }
 }
 
 // Card interactions
