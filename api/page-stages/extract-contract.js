@@ -25,7 +25,7 @@ var monitor  = require('../_lib/monitor');
 var fetchT   = require('../_lib/fetch-with-timeout');
 
 var CLAUDE_MODEL = 'claude-sonnet-4-6';
-var EXTRACT_TIMEOUT_MS = 50000;
+var EXTRACT_TIMEOUT_MS = 240000;
 var MAX_OUTPUT_TOKENS = 4096;
 
 module.exports = async function handler(req, res) {
