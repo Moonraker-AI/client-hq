@@ -487,6 +487,99 @@ a:hover { text-decoration: underline; }
   .stage-track { grid-column: 1 / -1; }
   .status-badge, .notif-cluster { grid-column: 1 / -1; justify-self: start; }
 }
+
+/* Lock-and-fire bar (campaign-start ceremony) */
+.lock-bar {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1rem 1.25rem; margin-bottom: 1rem;
+  background: linear-gradient(135deg, rgba(0, 212, 126, 0.08), rgba(0, 212, 126, 0.02));
+  border: 1px solid rgba(0, 212, 126, 0.3);
+  border-radius: 14px;
+}
+.lock-bar-text { flex: 1; }
+.lock-bar-text strong { display: block; color: var(--color-primary); font-size: .95rem; margin-bottom: .15rem; }
+.lock-bar-text span { color: var(--color-muted); font-size: .82rem; }
+.lock-bar-progress {
+  display: flex; align-items: center; gap: .75rem;
+  padding: 1rem 1.25rem; margin-bottom: 1rem;
+  background: rgba(99, 110, 165, 0.06);
+  border: 1px solid rgba(99, 110, 165, 0.2);
+  border-radius: 14px;
+  font-size: .85rem; color: var(--color-muted);
+}
+.lock-bar-progress .spinner {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(99, 110, 165, 0.25);
+  border-top-color: var(--color-primary);
+  animation: lockSpin 0.9s linear infinite;
+}
+@keyframes lockSpin { to { transform: rotate(360deg); } }
+
+/* Per-page Surge status pill */
+.surge-pill {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .15rem .5rem; border-radius: 10px;
+  font-size: .7rem; font-weight: 600;
+  border: 1px solid transparent;
+}
+.surge-pill.pending { background: rgba(245, 158, 11, .12); color: #b45309; border-color: rgba(245, 158, 11, .3); }
+.surge-pill.processing { background: rgba(59, 130, 246, .12); color: #1d4ed8; border-color: rgba(59, 130, 246, .3); }
+.surge-pill.processed { background: rgba(0, 212, 126, .1); color: #047857; border-color: rgba(0, 212, 126, .25); }
+.surge-pill.error { background: rgba(220, 38, 38, .1); color: #b91c1c; border-color: rgba(220, 38, 38, .3); }
+.surge-pill .dot {
+  width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+}
+.surge-pill.processing .dot { animation: surgePulse 1.4s ease-in-out infinite; }
+@keyframes surgePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* Variance score badge */
+.variance-badge {
+  display: inline-flex; align-items: baseline; gap: .25rem;
+  padding: .15rem .5rem; border-radius: 10px;
+  font-size: .7rem; font-weight: 600;
+  background: rgba(99, 110, 165, 0.1);
+  color: var(--color-text);
+  border: 1px solid rgba(99, 110, 165, 0.25);
+}
+.variance-badge.low { background: rgba(0, 212, 126, .1); color: #047857; border-color: rgba(0, 212, 126, .25); }
+.variance-badge.mid { background: rgba(245, 158, 11, .12); color: #b45309; border-color: rgba(245, 158, 11, .3); }
+.variance-badge.high { background: rgba(220, 38, 38, .1); color: #b91c1c; border-color: rgba(220, 38, 38, .3); }
+.variance-badge .score { font-size: .8rem; }
+.variance-badge .label { font-weight: 500; opacity: .85; }
+
+/* RTPBA / Surge inputs panel (above stages, page-scoped) */
+.surge-inputs-panel {
+  margin: 1rem 0; padding: 0;
+  background: var(--color-card); border: 1px solid var(--color-border); border-radius: 12px;
+  overflow: hidden;
+}
+.surge-inputs-tabs {
+  display: flex; gap: 0; padding: 0 .5rem;
+  border-bottom: 1px solid var(--color-border);
+  background: rgba(99, 110, 165, 0.04);
+}
+.surge-inputs-tab {
+  padding: .55rem .9rem; cursor: pointer; user-select: none;
+  font-size: .78rem; font-weight: 500; color: var(--color-muted);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.surge-inputs-tab:hover { color: var(--color-text); }
+.surge-inputs-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.surge-inputs-body { padding: 1rem; }
+.surge-inputs-body pre {
+  margin: 0; padding: .75rem; background: rgba(99,110,165,.05);
+  border-radius: 8px; font-size: .76rem; line-height: 1.5;
+  white-space: pre-wrap; word-break: break-word; max-height: 380px; overflow: auto;
+  color: var(--color-text);
+}
+.surge-inputs-body .empty { color: var(--color-muted); font-style: italic; padding: 1rem; }
+.surge-inputs-body .placeholder-warn {
+  margin-top: .75rem; padding: .65rem .85rem;
+  background: rgba(245, 158, 11, .08); border: 1px solid rgba(245, 158, 11, .3);
+  border-radius: 8px; font-size: .75rem; color: #b45309;
+}
+
 </style>
 <script src="/vendor/supabase/supabase-2.49.4.min.js" integrity="sha384-2zrRDgDHSYB/GN3nFW3fsZXoxEhKIr3N2h63Tc6DEOB9JJdFIu8xMJT2Cph/gBil" crossorigin="anonymous" defer></script>
 <script src="/shared/admin-auth.js"></script>
@@ -507,6 +600,8 @@ a:hover { text-decoration: underline; }
   </div>
 
   <div class="summary-row" id="summaryRow" style="display:none;"></div>
+
+  <div id="lockBar"></div>
 
   <div id="content">
     <div class="loading">Loading pages…</div>
@@ -650,6 +745,8 @@ async function load() {
     var data = await resp.json();
     state.pages = data.pages || [];
     state.contract = data.contract;
+    state.contactId = data.contact_id;
+    state.activeBatch = data.active_batch || null;
     // If a clarifying-question modal is open, defer rerender to avoid blowing
     // away the operator's in-progress input. Reschedule the poll instead.
     if (document.getElementById('cqModal')) {
@@ -688,13 +785,18 @@ async function load() {
 
 function schedulePoll() {
   if (state.pollTimer) clearTimeout(state.pollTimer);
-  // Poll if any stage run is in flight OR a page is currently generating.
+  // Poll if any stage run is in flight, a page is currently generating, or
+  // any page's Surge is queued/running.
   var anyRunning = state.pages.some(function(p) {
     if (p.status === 'generating') return true;
+    if (p.surge_status === 'pending' || p.surge_status === 'processing') return true;
     return Object.keys(p.stages || {}).some(function(s) {
       return p.stages[s].latest && p.stages[s].latest.run_status === 'running';
     });
   });
+  // Also poll while an audit batch is mid-flight (covers the agent-side window
+  // before per-page surge_status flips happen).
+  if (state.activeBatch) anyRunning = true;
   if (anyRunning) {
     state.pollTimer = setTimeout(load, 5000);
   }
@@ -726,6 +828,9 @@ function render(data) {
   summary.innerHTML = summaryHtml;
   summary.style.display = '';
 
+  // Lock-and-fire bar — campaign-start ceremony when we have un-audited pages
+  renderLockBar();
+
   // Card list
   if (state.pages.length === 0) {
     content.innerHTML =
@@ -736,6 +841,100 @@ function render(data) {
 
   var cardsHtml = state.pages.map(renderCard).join('');
   content.innerHTML = '<div class="card-list">' + cardsHtml + '</div>';
+}
+
+// ── Lock-and-fire bar ──────────────────────────────────────────────
+//
+// Surfaces two states:
+//   1) "Ready to lock" — we have ≥1 page in pending_audit and no in-flight
+//      batch. Shows the green Lock button.
+//   2) "Audits in flight" — a batch is mid-processing. Shows progress strip,
+//      no button. Polling picks up state changes.
+//
+// When all pages have moved past surge_status='pending', the bar disappears.
+function renderLockBar() {
+  var bar = document.getElementById('lockBar');
+  if (!bar) return;
+
+  // Count pages by surge status. We only consider homepage + service pages
+  // — the same set the lock endpoint targets.
+  var eligiblePages = state.pages.filter(function(p) {
+    return p.page_type === 'homepage' || p.page_type === 'service';
+  });
+  var counts = { pending: 0, processing: 0, processed: 0, error: 0 };
+  eligiblePages.forEach(function(p) {
+    var s = p.surge_status || 'pending';
+    if (counts[s] === undefined) counts[s] = 0;
+    counts[s]++;
+  });
+
+  var totalPending = counts.pending || 0;
+  var totalProcessing = counts.processing || 0;
+  var anyInFlight = state.activeBatch && ['queued','agent_running','extracting','processing'].includes(state.activeBatch.status);
+
+  if (anyInFlight || totalProcessing > 0) {
+    var doneCount = (counts.processed || 0) + (counts.error || 0);
+    bar.innerHTML =
+      '<div class="lock-bar-progress">' +
+        '<div class="spinner"></div>' +
+        '<div><strong>Surge audits in flight</strong> &nbsp;·&nbsp; ' +
+        doneCount + ' of ' + eligiblePages.length + ' complete' +
+        (counts.error ? ' &nbsp;·&nbsp; <span style="color:#b91c1c;">' + counts.error + ' error(s)</span>' : '') +
+        '</div>' +
+      '</div>';
+    return;
+  }
+
+  if (totalPending === 0) {
+    // Everything's audited (or already moved past audit) — nothing to lock
+    bar.innerHTML = '';
+    return;
+  }
+
+  // Ready-to-lock state
+  bar.innerHTML =
+    '<div class="lock-bar">' +
+      '<div class="lock-bar-text">' +
+        '<strong>Lock target pages and fire Surge audits</strong>' +
+        '<span>' + totalPending + ' page' + (totalPending === 1 ? '' : 's') + ' awaiting audit. ' +
+        'This locks the campaign\'s page set and queues per-page Surge audits via the agent. ' +
+        'Homepage will auto-link a fresh entity audit if one exists.</span>' +
+      '</div>' +
+      '<button class="btn btn-primary" onclick="lockAndFire()">Lock + fire audits →</button>' +
+    '</div>';
+}
+
+async function lockAndFire() {
+  if (!confirm('Lock the campaign\'s page set and fire Surge audits?\n\n' +
+      'Homepage will auto-link an existing entity audit when one is fresh (≤30 days). ' +
+      'Service pages will be queued sequentially via the agent VPS (~5-10 min per page). ' +
+      'You\'ll see progress here as each completes.')) return;
+  try {
+    var resp = await fetch('/api/onboarding/lock-target-pages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ contact_id: state.contactId })
+    });
+    var data = await resp.json();
+    if (!resp.ok) {
+      alert('Lock failed: ' + (data.error || resp.status));
+      return;
+    }
+    if (data.already_in_flight) {
+      alert('A batch is already in flight for this client.');
+    } else {
+      var msg = 'Locked. Auto-linked ' + (data.auto_linked_pages || 0) +
+        ', queued ' + (data.queued_pages || 0) + '.';
+      if (data.errors && data.errors.length > 0) {
+        msg += '\n\nErrors:\n' + data.errors.map(function(e) { return '• ' + e.page.name + ': ' + e.message; }).join('\n');
+      }
+      alert(msg);
+    }
+    load();
+  } catch (e) {
+    alert('Network error: ' + e.message);
+  }
 }
 
 function pill(num, label) {
@@ -777,12 +976,39 @@ function renderCard(page) {
   var pageType = page.page_type || 'service';
   var lastTouched = page.updated_at || page.created_at;
 
+  // Surge pill — visible only when Surge is meaningful (queued/running/error).
+  // Once 'processed', the page status takes over signaling.
+  var surgePillHtml = '';
+  if (page.surge_status && page.surge_status !== 'processed') {
+    var surgeLabel = ({
+      pending: 'Surge queued',
+      raw_stored: 'Surge raw',
+      processing: 'Surge running',
+      error: 'Surge failed'
+    })[page.surge_status] || ('Surge: ' + page.surge_status);
+    surgePillHtml = '<span class="surge-pill ' + escapeHtml(page.surge_status) + '" title="Surge audit status">' +
+      '<span class="dot"></span>' + escapeHtml(surgeLabel) + '</span>';
+  }
+
+  // Variance badge — surface the Surge variance score when present. Lower is
+  // better in Surge's framework: 0-25 Optimized, 26-50 Moderate, 51+ Heavy.
+  var varianceHtml = '';
+  if (page.variance_score != null && page.variance_score >= 0) {
+    var vs = page.variance_score;
+    var vCls = vs <= 25 ? 'low' : (vs <= 50 ? 'mid' : 'high');
+    varianceHtml = '<span class="variance-badge ' + vCls + '" title="Surge variance score (lower is better)">' +
+      '<span class="score">' + vs + '</span>' +
+      (page.variance_label ? '<span class="label">' + escapeHtml(page.variance_label.split(' ')[0]) + '</span>' : '') +
+      '</span>';
+  }
+
   return '' +
     '<div class="card' + (expanded ? ' expanded' : '') + '" data-page-id="' + page.id + '">' +
       '<div class="card-header" onclick="toggleCard(\'' + page.id + '\')">' +
         '<div class="page-name">' +
           '<span class="page-type-pill ' + escapeHtml(pageType) + '">' + escapeHtml(pageType) + '</span>' +
           '<span class="name" title="' + escapeHtml(page.page_name || '') + '">' + escapeHtml(page.page_name || '(unnamed)') + '</span>' +
+          (surgePillHtml || varianceHtml ? '<span style="display:inline-flex;gap:.35rem;margin-left:.5rem;">' + surgePillHtml + varianceHtml + '</span>' : '') +
         '</div>' +
         '<div class="stage-track">' + dotsHtml + '</div>' +
         '<span class="status-badge ' + status.cls + '">' + escapeHtml(status.label) + '</span>' +
@@ -850,6 +1076,8 @@ function renderCardBody(page) {
     return renderStagePanel(page, s);
   }).join('');
 
+  var surgeInputsHtml = renderSurgeInputsPanel(page);
+
   return '' +
     '<div class="body-meta-grid">' +
       '<div class="meta"><div class="meta-label">Page slug</div><div class="meta-value mono">/' + escapeHtml(page.page_slug || '') + '</div></div>' +
@@ -859,7 +1087,78 @@ function renderCardBody(page) {
     '</div>' +
     preChainHtml +
     promoteHtml +
+    surgeInputsHtml +
     '<div class="stage-panels"' + (notInChain ? ' style="opacity:.45;pointer-events:none;"' : '') + '>' + stagePanelsHtml + '</div>';
+}
+
+// ── Surge inputs panel ────────────────────────────────────────────
+//
+// Page-scoped panel showing the three Surge artifacts that feed Pagemaster
+// and the chain: RTPBA (content seed), schema_jsonb (deterministic schema
+// blocks), and the Surge raw markdown (for inspection). Rendered above the
+// stage panels because it's the *input* to all stages — useful to peek at
+// before clicking Run on audit.
+//
+// Hidden when the page has no Surge data yet (pending_audit / surge pending).
+function renderSurgeInputsPanel(page) {
+  var hasRtpba = !!page.rtpba;
+  var hasSchema = page.schema_jsonb && page.schema_jsonb.length > 0;
+  if (!hasRtpba && !hasSchema) return '';
+
+  // Default tab depends on what's there. RTPBA wins because it's the more
+  // commonly-inspected artifact.
+  var activeTab = hasRtpba ? 'rtpba' : 'schema';
+
+  var rtpbaContent = hasRtpba
+    ? '<pre>' + escapeHtml(page.rtpba) + '</pre>'
+    : '<div class="empty">No RTPBA captured yet. Surge audit must complete first.</div>';
+
+  var schemaContent;
+  if (hasSchema) {
+    var blocks = page.schema_jsonb;
+    schemaContent = '<div style="font-size:.78rem;color:var(--color-muted);margin-bottom:.5rem;">' +
+      blocks.length + ' block' + (blocks.length === 1 ? '' : 's') +
+      ' · stored separately from page HTML · injected into &lt;head&gt; at serve time</div>' +
+      '<pre>' + escapeHtml(JSON.stringify(blocks, null, 2)) + '</pre>';
+    // Detect placeholder leakage (defensive — shouldn't happen with schema-builder)
+    var jsonStr = JSON.stringify(blocks);
+    var placeholderRe = /\[(?:Your|your-|YOUR-|path-to-|YYYY-MM-DD|PT_M_S|insert )[^\]]*\]/g;
+    var ph = jsonStr.match(placeholderRe);
+    if (ph && ph.length > 0) {
+      schemaContent += '<div class="placeholder-warn">⚠ ' + ph.length +
+        ' placeholder value(s) detected in generated schema: ' +
+        Array.from(new Set(ph)).slice(0, 5).map(escapeHtml).join(', ') +
+        '. Re-run Pagemaster after populating missing client data.</div>';
+    }
+  } else {
+    schemaContent = '<div class="empty">No schema_jsonb yet. Pagemaster generates this when building the page.</div>';
+  }
+
+  return '' +
+    '<div class="surge-inputs-panel" data-page-id="' + page.id + '">' +
+      '<div class="surge-inputs-tabs">' +
+        '<div class="surge-inputs-tab' + (activeTab === 'rtpba' ? ' active' : '') +
+          '" onclick="switchSurgeTab(\'' + page.id + '\', \'rtpba\')">RTPBA' +
+          (hasRtpba ? ' (' + Math.round(page.rtpba.length / 1000) + 'k chars)' : '') + '</div>' +
+        '<div class="surge-inputs-tab' + (activeTab === 'schema' ? ' active' : '') +
+          '" onclick="switchSurgeTab(\'' + page.id + '\', \'schema\')">Schema blocks' +
+          (hasSchema ? ' (' + page.schema_jsonb.length + ')' : '') + '</div>' +
+      '</div>' +
+      '<div class="surge-inputs-body" data-tab="rtpba" style="' + (activeTab === 'rtpba' ? '' : 'display:none;') + '">' + rtpbaContent + '</div>' +
+      '<div class="surge-inputs-body" data-tab="schema" style="' + (activeTab === 'schema' ? '' : 'display:none;') + '">' + schemaContent + '</div>' +
+    '</div>';
+}
+
+function switchSurgeTab(pageId, tab) {
+  var panel = document.querySelector('.surge-inputs-panel[data-page-id="' + pageId + '"]');
+  if (!panel) return;
+  panel.querySelectorAll('.surge-inputs-tab').forEach(function(t) {
+    t.classList.toggle('active', t.textContent.toLowerCase().indexOf(tab) === 0 ||
+      (tab === 'schema' && t.textContent.toLowerCase().indexOf('schema') === 0));
+  });
+  panel.querySelectorAll('.surge-inputs-body').forEach(function(b) {
+    b.style.display = b.getAttribute('data-tab') === tab ? '' : 'none';
+  });
 }
 
 // Render a single stage panel (collapsed by default; opens to show tabs).
