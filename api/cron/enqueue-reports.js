@@ -32,8 +32,13 @@ async function handler(req, res) {
 
     var dryRun = req.query && req.query.dry_run === 'true';
 
-    // Fetch all active report configs
-    var configs = await sb.query('report_configs?active=eq.true&select=client_slug,gsc_property');
+    // Fetch all clients ready for monthly compilation.
+    // Both flags must be set: active is the manual kill-switch the team
+    // can flip to pause a client without breaking lock state, and
+    // keywords_locked_at is the gate proving the client passed the
+    // readiness check (GBP + GSC + LF + keywords). Without keywords_locked_at
+    // we'd queue a half-configured client and produce a broken snapshot.
+    var configs = await sb.query('report_configs?active=eq.true&keywords_locked_at=not.is.null&select=client_slug,gsc_property');
 
     if (!configs || configs.length === 0) {
       // Prune error logs older than 30 days (monthly housekeeping)
@@ -41,7 +46,7 @@ async function handler(req, res) {
       await sb.mutate('rpc/prune_old_errors', 'POST', null);
     } catch (e) { /* non-critical */ }
 
-    return res.status(200).json({ success: true, message: 'No active report configs found', queued: 0 });
+    return res.status(200).json({ success: true, message: 'No active+locked report configs found', queued: 0 });
     }
 
     // Check which clients already have a queue entry for this month
