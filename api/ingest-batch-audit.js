@@ -43,8 +43,16 @@ module.exports = async function(req, res) {
       var pg = pages[i];
       if (!pg.content_page_id) continue;
 
+      // surge_status MUST be one of: pending | raw_stored | processing |
+      // processed | error (CHECK constraint). Setting 'complete' (legacy bug)
+      // silently fails every PATCH because PostgREST returns the violation as
+      // a 400, which the catch block counted as pages_errors=N with the batch
+      // ending up in 'failed' even though the agent succeeded.
+      // We mark 'raw_stored' so the process-batch-pages cron picks the row
+      // up, parses surge_raw_data via canonical surge-parser, and flips to
+      // 'processed' once RTPBA + schema have landed.
       var updateData = {
-        surge_status: 'complete',
+        surge_status: 'raw_stored',
         surge_raw_data: pg.surge_raw_data || null,
         variance_score: pg.variance_score || null,
         variance_label: pg.variance_label || null,
