@@ -68,7 +68,7 @@ module.exports = async function(req, res) {
       schema_recommendations: parsed.schema_recommendations || null,
       variance_score: parsed.variance_score,              // null when not extractable
       variance_label: parsed.variance_label,
-      surge_status: 'complete',
+      surge_status: 'processed',
       status: 'audit_loaded',
       agent_task_id: body.agent_task_id || cp.agent_task_id,
       updated_at: new Date().toISOString()
