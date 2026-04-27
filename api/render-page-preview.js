@@ -107,20 +107,22 @@ module.exports = async function handler(req, res) {
 
     if (!page) return res.status(404).json({ error: 'Page not found' });
 
-    // v1 fallback: just return generated_html
+    // v1 fallback: return generated_html with schema_jsonb injected into <head>
     if (page.template_version === 'v1' || !page.template_version) {
       if (!page.generated_html) {
         return res.status(404).send('<h1>Page not yet generated</h1>');
       }
+      var v1Html = injectSchemaIntoHead(page.generated_html, page.schema_jsonb);
       if (asJson) {
         return res.status(200).json({
           template_version: 'v1',
-          html: page.generated_html,
+          html: v1Html,
+          schema_block_count: Array.isArray(page.schema_jsonb) ? page.schema_jsonb.length : 0,
           page: { id: page.id, page_type: page.page_type, page_name: page.page_name },
         });
       }
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      return res.status(200).send(page.generated_html);
+      return res.status(200).send(v1Html);
     }
 
     // v2 path: load template, content_jsonb, design_spec, contact, neo_image
@@ -839,3 +841,36 @@ function decorateContent(content) {
 }
 
 module.exports.decorateContent = decorateContent;
+
+/**
+ * Inject schema_jsonb blocks into a v1 HTML page's <head>.
+ *
+ * Pagemaster does NOT emit inline JSON-LD (the system prompt forbids it and
+ * the save path strips any that slipped through). Schema lives in
+ * content_pages.schema_jsonb as an array of blocks. The render layer is what
+ * stitches them into the page at serve time, so client-side edits to the HTML
+ * body never touch schema.
+ *
+ * If schema_jsonb is empty/null, the HTML is returned unchanged.
+ * If the HTML has no <head> tag (degenerate input), we wrap minimal markup.
+ */
+function injectSchemaIntoHead(html, schemaJsonb) {
+  if (!html) return '';
+  if (!Array.isArray(schemaJsonb) || schemaJsonb.length === 0) return html;
+
+  var scripts = schemaJsonb.map(function(block) {
+    return '<script type="application/ld+json">' + JSON.stringify(block) + '</script>';
+  }).join('\n');
+
+  // Inject just before </head>. Case-insensitive match, leave the rest alone.
+  var headCloseRe = /<\/head>/i;
+  if (headCloseRe.test(html)) {
+    return html.replace(headCloseRe, scripts + '\n</head>');
+  }
+
+  // No <head> at all — last-resort wrap. Should be rare since Pagemaster
+  // always emits a full doc with <head>.
+  return '<!DOCTYPE html><html><head>' + scripts + '</head><body>' + html + '</body></html>';
+}
+
+module.exports.injectSchemaIntoHead = injectSchemaIntoHead;
