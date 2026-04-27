@@ -158,28 +158,35 @@ function scoreLocationMatch(loc, candidate) {
 }
 
 // Find the best-matching SA-managed GBP location for a contact's practice
-// profile. Returns the top candidate (with score) or null. The full ranked
-// list is also returned so the UI can offer alternates if the auto-pick is wrong.
+// profile. Returns the top candidate (with score) plus the full set of
+// manageable locations so the UI can offer a manual picker when the auto-
+// match is wrong (e.g. legal entity vs DBA).
 async function discoverByPracticeProfile(profile, opts) {
   var index = await buildPlaceIdIndex(opts);
   var locations = Object.keys(index).map(function(pid) {
     return Object.assign({ place_id: pid }, index[pid]);
   });
-  if (locations.length === 0) return { matched: null, candidates: [] };
+  if (locations.length === 0) return { matched: null, candidates: [], total_managed: 0 };
 
-  var ranked = locations
+  // Score every location, but don't filter — admin needs to see the full
+  // manageable set when scoring fails (which happens when the contact's
+  // practice_name is the DBA but the GBP listing is under a personal name).
+  var scored = locations
     .map(function(loc) { return Object.assign({ score: scoreLocationMatch(loc, profile) }, loc); })
-    .filter(function(loc) { return loc.score > 0; })
-    .sort(function(a, b) { return b.score - a.score; });
+    .sort(function(a, b) {
+      // Score desc, then name asc as tiebreaker for stable picker UX.
+      if (a.score !== b.score) return b.score - a.score;
+      return (a.display_name || '').localeCompare(b.display_name || '');
+    });
 
   // Confidence threshold: require a reasonably strong signal. <40 means the
   // match is just one weak token; better to surface "no match" than guess.
-  var top = ranked[0];
+  var top = scored[0];
   var confidentMatch = (top && top.score >= 40) ? top : null;
 
   return {
     matched: confidentMatch,
-    candidates: ranked.slice(0, 8),
+    candidates: scored,
     total_managed: locations.length
   };
 }
