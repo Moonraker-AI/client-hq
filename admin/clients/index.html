@@ -3837,7 +3837,10 @@
   function discoverService(service) {
     var c = state.contact;
     if (!c) return;
-    toast('Searching for ' + (service === 'gsc' ? 'GSC property' : 'LocalFalcon location') + '...', 'info');
+    var serviceLabel = service === 'gsc' ? 'GSC property'
+                     : service === 'gbp' ? 'GBP location'
+                     : 'LocalFalcon location';
+    toast('Searching for ' + serviceLabel + '...', 'info');
     fetch('/api/discover-services', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -3846,8 +3849,10 @@
       if (res.found) {
         if (service === 'gsc') {
           toast('GSC auto-discovered: ' + res.property, 'success');
-          // Update local state
           state.contact.gsc_property = res.property;
+        } else if (service === 'gbp') {
+          toast('GBP auto-discovered: ' + (res.location_name || res.location_id), 'success');
+          state.contact.gbp_place_id = res.place_id;
         } else {
           toast('LocalFalcon location found: ' + (res.location_name || res.place_id), 'success');
         }
@@ -3858,17 +3863,26 @@
           renderReports();
         });
       } else {
-        // Not found - show available options
-        var msg = service === 'gsc'
-          ? 'No matching GSC site found for "' + (c.website_url || '') + '". '
-          : 'No matching LocalFalcon location for "' + (c.practice_name || '') + '". ';
-        if (res.all_sites && res.all_sites.length > 0) {
-          msg += 'Available: ' + res.all_sites.slice(0, 5).join(', ');
-        } else if (res.all_locations && res.all_locations.length > 0) {
-          msg += 'Available: ' + res.all_locations.slice(0, 5).map(function(l) { return l.name; }).join(', ');
+        // Not found — surface what's available so admin can verify the practice
+        // hasn't granted access yet.
+        var msg;
+        if (service === 'gsc') {
+          msg = 'No matching GSC site found for "' + (c.website_url || '') + '". ';
+          if (res.all_sites && res.all_sites.length > 0) msg += 'Available: ' + res.all_sites.slice(0, 5).join(', ');
+        } else if (service === 'gbp') {
+          msg = res.message || 'No GBP location matched for "' + (c.practice_name || '') + '". ';
+          if (res.all_locations && res.all_locations.length > 0) {
+            msg += ' Closest: ' + res.all_locations.slice(0, 3).map(function(l) {
+              return l.name + (l.address ? ' (' + l.address + ')' : '');
+            }).join('; ');
+          }
+        } else {
+          msg = 'No matching LocalFalcon location for "' + (c.practice_name || '') + '". ';
+          if (res.all_locations && res.all_locations.length > 0) {
+            msg += 'Available: ' + res.all_locations.slice(0, 5).map(function(l) { return l.name; }).join(', ');
+          }
         }
         toast(msg, 'warning');
-        // Still create report_configs even without discovery
         autoConfigReports();
       }
     }).catch(function(err) {
@@ -3876,8 +3890,8 @@
       autoConfigReports();
     });
   }
-  // Exposed so the Reports-tab readiness panel can trigger GSC discovery
-  // from an inline onclick handler.
+  // Exposed so the Reports-tab readiness panel can trigger discovery from
+  // inline onclick handlers (GSC, GBP, and LocalFalcon all flow through here).
   window.discoverService = discoverService;
 
   function autoConfigReports() {
@@ -7306,7 +7320,7 @@
         if (hasGbp) {
           h += stepRow(stepDone, 'GBP Place ID', stepMuted(esc(cfg.gbp_location_id).substring(0, 24) + (cfg.gbp_location_id.length > 24 ? '...' : '')));
         } else {
-          h += stepRow(stepOpen('1'), 'GBP Place ID', stepBtn('Search', 'window.crSearchGBP()'));
+          h += stepRow(stepOpen('1'), 'GBP Place ID', stepBtn('Discover', 'window.discoverService(\'gbp\')'));
         }
         h += '<div id="crSearchResults" style="display:none;"></div>';
 
