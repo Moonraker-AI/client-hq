@@ -27,7 +27,7 @@ module.exports = async function handler(req, res) {
   var service = body.service; // "gsc" or "localfalcon"
 
   if (!clientSlug) return res.status(400).json({ error: 'client_slug required' });
-  if (!service || !['gsc', 'localfalcon'].includes(service)) return res.status(400).json({ error: 'service must be "gsc" or "localfalcon"' });
+  if (!service || !['gsc', 'gbp', 'localfalcon'].includes(service)) return res.status(400).json({ error: 'service must be "gsc", "gbp", or "localfalcon"' });
 
   // Supabase calls via sb helper
 
@@ -154,6 +154,67 @@ module.exports = async function handler(req, res) {
           message: 'No matching site found for domain "' + websiteUrl + '". Service account has access to ' + allSites.length + ' sites.',
           all_sites: allSites.map(function(s) { return s.siteUrl; }),
           client_domain: websiteUrl
+        });
+      }
+    }
+
+    // ─── GBP DISCOVERY ───
+    // Mirrors GSC: enumerate every location our SA can see via DWD, score
+    // matches against the contact's practice profile, auto-pick if confident.
+    // Removes the Places API dependency — we never need an authoritative
+    // listing search; the only locations we can actually report on are
+    // the ones our SA can manage, so that's the universe we search.
+    if (service === 'gbp') {
+      if (!googleSA) return res.status(500).json({ error: 'GOOGLE_SERVICE_ACCOUNT_JSON not configured' });
+
+      var gbpAccounts = require('./_lib/gbp-accounts');
+      var profile = {
+        practice_name: contact.practice_name || ((contact.first_name || '') + ' ' + (contact.last_name || '')).trim(),
+        city: contact.city || '',
+        state: contact.state || contact.province || ''
+      };
+
+      var discovery;
+      try {
+        discovery = await gbpAccounts.discoverByPracticeProfile(profile);
+      } catch (e) {
+        monitor.logError('discover-services/gbp', e, { client_slug: clientSlug });
+        return res.status(502).json({
+          error: 'GBP discovery failed',
+          detail: e.message || String(e)
+        });
+      }
+
+      if (discovery.matched) {
+        var pick = discovery.matched;
+        // Save numeric location ID to report_configs (what compile-report uses)
+        // and mirror the Place ID to contacts for backwards compat.
+        await upsertReportConfig(clientSlug, { gbp_location_id: pick.location_id });
+        await sb.mutate('contacts?slug=eq.' + clientSlug, 'PATCH', { gbp_place_id: pick.place_id });
+        return res.status(200).json({
+          success: true,
+          service: 'gbp',
+          found: true,
+          location_id: pick.location_id,
+          place_id: pick.place_id,
+          location_name: pick.display_name,
+          address: pick.address,
+          score: pick.score,
+          message: 'Auto-matched: ' + pick.display_name + ' (score ' + pick.score + ')',
+          alternates: discovery.candidates.slice(1, 5)
+        });
+      } else {
+        return res.status(200).json({
+          success: true,
+          service: 'gbp',
+          found: false,
+          message: discovery.total_managed === 0
+            ? 'Service account has no manageable GBP locations. Practice still needs to grant access.'
+            : 'No confident match for "' + profile.practice_name + '" among ' + discovery.total_managed + ' manageable locations.',
+          all_locations: discovery.candidates.map(function(c) {
+            return { name: c.display_name, address: c.address, location_id: c.location_id, place_id: c.place_id, score: c.score };
+          }),
+          total_managed: discovery.total_managed
         });
       }
     }
