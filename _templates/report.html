@@ -748,14 +748,34 @@ section { padding: 4.5rem 0; }
     document.getElementById('gbpSummaryRow').innerHTML = gbpHtml;
 
     // GBP performance stats (impressions + actions). Render whenever any value
-    // is present, independent of geogrid availability.
+    // is present, independent of geogrid availability. Each stat shows a
+    // month-over-month delta when the previous-period value is known
+    // (populated by compile-report from prevSnap or the gbp_daily warehouse).
+    function deltaHtml(curr, prev) {
+      if (curr == null || prev == null) return '';
+      var diff = curr - prev;
+      if (diff === 0) {
+        return '<div class="stat-delta" style="font-size:.7rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-top:.4rem;color:var(--color-muted)">No change</div>';
+      }
+      var pct = prev === 0 ? null : Math.round((diff / prev) * 1000) / 10;
+      var arrow = diff > 0 ? '\u25B2' : '\u25BC';
+      var color = diff > 0 ? 'var(--color-success)' : 'var(--color-danger)';
+      var pctTxt = pct == null ? 'new' : (pct > 0 ? '+' : '') + pct + '%';
+      return '<div class="stat-delta" style="font-size:.72rem;font-weight:600;letter-spacing:.02em;margin-top:.4rem;color:' + color + '">' +
+             arrow + ' ' + pctTxt + ' <span style="color:var(--color-muted);font-weight:500">vs prev month</span></div>';
+    }
+
+    // Total impressions don't have a dedicated _prev column; derive from the
+    // current breakdown's prior month if we ever store it. For now, use null
+    // (no delta shown) — left as a future enhancement once gbp_detail_prev
+    // is captured. The four action metrics have explicit _prev columns.
     var perfStats = [];
     var totalImps = (gbpDetail && gbpDetail.impressions_total) || null;
-    if (totalImps != null) perfStats.push({ value: fmt(totalImps), label: 'Profile Impressions' });
-    if (snap.gbp_website_clicks != null) perfStats.push({ value: fmt(snap.gbp_website_clicks), label: 'Website Clicks' });
-    if (snap.gbp_direction_requests != null) perfStats.push({ value: fmt(snap.gbp_direction_requests), label: 'Direction Requests' });
-    if (snap.gbp_calls != null) perfStats.push({ value: fmt(snap.gbp_calls), label: 'Calls' });
-    if (snap.gbp_photo_views != null) perfStats.push({ value: fmt(snap.gbp_photo_views), label: 'Photo Views' });
+    if (totalImps != null) perfStats.push({ value: fmt(totalImps), label: 'Profile Impressions', delta: '' });
+    if (snap.gbp_website_clicks != null) perfStats.push({ value: fmt(snap.gbp_website_clicks), label: 'Website Clicks', delta: deltaHtml(snap.gbp_website_clicks, snap.gbp_website_clicks_prev) });
+    if (snap.gbp_direction_requests != null) perfStats.push({ value: fmt(snap.gbp_direction_requests), label: 'Direction Requests', delta: deltaHtml(snap.gbp_direction_requests, snap.gbp_direction_requests_prev) });
+    if (snap.gbp_calls != null) perfStats.push({ value: fmt(snap.gbp_calls), label: 'Calls', delta: deltaHtml(snap.gbp_calls, snap.gbp_calls_prev) });
+    if (snap.gbp_photo_views != null) perfStats.push({ value: fmt(snap.gbp_photo_views), label: 'Photo Views', delta: deltaHtml(snap.gbp_photo_views, snap.gbp_photo_views_prev) });
 
     var localContent = document.getElementById('localVisContent');
     var perfHtml = '';
@@ -764,7 +784,7 @@ section { padding: 4.5rem 0; }
         '<p style="color:var(--color-muted);font-size:.875rem;margin:0 0 1rem">How people interacted with the practice on Google this month.</p>' +
         '<div class="geogrid-summary">';
       perfStats.forEach(function(st) {
-        perfHtml += '<div class="geogrid-summary-stat"><div class="stat-value">' + st.value + '</div><div class="stat-label">' + st.label + '</div></div>';
+        perfHtml += '<div class="geogrid-summary-stat"><div class="stat-value">' + st.value + '</div><div class="stat-label">' + st.label + '</div>' + (st.delta || '') + '</div>';
       });
       perfHtml += '</div>';
     }
