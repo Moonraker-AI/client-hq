@@ -3831,6 +3831,9 @@
       autoConfigReports();
     });
   }
+  // Exposed so the Reports-tab readiness panel can trigger GSC discovery
+  // from an inline onclick handler.
+  window.discoverService = discoverService;
 
   function autoConfigReports() {
     var c = state.contact;
@@ -7221,14 +7224,27 @@
       if (isNational) {
         crEl.innerHTML = '<div style="font-size:.78rem;color:var(--color-muted);padding:.5rem 0;">National campaign. LocalFalcon geogrid tracking is not applicable. Reporting pulls from Google Search Console only.</div>';
       } else {
-        var hasGbp = !!(c && c.gbp_place_id);
-        var hasKw = state.trackedKeywords && state.trackedKeywords.length > 0;
-        var kwCount = state.trackedKeywords ? state.trackedKeywords.length : 0;
+        // Read from report_configs (what compile-report and the warehouse
+        // triggers actually use), not contacts.gbp_place_id which is a
+        // legacy mirror of a different format.
+        var hasGbp = !!(cfg && cfg.gbp_location_id);
+        var hasGsc = !!(cfg && cfg.gsc_property);
         var hasLfPlace = !!(cfg && cfg.localfalcon_place_id);
+        var activeKws = (state.trackedKeywords || []).filter(function(k) { return k.active && !k.retired_at; });
+        var hasKw = activeKws.length > 0;
+        var kwCount = activeKws.length;
+        var keywordsLockedAt = (cfg && cfg.keywords_locked_at) || null;
+        var keywordsLockedBy = (cfg && cfg.keywords_locked_by) || null;
         var hasLfCampaigns = !!(cfg && cfg.lf_campaign_keys && Object.keys(cfg.lf_campaign_keys).length > 0);
         var isActive = !!(cfg && cfg.active);
         var lfKeys = (cfg && cfg.lf_campaign_keys) || {};
         var lfPlatformNames = { google: 'Google Maps', apple: 'Apple Maps', aimode: 'AI Mode', gaio: 'AI Overviews', chatgpt: 'ChatGPT', gemini: 'Gemini' };
+
+        // Service pages with target_keyword — required to lock.
+        var servicePages = (state.deepDive && Array.isArray(state.deepDive.content_pages))
+          ? state.deepDive.content_pages.filter(function(p) { return p.page_type === 'service' && p.target_keyword; })
+          : [];
+        var hasServicePages = servicePages.length > 0;
 
         var stepDone = '<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--color-success);color:#fff;font-size:.65rem;font-weight:700;flex-shrink:0;">&#10003;</span>';
         var stepOpen = function(n) { return '<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:2px solid var(--color-border);color:var(--color-muted);font-size:.65rem;font-weight:700;flex-shrink:0;">' + n + '</span>'; };
@@ -7240,39 +7256,62 @@
 
         // Step 1: GBP Place ID
         if (hasGbp) {
-          h += stepRow(stepDone, 'GBP Place ID', stepMuted(esc(c.gbp_place_id).substring(0, 20) + '...'));
+          h += stepRow(stepDone, 'GBP Place ID', stepMuted(esc(cfg.gbp_location_id).substring(0, 24) + (cfg.gbp_location_id.length > 24 ? '...' : '')));
         } else {
           h += stepRow(stepOpen('1'), 'GBP Place ID', stepBtn('Search', 'window.crSearchGBP()'));
         }
         h += '<div id="crSearchResults" style="display:none;"></div>';
 
-        // Step 2: LocalFalcon Location
+        // Step 2: GSC Property
+        if (hasGsc) {
+          h += stepRow(stepDone, 'GSC Property', stepMuted(esc(cfg.gsc_property)));
+        } else {
+          h += stepRow(stepOpen('2'), 'GSC Property', stepBtn('Discover', 'window.discoverService(\'gsc\')'));
+        }
+
+        // Step 3: LocalFalcon Location
         if (hasLfPlace) {
           h += stepRow(stepDone, 'LocalFalcon Location', stepMuted('Linked'));
         } else if (hasGbp) {
-          h += stepRow(stepOpen('2'), 'LocalFalcon Location', stepBtn('Link Location', 'window.crLinkLF()'));
+          h += stepRow(stepOpen('3'), 'LocalFalcon Location', stepBtn('Link Location', 'window.crLinkLF()'));
         } else {
-          h += stepRow(stepOpen('2'), 'LocalFalcon Location', stepMuted('Complete step 1 first'));
+          h += stepRow(stepOpen('3'), 'LocalFalcon Location', stepMuted('Complete step 1 first'));
         }
 
-        // Step 3: Tracked Keywords (read-only)
-        if (hasKw) {
-          h += stepRow(stepDone, 'Tracked Keywords', stepMuted(kwCount + ' keywords'));
+        // Step 4: Lock Keywords (the campaign-start ceremony)
+        // Pulls from content_pages.target_keyword (page_type=service).
+        // Server-side gate enforces GBP+GSC+LF before allowing the lock.
+        if (keywordsLockedAt) {
+          var lockedDate = new Date(keywordsLockedAt);
+          var lockSubtitle = kwCount + ' keywords \u00B7 ' + lockedDate.toLocaleDateString();
+          if (keywordsLockedBy) lockSubtitle += ' by ' + esc(keywordsLockedBy.split('@')[0]);
+          h += stepRow(stepDone, 'Lock Keywords',
+            '<div style="display:flex;align-items:center;gap:.4rem;">' +
+              stepMuted(lockSubtitle) +
+              '<button onclick="window.crShowLockedKeywords()" style="padding:.2rem .55rem;font-size:.68rem;font-weight:500;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-body);border-radius:4px;cursor:pointer;font-family:inherit;">View</button>' +
+            '</div>'
+          );
+        } else if (hasGbp && hasGsc && hasLfPlace && hasServicePages) {
+          h += stepRow(stepOpen('4'), 'Lock Keywords',
+            stepBtn('Pull from Service Pages & Lock', 'window.crLockKeywords()')
+          );
+        } else if (!hasServicePages) {
+          h += stepRow(stepOpen('4'), 'Lock Keywords', stepMuted('Add service pages with target keywords first'));
         } else {
-          h += stepRow(stepOpen('3'), 'Tracked Keywords', stepMuted('Add in Keyword Targets above'));
+          h += stepRow(stepOpen('4'), 'Lock Keywords', stepMuted('Complete steps 1-3 first'));
         }
 
-        // Step 4: LF Campaigns
+        // Step 5: LF Campaigns
         if (hasLfCampaigns) {
           var badges = '';
           Object.keys(lfKeys).forEach(function(p) {
             badges += '<span style="font-size:.62rem;font-weight:600;padding:.1rem .35rem;border-radius:3px;background:rgba(0,212,126,.1);color:var(--color-primary-hover);">' + (lfPlatformNames[p] || p) + '</span>';
           });
           h += stepRow(stepDone, 'LF Campaigns', '<div style="display:flex;flex-wrap:wrap;gap:.25rem;">' + badges + '</div>');
-        } else if (hasGbp && hasLfPlace && hasKw) {
-          h += stepRow(stepOpen('4'), 'LF Campaigns', stepBtn('Create 6 Campaigns', 'window.crCreateCampaigns()'));
+        } else if (keywordsLockedAt) {
+          h += stepRow(stepOpen('5'), 'LF Campaigns', stepBtn('Create 6 Campaigns', 'window.crCreateCampaigns()'));
         } else {
-          h += stepRow(stepOpen('4'), 'LF Campaigns', stepMuted('Complete steps 1-3 first'));
+          h += stepRow(stepOpen('5'), 'LF Campaigns', stepMuted('Lock keywords first'));
         }
 
         // Remove last border
@@ -7280,12 +7319,15 @@
 
         // Progress status area
         h += '<div id="crProgress" style="display:none;margin-top:.75rem;"></div>';
+        h += '<div id="crLockedKeywordsView" style="display:none;margin-top:.75rem;"></div>';
 
-        // Activation button (only when all 4 steps done)
-        if (hasGbp && hasLfPlace && hasKw && hasLfCampaigns) {
+        // Activation button — gated on full readiness including keywords lock.
+        var allReady = hasGbp && hasGsc && hasLfPlace && keywordsLockedAt && hasLfCampaigns;
+        if (allReady) {
           if (isActive) {
             h += '<div style="margin-top:.85rem;display:flex;align-items:center;gap:.5rem;">';
             h += '<span style="display:inline-flex;align-items:center;gap:.35rem;padding:.4rem .85rem;font-size:.78rem;font-weight:600;border-radius:6px;background:rgba(0,212,126,.1);color:var(--color-primary-hover);">&#10003; Campaign Reporting Active</span>';
+            h += '<button onclick="window.crPauseReporting()" style="padding:.35rem .75rem;font-size:.72rem;font-weight:500;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-body);border-radius:5px;cursor:pointer;font-family:inherit;">Pause</button>';
             h += '</div>';
           } else {
             h += '<div style="margin-top:.85rem;">';
@@ -7540,6 +7582,105 @@
         crProgress('Campaign creation failed: ' + (res.error || 'Unknown error'), 'error');
       }
     }).catch(function(err) { crProgress('Network error: ' + err.message, 'error'); });
+  };
+
+  window.crLockKeywords = function() {
+    var c = state.contact;
+    if (!c || !c.slug) return;
+
+    var pages = (state.deepDive && Array.isArray(state.deepDive.content_pages))
+      ? state.deepDive.content_pages.filter(function(p) { return p.page_type === 'service' && p.target_keyword; })
+      : [];
+
+    if (pages.length === 0) {
+      crProgress('No service pages with target keywords found. Add service pages first.', 'error');
+      return;
+    }
+
+    // Show preview + confirm so admin sees exactly what will lock.
+    var seen = {};
+    var preview = [];
+    pages.forEach(function(p) {
+      var k = (p.target_keyword || '').trim();
+      if (!k) return;
+      var lc = k.toLowerCase();
+      if (seen[lc]) return;
+      seen[lc] = true;
+      preview.push(k);
+    });
+
+    var msg = 'Lock these ' + preview.length + ' keywords for monthly reporting?\n\n' +
+      preview.join('\n') +
+      '\n\nThis will:\n' +
+      '\u2022 Create tracked_keywords rows for geogrid + AI visibility tracking\n' +
+      '\u2022 Stamp report_configs.keywords_locked_at\n' +
+      '\u2022 Enable monthly compilation queueing once campaigns are created\n\n' +
+      'Keywords can be edited later via the keyword change protocol.';
+
+    if (!confirm(msg)) return;
+
+    crProgress('Locking ' + preview.length + ' keywords...');
+    fetch('/api/admin/lock-reporting-keywords', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_slug: c.slug })
+    }).then(function(r) { return r.json().then(function(b) { return { ok: r.ok, body: b, status: r.status }; }); })
+      .then(function(res) {
+        if (res.ok && res.body.success) {
+          crProgress('\u2713 ' + res.body.keyword_count + ' keywords locked at ' + new Date(res.body.locked_at).toLocaleString(), 'success');
+          refreshDeepDiveSlice(c.slug, 'report_configs').then(function() {
+            var cfgs = (state.deepDive && state.deepDive.report_configs) || [];
+            state.reportConfig = cfgs[0] || state.reportConfig;
+            return refreshDeepDiveSlice(c.slug, 'tracked_keywords');
+          }).then(function() {
+            state.trackedKeywords = (state.deepDive && state.deepDive.tracked_keywords) || state.trackedKeywords;
+            setTimeout(function() { renderReports(); }, 600);
+          });
+        } else {
+          var msg = res.body.error || 'Lock failed';
+          if (Array.isArray(res.body.missing)) msg += ' (missing: ' + res.body.missing.join(', ') + ')';
+          crProgress(msg, 'error');
+        }
+      }).catch(function(err) { crProgress('Network error: ' + err.message, 'error'); });
+  };
+
+  window.crShowLockedKeywords = function() {
+    var view = document.getElementById('crLockedKeywordsView');
+    if (!view) return;
+    if (view.style.display === 'block') { view.style.display = 'none'; return; }
+
+    var locked = (state.trackedKeywords || []).filter(function(k) { return k.active && !k.retired_at; });
+    if (locked.length === 0) { view.style.display = 'none'; return; }
+
+    var html = '<div style="font-size:.78rem;background:var(--color-bg);border:1px solid var(--color-border);border-radius:8px;padding:.75rem 1rem;">';
+    html += '<div style="font-weight:600;color:var(--color-heading);margin-bottom:.5rem;font-size:.8rem;">Locked keywords (' + locked.length + ')</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:.35rem;">';
+    locked.forEach(function(k) {
+      html += '<span style="font-size:.74rem;padding:.25rem .55rem;background:var(--color-primary-subtle);color:var(--color-primary-hover);border-radius:4px;font-weight:500;">' + esc(k.keyword) + '</span>';
+    });
+    html += '</div>';
+    html += '<div style="margin-top:.65rem;font-size:.7rem;color:var(--color-muted);">To change keywords, retire one and add a replacement. See docs/keyword-change-protocol.md.</div>';
+    html += '</div>';
+    view.innerHTML = html;
+    view.style.display = 'block';
+  };
+
+  window.crPauseReporting = function() {
+    var c = state.contact;
+    if (!c || !c.slug) return;
+    if (!confirm('Pause monthly report compilation for this client?\n\nKeywords stay locked. Re-activate any time.')) return;
+
+    fetch('/api/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: 'report_configs', filters: { client_slug: c.slug }, data: { active: false } })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success) {
+        state.reportConfig.active = false;
+        toast('Reporting paused', 'success');
+        renderReports();
+      } else {
+        toast('Pause failed: ' + (res.error || 'unknown'), 'error');
+      }
+    }).catch(function(err) { toast('Error: ' + err.message, 'error'); });
   };
 
   window.crActivateReporting = function() {
