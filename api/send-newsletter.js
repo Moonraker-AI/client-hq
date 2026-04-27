@@ -146,6 +146,40 @@ module.exports = async function handler(req, res) {
 
     var warmupActive = !!(warmup && warmup.enabled && (warmup.current_step || 0) < (warmup.ramp_schedule || []).length);
 
+    // Pre-validate emails. Resend rejects the entire 100-email batch if a single
+    // address is malformed (e.g. trailing dot, leading whitespace) — see
+    // 2026-04-27 incident on edition #33. We strip invalid addresses up front,
+    // record them as 'failed' so the dedup catches them on re-runs, and let the
+    // batch endpoint see only well-formed payloads.
+    // RFC 5321 in spirit, not letter — Resend's parser is what we have to satisfy.
+    var EMAIL_RE = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$/;
+    var invalidRecords = [];
+    var validSendList = [];
+    for (var v = 0; v < sendList.length; v++) {
+      var addr = (sendList[v].email || '').trim();
+      if (EMAIL_RE.test(addr)) {
+        validSendList.push(sendList[v]);
+      } else {
+        invalidRecords.push({
+          newsletter_id: newsletterId,
+          subscriber_id: sendList[v].id,
+          status: 'failed'
+        });
+      }
+    }
+    if (invalidRecords.length) {
+      try { await sb.mutate('newsletter_sends', 'POST', invalidRecords); } catch (e) {
+        console.error('failed to record invalid-email rows:', e.message);
+      }
+      try {
+        await monitor.logError('send-newsletter', new Error('Skipped ' + invalidRecords.length + ' invalid email(s)'), {
+          severity: 'warning',
+          detail: { newsletter_id: newsletterId, count: invalidRecords.length }
+        });
+      } catch (e) { /* non-fatal */ }
+    }
+    sendList = validSendList;
+
     var totalSent = 0;
     var totalFailed = 0;
     var errors = [];
