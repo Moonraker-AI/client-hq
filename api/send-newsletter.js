@@ -312,10 +312,14 @@ module.exports = async function handler(req, res) {
     // ─────────────────────────────────────────────────────────────
     // Update newsletter row: status, stats
     // ─────────────────────────────────────────────────────────────
-    // 'sent' only when every subscriber has a sent row. Otherwise 'draft'
-    // so the admin can re-send to catch the remaining eligible subs without
-    // re-hitting those already successful.
-    var isComplete = (totalFailed === 0 && insertFailures === 0);
+    // 'sent' only when every eligible subscriber has been processed AND
+    // this run had zero failures. Otherwise 'draft' so the admin can re-send
+    // to catch the rest without re-hitting those already successful.
+    // remainingEligible = subs we'd send to next run (eligibleSubscribers minus
+    // the slice we just completed). Warmup-capped runs and override_limit runs
+    // both leave remainingEligible > 0 and correctly stay in 'draft'.
+    var remainingEligible = Math.max(0, eligibleSubscribers.length - sendList.length);
+    var isComplete = (totalFailed === 0 && insertFailures === 0 && remainingEligible === 0);
     var finalStatus = isComplete ? 'sent' : 'draft';
     var finalUpdate = {
       status: finalStatus,
