@@ -17,6 +17,7 @@ var auth = require('./_lib/auth');
 var email = require('./_lib/email-template');
 var sb = require('./_lib/supabase');
 var monitor = require('./_lib/monitor');
+var surgeParser = require('./_lib/surge-parser');
 
 module.exports = async function(req, res) {
   if (req.method !== 'POST') {
@@ -44,25 +45,36 @@ module.exports = async function(req, res) {
       return res.status(404).json({ error: 'Content page not found' });
     }
 
-    // 2. Parse surge data
-    var surgeData = body.surge_data;
-    if (typeof surgeData === 'string') {
-      try { surgeData = JSON.parse(surgeData); } catch(e) { surgeData = { raw_text: surgeData }; }
+    // 2. Capture the raw payload before any mutation. Useful for re-parsing
+    // with a future parser version (parser_version is recorded on each ingest).
+    var rawForStorage = '';
+    if (typeof body.surge_data === 'string') {
+      rawForStorage = body.surge_data;
+    } else if (body.surge_data && typeof body.surge_data === 'object') {
+      // Prefer raw_text envelope if present; otherwise stringify the object
+      rawForStorage = body.surge_data.raw_text || JSON.stringify(body.surge_data);
     }
 
-    // 3. Extract RTPBA and schema from surge data
-    var rtpba = extractRtpba(surgeData);
-    var schemaRecs = extractSchemaRecommendations(surgeData);
+    // 3. Parse via canonical surge-parser. Handles markdown (Anna's shape),
+    // legacy JSON, and mixed envelopes.
+    var parsed = surgeParser.parse(body.surge_data);
 
-    // 4. Update content_pages
+    // 4. Update content_pages. We store both the raw markdown (for re-parsing)
+    // and the structured parse output (for Pagemaster + UI consumption).
     var updateData = {
-      surge_data: surgeData,
-      rtpba: rtpba || null,
-      schema_recommendations: schemaRecs || null,
+      surge_raw_data: rawForStorage,
+      surge_data: parsed,                                 // structured parse output
+      rtpba: parsed.rtpba || null,
+      schema_recommendations: parsed.schema_recommendations || null,
+      variance_score: parsed.variance_score,              // null when not extractable
+      variance_label: parsed.variance_label,
+      surge_status: 'complete',
       status: 'audit_loaded',
       agent_task_id: body.agent_task_id || cp.agent_task_id,
       updated_at: new Date().toISOString()
     };
+    var rtpba = parsed.rtpba;
+    var schemaRecs = parsed.schema_recommendations;
 
     try {
       await sb.mutate('content_pages?id=eq.' + encodeURIComponent(body.content_page_id), 'PATCH', updateData);
@@ -97,7 +109,12 @@ module.exports = async function(req, res) {
       content_page_id: body.content_page_id,
       has_rtpba: !!rtpba,
       rtpba_length: rtpba ? rtpba.length : 0,
-      has_schema: !!schemaRecs && Object.keys(schemaRecs).length > 0,
+      has_schema: !!schemaRecs && schemaRecs.blocks && schemaRecs.blocks.length > 0,
+      schema_block_count: (schemaRecs && schemaRecs.blocks) ? schemaRecs.blocks.length : 0,
+      variance_score: parsed.variance_score,
+      variance_label: parsed.variance_label,
+      parser_version: parsed.parser_version,
+      source_shape: parsed.source_shape,
       status: 'audit_loaded'
     });
 
@@ -109,111 +126,6 @@ module.exports = async function(req, res) {
     return res.status(500).json({ error: 'Failed to ingest surge content' });
   }
 };
-
-
-/**
- * Extract the Ready-to-Publish Best Answer from Surge data.
- * Surge outputs vary in structure, so we try multiple paths.
- */
-function extractRtpba(surgeData) {
-  if (!surgeData) return null;
-
-  // Structured JSON paths (from agent extraction)
-  if (surgeData.opportunities) {
-    var opps = surgeData.opportunities;
-    if (typeof opps === 'object') {
-      if (opps.ready_to_publish) return opps.ready_to_publish;
-      if (opps.ready_to_publish_best_answer) return opps.ready_to_publish_best_answer;
-      if (opps.rtpba) return opps.rtpba;
-      if (opps.best_answer) return opps.best_answer;
-    }
-  }
-
-  // Raw text extraction
-  var raw = surgeData.raw_text || '';
-  if (typeof surgeData === 'string') raw = surgeData;
-
-  if (!raw) return null;
-
-  // Look for RTPBA section markers
-  var markers = [
-    'Ready-to-Publish Best Answer',
-    'Ready to Publish Best Answer',
-    'READY-TO-PUBLISH',
-    'Best Answer Content',
-    'Recommended Page Content'
-  ];
-
-  for (var i = 0; i < markers.length; i++) {
-    var idx = raw.indexOf(markers[i]);
-    if (idx > -1) {
-      // Extract from after the marker to the next major section
-      var startIdx = raw.indexOf('\n', idx);
-      if (startIdx === -1) startIdx = idx + markers[i].length;
-
-      // Find the end: next major section header or end of text
-      var endMarkers = [
-        'Action Plan', 'Brand Beacon', 'Off-Page', 'Technical SEO',
-        'Schema Recommendations', 'Implementation', '---', '==='
-      ];
-
-      var endIdx = raw.length;
-      for (var j = 0; j < endMarkers.length; j++) {
-        var eIdx = raw.indexOf(endMarkers[j], startIdx + 100); // Skip at least 100 chars
-        if (eIdx > -1 && eIdx < endIdx) endIdx = eIdx;
-      }
-
-      var content = raw.substring(startIdx, endIdx).trim();
-      if (content.length > 100) return content;
-    }
-  }
-
-  return null;
-}
-
-
-/**
- * Extract schema recommendations from Surge data.
- */
-function extractSchemaRecommendations(surgeData) {
-  if (!surgeData) return null;
-
-  // Structured paths
-  if (surgeData.action_plan && typeof surgeData.action_plan === 'object') {
-    var ap = surgeData.action_plan;
-    if (ap.schema) return ap.schema;
-    if (ap.schema_recommendations) return ap.schema_recommendations;
-    if (ap.structured_data) return ap.structured_data;
-  }
-
-  if (surgeData.intelligence && typeof surgeData.intelligence === 'object') {
-    if (surgeData.intelligence.schema) return surgeData.intelligence.schema;
-  }
-
-  // Raw text: look for schema section
-  var raw = surgeData.raw_text || '';
-  if (typeof surgeData === 'string') raw = surgeData;
-  if (!raw) return null;
-
-  var schemaIdx = raw.indexOf('Schema');
-  if (schemaIdx === -1) schemaIdx = raw.indexOf('Structured Data');
-  if (schemaIdx > -1) {
-    var section = raw.substring(schemaIdx, schemaIdx + 2000);
-    // Extract schema types mentioned
-    var types = [];
-    var knownTypes = ['MedicalBusiness', 'MedicalWebPage', 'FAQPage', 'Person', 'Service',
-      'BreadcrumbList', 'AggregateRating', 'VideoObject', 'Article', 'LocalBusiness',
-      'HealthAndBeautyBusiness', 'ProfessionalService'];
-    knownTypes.forEach(function(t) {
-      if (section.indexOf(t) > -1) types.push(t);
-    });
-    if (types.length > 0) {
-      return { recommended_types: types, raw_section: section.substring(0, 500) };
-    }
-  }
-
-  return null;
-}
 
 
 /**
