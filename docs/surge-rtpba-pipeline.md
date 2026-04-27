@@ -219,7 +219,74 @@ This doc, plus inline comments in the parser and generator.
   across service pages would save admin time. Adding this is small; deferred
   until the pipeline is validated end-to-end.
 
-## Open questions / decisions to revisit
+## Side-notes / verification work
+
+Two flagged items that aren't blocking the page pipeline but need follow-up:
+
+### Side-note 1: Entity audit ingestion path
+
+The existing entity audit system (which feeds `/entity-audit` pages, audit
+tasks, and the diagnosis/action/progress pages) was built before
+`surge-parser.js`. If Surge's output shape evolved from JSON to markdown over
+time, the entity audit ingester might be silently degrading — pulling from
+JSON paths that no longer exist and returning empty fields without erroring.
+
+To verify (after the page pipeline lands):
+
+1. What does the agent VPS currently send to the entity-audit ingest endpoint
+   — JSON, markdown, or mixed? Inspect a recent payload.
+2. Does the entity audit parser handle both shapes? Walk the code path.
+3. Are recent `entity_audits.surge_data` rows actually populated? Spot-check
+   the last 10 rows for thin/empty data.
+4. Are the `tasks` arrays being extracted correctly from the Implementation
+   Blueprint section? Spot-check `entity_audits.tasks` for completeness.
+
+If the ingester needs updating, the fix is to refactor it to use the same
+`api/_lib/surge-parser.js` library. Single source of truth across both audit
+products.
+
+### Side-note 2: Schema completeness — placeholder detection + enrichment
+
+Anna's example shows that several Surge-recommended schema blocks contain
+placeholders like `[Your Postal Code]`, `[path-to-your-logo-image.png]`,
+`[your-PT-profile-url]`. Shipping these as-is to `schema_jsonb` would produce
+broken JSON-LD on the rendered page.
+
+Architecture: **Surge gives us the schema recipe (which @types, which
+structure). We populate it from our database.** All needed data exists:
+
+| Schema field | Source we have |
+|---|---|
+| address, postalCode | `contacts` + `practice_details` |
+| telephone | `contacts.phone` |
+| logo | `client_image_pool` / contact branding |
+| founder / employee Person | `bio_materials` (each clinician) |
+| sameAs (socials, directories) | `social_platforms` (823 rows), `directory_listings` (2008 rows) |
+| areaServed | `practice_details.city/state` + `tracked_keywords.geo` |
+| ratingValue, ratingCount | live GBP data via `gbp_daily` |
+| knowsAbout | `tracked_keywords` for the contact |
+| founder credentials, bio | `bio_materials.title`, `bio_materials.credentials` |
+
+Implementation: a new helper `api/_lib/schema-builder.js` that takes:
+- The Surge `schema_recommendations` (templates with placeholders)
+- The contact's full data fan-out
+- Returns: array of fully-populated JSON-LD blocks ready for `schema_jsonb`
+
+**Two-pass Pagemaster:**
+
+1. **Schema-builder pass** (deterministic, no LLM): Take Surge's recommended
+   schema types, fill placeholders from DB. Produce complete JSON-LD blocks.
+2. **Pagemaster generation pass** (LLM): Build the HTML body. Schema is
+   already built and handed to Pagemaster as reference — Pagemaster never
+   asks Claude to invent contact data.
+
+This is more reliable than asking Claude to assemble JSON-LD and hope it
+includes every social link, every clinician, every directory listing.
+
+Schema-builder runs as part of chunk 4 (Pagemaster overhaul) since they share
+a code path.
+
+
 
 - **`tracked_keywords.is_locked`:** does it exist? Need to check before chunk 3.
 - **Stale entity audit threshold:** 30 days. Easy to change.
