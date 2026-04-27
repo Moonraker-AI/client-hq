@@ -116,10 +116,16 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'No subscribers match the selected tier' });
     }
 
-    // Already-sent dedup (partial re-sends)
+    // Already-sent dedup (partial re-sends).
+    // Treat any non-failed row as already received: 'sent' is the initial insert,
+    // but webhooks promote it to 'delivered' / 'opened' / 'clicked' / 'bounced' /
+    // 'complained' before a re-send is likely. Only 'failed' (and 'pending', if
+    // it ever shows up) means the email never went out.
     var alreadySent = {};
     try {
-      var existing = await sb.query('newsletter_sends?newsletter_id=eq.' + newsletterId + '&status=eq.sent&select=subscriber_id&limit=5000');
+      var existing = await sb.query('newsletter_sends?newsletter_id=eq.' + newsletterId +
+        '&status=in.(sent,delivered,opened,clicked,bounced,complained)' +
+        '&select=subscriber_id&limit=5000');
       for (var e = 0; e < existing.length; e++) alreadySent[existing[e].subscriber_id] = true;
     } catch (e) { /* non-fatal */ }
 
