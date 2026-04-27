@@ -9,6 +9,7 @@ var auth = require('./_lib/auth');
 var sanitizer = require('./_lib/html-sanitizer');
 var monitor = require('./_lib/monitor');
 var designBans = require('./_lib/design-bans');
+var schemaBuilder = require('./_lib/schema-builder');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -48,7 +49,8 @@ module.exports = async function handler(req, res) {
     var contactId = cp.contact_id;
     var clientSlug = cp.client_slug;
 
-    // 2. Fetch design spec, contact, practice details in parallel
+    // 2. Fetch design spec, contact, practice details, and the data needed
+    //    for deterministic schema assembly, in parallel.
     send({ step: 'loading', message: 'Loading design spec and client data...' });
 
     var results = await Promise.all([
@@ -57,7 +59,14 @@ module.exports = async function handler(req, res) {
       sb.query('practice_details?contact_id=eq.' + contactId + '&limit=1').catch(function() { return []; }),
       sb.query('bio_materials?contact_id=eq.' + contactId + '&order=sort_order,is_primary.desc').catch(function() { return []; }),
       sb.query('entity_audits?contact_id=eq.' + contactId + '&order=created_at.desc&limit=1').catch(function() { return []; }),
-      sb.query('endorsements?contact_id=eq.' + contactId + '&status=eq.processed&order=sort_order,created_at.desc').catch(function() { return []; })
+      sb.query('endorsements?contact_id=eq.' + contactId + '&status=eq.processed&order=sort_order,created_at.desc').catch(function() { return []; }),
+      // Active design contract — when present, used as authoritative reference
+      // for tokens/voice/copy_conventions instead of design_spec
+      sb.query('client_design_contracts?contact_id=eq.' + contactId + '&status=eq.active&order=created_at.desc&limit=1').catch(function() { return []; }),
+      // Schema-builder enrichment data
+      sb.query('social_platforms?contact_id=eq.' + contactId).catch(function() { return []; }),
+      sb.query('directory_listings?contact_id=eq.' + contactId).catch(function() { return []; }),
+      sb.query('tracked_keywords?contact_id=eq.' + contactId + '&active=eq.true&order=priority,keyword').catch(function() { return []; })
     ]);
 
     var spec = results[0] && results[0][0];
@@ -66,6 +75,10 @@ module.exports = async function handler(req, res) {
     var bios = results[3] || [];
     var entityAudit = results[4] && results[4][0];
     var endorsements = results[5] || [];
+    var designContract = results[6] && results[6][0];
+    var socials = results[7] || [];
+    var directories = results[8] || [];
+    var trackedKeywords = results[9] || [];
 
     if (!contact) { send({ step: 'error', message: 'Contact not found' }); return res.end(); }
 
@@ -97,7 +110,50 @@ module.exports = async function handler(req, res) {
     var platform = contact.website_platform || 'wordpress';
     var siteUrl = contact.website_url || '';
 
-    send({ step: 'loaded', message: 'Data loaded. Starting generation...', page_type: cp.page_type, platform: platform, has_spec: !!spec, has_rtpba: !!rtpba });
+    // Deterministic schema assembly. Surge gives the recipe (which @types,
+    // which structure); we populate from real client data. Pagemaster is told
+    // to NEVER embed JSON-LD inline — schema lives separately in
+    // content_pages.schema_jsonb and is injected by the render layer at serve
+    // time. This protects schema from the future client-edit agent.
+    var schemaBlocks = [];
+    var schemaPlaceholders = [];
+    try {
+      schemaBlocks = schemaBuilder.build({
+        contact: contact,
+        practice: practice,
+        bios: bios,
+        social_platforms: socials,
+        directory_listings: directories,
+        tracked_keywords: trackedKeywords
+      }, schemaRecs, cp);
+      schemaPlaceholders = schemaBuilder.detectPlaceholders(schemaBlocks);
+      if (schemaPlaceholders.length > 0) {
+        // Don't fail — log + surface so admin can investigate. Placeholders
+        // here would mean schema-builder didn't have data to fill something
+        // Surge expected (e.g., missing logo URL).
+        console.warn('[generate-content-page] schema placeholders:', schemaPlaceholders);
+      }
+    } catch (e) {
+      console.error('[generate-content-page] schema-builder failed:', e.message);
+      // Soft-fail: continue with empty schema. The page still ships; schema
+      // can be re-built later by re-running the generator.
+      monitor.logError('generate-content-page', e, {
+        client_slug: clientSlug,
+        detail: { stage: 'schema_builder', content_page_id: contentPageId }
+      });
+    }
+
+    send({
+      step: 'loaded',
+      message: 'Data loaded. Starting generation...',
+      page_type: cp.page_type,
+      platform: platform,
+      has_spec: !!spec,
+      has_contract: !!designContract,
+      has_rtpba: !!rtpba,
+      schema_block_count: schemaBlocks.length,
+      schema_placeholder_count: schemaPlaceholders.length
+    });
 
     // Update status to generating
     try {
@@ -106,11 +162,12 @@ module.exports = async function handler(req, res) {
       console.error('[generate-content-page] status=generating flip failed:', e.message);
     }
 
-    // 3. Build the system prompt
-    var systemPrompt = buildSystemPrompt(platform, siteUrl);
+    // 3. Build the system prompt (now contract-aware: emit schema separately)
+    var systemPrompt = buildSystemPrompt(platform, siteUrl, !!designContract);
 
-    // 4. Build the user message with all context
-    var userMessage = buildUserMessage(cp, spec, contact, practice, bios, endorsements, rtpba, schemaRecs, platform, siteUrl);
+    // 4. Build the user message with all context, including the active design
+    //    contract when present (authoritative reference for tokens/voice)
+    var userMessage = buildUserMessage(cp, spec, designContract, contact, practice, bios, endorsements, rtpba, schemaRecs, platform, siteUrl);
 
     // 5. Call Claude with heartbeat
     var heartbeat = setInterval(function() {
@@ -193,6 +250,19 @@ module.exports = async function handler(req, res) {
       notes = 'VERIFY flags (' + verifyFlags.length + '): ' + verifyFlags.join('; ');
     }
 
+    // 7c. Strip any inline JSON-LD from the generated HTML. Schema lives in
+    //     content_pages.schema_jsonb and is injected by the render layer at
+    //     serve time. This is what protects schema from the future client-edit
+    //     agent — even if Claude defied the system prompt and emitted inline
+    //     JSON-LD, we strip it here before save.
+    var inlineLdStripped = 0;
+    var ldRe = /<script[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi;
+    html = html.replace(ldRe, function() { inlineLdStripped++; return ''; });
+    if (inlineLdStripped > 0) {
+      notes = (notes ? notes + ' ' : '') + 'Stripped ' + inlineLdStripped + ' inline JSON-LD block(s) — schema lives in schema_jsonb.';
+      send({ step: 'inline_ld_stripped', message: 'Stripped ' + inlineLdStripped + ' inline JSON-LD blocks', count: inlineLdStripped });
+    }
+
     // 7b. Sanitize the generated HTML before save.
     //
     // Defense-in-depth against stored XSS on the deployed client site.
@@ -211,11 +281,12 @@ module.exports = async function handler(req, res) {
       send({ step: 'sanitized', message: 'Sanitizer stripped ' + diff + ' bytes', bytes_removed: diff });
     }
 
-    // 8. Save to content_pages
-    send({ step: 'saving', message: 'Saving generated HTML (' + Math.round(html.length / 1024) + 'KB)...' });
+    // 8. Save to content_pages — HTML and schema as separate artifacts
+    send({ step: 'saving', message: 'Saving generated HTML (' + Math.round(html.length / 1024) + 'KB) + ' + schemaBlocks.length + ' schema blocks...' });
 
     var updateData = {
       generated_html: html,
+      schema_jsonb: schemaBlocks.length > 0 ? schemaBlocks : null,
       status: 'review',
       generation_notes: notes || null,
       stale: false
@@ -223,7 +294,8 @@ module.exports = async function handler(req, res) {
 
     await sb.mutate('content_pages?id=eq.' + contentPageId, 'PATCH', updateData, 'return=minimal');
 
-    // 9. Create initial version record
+    // 9. Create initial version record (HTML only — schema versioning is
+    //    separate concern; schema rebuilds happen via re-running this endpoint)
     await sb.mutate('content_page_versions', 'POST', {
       content_page_id: contentPageId,
       html: html,
@@ -235,6 +307,7 @@ module.exports = async function handler(req, res) {
       step: 'complete',
       message: 'Page generated successfully',
       html_size: html.length,
+      schema_block_count: schemaBlocks.length,
       verify_flags: verifyFlags.length,
       status: 'review'
     });
@@ -253,7 +326,7 @@ module.exports = async function handler(req, res) {
 // ============================================================
 // SYSTEM PROMPT BUILDER
 // ============================================================
-function buildSystemPrompt(platform, siteUrl) {
+function buildSystemPrompt(platform, siteUrl, hasContract) {
   var isWix = platform.toLowerCase() === 'wix';
 
   var prompt = `You are the Moonraker Pagemaster, a production engine that builds SEO-optimized, AI-citation-ready HTML pages for mental health therapy practices.
@@ -265,25 +338,30 @@ OUTPUT RULES:
 
 CONTENT RULES:
 - The Ready-to-Publish Best Answer (RTPBA) is VERBATIM source copy. Do not rewrite or reinterpret it.
-- Apply layout, styling, schema, and formatting to the exact RTPBA text.
+- Apply layout, styling, and formatting to the exact RTPBA text.
 - Adapt voice to match the Voice DNA profile provided.
 - NEVER use emdashes. Use commas, periods, colons, or restructure the sentence.
 - Mark any unconfirmed practitioner detail with <!-- VERIFY: detail --> comments.
-- Crisis disclaimers must be paragraph text, never headings.
+- Crisis disclaimers must be paragraph text, never headings.${hasContract ? '\n- An active DESIGN_CONTRACT is provided below. It is AUTHORITATIVE for tokens, voice, copy_conventions, and component conventions. Do not deviate. The contract was extracted from this client\'s validated homepage; subsequent pages inherit its decisions to maintain consistency.' : ''}
 
 PAGE STRUCTURE:
 - Hero section: two-column with emotional "Why" statement, "What" explanation, and CTA.
   Hero text max: hook + one supporting paragraph + CTA. Longer content goes into sections below.
 - Two-column desktop layouts with alternating full-width branded background sections.
-- FAQ accordion section with proper FAQPage schema.
+- FAQ accordion section (visible Q&A in HTML — no FAQPage schema in HTML, see below).
 - CTA bands: minimum two (hero CTA and closing CTA).
 - Button hover transitions at 0.3s, no aggressive animations.
 - Subtle scroll animations (fade-in on scroll).
 - Set <body> background-color to match the last section's background.
 
-SCHEMA (embedded in page):
-- Include all relevant schema types: MedicalWebPage, FAQPage, Person, Service, BreadcrumbList.
-- Schema goes in a <script type="application/ld+json"> block in the <head>.
+SCHEMA — CRITICAL:
+- DO NOT emit any <script type="application/ld+json"> blocks anywhere in the HTML.
+- Schema is assembled deterministically by the server from validated client
+  data, stored separately, and injected by the render layer at serve time.
+- This separation protects schema from future client edits to page content.
+- Reference SCHEMA_RECOMMENDATIONS in the user message only as guidance for
+  what topics/sections to surface (e.g., FAQs warrant a visible FAQ section).
+  Never inline JSON-LD in your output.
 
 RESPONSIVE DESIGN:
 - Mobile-first CSS with breakpoints at 768px (tablet) and 1024px (desktop).
@@ -326,8 +404,27 @@ PLATFORM: ${platform.toUpperCase()} (Hybrid Styling Mode)
 // ============================================================
 // USER MESSAGE BUILDER
 // ============================================================
-function buildUserMessage(cp, spec, contact, practice, bios, endorsements, rtpba, schemaRecs, platform, siteUrl) {
+function buildUserMessage(cp, spec, designContract, contact, practice, bios, endorsements, rtpba, schemaRecs, platform, siteUrl) {
   var msg = 'Build a production-ready HTML page with the following context:\n\n';
+
+  // ── DESIGN CONTRACT (when present, takes precedence over design_spec) ──
+  // The contract was extracted from this client's validated homepage chain
+  // and locks tokens, voice, copy_conventions, and component patterns.
+  // Subsequent pages MUST inherit from it.
+  if (designContract) {
+    msg += '## DESIGN_CONTRACT (AUTHORITATIVE — DO NOT DEVIATE)\n';
+    msg += 'This contract was locked after the homepage cleared the page-stage chain.\n';
+    msg += 'Use it as the single source of truth for tokens, voice, copy conventions,\n';
+    msg += 'and component patterns. The design_spec below is provided for reference\n';
+    msg += 'only and is superseded by the contract.\n\n';
+    msg += '```json\n' + JSON.stringify({
+      tokens: designContract.tokens,
+      voice: designContract.voice,
+      components: designContract.components,
+      copy_conventions: designContract.copy_conventions,
+      source_brief: designContract.source_brief
+    }, null, 2) + '\n```\n\n';
+  }
 
   // Page info
   msg += '=== PAGE INFO ===\n';
