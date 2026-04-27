@@ -40,15 +40,26 @@ module.exports = async function handler(req, res) {
     if (service === 'gsc') {
       if (!googleSA) return res.status(500).json({ error: 'GOOGLE_SERVICE_ACCOUNT_JSON not configured' });
 
-      // Get access token
+      // Get access token via domain-wide delegation. The direct SA
+      // (reporting@moonraker-client-hq.iam.gserviceaccount.com) only sees
+      // GSC properties where someone has explicitly granted that SA email
+      // user access — which is rarely done in practice. DWD impersonating
+      // support@moonraker.ai sees every GSC property our team has been
+      // added to via the normal GSC user-management flow, which is what
+      // the SEO techs actually do during onboarding. Same scope works for
+      // both auth modes; the difference is which identity the call runs as.
+      // (Mirrors the auth used in _lib/gsc.js for the daily warehouse cron.)
       var token;
       try {
-        token = await google.getServiceAccountToken('https://www.googleapis.com/auth/webmasters.readonly');
+        token = await google.getDelegatedAccessToken(
+          'support@moonraker.ai',
+          'https://www.googleapis.com/auth/webmasters.readonly'
+        );
       } catch (tokenErr) {
         return res.status(500).json({ error: 'Google auth failed: ' + (tokenErr.message || String(tokenErr)) });
       }
 
-      // List all sites the service account has access to
+      // List all sites the impersonated user has access to
       var sitesResp = await fetch('https://www.googleapis.com/webmasters/v3/sites', {
         headers: { 'Authorization': 'Bearer ' + token }
       });
@@ -58,23 +69,54 @@ module.exports = async function handler(req, res) {
       });
 
       if (allSites.length === 0) {
-        return res.status(200).json({ success: true, service: 'gsc', found: false, message: 'Service account has no GSC sites', all_sites: [] });
+        return res.status(200).json({ success: true, service: 'gsc', found: false, message: 'No GSC sites visible to support@moonraker.ai', all_sites: [] });
       }
 
-      // Try to match against client's website domain
-      var websiteUrl = (contact.website_url || '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '').toLowerCase();
+      // Match the contact's website domain against the site list.
+      // Strategy:
+      //   1. Normalize both sides to a bare host (lowercase, strip protocol,
+      //      strip www., strip trailing slash, strip sc-domain: prefix).
+      //   2. Exact-match the normalized host first — strongest signal.
+      //   3. Fall back to "registrable domain" overlap (domain.tld) so we
+      //      catch sc-domain:audreylmft.com when the site is www.audreylmft.com.
+      // The previous substring search produced false matches when one
+      // domain happened to be a substring of another (e.g. "obrien.com"
+      // matching "markfarrellobrien.com").
+      function normalizeHost(s) {
+        return (s || '')
+          .replace(/^sc-domain:/, '')
+          .replace(/^https?:\/\//, '')
+          .replace(/^www\./, '')
+          .replace(/\/+$/, '')
+          .toLowerCase()
+          .trim();
+      }
+      function registrable(host) {
+        // Crude: take the last two labels. Good enough for .com/.ca/.net
+        // therapy domains; punts on .co.uk-style multi-part TLDs.
+        var parts = host.split('.');
+        return parts.slice(-2).join('.');
+      }
+
+      var websiteHost = normalizeHost(contact.website_url || '');
+      var websiteRegistrable = registrable(websiteHost);
       var matches = [];
 
       for (var i = 0; i < allSites.length; i++) {
         var siteUrl = allSites[i].siteUrl;
-        var normalizedSite = siteUrl.replace(/^sc-domain:/, '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '').toLowerCase();
-        if (normalizedSite === websiteUrl || websiteUrl.indexOf(normalizedSite) >= 0 || normalizedSite.indexOf(websiteUrl) >= 0) {
-          matches.push(siteUrl);
+        var siteHost = normalizeHost(siteUrl);
+        if (!websiteHost) continue;
+        if (siteHost === websiteHost) {
+          matches.push({ siteUrl: siteUrl, score: 100 });
+        } else if (registrable(siteHost) === websiteRegistrable) {
+          matches.push({ siteUrl: siteUrl, score: 50 });
         }
       }
 
-      // Rank by preference: sc-domain (broadest) > https://www. > https:// > http://
+      // Rank: exact host match > registrable match. Within ties, prefer
+      // sc-domain (broadest) > https://www. > https:// > http://.
       matches.sort(function(a, b) {
+        if (a.score !== b.score) return b.score - a.score;
         function rank(url) {
           if (url.startsWith('sc-domain:')) return 0;
           if (url.startsWith('https://www.')) return 1;
@@ -82,10 +124,10 @@ module.exports = async function handler(req, res) {
           if (url.startsWith('http://www.')) return 3;
           return 4;
         }
-        return rank(a) - rank(b);
+        return rank(a.siteUrl) - rank(b.siteUrl);
       });
 
-      var matched = matches.length > 0 ? matches[0] : null;
+      var matched = matches.length > 0 ? matches[0].siteUrl : null;
 
       if (matched) {
         // Save to contact record
