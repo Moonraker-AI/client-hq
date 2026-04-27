@@ -214,6 +214,18 @@ module.exports = async function handler(req, res) {
       if (!batchOk) {
         console.error('send-newsletter batch ' + (i / BATCH_SIZE + 1) + ' rejected after retries: ' + batchErrMsg);
         errors.push('Batch ' + (i / BATCH_SIZE + 1) + ': ' + batchErrMsg);
+        // Persist to error_log — Vercel runtime logs truncate at ~80 chars in MCP/UI
+        // and the response body's `errors` array isn't always inspected.
+        try {
+          await monitor.logError('send-newsletter', new Error('Resend batch rejected: ' + batchErrMsg), {
+            detail: {
+              newsletter_id: newsletterId,
+              batch_index: i / BATCH_SIZE,
+              batch_size: batch.length,
+              raw_response: batchResult
+            }
+          });
+        } catch (e) { /* non-fatal */ }
         batchResult = { data: [] }; // pairing loop treats all as failed
       }
 
