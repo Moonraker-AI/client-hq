@@ -2630,15 +2630,25 @@ body.contact-locked .autosave-status { display: none !important; }
     themeBtn.addEventListener('click', function() {
       var h = document.documentElement;
       function apply() {
+        var nextTheme;
         if (h.getAttribute('data-theme') === 'light') {
+          nextTheme = 'dark';
           h.setAttribute('data-theme', 'dark');
           themeBtn.innerHTML = '&#9728;&#65039;';
           try { localStorage.setItem('moonraker-theme', 'dark'); } catch(e) {}
         } else {
+          nextTheme = 'light';
           h.setAttribute('data-theme', 'light');
           themeBtn.innerHTML = '&#x1F319;';
           try { localStorage.setItem('moonraker-theme', 'light'); } catch(e) {}
         }
+        // Sync the embedded site-map iframe (same-origin); harmless if not present.
+        try {
+          var smFrame = document.getElementById('siteMapFrame');
+          if (smFrame && smFrame.contentWindow) {
+            smFrame.contentWindow.postMessage({ type: 'mr-theme', theme: nextTheme }, location.origin);
+          }
+        } catch(_) {}
       }
       // Preserve signature canvas across theme toggle: snapshot pixels, clear, restore.
       function doToggle() {
