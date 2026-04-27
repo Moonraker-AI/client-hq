@@ -8,8 +8,9 @@
  *
  * Flow:
  * 1. Validates auth (Bearer token must match AGENT_API_KEY)
- * 2. Parses surge_data to extract RTPBA and schema recommendations
- * 3. Updates content_pages with surge_data, rtpba, schema_recommendations, status -> audit_loaded
+ * 2. Parses surge_data via canonical surge-parser
+ * 3. Updates content_pages with surge_data, rtpba, schema_recommendations,
+ *    variance, surge_status -> processed, status -> audit_loaded
  * 4. Sends team notification via Resend
  */
 
@@ -39,10 +40,19 @@ module.exports = async function(req, res) {
   }
 
   try {
-    // 1. Fetch current content page
+    // 1. Fetch current content page + contact (contact powers display name in
+    // notification subject + Client row, so the team sees a real practice
+    // name instead of a slug like "mark-obrien").
     var cp = await sb.one('content_pages?id=eq.' + encodeURIComponent(body.content_page_id) + '&limit=1');
     if (!cp) {
       return res.status(404).json({ error: 'Content page not found' });
+    }
+
+    var contact = null;
+    if (cp.contact_id) {
+      try {
+        contact = await sb.one('contacts?id=eq.' + encodeURIComponent(cp.contact_id) + '&limit=1');
+      } catch (e) { /* notification falls back to slug if fetch fails */ }
     }
 
     // 2. Capture the raw payload before any mutation. Useful for re-parsing
@@ -86,6 +96,7 @@ module.exports = async function(req, res) {
     // 5. Notify team
     if (RESEND_KEY) {
       try {
+        var displayName = buildDisplayName(contact, cp);
         await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -95,8 +106,8 @@ module.exports = async function(req, res) {
           body: JSON.stringify({
             from: email.FROM.notifications,
             to: ['support@moonraker.ai'],
-            subject: 'Surge Content Audit Complete: ' + (cp.page_name || cp.target_keyword || 'Unknown') + ' (' + cp.client_slug + ')',
-            html: buildNotificationHtml(cp, rtpba, body.agent_task_id)
+            subject: 'Surge Content Audit Complete: ' + (cp.page_name || cp.target_keyword || 'Unknown') + ' (' + displayName + ')',
+            html: buildNotificationHtml(cp, rtpba, body.agent_task_id, displayName)
           })
         });
       } catch(e) {
@@ -129,14 +140,31 @@ module.exports = async function(req, res) {
 
 
 /**
+ * Build a display name preferring practice_name, falling back to first+last,
+ * then slug. Used in subject + Client row of notification email.
+ */
+function buildDisplayName(contact, cp) {
+  if (contact) {
+    if (contact.practice_name) return contact.practice_name;
+    var first = (contact.first_name || '').trim();
+    var last = (contact.last_name || '').trim();
+    var combined = (first + ' ' + last).trim();
+    if (combined) return combined;
+  }
+  return cp && cp.client_slug ? cp.client_slug : '';
+}
+
+
+/**
  * Build notification email HTML
  */
-function buildNotificationHtml(cp, rtpba, taskId) {
+function buildNotificationHtml(cp, rtpba, taskId, displayName) {
   var clientUrl = 'https://clients.moonraker.ai/admin/clients?slug=' + (cp.client_slug || '') + '&tab=content';
+  var clientLabel = displayName || cp.client_slug || '';
 
   // Build detail rows as a simple table
   var details = '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:16px 0;">';
-  details += detailRow('Client', cp.client_slug || '');
+  details += detailRow('Client', clientLabel);
   details += detailRow('Page', (cp.page_name || '') + ' (' + (cp.page_type || '') + ')');
   if (cp.target_keyword) details += detailRow('Keyword', cp.target_keyword);
   if (taskId) details += detailRow('Agent Task', taskId);
