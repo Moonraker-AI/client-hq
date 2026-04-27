@@ -23,10 +23,10 @@
  * Auth: admin only (this is a campaign-start ceremony, not an automated path).
  */
 
-var sb = require('./_lib/supabase');
-var auth = require('./_lib/auth');
-var monitor = require('./_lib/monitor');
-var surgeParser = require('./_lib/surge-parser');
+var sb = require('../_lib/supabase');
+var auth = require('../_lib/auth');
+var monitor = require('../_lib/monitor');
+var surgeParser = require('../_lib/surge-parser');
 
 var ENTITY_AUDIT_FRESHNESS_DAYS = 30;
 
