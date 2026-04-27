@@ -18,8 +18,8 @@ plus separate schema for the chain to refine.
 - ✅ Polish/chain stages already read contract (existing infrastructure)
 
 **Pending:**
-- ⏳ Verify entity audit ingester handles markdown shape (side-note 1)
-- ⏳ End-to-end smoke test with a real client
+- ✅ Verify entity audit ingester handles markdown shape (side-note 1) — VERIFIED HEALTHY 2026-04-27
+- ⏳ End-to-end smoke test with a real client (waiting for first lock-and-fire)
 
 ## TL;DR
 
@@ -240,27 +240,37 @@ This doc, plus inline comments in the parser and generator.
 
 Two flagged items that aren't blocking the page pipeline but need follow-up:
 
-### Side-note 1: Entity audit ingestion path
+### Side-note 1: Entity audit ingestion path — VERIFIED HEALTHY (2026-04-27)
 
-The existing entity audit system (which feeds `/entity-audit` pages, audit
-tasks, and the diagnosis/action/progress pages) was built before
-`surge-parser.js`. If Surge's output shape evolved from JSON to markdown over
-time, the entity audit ingester might be silently degrading — pulling from
-JSON paths that no longer exist and returning empty fields without erroring.
+**Resolution:** the entity audit ingester (`api/process-entity-audit.js`) does
+not have the silent-degradation risk we were worried about. It uses a
+fundamentally different (and more robust) approach than `surge-parser.js`:
 
-To verify (after the page pipeline lands):
+- Surge data is passed to Claude Opus as a raw string in the prompt, regardless
+  of whether it's markdown, JSON, or mixed. Claude reads the structure
+  natively and extracts the structured fields. This is shape-agnostic by
+  design — unlike regex extraction, it cannot silently degrade when shape
+  changes.
+- A 240s fetch timeout protects against silent hang on long Opus runs (the
+  Anna Sky demo bug, audit `6268e8ee-...`, taught us this).
 
-1. What does the agent VPS currently send to the entity-audit ingest endpoint
-   — JSON, markdown, or mixed? Inspect a recent payload.
-2. Does the entity audit parser handle both shapes? Walk the code path.
-3. Are recent `entity_audits.surge_data` rows actually populated? Spot-check
-   the last 10 rows for thin/empty data.
-4. Are the `tasks` arrays being extracted correctly from the Implementation
-   Blueprint section? Spot-check `entity_audits.tasks` for completeness.
+**Spot check of recent rows (2026-04-27):**
 
-If the ingester needs updating, the fix is to refactor it to use the same
-`api/_lib/surge-parser.js` library. Single source of truth across both audit
-products.
+- 73 `complete` + 21 `delivered` rows, all with `surge_data`, `scores`, and
+  `variance_score` populated (100%).
+- Initial alarm: 56 `complete` rows from 2026-04-07 to 2026-04-10 had NULL
+  `tasks` JSONB. Investigation: those rows DO have populated tasks — they live
+  in the canonical `checklist_items` table (24 rows each, matching
+  `total_tasks`). The JSONB column is transient and gets nulled after
+  promotion to `checklist_items`, similar to how `surge_raw_data` is nulled
+  after successful processing (per the file's header comment).
+
+**No action needed.** The pipeline is working as designed.
+
+**Architecture note worth recording:** the entity audit pipeline stores tasks
+in `checklist_items` (canonical) and may null the JSONB. The page-stage
+pipeline stores per-page artifacts directly on `content_pages`. These are two
+different storage models, both correct for their respective use cases.
 
 ### Side-note 2: Schema completeness — placeholder detection + enrichment
 
