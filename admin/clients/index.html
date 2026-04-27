@@ -7478,52 +7478,67 @@
     var c = state.contact;
     if (!c) return;
     var name = c.practice_name || ((c.first_name || '') + ' ' + (c.last_name || '')).trim();
-    crProgress('Searching LocalFalcon for "' + esc(name) + '"...');
+    if (!name) {
+      crProgress('No practice name on contact. Add one before searching.', 'error');
+      return;
+    }
+    crProgress('Searching Google Places for "' + esc(name) + '"...');
 
-    fetch('/api/lf-proxy', {
+    fetch('/api/admin/search-gbp', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'search', name: name, city: c.city || '', state: c.state || c.province || '' })
-    }).then(function(r) { return r.json(); }).then(function(res) {
-      var panel = document.getElementById('crSearchResults');
-      if (!panel) return;
+      body: JSON.stringify({
+        practice_name: name,
+        city: c.city || '',
+        state: c.state || c.province || ''
+      })
+    }).then(function(r) { return r.json().then(function(b) { return { ok: r.ok, body: b }; }); })
+      .then(function(res) {
+        var panel = document.getElementById('crSearchResults');
+        if (!panel) return;
 
-      if (!res.success || !res.results || res.results.length === 0) {
-        // Try saved locations as fallback
-        fetch('/api/lf-proxy', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'saved', query: name })
-        }).then(function(r) { return r.json(); }).then(function(saved) {
-          var locs = (saved.success && saved.locations) || [];
-          if (locs.length === 0) {
-            crProgress('No results found for "' + esc(name) + '". Try adjusting the practice name or city.', 'error');
-            panel.style.display = 'none';
-            return;
-          }
-          crProgress('Found in saved LocalFalcon locations:');
-          renderCrResults(panel, locs, true);
-        });
-        return;
-      }
-      crProgress('Select the correct listing:');
-      renderCrResults(panel, res.results, false);
-    }).catch(function(err) {
-      crProgress('Search failed: ' + err.message, 'error');
-    });
+        if (!res.ok) {
+          crProgress('Search failed: ' + (res.body.error || 'unknown') + (res.body.detail ? ' \u2014 ' + res.body.detail : ''), 'error');
+          panel.style.display = 'none';
+          return;
+        }
+        var results = res.body.results || [];
+        if (results.length === 0) {
+          crProgress('No Places results for "' + esc(name) + '". Try adjusting the practice name or add city/state to the contact.', 'error');
+          panel.style.display = 'none';
+          return;
+        }
+
+        var manageable = res.body.manageable_count || 0;
+        var headerMsg = manageable > 0
+          ? 'Select the correct listing (' + manageable + ' of ' + results.length + ' manageable by our SA):'
+          : 'No listings reachable by our service account yet. ' +
+            'Pick the right one anyway \u2014 you can re-run search after the practice grants us GBP access.';
+        crProgress(headerMsg, manageable > 0 ? null : 'warning');
+        renderCrResults(panel, results);
+      }).catch(function(err) {
+        crProgress('Search failed: ' + err.message, 'error');
+      });
   };
 
-  function renderCrResults(panel, results, isSaved) {
+  function renderCrResults(panel, results) {
     panel.style.display = 'block';
     var h = '<div style="display:flex;flex-direction:column;gap:.4rem;margin:.5rem 0;">';
     results.forEach(function(r) {
       var pid = esc(r.place_id || '');
+      var locId = esc(r.location_id || '');
       var nm = esc(r.name || 'Unknown');
       var addr = esc(r.address || '');
-      var cat = r.category ? '<span style="font-size:.65rem;color:var(--color-muted);margin-left:.35rem;">' + esc(r.category) + '</span>' : '';
-      h += '<div data-place-id="' + pid + '" data-name="' + nm + '" data-saved="' + (isSaved ? '1' : '0') + '" style="display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border:1px solid var(--color-border);border-radius:8px;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor=\'var(--color-primary)\'" onmouseout="this.style.borderColor=\'var(--color-border)\'" onclick="window.crSelectGBP(this)">';
-      h += '<div style="flex:1;min-width:0;"><div style="font-size:.78rem;font-weight:600;color:var(--color-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + nm + cat + '</div>';
+      var manageable = !!r.manageable;
+      var badge = manageable
+        ? '<span style="font-size:.62rem;font-weight:600;padding:.15rem .4rem;border-radius:3px;background:rgba(0,212,126,.15);color:var(--color-primary-hover);">\u2713 Manageable</span>'
+        : '<span style="font-size:.62rem;font-weight:600;padding:.15rem .4rem;border-radius:3px;background:var(--color-bg);color:var(--color-muted);">No SA access</span>';
+      h += '<div data-place-id="' + pid + '" data-location-id="' + locId + '" data-name="' + nm + '" data-manageable="' + (manageable ? '1' : '0') + '" style="display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border:1px solid var(--color-border);border-radius:8px;cursor:pointer;transition:border-color .15s;' + (manageable ? '' : 'opacity:.7;') + '" onmouseover="this.style.borderColor=\'var(--color-primary)\'" onmouseout="this.style.borderColor=\'var(--color-border)\'" onclick="window.crSelectGBP(this)">';
+      h += '<div style="flex:1;min-width:0;">';
+      h += '<div style="font-size:.78rem;font-weight:600;color:var(--color-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:.4rem;">' + nm + ' ' + badge + '</div>';
       if (addr) h += '<div style="font-size:.7rem;color:var(--color-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + addr + '</div>';
       h += '</div>';
-      h += '<div style="font-size:.6rem;color:var(--color-muted);font-family:monospace;flex-shrink:0;max-width:140px;overflow:hidden;text-overflow:ellipsis;">' + pid + '</div>';
+      var idDisplay = locId ? '<span style="color:var(--color-success);">loc: ' + locId + '</span>' : '<span>place: ' + pid + '</span>';
+      h += '<div style="font-size:.6rem;color:var(--color-muted);font-family:monospace;flex-shrink:0;max-width:170px;overflow:hidden;text-overflow:ellipsis;">' + idDisplay + '</div>';
       h += '</div>';
     });
     h += '</div>';
@@ -7532,25 +7547,62 @@
 
   window.crSelectGBP = function(el) {
     var placeId = el.getAttribute('data-place-id');
-    var name = el.getAttribute('data-name');
-    var isSaved = el.getAttribute('data-saved') === '1';
+    var locationId = el.getAttribute('data-location-id');
+    var manageable = el.getAttribute('data-manageable') === '1';
     if (!placeId) return;
 
-    crProgress('Saving GBP Place ID...');
     document.getElementById('crSearchResults').style.display = 'none';
 
-    // Save gbp_place_id to contacts
-    fetch('/api/action', {
+    if (!manageable) {
+      // Save the Places place_id on the contact as a marker, but DON'T
+      // populate gbp_location_id — that field needs the real GBP location
+      // resource ID, which we don't have until the SA gets access.
+      crProgress('Saving Place ID to contact. The practice still needs to grant GBP access before reporting can run.', 'warning');
+      fetch('/api/action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_record', table: 'contacts', filters: { slug: state.contact.slug }, data: { gbp_place_id: placeId } })
+      }).then(function(r) { return r.json(); }).then(function(res) {
+        state.contact.gbp_place_id = placeId;
+        renderReports();
+      }).catch(function(err) { crProgress('Save error: ' + err.message, 'error'); });
+      return;
+    }
+
+    crProgress('Saving GBP Location ID to report_configs...');
+
+    // Manageable: write the numeric location ID to report_configs.gbp_location_id,
+    // which is what compile-report and the warehouse triggers actually read.
+    // Also mirror the Place ID to contacts.gbp_place_id for backwards compat.
+    var cfgWrite = state.reportConfig
+      ? fetch('/api/action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update_record', table: 'report_configs', filters: { client_slug: state.contact.slug }, data: { gbp_location_id: locationId } })
+        }).then(function(r) { return r.json(); })
+      : fetch('/api/action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create_record', table: 'report_configs', data: { client_slug: state.contact.slug, gbp_location_id: locationId, report_day: 1, active: false } })
+        }).then(function(r) { return r.json(); });
+
+    var contactWrite = fetch('/api/action', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'update_record', table: 'contacts', filters: { slug: state.contact.slug }, data: { gbp_place_id: placeId } })
-    }).then(function(r) { return r.json(); }).then(function(res) {
-      if (res.success) {
+    }).then(function(r) { return r.json(); });
+
+    Promise.all([cfgWrite, contactWrite]).then(function(results) {
+      if (results[0].success) {
         state.contact.gbp_place_id = placeId;
-        crProgress('GBP Place ID saved. Now linking to LocalFalcon...', 'success');
-        // Auto-advance to Step 2
-        setTimeout(function() { window.crLinkLF(placeId, isSaved); }, 500);
+        if (state.reportConfig) state.reportConfig.gbp_location_id = locationId;
+        else state.reportConfig = (results[0].data && results[0].data[0]) || { client_slug: state.contact.slug, gbp_location_id: locationId };
+        crProgress('\u2713 GBP linked. Location ID: ' + locationId, 'success');
+        // The trigger will fire backfill-gbp-warehouse automatically.
+        // Reload state from server.
+        refreshDeepDiveSlice(state.contact.slug, 'report_configs').then(function() {
+          var cfgs = (state.deepDive && state.deepDive.report_configs) || [];
+          state.reportConfig = cfgs[0] || state.reportConfig;
+          setTimeout(function() { renderReports(); }, 600);
+        });
       } else {
-        crProgress('Failed to save: ' + (res.error || 'Unknown error'), 'error');
+        crProgress('Failed to save: ' + (results[0].error || 'Unknown error'), 'error');
         renderReports();
       }
     }).catch(function(err) { crProgress('Error: ' + err.message, 'error'); });
