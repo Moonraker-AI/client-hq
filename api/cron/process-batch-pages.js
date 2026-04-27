@@ -15,6 +15,7 @@ var auth = require('../_lib/auth');
 var sb = require('../_lib/supabase');
 var monitor = require('../_lib/monitor');
 var cronRuns = require('../_lib/cron-runs');
+var surgeParser = require('../_lib/surge-parser');
 
 async function handler(req, res) {
   // Auth: admin JWT, CRON_SECRET, or AGENT_API_KEY (timing-safe)
@@ -85,16 +86,23 @@ async function handler(req, res) {
         result.content_page_id = page.id;
         result.keyword = page.target_keyword || page.page_name;
 
-        // Extract RTPBA and schema
+        // Parse via canonical surge-parser (same parser ingest-surge-content
+        // uses for single-page audits). Inline extractRtpba/Schema below are
+        // legacy stubs kept only so older batches that never ran through this
+        // path don't regress; new code paths must use surgeParser.parse().
         var raw = page.surge_raw_data || '';
-        var rtpba = extractRtpba(raw);
-        var schemaRecs = extractSchemaRecommendations(raw);
+        var parsed = surgeParser.parse(raw);
 
-        // Update page
+        // Update page with full canonical parse output. Storing the parsed
+        // object on surge_data (jsonb) gives downstream consumers structured
+        // access (variance_score, structured_scores, blueprint_phases, etc.)
+        // without re-parsing the markdown each render.
         await sb.mutate('content_pages?id=eq.' + page.id, 'PATCH', {
-          surge_data: { raw_text: raw.substring(0, 500000) }, // Cap at 500K for JSONB
-          rtpba: rtpba || null,
-          schema_recommendations: schemaRecs || null,
+          surge_data: parsed,
+          rtpba: parsed.rtpba || null,
+          schema_recommendations: parsed.schema_recommendations || null,
+          variance_score: parsed.variance_score,
+          variance_label: parsed.variance_label,
           surge_status: 'processed',
           status: 'audit_loaded',
           updated_at: new Date().toISOString()
@@ -107,7 +115,11 @@ async function handler(req, res) {
         }, 'return=minimal');
 
         result.action = 'processed';
-        result.has_rtpba = !!rtpba;
+        result.has_rtpba = !!parsed.rtpba;
+        result.rtpba_length = parsed.rtpba ? parsed.rtpba.length : 0;
+        result.schema_block_count = (parsed.schema_recommendations && parsed.schema_recommendations.blocks)
+          ? parsed.schema_recommendations.blocks.length : 0;
+        result.variance_score = parsed.variance_score;
 
       } catch(pageErr) {
         console.error('Batch page processing error:', pageErr.message);
