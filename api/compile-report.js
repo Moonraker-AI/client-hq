@@ -703,6 +703,9 @@ module.exports = async function handler(req, res) {
     gbp_direction_requests: gbpPerfData ? gbpPerfData.direction_requests : null,
     gbp_website_clicks: gbpPerfData ? gbpPerfData.website_clicks : null,
     gbp_photo_views: null,
+    gbp_impressions_total_prev: (prevSnap && prevSnap.gbp_detail && prevSnap.gbp_detail.impressions_total != null)
+      ? prevSnap.gbp_detail.impressions_total
+      : (prevGbpWarehouse ? prevGbpWarehouse.impressions_total : null),
     gbp_calls_prev: (prevSnap && prevSnap.gbp_calls != null) ? prevSnap.gbp_calls : (prevGbpWarehouse ? prevGbpWarehouse.calls : null),
     gbp_direction_requests_prev: (prevSnap && prevSnap.gbp_direction_requests != null) ? prevSnap.gbp_direction_requests : (prevGbpWarehouse ? prevGbpWarehouse.direction_requests : null),
     gbp_website_clicks_prev: (prevSnap && prevSnap.gbp_website_clicks != null) ? prevSnap.gbp_website_clicks : (prevGbpWarehouse ? prevGbpWarehouse.website_clicks : null),
