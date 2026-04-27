@@ -38,11 +38,13 @@ module.exports = async function handler(req, res) {
       '&order=created_at.asc' +
       '&select=id,contact_id,client_slug,page_type,page_name,page_slug,status,' +
               'tracked_keyword_id,target_keyword,template_version,nav_label,' +
+              'surge_status,variance_score,variance_label,rtpba,' +
+              'schema_jsonb,batch_id,entity_audit_id,' +
               'created_at,updated_at,delivered_at,counts_against_budget'
     ) || [];
 
     if (pages.length === 0) {
-      return res.status(200).json({ pages: [], contract: null });
+      return res.status(200).json({ pages: [], contract: null, contact_id: null, active_batch: null });
     }
 
     var pageIds = pages.map(function(p) { return p.id; });
@@ -54,6 +56,19 @@ module.exports = async function handler(req, res) {
       contract = await sb.one(
         'client_design_contracts?contact_id=eq.' + contactId +
         '&status=eq.active&select=id,homepage_content_page_id,created_at,updated_at&limit=1'
+      );
+    }
+
+    // 2b. Active audit batch (campaign-start ceremony state). When present,
+    //     the UI shows the in-flight progress bar; when absent + pages are
+    //     pending_audit, the UI shows the Lock+Fire button.
+    var activeBatch = null;
+    if (contactId) {
+      activeBatch = await sb.one(
+        'content_audit_batches?contact_id=eq.' + contactId +
+        "&status=in.(queued,agent_running,extracting,processing)" +
+        '&order=created_at.desc&limit=1' +
+        '&select=id,status,pages_total,pages_extracted,pages_processed,created_at,updated_at,error_message'
       );
     }
 
@@ -155,6 +170,8 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       pages: enriched,
       contract: contract,
+      contact_id: contactId,
+      active_batch: activeBatch,
       counts: {
         total: enriched.length,
         in_chain: enriched.filter(function(p) { return inChainStatuses.indexOf(p.status) !== -1; }).length,
