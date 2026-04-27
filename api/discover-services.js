@@ -201,7 +201,11 @@ module.exports = async function handler(req, res) {
           address: pick.address,
           score: pick.score,
           message: 'Auto-matched: ' + pick.display_name + ' (score ' + pick.score + ')',
-          alternates: discovery.candidates.slice(1, 5)
+          // Full candidate list so UI can offer a "wrong match? pick another" picker.
+          all_locations: discovery.candidates.map(function(c) {
+            return { name: c.display_name, address: c.address, location_id: c.location_id, place_id: c.place_id, score: c.score };
+          }),
+          total_managed: discovery.total_managed
         });
       } else {
         return res.status(200).json({
