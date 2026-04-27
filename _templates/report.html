@@ -16,7 +16,7 @@
 <meta charset="UTF-8">
 <meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Moonraker x Sky Therapies: Monthly Campaign Report</title>
+<title>Monthly Campaign Report</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
@@ -542,6 +542,26 @@ section { padding: 4.5rem 0; }
   function sbFetch(table, query) {
     return fetch(SB_URL + '/rest/v1/' + table + '?' + query, { headers: sbHeaders() })
       .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  }
+
+  // Admin-preview-aware fetch for report_snapshots. Anon RLS hides non-published
+  // rows, so when ?preview=admin is set we read through /api/action (admin JWT
+  // cookie + service role) instead. Returns a Promise of an array.
+  function isAdminPreview() {
+    return new URLSearchParams(window.location.search).get('preview') === 'admin';
+  }
+  function fetchSnapshots(filters, select) {
+    if (isAdminPreview()) {
+      return fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ action: 'read_records', table: 'report_snapshots', filters: filters, select: select, limit: 200 })
+      }).then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function(b){ return (b && b.data) || []; });
+    }
+    var qs = Object.keys(filters).map(function(k){ return k + '=eq.' + encodeURIComponent(filters[k]); }).join('&');
+    return sbFetch('report_snapshots', qs + '&select=' + encodeURIComponent(select));
   }
 
   // ============================================================
@@ -1074,7 +1094,7 @@ section { padding: 4.5rem 0; }
 
   function loadMonth(month) {
     Promise.all([
-      sbFetch('report_snapshots', 'client_slug=eq.' + CLIENT_SLUG + '&report_month=eq.' + month + '&select=*'),
+      fetchSnapshots({ client_slug: CLIENT_SLUG, report_month: month }, '*'),
       sbFetch('report_highlights', 'client_slug=eq.' + CLIENT_SLUG + '&report_month=eq.' + month + '&order=sort_order')
     ]).then(function(results) {
       var snaps = results[0];
@@ -1122,6 +1142,7 @@ section { padding: 4.5rem 0; }
           // Set header immediately so it shows even if no reports exist
           document.getElementById('headerName').textContent = 'Prepared for ' + CLIENT_NAME;
           document.getElementById('headerPractice').textContent = PRACTICE_NAME + (PRACTICE_LOCATION ? ' \u00B7 ' + PRACTICE_LOCATION : '');
+          if (PRACTICE_NAME) document.title = 'Moonraker x ' + PRACTICE_NAME + ': Monthly Campaign Report';
         }
         loadReports();
       })
@@ -1135,12 +1156,34 @@ section { padding: 4.5rem 0; }
     document.getElementById('navActionPlan').href = base + '/audits/action-plan';
     document.getElementById('navProgress').href = base + '/audits/progress';
 
-    // Admin preview mode bypasses published filter
-    var isPreview = new URLSearchParams(window.location.search).get('preview') === 'admin';
-    var statusFilter = isPreview ? '' : '&report_status=eq.published';
+    // Admin preview mode bypasses published filter and reads through /api/action
+    // so RLS does not hide internal_review/draft rows.
+    var isPreview = isAdminPreview();
+    var monthsP;
+    if (isPreview) {
+      monthsP = fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          action: 'read_records',
+          table: 'report_snapshots',
+          filters: { client_slug: CLIENT_SLUG },
+          select: 'report_month,campaign_month,report_status',
+          limit: 200
+        })
+      }).then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function(b){
+          var rows = (b && b.data) || [];
+          rows.sort(function(a,b){ return (a.report_month < b.report_month) ? 1 : -1; });
+          return rows;
+        });
+    } else {
+      monthsP = sbFetch('report_snapshots', 'client_slug=eq.' + CLIENT_SLUG + '&report_status=eq.published&select=report_month,campaign_month,report_status&order=report_month.desc');
+    }
 
     // Fetch all available months
-    sbFetch('report_snapshots', 'client_slug=eq.' + CLIENT_SLUG + statusFilter + '&select=report_month,campaign_month,report_status&order=report_month.desc')
+    monthsP
       .then(function(months) {
         if (!months || months.length === 0) {
           document.getElementById('loadingState').innerHTML =
@@ -1290,6 +1333,7 @@ section { padding: 4.5rem 0; }
 <script src="/shared/offline-banner.js" defer></script>
 </body>
 </html>
+
 
 
 
