@@ -39,6 +39,7 @@ module.exports = async function handler(req, res) {
   if (!clientSlug) return res.status(400).json({ error: 'client_slug required' });
 
   var force = req.query && (req.query.force === 'true' || req.query.force === '1');
+  var useExisting = body.use_existing === true;
   var manualKeywords = Array.isArray(body.keywords) && body.keywords.length > 0 ? body.keywords : null;
 
   try {
@@ -63,12 +64,30 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // 3. Resolve the keyword set: explicit override OR pull from service pages.
-    var sourceLabel = manualKeywords ? 'override' : 'page_lock';
+    // 3. Resolve the keyword set. Three modes:
+    //    a) use_existing — the client already has tracked_keywords from the
+    //       legacy intro-call form; just stamp the lock and return.
+    //    b) manual override — explicit list passed in body.keywords.
+    //    c) default — pull target_keyword from service pages.
+    var sourceLabel = manualKeywords ? 'override' : (useExisting ? 'existing' : 'page_lock');
     var keywords = [];
     var pageMap = {}; // keyword -> target_url for tracked_keywords.target_page
+    var skipInsert = false;
 
-    if (manualKeywords) {
+    if (useExisting) {
+      var existingKws = await sb.query(
+        'tracked_keywords?client_slug=eq.' + encodeURIComponent(clientSlug) +
+        '&active=eq.true&retired_at=is.null&select=keyword'
+      );
+      if (!Array.isArray(existingKws) || existingKws.length === 0) {
+        return res.status(400).json({
+          error: 'use_existing requested but no active tracked_keywords found',
+          missing: ['existing_keywords']
+        });
+      }
+      keywords = existingKws.map(function(k) { return k.keyword; });
+      skipInsert = true; // rows already exist; we're just stamping the lock
+    } else if (manualKeywords) {
       keywords = manualKeywords
         .map(function(k) { return (k || '').trim(); })
         .filter(function(k) { return k.length > 0; });
@@ -110,7 +129,7 @@ module.exports = async function handler(req, res) {
 
     // 5. If forcing relock, retire existing active rows first.
     var retiredCount = 0;
-    if (force) {
+    if (force && !skipInsert) {
       var existing = await sb.query(
         'tracked_keywords?client_slug=eq.' + encodeURIComponent(clientSlug) +
         '&active=eq.true&retired_at=is.null&select=id'
@@ -127,28 +146,29 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // 6. Insert the new keyword set. tracked_keywords defaults handle the rest
-    //    (track_geogrid=true, track_ai_visibility=true, grid_size=7, etc.).
-    var rows = keywords.map(function(k, idx) {
-      return {
-        client_slug: clientSlug,
-        contact_id: config.contact_id || null,
-        keyword: k,
-        label: k,
-        keyword_type: 'service',
-        priority: 2,
-        target_page: pageMap[k] || null,
-        source: sourceLabel,
-        active: true
-      };
-    });
+    // 6. Insert the new keyword set unless we're locking against existing rows.
+    if (!skipInsert) {
+      var rows = keywords.map(function(k, idx) {
+        return {
+          client_slug: clientSlug,
+          contact_id: config.contact_id || null,
+          keyword: k,
+          label: k,
+          keyword_type: 'service',
+          priority: 2,
+          target_page: pageMap[k] || null,
+          source: sourceLabel,
+          active: true
+        };
+      });
 
-    var inserted = await sb.mutate(
-      'tracked_keywords',
-      'POST',
-      rows,
-      'return=representation'
-    );
+      await sb.mutate(
+        'tracked_keywords',
+        'POST',
+        rows,
+        'return=representation'
+      );
+    }
 
     // 7. Stamp the lock onto report_configs.
     var lockedAt = new Date().toISOString();
