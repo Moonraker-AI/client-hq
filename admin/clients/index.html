@@ -3864,18 +3864,19 @@
         });
       } else {
         // Not found — surface what's available so admin can verify the practice
-        // hasn't granted access yet.
+        // hasn't granted access yet, OR pick manually if the contact's
+        // practice_name doesn't match the GBP listing's name (e.g. legal
+        // entity vs DBA — common for therapists listed under their own name).
+        if (service === 'gbp' && Array.isArray(res.all_locations) && res.all_locations.length > 0) {
+          renderGbpManualPicker(res.all_locations, res.message);
+          return;
+        }
         var msg;
         if (service === 'gsc') {
           msg = 'No matching GSC site found for "' + (c.website_url || '') + '". ';
           if (res.all_sites && res.all_sites.length > 0) msg += 'Available: ' + res.all_sites.slice(0, 5).join(', ');
         } else if (service === 'gbp') {
-          msg = res.message || 'No GBP location matched for "' + (c.practice_name || '') + '". ';
-          if (res.all_locations && res.all_locations.length > 0) {
-            msg += ' Closest: ' + res.all_locations.slice(0, 3).map(function(l) {
-              return l.name + (l.address ? ' (' + l.address + ')' : '');
-            }).join('; ');
-          }
+          msg = res.message || 'No GBP locations manageable yet. Practice still needs to grant access.';
         } else {
           msg = 'No matching LocalFalcon location for "' + (c.practice_name || '') + '". ';
           if (res.all_locations && res.all_locations.length > 0) {
@@ -3893,6 +3894,98 @@
   // Exposed so the Reports-tab readiness panel can trigger discovery from
   // inline onclick handlers (GSC, GBP, and LocalFalcon all flow through here).
   window.discoverService = discoverService;
+
+  // Manual GBP picker — rendered when discovery surfaces SA-managed locations
+  // but none match the contact's practice_name confidently. Lets the admin
+  // pick the right one, then writes gbp_location_id to report_configs (the
+  // same target as auto-discovery).
+  function renderGbpManualPicker(locations, headerMessage) {
+    var panel = document.getElementById('crSearchResults');
+    if (!panel) return;
+    panel.style.display = 'block';
+
+    var c = state.contact || {};
+    var practiceName = c.practice_name || '';
+    var hint = headerMessage || ('No confident match for "' + practiceName + '". Pick the right location below.');
+
+    var h = '<div style="margin:.5rem 0;">';
+    h += '<div style="font-size:.78rem;color:var(--color-warning);margin-bottom:.5rem;font-weight:500;">' + esc(hint) + '</div>';
+    h += '<div style="font-size:.7rem;color:var(--color-muted);margin-bottom:.5rem;">' + locations.length + ' manageable location' + (locations.length === 1 ? '' : 's') + ' \u00B7 ranked by match score</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:.4rem;max-height:360px;overflow-y:auto;">';
+    locations.forEach(function(loc) {
+      var locId = esc(loc.location_id || '');
+      var pid = esc(loc.place_id || '');
+      var nm = esc(loc.name || '(unnamed)');
+      var addr = esc(loc.address || '');
+      var score = loc.score || 0;
+      var scoreColor = score >= 40 ? 'var(--color-success)' : (score >= 20 ? 'var(--color-warning)' : 'var(--color-muted)');
+      h += '<div data-location-id="' + locId + '" data-place-id="' + pid + '" data-name="' + nm + '" onclick="window.crSelectGbpLocation(this)" style="display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border:1px solid var(--color-border);border-radius:8px;cursor:pointer;transition:border-color .15s;background:var(--color-bg);" onmouseover="this.style.borderColor=\'var(--color-primary)\'" onmouseout="this.style.borderColor=\'var(--color-border)\'">';
+      h += '<div style="flex:1;min-width:0;">';
+      h += '<div style="font-size:.8rem;font-weight:600;color:var(--color-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + nm + '</div>';
+      if (addr) h += '<div style="font-size:.7rem;color:var(--color-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + addr + '</div>';
+      h += '</div>';
+      h += '<div style="font-size:.6rem;color:' + scoreColor + ';font-family:monospace;flex-shrink:0;font-weight:600;">' + score + '</div>';
+      h += '<div style="font-size:.6rem;color:var(--color-muted);font-family:monospace;flex-shrink:0;max-width:160px;overflow:hidden;text-overflow:ellipsis;">' + locId + '</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+    h += '<button onclick="document.getElementById(\'crSearchResults\').style.display=\'none\'" style="margin-top:.5rem;padding:.3rem .65rem;font-size:.7rem;background:transparent;border:1px solid var(--color-border);color:var(--color-muted);border-radius:5px;cursor:pointer;font-family:inherit;">Cancel</button>';
+    h += '</div>';
+    panel.innerHTML = h;
+  }
+
+  window.crSelectGbpLocation = function(el) {
+    var locationId = el.getAttribute('data-location-id');
+    var placeId = el.getAttribute('data-place-id');
+    var name = el.getAttribute('data-name');
+    if (!locationId) {
+      toast('Selected location has no resource ID', 'error');
+      return;
+    }
+    var c = state.contact;
+    if (!c || !c.slug) return;
+
+    var panel = document.getElementById('crSearchResults');
+    if (panel) panel.style.display = 'none';
+    crProgress('Saving GBP location \u201C' + esc(name) + '\u201D...');
+
+    // Same write pattern as auto-discovery: location_id to report_configs
+    // (where compile-report and the warehouse trigger read), Place ID
+    // mirrored to contacts for backwards compat.
+    var cfgWrite = state.reportConfig
+      ? fetch('/api/action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update_record', table: 'report_configs', filters: { client_slug: c.slug }, data: { gbp_location_id: locationId } })
+        }).then(function(r) { return r.json(); })
+      : fetch('/api/action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create_record', table: 'report_configs', data: { client_slug: c.slug, gbp_location_id: locationId, report_day: 1, active: false } })
+        }).then(function(r) { return r.json(); });
+
+    var contactWrite = placeId
+      ? fetch('/api/action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update_record', table: 'contacts', filters: { slug: c.slug }, data: { gbp_place_id: placeId } })
+        }).then(function(r) { return r.json(); })
+      : Promise.resolve({ success: true });
+
+    Promise.all([cfgWrite, contactWrite]).then(function(results) {
+      if (results[0].success) {
+        if (placeId) state.contact.gbp_place_id = placeId;
+        if (state.reportConfig) state.reportConfig.gbp_location_id = locationId;
+        else state.reportConfig = (results[0].data && results[0].data[0]) || { client_slug: c.slug, gbp_location_id: locationId };
+        crProgress('\u2713 GBP linked: ' + esc(name), 'success');
+        // The trigger fires backfill-gbp-warehouse automatically.
+        refreshDeepDiveSlice(c.slug, 'report_configs').then(function() {
+          var cfgs = (state.deepDive && state.deepDive.report_configs) || [];
+          state.reportConfig = cfgs[0] || state.reportConfig;
+          setTimeout(function() { renderReports(); }, 600);
+        });
+      } else {
+        crProgress('Failed to save: ' + (results[0].error || 'unknown'), 'error');
+      }
+    }).catch(function(err) { crProgress('Error: ' + err.message, 'error'); });
+  };
 
   function autoConfigReports() {
     var c = state.contact;
@@ -7251,7 +7344,7 @@
     var fHtml = '<div style="padding:.75rem 0;">';
     fHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">';
 
-    fHtml += '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.3rem;">GBP Place ID</label>';
+    fHtml += '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.3rem;">GBP Location ID</label>';
     fHtml += '<input type="text" id="rptGbpPlaceId" value="' + esc((cfg && cfg.gbp_location_id) || '') + '" placeholder="e.g. 12446916804880561539" style="width:100%;font-family:inherit;font-size:.84rem;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);"></div>';
 
     fHtml += '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.3rem;">GSC Property</label>';
@@ -7316,11 +7409,16 @@
 
         var h = '';
 
-        // Step 1: GBP Place ID
+        // Step 1: GBP Location ID
         if (hasGbp) {
-          h += stepRow(stepDone, 'GBP Place ID', stepMuted(esc(cfg.gbp_location_id).substring(0, 24) + (cfg.gbp_location_id.length > 24 ? '...' : '')));
+          h += stepRow(stepDone, 'GBP Location ID',
+            '<div style="display:flex;align-items:center;gap:.4rem;">' +
+              stepMuted(esc(cfg.gbp_location_id).substring(0, 24) + (cfg.gbp_location_id.length > 24 ? '...' : '')) +
+              '<button onclick="window.discoverService(\'gbp\')" title="Re-pick from manageable locations" style="padding:.15rem .45rem;font-size:.66rem;font-weight:500;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-muted);border-radius:4px;cursor:pointer;font-family:inherit;">Re-pick</button>' +
+            '</div>'
+          );
         } else {
-          h += stepRow(stepOpen('1'), 'GBP Place ID', stepBtn('Discover', 'window.discoverService(\'gbp\')'));
+          h += stepRow(stepOpen('1'), 'GBP Location ID', stepBtn('Discover', 'window.discoverService(\'gbp\')'));
         }
         h += '<div id="crSearchResults" style="display:none;"></div>';
 
