@@ -129,11 +129,68 @@ async function resolvePlaceIdToLocation(placeId, opts) {
   return index[placeId] || null;
 }
 
+// Score how well a SA-managed location matches a contact's practice profile.
+// Returns 0-100; we use a simple sum of signals rather than ML because the
+// SA-visible set is small (typically <500 locations across all clients) and
+// false matches are corrected by the human in the loop anyway.
+function scoreLocationMatch(loc, candidate) {
+  var score = 0;
+  var locName = (loc.display_name || '').toLowerCase().trim();
+  var candName = (candidate.practice_name || '').toLowerCase().trim();
+  if (locName && candName) {
+    if (locName === candName) score += 60;
+    else if (locName.indexOf(candName) >= 0 || candName.indexOf(locName) >= 0) score += 35;
+    else {
+      // Token overlap — defends against ", LMFT" / "Counseling" suffixes.
+      var locTokens = locName.split(/[\s,]+/).filter(function(t) { return t.length > 2; });
+      var candTokens = candName.split(/[\s,]+/).filter(function(t) { return t.length > 2; });
+      var common = locTokens.filter(function(t) { return candTokens.indexOf(t) >= 0; });
+      if (common.length >= 2) score += 20;
+      else if (common.length === 1) score += 10;
+    }
+  }
+  var locAddr = (loc.address || '').toLowerCase();
+  var candCity = (candidate.city || '').toLowerCase().trim();
+  var candState = (candidate.state || candidate.province || '').toLowerCase().trim();
+  if (candCity && locAddr.indexOf(candCity) >= 0) score += 25;
+  if (candState && locAddr.indexOf(candState) >= 0) score += 15;
+  return score;
+}
+
+// Find the best-matching SA-managed GBP location for a contact's practice
+// profile. Returns the top candidate (with score) or null. The full ranked
+// list is also returned so the UI can offer alternates if the auto-pick is wrong.
+async function discoverByPracticeProfile(profile, opts) {
+  var index = await buildPlaceIdIndex(opts);
+  var locations = Object.keys(index).map(function(pid) {
+    return Object.assign({ place_id: pid }, index[pid]);
+  });
+  if (locations.length === 0) return { matched: null, candidates: [] };
+
+  var ranked = locations
+    .map(function(loc) { return Object.assign({ score: scoreLocationMatch(loc, profile) }, loc); })
+    .filter(function(loc) { return loc.score > 0; })
+    .sort(function(a, b) { return b.score - a.score; });
+
+  // Confidence threshold: require a reasonably strong signal. <40 means the
+  // match is just one weak token; better to surface "no match" than guess.
+  var top = ranked[0];
+  var confidentMatch = (top && top.score >= 40) ? top : null;
+
+  return {
+    matched: confidentMatch,
+    candidates: ranked.slice(0, 8),
+    total_managed: locations.length
+  };
+}
+
 module.exports = {
   listAccounts: listAccounts,
   listLocationsForAccount: listLocationsForAccount,
   buildPlaceIdIndex: buildPlaceIdIndex,
   resolvePlaceIdToLocation: resolvePlaceIdToLocation,
+  discoverByPracticeProfile: discoverByPracticeProfile,
+  scoreLocationMatch: scoreLocationMatch,
   // For tests/probes:
   _resetCache: function() { cache.byPlaceId = null; cache.builtAt = 0; }
 };
