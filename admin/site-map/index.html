@@ -667,8 +667,10 @@
         if (ti) ti.innerHTML = next === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
       }
     }
-    if (document.startViewTransition) document.startViewTransition(apply);
-    else apply();
+    // Parent already runs startViewTransition for the toggle; nesting one
+    // here in the same-origin iframe crashes the renderer (SIGILL in
+    // Chromium). Apply directly.
+    apply();
     setTimeout(drawConnectors, 50);
   });
 
