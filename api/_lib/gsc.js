@@ -7,8 +7,8 @@
 // Hard cap: ~16 months sliding window from today. Missed days fall off the
 // edge permanently, hence the warehouse + nightly cron.
 
-var google = require('./google');
-var fetchT = require('./fetchT');
+var google = require('./google-delegated');
+var fetchT = require('./fetch-with-timeout');
 
 var GSC_SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
 var DEFAULT_MAILBOX = 'support@moonraker.ai';
