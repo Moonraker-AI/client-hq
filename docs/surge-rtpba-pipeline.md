@@ -4,6 +4,23 @@ This doc describes how Surge audit data flows from the agent VPS into client_hq,
 gets parsed into the structures Pagemaster needs, and produces a styled HTML page
 plus separate schema for the chain to refine.
 
+## Status (2026-04-26)
+
+**Shipped:**
+- ✅ `api/_lib/surge-parser.js` — parses both markdown and JSON Surge output shapes
+- ✅ `api/ingest-surge-content.js` — uses canonical parser; persists raw markdown + variance + structured fields
+- ✅ `api/onboarding/lock-target-pages.js` — campaign-start ceremony endpoint
+- ✅ `api/_lib/schema-builder.js` — deterministic JSON-LD assembly from real client data
+- ✅ `api/generate-content-page.js` — reads design contract, builds schema deterministically, saves HTML and `schema_jsonb` separately, strips inline JSON-LD
+- ✅ `api/render-page-preview.js` — v1 fallback injects `schema_jsonb` blocks into `<head>` at serve time
+- ✅ `api/page-stages/list.js` — surfaces surge_status, variance, RTPBA, schema_jsonb, contact_id, active_batch
+- ✅ `admin/pages-chain/index.html` — Lock-and-fire bar, surge status pill, variance badge, RTPBA + schema preview tabs
+- ✅ Polish/chain stages already read contract (existing infrastructure)
+
+**Pending:**
+- ⏳ Verify entity audit ingester handles markdown shape (side-note 1)
+- ⏳ End-to-end smoke test with a real client
+
 ## TL;DR
 
 ```
@@ -286,10 +303,19 @@ includes every social link, every clinician, every directory listing.
 Schema-builder runs as part of chunk 4 (Pagemaster overhaul) since they share
 a code path.
 
+## Resolved decisions
 
+- **`tracked_keywords.is_locked`:** Not added. The "lock" semantic is at the
+  campaign/batch level (one `content_audit_batches` row exists or doesn't),
+  not per keyword. Keywords retain the existing `active`/`retired_at`
+  convention. No migration needed.
+- **Stale entity audit threshold:** 30 days. Defined as
+  `ENTITY_AUDIT_FRESHNESS_DAYS` in `api/onboarding/lock-target-pages.js`.
+- **Schema block curation:** Pagemaster's role is gone — schema is now
+  built deterministically by `api/_lib/schema-builder.js` from the contact
+  data fan-out. Surge tells us *which* @types to emit; the schema-builder
+  fills them with real values. Admin can re-run via re-generating the page.
+- **`surge_status` valid values:** Per CHECK constraint:
+  `pending | raw_stored | processing | processed | error`. We use `pending`
+  (queued) and `processed` (Surge complete and parsed).
 
-- **`tracked_keywords.is_locked`:** does it exist? Need to check before chunk 3.
-- **Stale entity audit threshold:** 30 days. Easy to change.
-- **Schema block curation:** Pagemaster decides which schema_recommendations
-  to actually include. Is that always correct, or should there be a curation
-  pass? For now: Pagemaster decides; admin can re-run if needed.
