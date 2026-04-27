@@ -745,10 +745,38 @@ section { padding: 4.5rem 0; }
     }
     document.getElementById('gbpSummaryRow').innerHTML = gbpHtml;
 
+    // GBP performance stats (impressions + actions). Render whenever any value
+    // is present, independent of geogrid availability.
+    var perfStats = [];
+    var totalImps = (gbpDetail && gbpDetail.impressions_total) || null;
+    if (totalImps != null) perfStats.push({ value: fmt(totalImps), label: 'Profile Impressions' });
+    if (snap.gbp_website_clicks != null) perfStats.push({ value: fmt(snap.gbp_website_clicks), label: 'Website Clicks' });
+    if (snap.gbp_direction_requests != null) perfStats.push({ value: fmt(snap.gbp_direction_requests), label: 'Direction Requests' });
+    if (snap.gbp_calls != null) perfStats.push({ value: fmt(snap.gbp_calls), label: 'Calls' });
+    if (snap.gbp_photo_views != null) perfStats.push({ value: fmt(snap.gbp_photo_views), label: 'Photo Views' });
+
+    var localContent = document.getElementById('localVisContent');
+    var perfHtml = '';
+    if (perfStats.length > 0) {
+      perfHtml = '<h3 style="font-size:1rem;font-family:\'Outfit\',sans-serif;font-weight:600;color:var(--color-heading);margin:0 0 .25rem">Google Business Profile Performance</h3>' +
+        '<p style="color:var(--color-muted);font-size:.875rem;margin:0 0 1rem">How people interacted with the practice on Google this month.</p>' +
+        '<div class="geogrid-summary">';
+      perfStats.forEach(function(st) {
+        perfHtml += '<div class="geogrid-summary-stat"><div class="stat-value">' + st.value + '</div><div class="stat-label">' + st.label + '</div></div>';
+      });
+      perfHtml += '</div>';
+    }
+
     // Check if we have any grid data
     var googleGrids = platforms.google || [];
     var appleGrids = platforms.apple || [];
-    if (googleGrids.length === 0 && appleGrids.length === 0) return;
+    if (googleGrids.length === 0 && appleGrids.length === 0) {
+      // No geogrids — show GBP performance alone if we have it, otherwise leave placeholder.
+      if (perfHtml) {
+        localContent.innerHTML = perfHtml;
+      }
+      return;
+    }
 
     // Deduplicate: prefer largest grid_size per keyword, then best ARP within that size
     function dedupGrids(grids) {
@@ -864,7 +892,7 @@ section { padding: 4.5rem 0; }
     html += '<strong>SoLV</strong> (Share of Local Voice) is the percentage of grid cells ranking in the top 3.';
     html += '</div>';
 
-    document.getElementById('localVisContent').innerHTML = html;
+    document.getElementById('localVisContent').innerHTML = perfHtml + html;
   }
 
   window.switchPlatformTab = function(platform, btn) {
