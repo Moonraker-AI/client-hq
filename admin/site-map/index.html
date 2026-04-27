@@ -649,6 +649,29 @@
     });
   })();
 
+  // When embedded as an iframe (e.g. onboarding step 6), accept theme
+  // changes from the parent so the configurator stays in sync with the
+  // wrapper page. Same-origin only; we still verify origin defensively.
+  window.addEventListener('message', function(ev) {
+    if (ev.origin !== location.origin) return;
+    var data = ev.data;
+    if (!data || data.type !== 'mr-theme') return;
+    var next = data.theme === 'dark' ? 'dark' : 'light';
+    var h = document.documentElement;
+    if (h.getAttribute('data-theme') === next) return;
+    function apply() {
+      h.setAttribute('data-theme', next);
+      var btn = document.getElementById('themeBtn');
+      if (btn) {
+        var ti = btn.querySelector('.theme-icon');
+        if (ti) ti.innerHTML = next === 'dark' ? '&#9728;&#65039;' : '&#x1F319;';
+      }
+    }
+    if (document.startViewTransition) document.startViewTransition(apply);
+    else apply();
+    setTimeout(drawConnectors, 50);
+  });
+
   document.getElementById('showAllToggle').addEventListener('change', function(e) {
     state.showAll = e.target.checked;
     render();
