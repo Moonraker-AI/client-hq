@@ -80,32 +80,43 @@ module.exports = async function(req, res) {
       }
     }
 
-    // 3. Derive batch status from page-level outcomes (cron audit M2).
-    // Previously batch was always marked 'complete' regardless of per-page
-    // failures — admins couldn't tell "everything worked" apart from
-    // "callback half-succeeded and the batch was silently lost".
+    // 3. Derive batch status from page-level outcomes.
+    //
+    // Important: 'pagesProcessed' here counts successful PATCHes that stored
+    // surge_raw_data on each page row — NOT pages whose RTPBA + schema have
+    // been parsed by surge-parser yet. The canonical parsing happens in the
+    // process-batch-pages cron (every 5 min), which scans batches in
+    // status='processing' and claims pages with surge_status='raw_stored'.
+    // Setting the batch to 'complete' here would make the cron skip it and
+    // strand every page in raw_stored — which is exactly the bug that
+    // surfaced on the Anna Sky retry.
+    //
+    // Correct flow:
+    //   - All PATCHes succeeded → status='processing' (let cron parse)
+    //   - All PATCHes failed → status='failed' (truly nothing to do)
+    //   - Partial → status='processing' + capture errorMessage so the cron
+    //     processes the rows that did land
     var batchStatus;
     var errorMessage = null;
     if (pages.length === 0) {
-      // No pages submitted in callback — treat as failed.
       batchStatus = 'failed';
       errorMessage = 'Agent callback contained no pages';
-    } else if (pagesErrors === 0) {
-      batchStatus = 'complete';
     } else if (pagesProcessed === 0) {
       batchStatus = 'failed';
       errorMessage = 'All ' + pages.length + ' page update(s) failed';
+    } else if (pagesErrors === 0) {
+      batchStatus = 'processing';
     } else {
-      // Partial success: keep the successful page writes, mark batch complete
-      // so downstream consumers (synthesis auto-trigger, admin UI) still run,
-      // but capture the partial failure for admin visibility.
-      batchStatus = 'complete';
+      batchStatus = 'processing';
       errorMessage = pagesErrors + ' of ' + pages.length + ' page(s) failed to update';
     }
 
     var batchUpdate = {
       status: batchStatus,
-      pages_processed: pagesProcessed,
+      // pages_extracted reflects raw data stored on content_pages.
+      // pages_processed is left for the cron to increment as each page's
+      // RTPBA + schema parse completes (via process-batch-pages.js).
+      pages_extracted: pagesProcessed,
       synthesis_raw: body.synthesis_raw || null,
       surge_batch_url: body.surge_batch_url || null,
       error_message: errorMessage,
