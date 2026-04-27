@@ -3610,6 +3610,38 @@
   var IC_STATUSES = [{v:'pending',l:'Pending'},{v:'in_progress',l:'In Progress'},{v:'complete',l:'Complete'},{v:'not_applicable',l:'N/A'}];
   var expandedICId = null;
 
+  // For intro-call items whose true state lives in another table/tab, return
+  // the derived status + a deep-link to where the action actually happens.
+  // Manual checkbox state in intro_call_steps stays as-is (admin override),
+  // but rendering shows the derived state alongside so drift is visible.
+  function derivedICStatus(stepKey) {
+    var c = state.contact || {};
+    var cfg = state.reportConfig || {};
+    var dd = state.deepDive || {};
+    switch (stepKey) {
+      case 'set_keyword_targets':
+      case 'pick_target_keywords':
+        return { complete: !!cfg.keywords_locked_at, tab: 'reports', label: 'Reports tab' };
+      case 'verify_website_access':
+        return { complete: Array.isArray(dd.client_sites) && dd.client_sites.length > 0, tab: 'profile', label: 'Profile tab' };
+      case 'confirm_leadsie_access':
+        return { complete: !!(cfg.gbp_location_id && cfg.gsc_property), tab: 'onboarding', label: 'Onboarding tab' };
+      case 'google_marketing_account':
+        return { complete: !!cfg.gbp_location_id, tab: 'onboarding', label: 'Onboarding tab' };
+      case 'client_tracking_sheet':
+        return { complete: !!c.drive_folder_id, tab: 'profile', label: 'Profile tab' };
+      default:
+        return null; // not derived; manual only
+    }
+  }
+
+  // Click handler for the deep-link pill.
+  window.icJumpToTab = function(tabName, ev) {
+    if (ev) ev.stopPropagation();
+    var btn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
+    if (btn) btn.click();
+  };
+
   function renderIntroCall() {
     var steps = state.introCall;
     if (steps.length === 0) {
@@ -3648,10 +3680,23 @@
           intro_call_complete: '&#9989;'
         };
         var icIcon = icIcons[s.step_key] || '&#128196;';
+        var derived = derivedICStatus(s.step_key);
         html += '<div class="ic-row' + (isExp ? ' expanded' : '') + '" onclick="toggleICExpand(\'' + s.id + '\')">';
         html += '<div class="ic-expand-icon">&#9654;</div>';
         html += '<div class="del-icon">' + icIcon + '</div>';
-        html += '<div class="ic-label"><div class="ic-title">' + esc(s.label) + '</div></div>';
+        html += '<div class="ic-label"><div class="ic-title">' + esc(s.label) + '</div>';
+        if (derived) {
+          // Derived-status pill + deep-link. Click pill to jump to the tab
+          // where the underlying action actually happens.
+          var derivedColor = derived.complete ? 'var(--color-success)' : 'var(--color-muted)';
+          var derivedBg = derived.complete ? 'rgba(0,212,126,.1)' : 'var(--color-bg)';
+          var derivedSym = derived.complete ? '\u25CF' : '\u25CB';
+          html += '<div style="margin-top:.2rem;display:flex;align-items:center;gap:.4rem;">';
+          html += '<span style="font-size:.66rem;font-weight:600;color:' + derivedColor + ';display:inline-flex;align-items:center;gap:.25rem;">' + derivedSym + ' ' + (derived.complete ? 'auto-detected' : 'not detected') + '</span>';
+          html += '<button onclick="window.icJumpToTab(\'' + derived.tab + '\', event)" style="font-size:.66rem;font-weight:500;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-info);padding:.1rem .45rem;border-radius:4px;cursor:pointer;font-family:inherit;">Action lives in ' + derived.label + ' \u2192</button>';
+          html += '</div>';
+        }
+        html += '</div>';
         if (s.step_key === 'intro_call_complete') {
           if (st === 'complete') {
             html += '<span style="font-size:.72rem;font-weight:600;color:var(--color-success);padding:.2rem .6rem;background:rgba(0,212,126,.1);border-radius:4px;">Complete</span>';
