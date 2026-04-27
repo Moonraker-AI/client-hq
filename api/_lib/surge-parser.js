@@ -123,19 +123,33 @@ function extractRtpba(raw, json) {
 
   if (startIdx === -1) return null;
 
-  // End: next ## Section header, or other major dividers
+  // End: next major section. Section 3 body typically contains its own H2
+  // sub-headings (`## What [Service] Looks Like`, `## Why [Audience]`, etc.)
+  // and `---` horizontal rules between the regulated-niche notice and the
+  // page H1. Earlier endMarker variants treated either pattern as a section
+  // boundary and truncated RTPBA at ~1.4KB inside the first sub-section.
+  //
+  // Only treat NUMBERED Surge sections (Section 4 through Section 12) and a
+  // small set of unmistakable post-Section-3 markers as boundaries. Internal
+  // `---` separators and content sub-headings stay inside RTPBA.
   var endMarkers = [
-    /\n## Section 4[^\n]*\n/i,
-    /\n## Section 5[^\n]*\n/i,
-    /\nSTRUCTURED_SCORES/,
-    /\n## YOUR VARIANCE SCORE/i,
-    /\n## Implementation Blueprint/i,
-    /\n## STRUCTURED_SCORES/i,
-    /\n---\s*\n## /  // any new ## section after a horizontal rule
+    /\n## Section\s+(?:[4-9]|1[0-2])\b[^\n]*/i,
+    /\n## STRUCTURED_SCORES\b/i,
+    /\n## YOUR VARIANCE SCORE\b/i,
+    /\n## Implementation Blueprint\b/i,
+    /\n## PHASE\s+\d/i,
+    /\n## SURGE ACTION PLAN\b/i,         // agent's tab-walk fence
+    /\n## Cluster Synthesis\b/i,
+    /\n## Interlink Recommendations\b/i,
+    /\n```json\s*\n\s*\{[\s\S]{0,40}"metrics"/i,  // first STRUCTURED_SCORES JSON block, in case heading is missing
+    /\nsurge_v3_output\b/i
   ];
 
   var endIdx = raw.length;
   for (var j = 0; j < endMarkers.length; j++) {
+    // Anchor search 200 chars past startIdx so a marker on the SAME LINE as
+    // the Section 3 heading (very rare but possible after stripping) doesn't
+    // trip up the loop.
     var em = endMarkers[j].exec(raw.substring(startIdx + 200));
     if (em) {
       var absoluteEnd = startIdx + 200 + em.index;
@@ -144,9 +158,11 @@ function extractRtpba(raw, json) {
   }
 
   var content = raw.substring(startIdx, endIdx).trim();
-  // Strip leading italic note / dashes that are decoration
-  content = content.replace(/^\s*\*[^\n]*\*\s*\n+/, '');  // leading italic line
-  content = content.replace(/^---+\s*\n+/, '');            // leading hr
+  // Strip leading italic note / blockquote regulatory notice / leading HRs
+  // that are decoration before the actual page markdown begins.
+  content = content.replace(/^\s*\*[^\n]*\*\s*\n+/, '');     // leading italic line
+  content = content.replace(/^>\s*[^\n]*(?:\n>[^\n]*)*\n+/, '');  // leading blockquote (Regulated-Niche Notice)
+  content = content.replace(/^---+\s*\n+/, '');               // leading hr
 
   return content.length > 200 ? content : null;
 }
