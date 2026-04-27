@@ -7237,6 +7237,9 @@
     var fHtml = '<div style="padding:.75rem 0;">';
     fHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">';
 
+    fHtml += '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.3rem;">GBP Place ID</label>';
+    fHtml += '<input type="text" id="rptGbpPlaceId" value="' + esc((cfg && cfg.gbp_location_id) || '') + '" placeholder="e.g. 12446916804880561539" style="width:100%;font-family:inherit;font-size:.84rem;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);"></div>';
+
     fHtml += '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);display:block;margin-bottom:.3rem;">GSC Property</label>';
     fHtml += '<input type="text" id="rptGsc" value="' + esc(gscVal) + '" placeholder="e.g. sc-domain:example.com" style="width:100%;font-family:inherit;font-size:.84rem;padding:.45rem .65rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface);color:var(--color-heading);"></div>';
 
@@ -7324,8 +7327,9 @@
         }
 
         // Step 4: Lock Keywords (the campaign-start ceremony)
-        // Pulls from content_pages.target_keyword (page_type=service).
-        // Server-side gate enforces GBP+GSC+LF before allowing the lock.
+        // Source priority: service-page target_keywords (preferred for new
+        // clients), falling back to existing tracked_keywords (for legacy
+        // clients whose keywords were entered via the intro-call form).
         if (keywordsLockedAt) {
           var lockedDate = new Date(keywordsLockedAt);
           var lockSubtitle = kwCount + ' keywords \u00B7 ' + lockedDate.toLocaleDateString();
@@ -7338,10 +7342,16 @@
           );
         } else if (hasGbp && hasGsc && hasLfPlace && hasServicePages) {
           h += stepRow(stepOpen('4'), 'Lock Keywords',
-            stepBtn('Pull from Service Pages & Lock', 'window.crLockKeywords()')
+            stepBtn('Pull from Service Pages & Lock', 'window.crLockKeywords(false)')
           );
-        } else if (!hasServicePages) {
-          h += stepRow(stepOpen('4'), 'Lock Keywords', stepMuted('Add service pages with target keywords first'));
+        } else if (hasGbp && hasGsc && hasLfPlace && hasKw) {
+          // Legacy client: keywords already populated via intro-call form,
+          // no service pages yet. Lock the existing set.
+          h += stepRow(stepOpen('4'), 'Lock Keywords',
+            stepBtn('Lock Existing ' + kwCount + ' Keywords', 'window.crLockKeywords(true)')
+          );
+        } else if (!hasServicePages && !hasKw) {
+          h += stepRow(stepOpen('4'), 'Lock Keywords', stepMuted('Add service pages or keywords first'));
         } else {
           h += stepRow(stepOpen('4'), 'Lock Keywords', stepMuted('Complete steps 1-3 first'));
         }
@@ -7629,35 +7639,43 @@
     }).catch(function(err) { crProgress('Network error: ' + err.message, 'error'); });
   };
 
-  window.crLockKeywords = function() {
+  window.crLockKeywords = function(useExisting) {
     var c = state.contact;
     if (!c || !c.slug) return;
 
-    var pages = (state.deepDive && Array.isArray(state.deepDive.content_pages))
-      ? state.deepDive.content_pages.filter(function(p) { return p.page_type === 'service' && p.target_keyword; })
-      : [];
-
-    if (pages.length === 0) {
-      crProgress('No service pages with target keywords found. Add service pages first.', 'error');
-      return;
-    }
-
-    // Show preview + confirm so admin sees exactly what will lock.
-    var seen = {};
     var preview = [];
-    pages.forEach(function(p) {
-      var k = (p.target_keyword || '').trim();
-      if (!k) return;
-      var lc = k.toLowerCase();
-      if (seen[lc]) return;
-      seen[lc] = true;
-      preview.push(k);
-    });
+    if (useExisting) {
+      preview = ((state.trackedKeywords || []).filter(function(k) { return k.active && !k.retired_at; }))
+        .map(function(k) { return k.keyword; });
+      if (preview.length === 0) {
+        crProgress('No active keywords to lock.', 'error');
+        return;
+      }
+    } else {
+      var pages = (state.deepDive && Array.isArray(state.deepDive.content_pages))
+        ? state.deepDive.content_pages.filter(function(p) { return p.page_type === 'service' && p.target_keyword; })
+        : [];
+      if (pages.length === 0) {
+        crProgress('No service pages with target keywords found. Add service pages first.', 'error');
+        return;
+      }
+      var seen = {};
+      pages.forEach(function(p) {
+        var k = (p.target_keyword || '').trim();
+        if (!k) return;
+        var lc = k.toLowerCase();
+        if (seen[lc]) return;
+        seen[lc] = true;
+        preview.push(k);
+      });
+    }
 
     var msg = 'Lock these ' + preview.length + ' keywords for monthly reporting?\n\n' +
       preview.join('\n') +
       '\n\nThis will:\n' +
-      '\u2022 Create tracked_keywords rows for geogrid + AI visibility tracking\n' +
+      (useExisting
+        ? '\u2022 Stamp the existing tracked_keywords as locked\n'
+        : '\u2022 Create tracked_keywords rows for geogrid + AI visibility tracking\n') +
       '\u2022 Stamp report_configs.keywords_locked_at\n' +
       '\u2022 Enable monthly compilation queueing once campaigns are created\n\n' +
       'Keywords can be edited later via the keyword change protocol.';
@@ -7667,7 +7685,7 @@
     crProgress('Locking ' + preview.length + ' keywords...');
     fetch('/api/admin/lock-reporting-keywords', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ client_slug: c.slug })
+      body: JSON.stringify({ client_slug: c.slug, use_existing: !!useExisting })
     }).then(function(r) { return r.json().then(function(b) { return { ok: r.ok, body: b, status: r.status }; }); })
       .then(function(res) {
         if (res.ok && res.body.success) {
@@ -7681,9 +7699,9 @@
             setTimeout(function() { renderReports(); }, 600);
           });
         } else {
-          var msg = res.body.error || 'Lock failed';
-          if (Array.isArray(res.body.missing)) msg += ' (missing: ' + res.body.missing.join(', ') + ')';
-          crProgress(msg, 'error');
+          var emsg = res.body.error || 'Lock failed';
+          if (Array.isArray(res.body.missing)) emsg += ' (missing: ' + res.body.missing.join(', ') + ')';
+          crProgress(emsg, 'error');
         }
       }).catch(function(err) { crProgress('Network error: ' + err.message, 'error'); });
   };
@@ -7755,6 +7773,7 @@
   window.saveReportConfig = function() {
     var c = state.contact;
     if (!c) return;
+    var gbpVal = (document.getElementById('rptGbpPlaceId') || {}).value || '';
     var gscVal = (document.getElementById('rptGsc') || {}).value || '';
     var lfPlaceVal = (document.getElementById('rptLfPlaceId') || {}).value || '';
     var dayVal = parseInt((document.getElementById('rptDay') || {}).value) || 1;
@@ -7762,6 +7781,7 @@
 
     var configData = {
       client_slug: c.slug,
+      gbp_location_id: gbpVal || null,
       gsc_property: gscVal || null,
       localfalcon_place_id: lfPlaceVal || null,
       report_day: dayVal,
