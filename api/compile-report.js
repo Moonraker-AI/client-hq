@@ -89,6 +89,70 @@ module.exports = async function handler(req, res) {
     catch (e) { errors.push(label + ': ' + (e.message || String(e))); return null; }
   }
 
+  // Warehouse aggregators — sum gbp_daily / gsc_daily over a date window for
+  // a single client. Returns null if the warehouse has zero rows for the
+  // window (caller falls back to live API). Treats missing days as zero.
+  async function aggregateGbpFromWarehouse(slug, startISO, endISO) {
+    var rows = await sb.query(
+      'gbp_daily?client_slug=eq.' + encodeURIComponent(slug)
+      + '&date=gte.' + startISO + '&date=lte.' + endISO
+      + '&select=calls,website_clicks,direction_requests,impressions_desktop_maps,impressions_desktop_search,impressions_mobile_maps,impressions_mobile_search'
+    );
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    var out = {
+      calls: 0, website_clicks: 0, direction_requests: 0,
+      impressions_desktop_maps: 0, impressions_desktop_search: 0,
+      impressions_mobile_maps: 0, impressions_mobile_search: 0
+    };
+    rows.forEach(function(r) {
+      out.calls                      += r.calls                      || 0;
+      out.website_clicks             += r.website_clicks             || 0;
+      out.direction_requests         += r.direction_requests         || 0;
+      out.impressions_desktop_maps   += r.impressions_desktop_maps   || 0;
+      out.impressions_desktop_search += r.impressions_desktop_search || 0;
+      out.impressions_mobile_maps    += r.impressions_mobile_maps    || 0;
+      out.impressions_mobile_search  += r.impressions_mobile_search  || 0;
+    });
+    out.impressions_total = out.impressions_desktop_maps + out.impressions_desktop_search
+                          + out.impressions_mobile_maps  + out.impressions_mobile_search;
+    out.impressions_breakdown = {
+      desktop_maps:   out.impressions_desktop_maps,
+      desktop_search: out.impressions_desktop_search,
+      mobile_maps:    out.impressions_mobile_maps,
+      mobile_search:  out.impressions_mobile_search
+    };
+    out.day_count = rows.length;
+    return out;
+  }
+
+  async function aggregateGscFromWarehouse(slug, startISO, endISO) {
+    var rows = await sb.query(
+      'gsc_daily?client_slug=eq.' + encodeURIComponent(slug)
+      + '&date=gte.' + startISO + '&date=lte.' + endISO
+      + '&select=clicks,impressions,position'
+    );
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    var totalClicks = 0, totalImpressions = 0, weightedPos = 0;
+    rows.forEach(function(r) {
+      totalClicks += r.clicks || 0;
+      totalImpressions += r.impressions || 0;
+      // Position is averaged weighted by impressions, matching how GSC
+      // computes a property-level "average position" over a period.
+      weightedPos += (r.position || 0) * (r.impressions || 0);
+    });
+    var ctr = totalImpressions > 0 ? Math.round((totalClicks / totalImpressions) * 10000) / 100 : 0;
+    var avgPosition = totalImpressions > 0
+      ? Math.round((weightedPos / totalImpressions) * 10) / 10
+      : 0;
+    return {
+      clicks: totalClicks,
+      impressions: totalImpressions,
+      ctr: ctr,
+      position: avgPosition,
+      day_count: rows.length
+    };
+  }
+
   // ─── STEP 1: Load report config + contact ─────────────────────
   try {
     var configs = await sb.query('report_configs?client_slug=eq.' + clientSlug + '&active=eq.true&limit=1');
@@ -156,6 +220,17 @@ module.exports = async function handler(req, res) {
   var prevSnap = await safe('prev_snapshot', async function() {
     var pm = prevMonth(reportMonth);
     return await sb.one('report_snapshots?client_slug=eq.' + clientSlug + '&report_month=eq.' + pm + '&limit=1');
+  });
+
+  // Also aggregate warehouse for the previous month so MoM deltas work on
+  // the very first compile (before a prevSnap exists). Live gbpPerfFn /
+  // gscWarehouseFn use the *current* month's range; this is its sibling.
+  var prevRange = monthRange(prevMonth(reportMonth));
+  var prevGbpWarehouse = await safe('prev_gbp_warehouse', function() {
+    return aggregateGbpFromWarehouse(clientSlug, prevRange.start, prevRange.end);
+  });
+  var prevGscWarehouse = await safe('prev_gsc_warehouse', function() {
+    return aggregateGscFromWarehouse(clientSlug, prevRange.start, prevRange.end);
   });
 
   // ─── STEPS 3-5: Pull all data sources IN PARALLEL ─────────────
@@ -265,26 +340,43 @@ module.exports = async function handler(req, res) {
     };
   });
 
-  // --- 3b. GBP Performance API (calls, clicks, directions, impressions) ---
-  // Quota confirmed open April 2026 (case 8-326800040416). Parser previously
-  // had a flat-vs-nested shape bug that silently returned zeros; helper now
-  // handles both shapes defensively.
+  // --- 3b. GBP Performance (calls, clicks, directions, impressions) ---
+  // Reads the gbp_daily warehouse first (populated nightly by
+  // cron/backfill-gbp-daily). Falls back to the live API only if the
+  // warehouse has no rows for this report month — typically a brand-new
+  // client whose first nightly hasn't run yet. Quota was confirmed open
+  // April 2026 (case 8-326800040416) and the parser handles flat+nested
+  // shapes defensively.
   var gbpPerfFn = safe('gbp_performance', async function() {
+    var wh = await aggregateGbpFromWarehouse(clientSlug, range.start, range.end);
+    if (wh) {
+      return {
+        calls:                 wh.calls,
+        website_clicks:        wh.website_clicks,
+        direction_requests:    wh.direction_requests,
+        impressions_total:     wh.impressions_total,
+        impressions_breakdown: wh.impressions_breakdown,
+        source:                'warehouse',
+        day_count:             wh.day_count
+      };
+    }
+
     if (!googleSA || !config.gbp_location_id) {
-      warnings.push('GBP Performance: skipped (no service account or gbp_location_id configured)');
+      warnings.push('GBP Performance: warehouse empty + no service account or gbp_location_id configured');
       return null;
     }
     var result = await gbp.fetchPerformance(config.gbp_location_id, range.start, range.end);
     if (!result.available) {
-      warnings.push('GBP Performance: ' + (result.error || 'unavailable'));
+      warnings.push('GBP Performance (live fallback): ' + (result.error || 'unavailable'));
       return null;
     }
     return {
-      calls:              result.calls,
-      website_clicks:     result.website_clicks,
-      direction_requests: result.direction_requests,
-      impressions_total:  result.impressions_total,
-      impressions_breakdown: result.impressions_breakdown
+      calls:                 result.calls,
+      website_clicks:        result.website_clicks,
+      direction_requests:    result.direction_requests,
+      impressions_total:     result.impressions_total,
+      impressions_breakdown: result.impressions_breakdown,
+      source:                'live'
     };
   });
 
@@ -535,6 +627,34 @@ module.exports = async function handler(req, res) {
   var lfData = parallel[2];
   var taskData = parallel[3];
 
+  // GSC totals override: prefer the warehouse aggregate when available so
+  // a flaky single live API call doesn't leave a hole in the report. The
+  // live gscData still provides top pages/queries (which the warehouse
+  // doesn't store at row level), so we keep that and just substitute
+  // clicks/impressions/ctr/position.
+  var gscWarehouseCurrent = await safe('gsc_warehouse_current', function() {
+    return aggregateGscFromWarehouse(clientSlug, range.start, range.end);
+  });
+  if (gscWarehouseCurrent) {
+    if (!gscData) {
+      gscData = {
+        clicks: gscWarehouseCurrent.clicks,
+        impressions: gscWarehouseCurrent.impressions,
+        ctr: gscWarehouseCurrent.ctr,
+        position: gscWarehouseCurrent.position,
+        pages: [],
+        queries: [],
+        source: 'warehouse'
+      };
+    } else {
+      gscData.clicks      = gscWarehouseCurrent.clicks;
+      gscData.impressions = gscWarehouseCurrent.impressions;
+      gscData.ctr         = gscWarehouseCurrent.ctr;
+      gscData.position    = gscWarehouseCurrent.position;
+      gscData.source      = 'warehouse+live';
+    }
+  }
+
   // Extract sub-sections from LocalFalcon data
   var lfLocation = lfData ? lfData.location : null;
   var geogridData = lfData ? lfData.maps : null;
@@ -573,19 +693,19 @@ module.exports = async function handler(req, res) {
     gsc_impressions: gscData ? gscData.impressions : null,
     gsc_ctr: gscData ? gscData.ctr : null,
     gsc_avg_position: gscData ? gscData.position : null,
-    gsc_clicks_prev: prevSnap ? prevSnap.gsc_clicks : null,
-    gsc_impressions_prev: prevSnap ? prevSnap.gsc_impressions : null,
-    gsc_ctr_prev: prevSnap ? prevSnap.gsc_ctr : null,
-    gsc_avg_position_prev: prevSnap ? prevSnap.gsc_avg_position : null,
+    gsc_clicks_prev: (prevSnap && prevSnap.gsc_clicks != null) ? prevSnap.gsc_clicks : (prevGscWarehouse ? prevGscWarehouse.clicks : null),
+    gsc_impressions_prev: (prevSnap && prevSnap.gsc_impressions != null) ? prevSnap.gsc_impressions : (prevGscWarehouse ? prevGscWarehouse.impressions : null),
+    gsc_ctr_prev: (prevSnap && prevSnap.gsc_ctr != null) ? prevSnap.gsc_ctr : (prevGscWarehouse ? prevGscWarehouse.ctr : null),
+    gsc_avg_position_prev: (prevSnap && prevSnap.gsc_avg_position != null) ? prevSnap.gsc_avg_position : (prevGscWarehouse ? prevGscWarehouse.position : null),
 
     // GBP - performance metrics from Business Profile Performance API
     gbp_calls: gbpPerfData ? gbpPerfData.calls : null,
     gbp_direction_requests: gbpPerfData ? gbpPerfData.direction_requests : null,
     gbp_website_clicks: gbpPerfData ? gbpPerfData.website_clicks : null,
     gbp_photo_views: null,
-    gbp_calls_prev: prevSnap ? prevSnap.gbp_calls : null,
-    gbp_direction_requests_prev: prevSnap ? prevSnap.gbp_direction_requests : null,
-    gbp_website_clicks_prev: prevSnap ? prevSnap.gbp_website_clicks : null,
+    gbp_calls_prev: (prevSnap && prevSnap.gbp_calls != null) ? prevSnap.gbp_calls : (prevGbpWarehouse ? prevGbpWarehouse.calls : null),
+    gbp_direction_requests_prev: (prevSnap && prevSnap.gbp_direction_requests != null) ? prevSnap.gbp_direction_requests : (prevGbpWarehouse ? prevGbpWarehouse.direction_requests : null),
+    gbp_website_clicks_prev: (prevSnap && prevSnap.gbp_website_clicks != null) ? prevSnap.gbp_website_clicks : (prevGbpWarehouse ? prevGbpWarehouse.website_clicks : null),
     gbp_photo_views_prev: prevSnap ? prevSnap.gbp_photo_views : null,
 
     // CORE scores (carry forward from prevSnap, fallback to entity_audits)
