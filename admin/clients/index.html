@@ -421,7 +421,43 @@
 .cp-status-select.st-approved { background: rgba(0,212,126,.1); color: #00b86c; }
 .cp-status-select.st-delivered { background: rgba(0,212,126,.15); color: #00964a; }
 .cp-expand-panel { max-height: 0; overflow: hidden; transition: max-height .3s ease; border-bottom: 1px solid transparent; }
-.cp-expand-panel.show { max-height: 1200px; border-bottom-color: var(--color-border); }
+.cp-expand-panel.show { max-height: 6000px; border-bottom-color: var(--color-border); }
+/* ── Per-page editor sub-cards ─────────────────────────────────────── */
+.cp-editor { margin-top: .85rem; padding-top: .85rem; border-top: 1px solid var(--color-border); display: flex; flex-direction: column; gap: .65rem; }
+.cp-editor-loading { font-size: .78rem; color: var(--color-muted); padding: .5rem 0; }
+.cp-block { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; }
+.cp-block-header { display: flex; align-items: center; gap: .5rem; padding: .55rem .75rem; cursor: pointer; user-select: none; }
+.cp-block-header h4 { flex: 1; margin: 0; font-size: .8rem; font-weight: 600; color: var(--color-heading); }
+.cp-block-icon { font-size: .65rem; transition: transform .2s; display: inline-block; }
+.cp-block.expanded .cp-block-icon { transform: rotate(90deg); }
+.cp-block-meta { font-size: .7rem; color: var(--color-muted); font-weight: 500; }
+.cp-block-body { display: none; padding: 0 .75rem .75rem; }
+.cp-block.expanded .cp-block-body { display: block; }
+.cp-block-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: .5rem; }
+.cp-block-grid .full { grid-column: 1 / -1; }
+.cp-block label { font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); display: block; margin-bottom: .2rem; }
+.cp-block input[type="text"], .cp-block input[type="url"], .cp-block textarea, .cp-block select { width: 100%; padding: .35rem .55rem; font-size: .82rem; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-bg); color: var(--color-text-primary); font-family: inherit; box-sizing: border-box; }
+.cp-block textarea { resize: vertical; min-height: 70px; line-height: 1.45; }
+.cp-block textarea.code { font-family: 'SFMono-Regular', Consolas, monospace; font-size: .75rem; }
+.cp-block-footer { display: flex; justify-content: flex-end; gap: .5rem; align-items: center; margin-top: .5rem; }
+.cp-block-footer .save-status { font-size: .72rem; color: var(--color-muted); margin-right: auto; }
+.cp-section { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 8px; padding: .55rem; margin-bottom: .5rem; }
+.cp-section-head { display: flex; align-items: center; gap: .35rem; margin-bottom: .4rem; }
+.cp-section-type { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--color-primary-hover); padding: .15rem .4rem; border-radius: 4px; background: rgba(0,212,126,.1); }
+.cp-section-head .spacer { flex: 1; }
+.cp-section-btn { background: none; border: 1px solid var(--color-border); border-radius: 5px; padding: .15rem .4rem; font-size: .7rem; cursor: pointer; color: var(--color-muted); }
+.cp-section-btn:hover { color: var(--color-heading); border-color: var(--color-text-tertiary); }
+.cp-add-section { display: flex; gap: .35rem; align-items: center; }
+.cp-add-section select { width: auto; flex: 0 0 auto; }
+.cp-schema-chip { display: inline-block; font-size: .68rem; font-weight: 600; padding: .15rem .4rem; border-radius: 4px; background: rgba(0,212,126,.1); color: var(--color-primary-hover); margin-right: .3rem; margin-bottom: .25rem; }
+.cp-placeholder-warn { background: rgba(245,158,11,.08); border-radius: 6px; padding: .4rem .55rem; font-size: .75rem; color: var(--color-amber-deep); margin-bottom: .5rem; }
+.cp-neo-row { display: grid; grid-template-columns: 60px 1fr auto; gap: .5rem; align-items: center; padding: .4rem; border: 1px solid var(--color-border); border-radius: 8px; margin-bottom: .35rem; background: var(--color-bg); }
+.cp-neo-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; background: var(--color-surface); }
+.cp-neo-thumb-empty { display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: var(--color-muted); }
+.cp-neo-shared { font-size: .65rem; font-weight: 600; padding: .1rem .3rem; border-radius: 3px; background: rgba(59,130,246,.1); color: var(--color-info); margin-left: .3rem; }
+.cp-neo-fields { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; }
+.cp-neo-fields input { font-size: .75rem; padding: .25rem .4rem; }
+.cp-neo-actions { display: flex; gap: .25rem; }
 .cp-expand-inner { padding: .75rem .75rem .75rem 3.25rem; }
 .cp-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: .75rem; }
 .cp-detail-item label { font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); display: block; margin-bottom: .2rem; }
@@ -6000,7 +6036,681 @@
   // Asset tab switching removed - NEO Images and Endorsements now in separate sections
 
   window.setContentFilter = function(f) { contentFilter = f; renderContent(); };
-  window.toggleContentExpand = function(id) { expandedContentId = expandedContentId === id ? null : id; renderContent(); };
+  window.toggleContentExpand = function(id) {
+    expandedContentId = expandedContentId === id ? null : id;
+    renderContent();
+    if (expandedContentId === id) {
+      // Lazy-load the per-page editor after the row expands
+      setTimeout(function() { loadPageEditor(id); }, 50);
+    }
+  };
+
+  // ────────────────────────────────────────────────────────────────────
+  // Per-page editor (SEO / Schema / Content / NEO Images)
+  // Lazy-loaded into #cp-editor-<id> when a service/homepage row expands.
+  // Cache keyed by content_page_id; refresh on save to keep state honest.
+  // ────────────────────────────────────────────────────────────────────
+
+  var _peCache = {};       // pageId -> detail response
+  var _peExpanded = {};    // pageId -> { seo: bool, schema: bool, content: bool, neo: bool }
+
+  function loadPageEditor(pageId) {
+    var slot = document.getElementById('cp-editor-' + pageId);
+    if (!slot) return;
+    if (_peCache[pageId]) {
+      renderPageEditor(pageId);
+      return;
+    }
+    fetch('/api/admin/content-page-detail?content_page_id=' + encodeURIComponent(pageId), { credentials: 'same-origin' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || !data.success) { slot.innerHTML = '<div class="cp-editor-loading">Failed to load editor.</div>'; return; }
+        _peCache[pageId] = data;
+        // Default: open the SEO sub-card so admin sees something immediately
+        if (!_peExpanded[pageId]) _peExpanded[pageId] = { seo: true };
+        renderPageEditor(pageId);
+      })
+      .catch(function() { slot.innerHTML = '<div class="cp-editor-loading">Failed to load editor.</div>'; });
+  }
+
+  function renderPageEditor(pageId) {
+    var slot = document.getElementById('cp-editor-' + pageId);
+    if (!slot) return;
+    var d = _peCache[pageId];
+    if (!d) return;
+    var p = d.page;
+    var ex = _peExpanded[pageId] || {};
+
+    var html = '';
+    html += renderSeoBlock(pageId, p, ex.seo);
+    html += renderSchemaBlock(pageId, p, d.schema_placeholders, ex.schema);
+    html += renderContentBlock(pageId, p, d.versions, ex.content);
+    html += renderNeoBlock(pageId, d.neo_images, ex.neo);
+
+    slot.innerHTML = html;
+  }
+
+  window.togglePeBlock = function(pageId, block) {
+    if (!_peExpanded[pageId]) _peExpanded[pageId] = {};
+    _peExpanded[pageId][block] = !_peExpanded[pageId][block];
+    renderPageEditor(pageId);
+  };
+
+  // ──── SEO block ────────────────────────────────────────────────────
+  function renderSeoBlock(pageId, p, expanded) {
+    var cls = 'cp-block' + (expanded ? ' expanded' : '');
+    var titleLen = (p.meta_title || '').length;
+    var descLen = (p.meta_description || '').length;
+    var meta = '';
+    if (p.meta_title || p.meta_description) {
+      meta = (titleLen ? titleLen + 'ch title' : 'no title') + ' / ' + (descLen ? descLen + 'ch desc' : 'no desc');
+    } else {
+      meta = 'not set';
+    }
+    var h = '<div class="' + cls + '">';
+    h += '<div class="cp-block-header" onclick="togglePeBlock(\'' + pageId + '\', \'seo\')">';
+    h += '<span class="cp-block-icon">&#9654;</span>';
+    h += '<h4>SEO</h4>';
+    h += '<span class="cp-block-meta">' + meta + '</span>';
+    h += '</div>';
+    h += '<div class="cp-block-body">';
+    h += '<div class="cp-block-grid">';
+    h += '<div><label>Target Keyword</label><input type="text" id="pe-tk-' + pageId + '" value="' + esc(p.target_keyword || '') + '" placeholder="e.g. anxiety therapy chicago"></div>';
+    h += '<div><label>Target URL</label><input type="url" id="pe-tu-' + pageId + '" value="' + esc(p.target_url || '') + '" placeholder="https://example.com/services/anxiety/"></div>';
+    h += '<div class="full"><label>Meta Title <span style="color:var(--color-muted);font-weight:400;text-transform:none;">(50-60 chars ideal)</span></label><input type="text" id="pe-mt-' + pageId + '" value="' + esc(p.meta_title || '') + '" maxlength="120"></div>';
+    h += '<div class="full"><label>Meta Description <span style="color:var(--color-muted);font-weight:400;text-transform:none;">(140-160 chars ideal)</span></label><textarea id="pe-md-' + pageId + '" rows="2" maxlength="320">' + esc(p.meta_description || '') + '</textarea></div>';
+    h += '<div class="full"><label>OG Image URL</label><input type="url" id="pe-og-' + pageId + '" value="' + esc(p.og_image_url || '') + '" placeholder="https://..."></div>';
+    h += '</div>';
+    h += '<div class="cp-block-footer"><span class="save-status" id="pe-seo-status-' + pageId + '"></span>';
+    h += '<button class="btn btn-primary btn-sm" onclick="saveSeoBlock(\'' + pageId + '\')">Save SEO</button></div>';
+    h += '</div></div>';
+    return h;
+  }
+
+  window.saveSeoBlock = function(pageId) {
+    var status = document.getElementById('pe-seo-status-' + pageId);
+    if (status) status.textContent = 'Saving...';
+    var data = {
+      target_keyword: document.getElementById('pe-tk-' + pageId).value.trim() || null,
+      target_url: document.getElementById('pe-tu-' + pageId).value.trim() || null,
+      meta_title: document.getElementById('pe-mt-' + pageId).value.trim() || null,
+      meta_description: document.getElementById('pe-md-' + pageId).value.trim() || null,
+      og_image_url: document.getElementById('pe-og-' + pageId).value.trim() || null
+    };
+    actionUpdate('content_pages', pageId, data).then(function(ok) {
+      if (status) status.textContent = ok ? 'Saved' : 'Save failed';
+      if (ok && _peCache[pageId]) {
+        Object.assign(_peCache[pageId].page, data);
+        // Update list cache so badges refresh
+        var lp = (state.contentPages || []).find(function(x) { return x.id === pageId; });
+        if (lp) Object.assign(lp, data);
+        renderPageEditor(pageId);
+        toast('SEO saved', 'success');
+      } else if (!ok) {
+        toast('Save failed', 'error');
+      }
+    });
+  };
+
+  // ──── Schema block ─────────────────────────────────────────────────
+  function renderSchemaBlock(pageId, p, placeholders, expanded) {
+    var blocks = Array.isArray(p.schema_jsonb) ? p.schema_jsonb : [];
+    var meta = blocks.length ? blocks.length + ' block' + (blocks.length === 1 ? '' : 's') : 'not generated';
+    var cls = 'cp-block' + (expanded ? ' expanded' : '');
+
+    var h = '<div class="' + cls + '">';
+    h += '<div class="cp-block-header" onclick="togglePeBlock(\'' + pageId + '\', \'schema\')">';
+    h += '<span class="cp-block-icon">&#9654;</span>';
+    h += '<h4>Schema</h4>';
+    h += '<span class="cp-block-meta">' + meta + '</span>';
+    h += '</div>';
+    h += '<div class="cp-block-body">';
+
+    if (placeholders && placeholders.length) {
+      h += '<div class="cp-placeholder-warn">&#9888; Placeholder values still present: ' + placeholders.map(esc).join(', ') + '</div>';
+    }
+
+    if (blocks.length) {
+      h += '<div style="margin-bottom:.5rem;">';
+      blocks.forEach(function(b) {
+        var t = Array.isArray(b['@type']) ? b['@type'].join('+') : (b['@type'] || '?');
+        h += '<span class="cp-schema-chip">' + esc(t) + '</span>';
+      });
+      h += '</div>';
+    } else {
+      h += '<div style="margin-bottom:.5rem;font-size:.78rem;color:var(--color-muted);">No schema yet. Click Regenerate to build from contact + bios + socials + directories.</div>';
+    }
+
+    h += '<label>Schema JSON-LD <span style="color:var(--color-muted);font-weight:400;text-transform:none;">(advanced — Regenerate rebuilds from canonical sources)</span></label>';
+    var jsonText = blocks.length ? JSON.stringify(blocks, null, 2) : '';
+    h += '<textarea class="code" id="pe-schema-' + pageId + '" rows="10">' + esc(jsonText) + '</textarea>';
+
+    h += '<div class="cp-block-footer"><span class="save-status" id="pe-schema-status-' + pageId + '"></span>';
+    h += '<button class="btn btn-ghost btn-sm" onclick="regenerateSchema(\'' + pageId + '\')">&#8635; Regenerate</button>';
+    h += '<button class="btn btn-primary btn-sm" onclick="saveSchemaBlock(\'' + pageId + '\')">Save Schema</button></div>';
+    h += '</div></div>';
+    return h;
+  }
+
+  window.saveSchemaBlock = function(pageId) {
+    var status = document.getElementById('pe-schema-status-' + pageId);
+    var raw = document.getElementById('pe-schema-' + pageId).value.trim();
+    var parsed = null;
+    if (raw) {
+      try { parsed = JSON.parse(raw); }
+      catch (e) {
+        if (status) status.textContent = 'Invalid JSON: ' + e.message;
+        toast('Invalid JSON in schema', 'error');
+        return;
+      }
+      if (!Array.isArray(parsed)) {
+        if (status) status.textContent = 'Schema must be an array of blocks';
+        toast('Schema must be an array', 'error');
+        return;
+      }
+    }
+    if (status) status.textContent = 'Saving...';
+    actionUpdate('content_pages', pageId, { schema_jsonb: parsed }).then(function(ok) {
+      if (status) status.textContent = ok ? 'Saved' : 'Save failed';
+      if (ok && _peCache[pageId]) {
+        _peCache[pageId].page.schema_jsonb = parsed;
+        renderPageEditor(pageId);
+        toast('Schema saved', 'success');
+      } else if (!ok) {
+        toast('Save failed', 'error');
+      }
+    });
+  };
+
+  window.regenerateSchema = function(pageId) {
+    if (!confirm('Rebuild schema from contact + bios + socials + directories? This will overwrite any manual edits in the schema textarea.')) return;
+    var status = document.getElementById('pe-schema-status-' + pageId);
+    if (status) status.textContent = 'Regenerating...';
+    fetch('/api/admin/build-page-schema', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content_page_id: pageId })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res && res.success) {
+        if (status) status.textContent = 'Regenerated (' + res.block_count + ' blocks)';
+        toast('Schema regenerated', 'success');
+        // Refetch detail to pick up new schema_jsonb + placeholders
+        delete _peCache[pageId];
+        loadPageEditor(pageId);
+      } else {
+        if (status) status.textContent = 'Failed';
+        toast('Regenerate failed', 'error');
+      }
+    }).catch(function() {
+      if (status) status.textContent = 'Failed';
+      toast('Regenerate failed', 'error');
+    });
+  };
+
+  // ──── Content block (HTML + structured JSONB sections) ─────────────
+  function renderContentBlock(pageId, p, versions, expanded) {
+    var cj = p.content_jsonb || {};
+    var sections = Array.isArray(cj.sections) ? cj.sections : [];
+    var htmlSize = p.generated_html ? Math.round(p.generated_html.length / 1024) + 'KB' : 'none';
+    var meta = sections.length + ' section' + (sections.length === 1 ? '' : 's') + ' / HTML ' + htmlSize;
+    var cls = 'cp-block' + (expanded ? ' expanded' : '');
+
+    var h = '<div class="' + cls + '">';
+    h += '<div class="cp-block-header" onclick="togglePeBlock(\'' + pageId + '\', \'content\')">';
+    h += '<span class="cp-block-icon">&#9654;</span>';
+    h += '<h4>Content</h4>';
+    h += '<span class="cp-block-meta">' + meta + '</span>';
+    h += '</div>';
+    h += '<div class="cp-block-body">';
+
+    // Hero
+    var hero = cj.hero || {};
+    h += '<div class="cp-section"><div class="cp-section-head"><span class="cp-section-type">Hero</span><div class="spacer"></div></div>';
+    h += '<div class="cp-block-grid">';
+    h += '<div class="full"><label>Headline</label><input type="text" id="pe-hero-h-' + pageId + '" value="' + esc(hero.headline || '') + '"></div>';
+    h += '<div class="full"><label>Subhead</label><input type="text" id="pe-hero-s-' + pageId + '" value="' + esc(hero.subhead || '') + '"></div>';
+    h += '<div><label>CTA Text</label><input type="text" id="pe-hero-ct-' + pageId + '" value="' + esc(hero.cta_text || '') + '"></div>';
+    h += '<div><label>CTA URL</label><input type="url" id="pe-hero-cu-' + pageId + '" value="' + esc(hero.cta_url || '') + '"></div>';
+    h += '</div></div>';
+
+    // Intro
+    var intro = cj.intro || {};
+    h += '<div class="cp-section"><div class="cp-section-head"><span class="cp-section-type">Intro</span><div class="spacer"></div></div>';
+    h += '<label>Intro Body (HTML allowed)</label>';
+    h += '<textarea id="pe-intro-' + pageId + '" rows="3">' + esc(intro.body_html || '') + '</textarea>';
+    h += '</div>';
+
+    // Sections
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin:.5rem 0 .35rem;">';
+    h += '<label style="margin-bottom:0;">Sections</label>';
+    h += '<div class="cp-add-section">';
+    h += '<select id="pe-add-type-' + pageId + '" style="font-size:.75rem;">';
+    ['text','text_with_image','bullet_list','quote','cta','testimonials','video_embed','accordion'].forEach(function(t) {
+      h += '<option value="' + t + '">' + t.replace(/_/g,' ') + '</option>';
+    });
+    h += '</select>';
+    h += '<button class="btn btn-ghost btn-sm" onclick="addContentSection(\'' + pageId + '\')">+ Add</button>';
+    h += '</div></div>';
+
+    sections.forEach(function(sec, idx) {
+      h += renderContentSection(pageId, sec, idx, sections.length);
+    });
+    if (!sections.length) {
+      h += '<div style="font-size:.75rem;color:var(--color-muted);padding:.5rem 0;">No sections yet. Use the dropdown above to add one.</div>';
+    }
+
+    // Closing CTA
+    var cta = cj.closing_cta || {};
+    h += '<div class="cp-section" style="margin-top:.5rem;"><div class="cp-section-head"><span class="cp-section-type">Closing CTA</span><div class="spacer"></div></div>';
+    h += '<div class="cp-block-grid">';
+    h += '<div class="full"><label>Headline</label><input type="text" id="pe-cct-h-' + pageId + '" value="' + esc(cta.headline || '') + '"></div>';
+    h += '<div class="full"><label>Body</label><textarea id="pe-cct-b-' + pageId + '" rows="2">' + esc(cta.body || '') + '</textarea></div>';
+    h += '<div><label>CTA Text</label><input type="text" id="pe-cct-ct-' + pageId + '" value="' + esc(cta.cta_text || '') + '"></div>';
+    h += '<div><label>CTA URL</label><input type="url" id="pe-cct-cu-' + pageId + '" value="' + esc(cta.cta_url || '') + '"></div>';
+    h += '</div></div>';
+
+    // Generated HTML (read-only preview, edit via existing Generate flow)
+    h += '<div style="margin-top:.5rem;"><label>Rendered HTML</label>';
+    if (p.generated_html) {
+      h += '<textarea class="code" id="pe-html-' + pageId + '" rows="8">' + esc(p.generated_html) + '</textarea>';
+      h += '<div style="font-size:.7rem;color:var(--color-muted);margin-top:.25rem;">Edits to rendered HTML save directly. Versions are snapshotted on every HTML change.</div>';
+    } else {
+      h += '<div style="font-size:.78rem;color:var(--color-muted);padding:.4rem 0;">No generated HTML yet. Run audit then Generate HTML in the actions above.</div>';
+    }
+    h += '</div>';
+
+    // Versions
+    if (versions && versions.length) {
+      h += '<div style="margin-top:.5rem;"><label>Version History (' + versions.length + ')</label>';
+      h += '<div style="font-size:.75rem;color:var(--color-muted);">';
+      versions.slice(0, 5).forEach(function(v) {
+        var when = new Date(v.created_at).toLocaleString();
+        h += '<div style="padding:.15rem 0;">' + when + ' &mdash; ' + esc(v.change_summary || 'edit') + ' (' + esc(v.changed_by || '') + ')</div>';
+      });
+      if (versions.length > 5) h += '<div style="font-style:italic;">+ ' + (versions.length - 5) + ' older</div>';
+      h += '</div></div>';
+    }
+
+    h += '<div class="cp-block-footer"><span class="save-status" id="pe-content-status-' + pageId + '"></span>';
+    h += '<button class="btn btn-primary btn-sm" onclick="saveContentBlock(\'' + pageId + '\')">Save Content</button></div>';
+    h += '</div></div>';
+    return h;
+  }
+
+  function renderContentSection(pageId, sec, idx, total) {
+    var inputId = 'pe-sec-' + pageId + '-' + idx;
+    var h = '<div class="cp-section">';
+    h += '<div class="cp-section-head">';
+    h += '<span class="cp-section-type">' + esc(sec.type || 'text') + '</span>';
+    if (sec.id) h += '<span style="font-size:.65rem;color:var(--color-muted);">#' + esc(sec.id) + '</span>';
+    h += '<div class="spacer"></div>';
+    if (idx > 0) h += '<button class="cp-section-btn" onclick="moveContentSection(\'' + pageId + '\',' + idx + ',-1)">&uarr;</button>';
+    if (idx < total - 1) h += '<button class="cp-section-btn" onclick="moveContentSection(\'' + pageId + '\',' + idx + ',1)">&darr;</button>';
+    h += '<button class="cp-section-btn" onclick="deleteContentSection(\'' + pageId + '\',' + idx + ')" title="Delete">&times;</button>';
+    h += '</div>';
+
+    // Type-specific fields
+    var t = sec.type;
+    if (t === 'text') {
+      h += '<div class="cp-block-grid"><div class="full"><label>Heading</label><input type="text" data-sec="' + idx + '" data-f="heading" value="' + esc(sec.heading || '') + '"></div></div>';
+      h += '<label>Body (HTML)</label><textarea rows="3" data-sec="' + idx + '" data-f="body_html">' + esc(sec.body_html || '') + '</textarea>';
+    } else if (t === 'text_with_image') {
+      h += '<div class="cp-block-grid">';
+      h += '<div class="full"><label>Heading</label><input type="text" data-sec="' + idx + '" data-f="heading" value="' + esc(sec.heading || '') + '"></div>';
+      h += '<div><label>Image ID (uuid)</label><input type="text" data-sec="' + idx + '" data-f="image_id" value="' + esc(sec.image_id || '') + '" placeholder="neo_images.id"></div>';
+      h += '<div><label>Position</label><select data-sec="' + idx + '" data-f="image_position"><option value="left"' + (sec.image_position==='left'?' selected':'') + '>Left</option><option value="right"' + (sec.image_position==='right'?' selected':'') + '>Right</option></select></div>';
+      h += '</div>';
+      h += '<label>Body (HTML)</label><textarea rows="3" data-sec="' + idx + '" data-f="body_html">' + esc(sec.body_html || '') + '</textarea>';
+    } else if (t === 'bullet_list') {
+      h += '<div class="cp-block-grid"><div class="full"><label>Heading</label><input type="text" data-sec="' + idx + '" data-f="heading" value="' + esc(sec.heading || '') + '"></div></div>';
+      h += '<label>Intro (HTML, optional)</label><textarea rows="2" data-sec="' + idx + '" data-f="intro_html">' + esc(sec.intro_html || '') + '</textarea>';
+      h += '<label>Items (one per line)</label><textarea rows="4" data-sec="' + idx + '" data-f="items_textarea">' + esc((sec.items || []).join('\n')) + '</textarea>';
+    } else if (t === 'quote') {
+      h += '<label>Quote</label><textarea rows="3" data-sec="' + idx + '" data-f="quote">' + esc(sec.quote || '') + '</textarea>';
+      h += '<div class="cp-block-grid"><div class="full"><label>Attribution</label><input type="text" data-sec="' + idx + '" data-f="attribution" value="' + esc(sec.attribution || '') + '"></div></div>';
+    } else if (t === 'cta') {
+      h += '<div class="cp-block-grid">';
+      h += '<div class="full"><label>Headline</label><input type="text" data-sec="' + idx + '" data-f="headline" value="' + esc(sec.headline || '') + '"></div>';
+      h += '<div class="full"><label>Body</label><textarea rows="2" data-sec="' + idx + '" data-f="body">' + esc(sec.body || '') + '</textarea></div>';
+      h += '<div><label>CTA Text</label><input type="text" data-sec="' + idx + '" data-f="cta_text" value="' + esc(sec.cta_text || '') + '"></div>';
+      h += '<div><label>CTA URL</label><input type="url" data-sec="' + idx + '" data-f="cta_url" value="' + esc(sec.cta_url || '') + '"></div>';
+      h += '</div>';
+    } else if (t === 'testimonials') {
+      h += '<div class="cp-block-grid"><div class="full"><label>Heading</label><input type="text" data-sec="' + idx + '" data-f="heading" value="' + esc(sec.heading || '') + '"></div></div>';
+      h += '<label>Items (JSON array of {quote, attribution, location, rating})</label>';
+      h += '<textarea class="code" rows="6" data-sec="' + idx + '" data-f="items_json">' + esc(JSON.stringify(sec.items || [], null, 2)) + '</textarea>';
+    } else if (t === 'video_embed') {
+      h += '<div class="cp-block-grid">';
+      h += '<div class="full"><label>Heading</label><input type="text" data-sec="' + idx + '" data-f="heading" value="' + esc(sec.heading || '') + '"></div>';
+      h += '<div><label>Provider</label><select data-sec="' + idx + '" data-f="provider">';
+      ['youtube','vimeo','direct'].forEach(function(prov) {
+        h += '<option value="' + prov + '"' + (sec.provider===prov?' selected':'') + '>' + prov + '</option>';
+      });
+      h += '</select></div>';
+      h += '<div><label>Video URL</label><input type="url" data-sec="' + idx + '" data-f="video_url" value="' + esc(sec.video_url || '') + '"></div>';
+      h += '<div class="full"><label>Caption</label><input type="text" data-sec="' + idx + '" data-f="caption" value="' + esc(sec.caption || '') + '"></div>';
+      h += '</div>';
+    } else if (t === 'accordion') {
+      h += '<div class="cp-block-grid"><div class="full"><label>Heading</label><input type="text" data-sec="' + idx + '" data-f="heading" value="' + esc(sec.heading || '') + '"></div></div>';
+      h += '<label>Intro (HTML, optional)</label><textarea rows="2" data-sec="' + idx + '" data-f="intro_html">' + esc(sec.intro_html || '') + '</textarea>';
+      h += '<label>Items (JSON array of {question, answer_html})</label>';
+      h += '<textarea class="code" rows="6" data-sec="' + idx + '" data-f="items_json">' + esc(JSON.stringify(sec.items || [], null, 2)) + '</textarea>';
+    } else {
+      h += '<label>Section JSON</label><textarea class="code" rows="6" data-sec="' + idx + '" data-f="raw_json">' + esc(JSON.stringify(sec, null, 2)) + '</textarea>';
+    }
+
+    h += '</div>';
+    return h;
+  }
+
+  function genSectionId() {
+    return 's_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+
+  window.addContentSection = function(pageId) {
+    var sel = document.getElementById('pe-add-type-' + pageId);
+    if (!sel) return;
+    var t = sel.value;
+    var d = _peCache[pageId];
+    if (!d) return;
+    var cj = d.page.content_jsonb || {};
+    if (!cj.sections) cj.sections = [];
+
+    // Pull current edits into cj first so they aren't lost
+    collectContentEdits(pageId, cj);
+
+    var newSec = { id: genSectionId(), type: t };
+    if (t === 'bullet_list' || t === 'accordion' || t === 'testimonials') newSec.items = [];
+    cj.sections.push(newSec);
+    d.page.content_jsonb = cj;
+    renderPageEditor(pageId);
+  };
+
+  window.deleteContentSection = function(pageId, idx) {
+    if (!confirm('Delete this section?')) return;
+    var d = _peCache[pageId];
+    if (!d || !d.page.content_jsonb || !Array.isArray(d.page.content_jsonb.sections)) return;
+    collectContentEdits(pageId, d.page.content_jsonb);
+    d.page.content_jsonb.sections.splice(idx, 1);
+    renderPageEditor(pageId);
+  };
+
+  window.moveContentSection = function(pageId, idx, delta) {
+    var d = _peCache[pageId];
+    if (!d || !d.page.content_jsonb || !Array.isArray(d.page.content_jsonb.sections)) return;
+    collectContentEdits(pageId, d.page.content_jsonb);
+    var arr = d.page.content_jsonb.sections;
+    var ni = idx + delta;
+    if (ni < 0 || ni >= arr.length) return;
+    var tmp = arr[idx]; arr[idx] = arr[ni]; arr[ni] = tmp;
+    renderPageEditor(pageId);
+  };
+
+  // Walks the rendered DOM for the Content block and writes user edits back
+  // into the in-memory cj structure. Called before any add/move/delete that
+  // re-renders, and before save.
+  function collectContentEdits(pageId, cj) {
+    var get = function(id) { var el = document.getElementById(id); return el ? el.value : null; };
+
+    // Hero
+    cj.hero = cj.hero || {};
+    var v;
+    if ((v = get('pe-hero-h-' + pageId)) !== null) cj.hero.headline = v;
+    if ((v = get('pe-hero-s-' + pageId)) !== null) cj.hero.subhead = v;
+    if ((v = get('pe-hero-ct-' + pageId)) !== null) cj.hero.cta_text = v;
+    if ((v = get('pe-hero-cu-' + pageId)) !== null) cj.hero.cta_url = v;
+
+    // Intro
+    cj.intro = cj.intro || {};
+    if ((v = get('pe-intro-' + pageId)) !== null) cj.intro.body_html = v;
+
+    // Sections — query all data-sec inputs
+    if (Array.isArray(cj.sections)) {
+      var slot = document.getElementById('cp-editor-' + pageId);
+      if (slot) {
+        var els = slot.querySelectorAll('[data-sec][data-f]');
+        els.forEach(function(el) {
+          var i = parseInt(el.getAttribute('data-sec'), 10);
+          var f = el.getAttribute('data-f');
+          if (isNaN(i) || !cj.sections[i]) return;
+          var sec = cj.sections[i];
+          var val = el.value;
+          if (f === 'items_textarea') {
+            sec.items = val.split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+          } else if (f === 'items_json') {
+            try { sec.items = JSON.parse(val); }
+            catch (e) { /* leave previous items intact on bad JSON */ }
+          } else if (f === 'raw_json') {
+            try { var parsed = JSON.parse(val); cj.sections[i] = parsed; }
+            catch (e) { /* leave intact */ }
+          } else {
+            sec[f] = val;
+          }
+        });
+      }
+    }
+
+    // Closing CTA
+    cj.closing_cta = cj.closing_cta || {};
+    if ((v = get('pe-cct-h-' + pageId)) !== null) cj.closing_cta.headline = v;
+    if ((v = get('pe-cct-b-' + pageId)) !== null) cj.closing_cta.body = v;
+    if ((v = get('pe-cct-ct-' + pageId)) !== null) cj.closing_cta.cta_text = v;
+    if ((v = get('pe-cct-cu-' + pageId)) !== null) cj.closing_cta.cta_url = v;
+  }
+
+  window.saveContentBlock = function(pageId) {
+    var status = document.getElementById('pe-content-status-' + pageId);
+    var d = _peCache[pageId];
+    if (!d) return;
+    var cj = d.page.content_jsonb || {};
+    collectContentEdits(pageId, cj);
+
+    var update = { content_jsonb: cj };
+
+    // Generated HTML (only include if textarea exists — i.e. HTML was rendered)
+    var htmlEl = document.getElementById('pe-html-' + pageId);
+    if (htmlEl && htmlEl.value !== d.page.generated_html) {
+      update.generated_html = htmlEl.value;
+    }
+
+    if (status) status.textContent = 'Saving...';
+    actionUpdate('content_pages', pageId, update).then(function(ok) {
+      if (status) status.textContent = ok ? 'Saved' : 'Save failed';
+      if (ok) {
+        d.page.content_jsonb = cj;
+        if ('generated_html' in update) d.page.generated_html = update.generated_html;
+        var lp = (state.contentPages || []).find(function(x) { return x.id === pageId; });
+        if (lp) {
+          lp.content_jsonb = cj;
+          if ('generated_html' in update) lp.generated_html = update.generated_html;
+        }
+        // If HTML changed, refetch detail to pick up the new version row
+        if ('generated_html' in update) {
+          delete _peCache[pageId];
+          loadPageEditor(pageId);
+        }
+        toast('Content saved', 'success');
+      } else {
+        toast('Save failed', 'error');
+      }
+    });
+  };
+
+  // ──── NEO Images block ─────────────────────────────────────────────
+  function renderNeoBlock(pageId, neo, expanded) {
+    var pageScoped = (neo && neo.page_scoped) || [];
+    var shared = (neo && neo.shared) || [];
+    var meta = pageScoped.length + ' on this page' + (shared.length ? ' / ' + shared.length + ' shared' : '');
+    var cls = 'cp-block' + (expanded ? ' expanded' : '');
+
+    var h = '<div class="' + cls + '">';
+    h += '<div class="cp-block-header" onclick="togglePeBlock(\'' + pageId + '\', \'neo\')">';
+    h += '<span class="cp-block-icon">&#9654;</span>';
+    h += '<h4>NEO Images</h4>';
+    h += '<span class="cp-block-meta">' + meta + '</span>';
+    h += '</div>';
+    h += '<div class="cp-block-body">';
+
+    // Per-page images
+    if (pageScoped.length) {
+      pageScoped.forEach(function(img) { h += renderNeoRow(pageId, img, false); });
+    } else {
+      h += '<div style="font-size:.75rem;color:var(--color-muted);padding:.35rem 0;">No images attached to this page yet.</div>';
+    }
+
+    // Add new image
+    h += '<div style="display:flex;gap:.35rem;margin-top:.5rem;align-items:center;">';
+    h += '<input type="text" id="pe-neo-new-name-' + pageId + '" placeholder="Image name" style="flex:1;font-size:.78rem;padding:.3rem .5rem;">';
+    h += '<button class="btn btn-ghost btn-sm" onclick="addPageNeoImage(\'' + pageId + '\')">+ Add Image</button>';
+    h += '</div>';
+
+    // Shared (legacy contact-scoped) images
+    if (shared.length) {
+      h += '<div style="margin-top:.85rem;border-top:1px solid var(--color-border);padding-top:.65rem;">';
+      h += '<label>Shared (contact-scoped) images <span style="color:var(--color-muted);font-weight:400;text-transform:none;">— used across this contact\'s pages</span></label>';
+      shared.forEach(function(img) { h += renderNeoRow(pageId, img, true); });
+      h += '</div>';
+    }
+
+    h += '<div class="cp-block-footer"><span class="save-status" id="pe-neo-status-' + pageId + '"></span>';
+    h += '<button class="btn btn-primary btn-sm" onclick="saveAllNeoEdits(\'' + pageId + '\')">Save Image Edits</button></div>';
+    h += '</div></div>';
+    return h;
+  }
+
+  function renderNeoRow(pageId, img, isShared) {
+    var thumb = img.hosted_url || img.composite_url || img.source_url;
+    var h = '<div class="cp-neo-row" data-img-id="' + esc(img.id) + '">';
+    if (thumb) {
+      h += '<img class="cp-neo-thumb" src="' + esc(thumb) + '" alt="" onerror="this.style.display=\'none\'">';
+    } else {
+      h += '<div class="cp-neo-thumb cp-neo-thumb-empty">&#128247;</div>';
+    }
+    h += '<div>';
+    h += '<div style="font-size:.8rem;font-weight:600;color:var(--color-heading);">' + esc(img.image_name || '(unnamed)') + (isShared ? '<span class="cp-neo-shared">SHARED</span>' : '') + '</div>';
+    h += '<div class="cp-neo-fields">';
+    h += '<input type="url" data-imgf="hosted_url" value="' + esc(img.hosted_url || '') + '" placeholder="Hosted URL (R2)" ' + (isShared ? 'readonly' : '') + '>';
+    h += '<input type="url" data-imgf="published_url" value="' + esc(img.published_url || '') + '" placeholder="Published URL on client domain">';
+    h += '</div></div>';
+    h += '<div class="cp-neo-actions">';
+    if (isShared) {
+      h += '<button class="cp-section-btn" onclick="claimSharedNeo(\'' + pageId + '\',\'' + esc(img.id) + '\')" title="Make per-page">Claim</button>';
+    } else {
+      h += '<button class="cp-section-btn" onclick="unclaimPageNeo(\'' + pageId + '\',\'' + esc(img.id) + '\')" title="Unscope to shared">Unscope</button>';
+      h += '<button class="cp-section-btn" onclick="deleteNeoImage(\'' + pageId + '\',\'' + esc(img.id) + '\')" title="Delete">&times;</button>';
+    }
+    h += '</div></div>';
+    return h;
+  }
+
+  window.addPageNeoImage = function(pageId) {
+    var nameEl = document.getElementById('pe-neo-new-name-' + pageId);
+    var name = (nameEl && nameEl.value || '').trim();
+    if (!name) { toast('Image name required', 'error'); return; }
+    var d = _peCache[pageId];
+    if (!d) return;
+    var data = {
+      contact_id: d.page.contact_id,
+      client_slug: d.page.client_slug,
+      content_page_id: pageId,
+      image_name: name
+    };
+    fetch('/api/action', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create_record', table: 'neo_images', data: data })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res && res.success) {
+        delete _peCache[pageId];
+        loadPageEditor(pageId);
+        toast('Image added', 'success');
+      } else {
+        toast('Add failed', 'error');
+      }
+    });
+  };
+
+  window.claimSharedNeo = function(pageId, imgId) {
+    actionUpdate('neo_images', imgId, { content_page_id: pageId }).then(function(ok) {
+      if (ok) { delete _peCache[pageId]; loadPageEditor(pageId); toast('Image claimed for this page', 'success'); }
+      else toast('Claim failed', 'error');
+    });
+  };
+
+  window.unclaimPageNeo = function(pageId, imgId) {
+    if (!confirm('Unscope this image so it becomes shared across all this contact\'s pages?')) return;
+    actionUpdate('neo_images', imgId, { content_page_id: null }).then(function(ok) {
+      if (ok) { delete _peCache[pageId]; loadPageEditor(pageId); toast('Image unscoped to shared', 'success'); }
+      else toast('Unscope failed', 'error');
+    });
+  };
+
+  window.deleteNeoImage = function(pageId, imgId) {
+    if (!confirm('Delete this image record? (Hosted file is not affected.)')) return;
+    fetch('/api/action', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_record', table: 'neo_images', id: imgId })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res && res.success) {
+        delete _peCache[pageId];
+        loadPageEditor(pageId);
+        toast('Image deleted', 'success');
+      } else {
+        toast('Delete failed', 'error');
+      }
+    });
+  };
+
+  window.saveAllNeoEdits = function(pageId) {
+    var status = document.getElementById('pe-neo-status-' + pageId);
+    var slot = document.getElementById('cp-editor-' + pageId);
+    if (!slot) return;
+    var rows = slot.querySelectorAll('.cp-neo-row');
+    var updates = [];
+    rows.forEach(function(row) {
+      var id = row.getAttribute('data-img-id');
+      if (!id) return;
+      var fields = {};
+      row.querySelectorAll('[data-imgf]').forEach(function(input) {
+        if (input.readOnly) return;
+        var f = input.getAttribute('data-imgf');
+        fields[f] = input.value.trim() || null;
+      });
+      if (Object.keys(fields).length) updates.push({ id: id, fields: fields });
+    });
+    if (!updates.length) { if (status) status.textContent = 'Nothing to save'; return; }
+    if (status) status.textContent = 'Saving ' + updates.length + ' edit' + (updates.length===1?'':'s') + '...';
+    Promise.all(updates.map(function(u) { return actionUpdate('neo_images', u.id, u.fields); }))
+      .then(function(results) {
+        var okCount = results.filter(Boolean).length;
+        if (status) status.textContent = 'Saved ' + okCount + '/' + updates.length;
+        if (okCount === updates.length) {
+          delete _peCache[pageId];
+          loadPageEditor(pageId);
+          toast('Image edits saved', 'success');
+        } else {
+          toast('Some saves failed', 'error');
+        }
+      });
+  };
+
+  // Generic /api/action update helper, returns Promise<bool>
+  function actionUpdate(table, id, fields) {
+    return fetch('/api/action', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_record', table: table, id: id, data: fields })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      return !!(res && res.success);
+    }).catch(function() { return false; });
+  }
+
+  // ──── End per-page editor ──────────────────────────────────────────
 
   window.setContentPageStatus = function(id, newStatus) {
     var cp = state.contentPages.find(function(p) { return p.id === id; });
@@ -7017,7 +7727,14 @@
           var isDeploying = cp._deploying;
           h += '<button class="btn btn-sm" style="background:rgba(0,212,126,.12);color:var(--color-primary-hover);border:1px solid rgba(0,212,126,.3);line-height:1;" onclick="event.stopPropagation(); deployToClientSite(\'' + cp.id + '\')"' + (isDeploying ? ' disabled' : '') + '>' + (isDeploying ? 'Deploying...' : '&#9729; Deploy to Site') + '</button>';
         }
-        h += '</div></div></div></div>';
+        h += '</div></div>';
+        // Per-page editor (SEO / Schema / Content / NEO) — only for service + homepage
+        if (cp.page_type === 'service' || cp.page_type === 'homepage') {
+          h += '<div id="cp-editor-' + cp.id + '" class="cp-editor" onclick="event.stopPropagation()">' +
+                 (isExp ? '<div class="cp-editor-loading">Loading editor...</div>' : '') +
+               '</div>';
+        }
+        h += '</div></div>';
       });
     }
     listEl.innerHTML = h;
