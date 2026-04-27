@@ -107,7 +107,11 @@ module.exports = async function handler(req, res) {
     if (tier === 'hot') subFilter += '&engagement_tier=eq.hot';
     else if (tier === 'warm') subFilter += '&engagement_tier=in.(hot,warm)';
 
-    var fetchLimit = sendLimit ? sendLimit + 100 : 5000;
+    // Fetch ALL active subscribers in tier. Filtering happens in JS so the dedup
+    // doesn't get fooled by a small fetchLimit landing entirely inside the
+    // already-sent set. Hard cap of 5000 to keep memory bounded — bump if
+    // subscriber base grows past that.
+    var fetchLimit = 5000;
     var orderBy = 'order=engagement_tier.asc,subscribed_at.asc';
     var subscribers = await sb.query('newsletter_subscribers?' + subFilter + '&select=id,email,first_name&' + orderBy + '&limit=' + fetchLimit);
 
