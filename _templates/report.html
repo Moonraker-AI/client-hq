@@ -765,13 +765,11 @@ section { padding: 4.5rem 0; }
              arrow + ' ' + pctTxt + ' <span style="color:var(--color-muted);font-weight:500">vs prev month</span></div>';
     }
 
-    // Total impressions don't have a dedicated _prev column; derive from the
-    // current breakdown's prior month if we ever store it. For now, use null
-    // (no delta shown) — left as a future enhancement once gbp_detail_prev
-    // is captured. The four action metrics have explicit _prev columns.
+    // Total impressions delta uses the new gbp_impressions_total_prev column
+    // (populated by compile-report from prevSnap.gbp_detail or prevGbpWarehouse).
     var perfStats = [];
     var totalImps = (gbpDetail && gbpDetail.impressions_total) || null;
-    if (totalImps != null) perfStats.push({ value: fmt(totalImps), label: 'Profile Impressions', delta: '' });
+    if (totalImps != null) perfStats.push({ value: fmt(totalImps), label: 'Profile Impressions', delta: deltaHtml(totalImps, snap.gbp_impressions_total_prev) });
     if (snap.gbp_website_clicks != null) perfStats.push({ value: fmt(snap.gbp_website_clicks), label: 'Website Clicks', delta: deltaHtml(snap.gbp_website_clicks, snap.gbp_website_clicks_prev) });
     if (snap.gbp_direction_requests != null) perfStats.push({ value: fmt(snap.gbp_direction_requests), label: 'Direction Requests', delta: deltaHtml(snap.gbp_direction_requests, snap.gbp_direction_requests_prev) });
     if (snap.gbp_calls != null) perfStats.push({ value: fmt(snap.gbp_calls), label: 'Calls', delta: deltaHtml(snap.gbp_calls, snap.gbp_calls_prev) });
