@@ -277,6 +277,14 @@
     "api/upload-image-init.js": {
       "maxDuration": 30,
       "memory": 512
+    },
+    "api/backfill-gsc-warehouse.js": {
+      "maxDuration": 300,
+      "memory": 1024
+    },
+    "api/cron/backfill-gsc-daily.js": {
+      "maxDuration": 300,
+      "memory": 1024
     }
   },
   "crons": [
@@ -339,6 +347,10 @@
     {
       "path": "/api/cron/process-image-pool",
       "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/api/cron/backfill-gsc-daily",
+      "schedule": "30 9 * * *"
     }
   ]
 }
