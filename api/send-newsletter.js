@@ -20,7 +20,7 @@ var RESEND_KEY = process.env.RESEND_API_KEY_NEWSLETTER || process.env.RESEND_API
 var FROM_ADDRESS = 'Scott Pope <newsletter@newsletter.moonraker.ai>';
 var REPLY_TO = 'scott@moonraker.ai';
 var BATCH_SIZE = 100;               // Resend /emails/batch max
-var INTER_BATCH_DELAY_MS = 300;     // keep under 5 rps
+var INTER_BATCH_DELAY_MS = 600;     // keep well under 5 rps; was 300, bumped after batch 3 rejection on edition 33
 var WARMUP_SUCCESS_THRESHOLD = 0.80;
 
 module.exports = async function handler(req, res) {
@@ -164,27 +164,47 @@ module.exports = async function handler(req, res) {
       });
 
       var batchResult;
-      try {
-        var batchResp = await fetch('https://api.resend.com/emails/batch', {
-          method: 'POST',
-          headers: {
-            'Authorization': 'Bearer ' + RESEND_KEY,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(batchPayload)
-        });
-        batchResult = await batchResp.json();
-        if (!batchResp.ok) {
-          // Whole batch rejected (rate limit, bad payload, etc.)
-          var msg = (batchResult && batchResult.message) || ('HTTP ' + batchResp.status);
-          console.error('send-newsletter batch ' + (i / BATCH_SIZE) + ' rejected:', msg);
-          errors.push('Batch ' + (i / BATCH_SIZE + 1) + ': ' + msg);
-          batchResult = { data: [] }; // so pairing loop treats all as failed
+      var batchOk = false;
+      var batchErrMsg = null;
+      // Retry the whole batch on transient failure (429, 5xx, network).
+      // Each retry waits longer to let Resend's window clear.
+      var BATCH_RETRY_DELAYS_MS = [2000, 5000];
+      for (var batchAttempt = 0; batchAttempt <= BATCH_RETRY_DELAYS_MS.length; batchAttempt++) {
+        try {
+          var batchResp = await fetch('https://api.resend.com/emails/batch', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + RESEND_KEY,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(batchPayload)
+          });
+          batchResult = await batchResp.json();
+          if (batchResp.ok) {
+            batchOk = true;
+            break;
+          }
+          batchErrMsg = (batchResult && batchResult.message) || ('HTTP ' + batchResp.status);
+          // Only retry on transient codes
+          var transient = batchResp.status === 429 || batchResp.status >= 500;
+          if (!transient || batchAttempt === BATCH_RETRY_DELAYS_MS.length) break;
+          console.error('send-newsletter batch ' + (i / BATCH_SIZE + 1) + ' attempt ' +
+            (batchAttempt + 1) + ' transient failure: ' + batchErrMsg + ' — retrying in ' +
+            BATCH_RETRY_DELAYS_MS[batchAttempt] + 'ms');
+          await new Promise(function(r) { setTimeout(r, BATCH_RETRY_DELAYS_MS[batchAttempt]); });
+        } catch (err) {
+          batchErrMsg = err.message;
+          if (batchAttempt === BATCH_RETRY_DELAYS_MS.length) break;
+          console.error('send-newsletter batch ' + (i / BATCH_SIZE + 1) + ' attempt ' +
+            (batchAttempt + 1) + ' network error: ' + batchErrMsg + ' — retrying in ' +
+            BATCH_RETRY_DELAYS_MS[batchAttempt] + 'ms');
+          await new Promise(function(r) { setTimeout(r, BATCH_RETRY_DELAYS_MS[batchAttempt]); });
         }
-      } catch (err) {
-        console.error('send-newsletter batch network error:', err.message);
-        errors.push('Batch ' + (i / BATCH_SIZE + 1) + ' network error: ' + err.message);
-        batchResult = { data: [] };
+      }
+      if (!batchOk) {
+        console.error('send-newsletter batch ' + (i / BATCH_SIZE + 1) + ' rejected after retries: ' + batchErrMsg);
+        errors.push('Batch ' + (i / BATCH_SIZE + 1) + ': ' + batchErrMsg);
+        batchResult = { data: [] }; // pairing loop treats all as failed
       }
 
       var responseIds = (batchResult && batchResult.data) || [];
