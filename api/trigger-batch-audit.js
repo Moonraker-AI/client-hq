@@ -179,16 +179,29 @@ module.exports = async function(req, res) {
         (contact.state_province || '');
     }
 
-    // Determine entity type from GBP URL
+    // Surge batch UI fields:
+    //   - Entity Type: hardcoded Local Business for our therapy practice niche.
+    //   - Brand Name: practice_name.
+    //   - Google Maps URL: contact.gbp_url.
+    //   - Batch Name: descriptive label so the run is findable in /dashboard/history.
+    //   - Category (Optional Geo/Category section): "Mental Health" matches the
+    //     niche category Surge expects across all our clients.
+    //   - Geo / Location: city + state, batch-level (NOT per-page).
+    // Per-page-group, the agent fills only Target URL + Keywords (one per line)
+    // — keyword = page name verbatim, no geo concat. This mirrors single-page
+    // content-audit protocol exactly.
     var entityType = 'Local Business';
+    var batchName = practiceName + ' — Page Audit Batch';
 
     var agentPayload = {
       batch_id: batch.id,
       client_slug: contact.slug,
+      batch_name: batchName,
       brand_name: practiceName,
       gbp_url: contact.gbp_url,
       entity_type: entityType,
       geo_target: geoTarget,
+      category: 'Mental Health',
       website_url: contact.website_url,
       pages: pages,
       callback_url: 'https://clients.moonraker.ai/api/ingest-batch-audit'
