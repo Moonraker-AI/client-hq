@@ -1390,6 +1390,19 @@
   var SB = 'https://ofmmwcjhdrhvxxkhcuww.supabase.co';
   var SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbW13Y2poZHJodnh4a2hjdXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjM1NTcsImV4cCI6MjA4OTg5OTU1N30.zMMHW0Fk9ixWjORngyxJTIoPOfx7GFsD4wBV4Foqqms';
 
+  // Inject <base target="_blank"> into email HTML so links in sandboxed
+  // preview iframes open a new tab instead of navigating inside the frame
+  // (which would fail because allow-scripts is not set).
+  window._withBaseBlank = function(html) {
+    var s = String(html || '');
+    if (!s) return s;
+    if (/<base[\s>]/i.test(s)) return s;
+    var tag = '<base target="_blank">';
+    if (/<head[^>]*>/i.test(s)) return s.replace(/<head[^>]*>/i, function(m) { return m + tag; });
+    if (/<html[^>]*>/i.test(s)) return s.replace(/<html[^>]*>/i, function(m) { return m + '<head>' + tag + '</head>'; });
+    return tag + s;
+  };
+
   // Managed pollers: auto-clear when tab hidden or navigated away to avoid background DDoS.
   var _managedPollers = new Set();
   function mkInterval(fn, ms) {
@@ -5085,7 +5098,7 @@
           iframe.setAttribute('sandbox', 'allow-same-origin');
           iframe.style.cssText = 'width:100%;min-height:500px;border:none;display:block;';
           iframe.onload = function() { try { iframe.style.height = iframe.contentDocument.body.scrollHeight + 20 + 'px'; } catch(_) {} };
-          iframe.srcdoc = String(data.body_html || '');
+          iframe.srcdoc = window._withBaseBlank(data.body_html);
           document.getElementById('eaEmailBody').innerHTML = '';
           document.getElementById('eaEmailBody').appendChild(iframe);
           panel.setAttribute('data-loaded', '1');
@@ -8725,7 +8738,7 @@
         var iframe = document.createElement('iframe');
         iframe.setAttribute('sandbox', 'allow-same-origin');
         iframe.style.cssText = 'width:100%;height:100%;border:none;min-height:500px;';
-        iframe.srcdoc = String(res.html || '');
+        iframe.srcdoc = window._withBaseBlank(res.html);
         document.getElementById('emailPreviewFrame').innerHTML = '';
         document.getElementById('emailPreviewFrame').appendChild(iframe);
       } else {
@@ -10361,7 +10374,7 @@
           iframe.setAttribute('sandbox', 'allow-same-origin');
           iframe.style.cssText = 'width:100%;min-height:500px;border:none;display:block;';
           iframe.onload = function() { try { iframe.style.height = iframe.contentDocument.body.scrollHeight + 20 + 'px'; } catch(_) {} };
-          iframe.srcdoc = String(data.body_html || '');
+          iframe.srcdoc = window._withBaseBlank(data.body_html);
           document.getElementById('propEmailBody').innerHTML = '';
           document.getElementById('propEmailBody').appendChild(iframe);
           panel.setAttribute('data-loaded', '1');
@@ -10392,7 +10405,8 @@
       var data = await resp.json();
       if (data.ok) {
         var w = window.open('', '_blank');
-        var srcdoc = String(data.body_html || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        var withBase = window._withBaseBlank(data.body_html);
+        var srcdoc = withBase.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         w.document.write('<html><head><title>Email Preview</title></head><body>');
         w.document.write('<div style="padding:1rem;background:#f5f5f5;font-family:sans-serif;font-size:14px;margin-bottom:1rem;">');
         w.document.write('<strong>To:</strong> ' + esc(data.to) + '<br><strong>From:</strong> ' + esc(data.from) + '<br><strong>Reply-To:</strong> ' + esc(data.reply_to) + '<br><strong>CC:</strong> ' + esc(data.cc) + '<br><strong>Subject:</strong> ' + esc(data.subject));
