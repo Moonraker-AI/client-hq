@@ -3279,7 +3279,7 @@
     var w = window.open('', '_blank', 'width=800,height=900');
     w.document.write('<html><head><title>Signed CSA - ' + esc(state.contact.practice_name || state.contact.slug) + '</title>');
     w.document.write('<style>body{font-family:Inter,sans-serif;max-width:800px;margin:2rem auto;padding:0 2rem;color:#1a1a2e;line-height:1.7;font-size:.9rem;}h1,h2,h3{font-family:Outfit,sans-serif;}p{margin:.5rem 0;}iframe{border:none;width:100%;min-height:60vh;}</style></head><body>');
-    w.document.write('<iframe sandbox="allow-same-origin" srcdoc="' + String(signed.document_html || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '"></iframe>');
+    w.document.write('<iframe sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" srcdoc="' + String(signed.document_html || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '"></iframe>');
     w.document.write('<hr style="margin:2rem 0;"><p><strong>Signed by:</strong> ' + esc(signed.signer_name || '') + '</p>');
     w.document.write('<p><strong>Date:</strong> ' + (signed.signed_at ? new Date(signed.signed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '') + '</p>');
     w.document.write('</body></html>');
@@ -4572,7 +4572,7 @@
           h += '<span><strong style="color:var(--color-heading);">Subject:</strong> ' + esc(f.subject) + '</span>';
           h += '</div>';
           var escaped = String(f.body_html || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-          h += '<iframe sandbox="allow-same-origin" srcdoc="' + escaped + '" style="width:100%;min-height:400px;border:none;display:block;" onload="try{this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'}catch(_){}"></iframe>';
+          h += '<iframe sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" srcdoc="' + escaped + '" style="width:100%;min-height:400px;border:none;display:block;" onload="try{this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'}catch(_){}"></iframe>';
           h += '</div>';
           h += '</div>';
         });
@@ -5095,7 +5095,7 @@
             '<span><strong style="color:var(--color-heading);">CC:</strong> ' + esc(data.cc) + '</span>' +
             '<span><strong style="color:var(--color-heading);">Subject:</strong> ' + esc(data.subject) + '</span>';
           var iframe = document.createElement('iframe');
-          iframe.setAttribute('sandbox', 'allow-same-origin');
+          iframe.setAttribute('sandbox', 'allow-same-origin allow-popups allow-popups-to-escape-sandbox');
           iframe.style.cssText = 'width:100%;min-height:500px;border:none;display:block;';
           iframe.onload = function() { try { iframe.style.height = iframe.contentDocument.body.scrollHeight + 20 + 'px'; } catch(_) {} };
           iframe.srcdoc = window._withBaseBlank(data.body_html);
@@ -5222,7 +5222,7 @@
       if (fu.sent_at) schedStr = 'Sent ' + new Date(fu.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       w.document.write('<div class="email-card"><div class="email-header"><div><span class="email-num status-' + fu.status + '">Email ' + fu.sequence_number + ' &middot; ' + statusLabel + '</span><span class="email-meta" style="margin-left:.75rem;">' + schedStr + '</span></div><div class="email-meta"><strong>Subject:</strong> ' + esc(fu.subject || '(no subject)') + '</div></div>');
       var escaped = String(fu.body_html || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-      w.document.write('<div style="padding:0;"><iframe sandbox="allow-same-origin" srcdoc="' + escaped + '" style="width:100%;min-height:500px;border:none;" onload="try{this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'}catch(_){}"></iframe></div></div>');
+      w.document.write('<div style="padding:0;"><iframe sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" srcdoc="' + escaped + '" style="width:100%;min-height:500px;border:none;" onload="try{this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'}catch(_){}"></iframe></div></div>');
     });
     w.document.write('</body></html>');
     w.document.close();
@@ -8736,7 +8736,7 @@
           '<strong>Subject:</strong> ' + esc(res.subject) + '<br>' +
           '<strong>From:</strong> Moonraker Reports &lt;reports@clients.moonraker.ai&gt;';
         var iframe = document.createElement('iframe');
-        iframe.setAttribute('sandbox', 'allow-same-origin');
+        iframe.setAttribute('sandbox', 'allow-same-origin allow-popups allow-popups-to-escape-sandbox');
         iframe.style.cssText = 'width:100%;height:100%;border:none;min-height:500px;';
         iframe.srcdoc = window._withBaseBlank(res.html);
         document.getElementById('emailPreviewFrame').innerHTML = '';
@@ -10096,7 +10096,7 @@
           h += '<span><strong style="color:var(--color-heading);">Subject:</strong> ' + esc(f.subject) + '</span>';
           h += '</div>';
           var pfuEscaped = String(f.body_html || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-          h += '<iframe sandbox="allow-same-origin" srcdoc="' + pfuEscaped + '" style="width:100%;min-height:400px;border:none;display:block;" onload="try{this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'}catch(_){}"></iframe>';
+          h += '<iframe sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" srcdoc="' + pfuEscaped + '" style="width:100%;min-height:400px;border:none;display:block;" onload="try{this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'}catch(_){}"></iframe>';
           h += '</div>';
           h += '</div>';
         });
@@ -10371,7 +10371,7 @@
             '<span><strong style="color:var(--color-heading);">Reply-to:</strong> ' + esc(data.reply_to) + '</span>' +
             '<span><strong style="color:var(--color-heading);">Subject:</strong> ' + esc(data.subject) + '</span>';
           var iframe = document.createElement('iframe');
-          iframe.setAttribute('sandbox', 'allow-same-origin');
+          iframe.setAttribute('sandbox', 'allow-same-origin allow-popups allow-popups-to-escape-sandbox');
           iframe.style.cssText = 'width:100%;min-height:500px;border:none;display:block;';
           iframe.onload = function() { try { iframe.style.height = iframe.contentDocument.body.scrollHeight + 20 + 'px'; } catch(_) {} };
           iframe.srcdoc = window._withBaseBlank(data.body_html);
@@ -10411,7 +10411,7 @@
         w.document.write('<div style="padding:1rem;background:#f5f5f5;font-family:sans-serif;font-size:14px;margin-bottom:1rem;">');
         w.document.write('<strong>To:</strong> ' + esc(data.to) + '<br><strong>From:</strong> ' + esc(data.from) + '<br><strong>Reply-To:</strong> ' + esc(data.reply_to) + '<br><strong>CC:</strong> ' + esc(data.cc) + '<br><strong>Subject:</strong> ' + esc(data.subject));
         w.document.write('</div>');
-        w.document.write('<iframe sandbox="allow-same-origin" style="width:100%;height:80vh;border:1px solid #ddd;" srcdoc="' + srcdoc + '"></iframe>');
+        w.document.write('<iframe sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" style="width:100%;height:80vh;border:1px solid #ddd;" srcdoc="' + srcdoc + '"></iframe>');
         w.document.write('</body></html>');
         w.document.close();
       } else { toast('Preview failed: ' + (data.error || 'Unknown'), 'error'); }
@@ -10495,7 +10495,7 @@
       if (fu.sent_at) schedStr = 'Sent ' + new Date(fu.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       w.document.write('<div class="email-card"><div class="email-header"><div><span class="email-num status-' + fu.status + '">Email ' + fu.sequence_number + ' &middot; ' + statusLabel + '</span><span class="email-meta" style="margin-left:.75rem;">' + schedStr + '</span></div><div class="email-meta"><strong>Subject:</strong> ' + esc(fu.subject || '(no subject)') + '</div></div>');
       var escaped = String(fu.body_html || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-      w.document.write('<div style="padding:0;"><iframe sandbox="allow-same-origin" srcdoc="' + escaped + '" style="width:100%;min-height:500px;border:none;" onload="try{this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'}catch(_){}"></iframe></div></div>');
+      w.document.write('<div style="padding:0;"><iframe sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" srcdoc="' + escaped + '" style="width:100%;min-height:500px;border:none;" onload="try{this.style.height=this.contentDocument.body.scrollHeight+20+\'px\'}catch(_){}"></iframe></div></div>');
     });
     w.document.write('</body></html>');
     w.document.close();
