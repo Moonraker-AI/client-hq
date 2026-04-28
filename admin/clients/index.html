@@ -3413,14 +3413,14 @@
       : '<span style="display:inline-flex;align-items:center;gap:.35rem;background:rgba(120,120,120,.12);color:var(--color-muted);padding:.22rem .55rem;border-radius:999px;font-size:.72rem;font-weight:600;">Not eligible</span>';
 
     body.innerHTML = '<div class="field-group">'
-      + '<div class="field-row"><span class="field-label">Plan</span><span class="field-value">' + (planDisplay || '<span style="color:var(--color-muted);">&mdash;</span>') + '</span></div>'
+      + '<div class="field"><div class="field-label">Plan</div><div class="field-value">' + (planDisplay || '<span style="color:var(--color-muted);">&mdash;</span>') + '</div></div>'
       + fieldRow('Commitment', commitmentDisplay)
       + fieldRow('Commitment Start', startDisplay)
       + fieldRow('Plan Amount', amountDisplay)
       + fieldRow('Payment Method', c.payment_method)
       + fieldRow('Stripe Customer', c.stripe_customer_id, false, c.stripe_customer_id ? 'https://dashboard.stripe.com/customers/' + c.stripe_customer_id : null)
       + fieldRow('Stripe Subscription', c.stripe_subscription_id, false, c.stripe_subscription_id ? 'https://dashboard.stripe.com/subscriptions/' + c.stripe_subscription_id : null)
-      + '<div class="field-row"><span class="field-label">Performance Guarantee</span><span class="field-value">' + pgBadge + '</span></div>'
+      + '<div class="field"><div class="field-label">Performance Guarantee</div><div class="field-value">' + pgBadge + '</div></div>'
       + '</div>';
   }
 
