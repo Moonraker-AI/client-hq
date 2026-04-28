@@ -7522,21 +7522,38 @@
         }
       }
 
-      // Action buttons
-      sHtml += '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;">';
-      if (!spec || (!spec.capture_status || spec.capture_status === 'pending' || spec.capture_status === 'error')) {
-        sHtml += '<button class="btn btn-primary btn-sm" id="btnCaptureDesign" style="font-size:.78rem;" onclick="captureDesignAssets()">&#9881; Analyze Website</button>';
+      // Action buttons. Three distinct operations, surfaced as proper
+      // buttons with tooltips so the difference between them is obvious:
+      //   Re-capture  -> full agent run (screenshots + CSS + crawled
+      //                  text), auto-chains analyze. ~60-90s.
+      //   Re-analyze  -> skip the agent, re-distill existing capture data
+      //                  through Claude. ~10-25s.
+      //   Manual      -> bypass the agent entirely; paste raw CSS,
+      //                  content, and screenshot URLs by hand.
+      var TT_CAPTURE   = 'Run an agent capture: screenshots of homepage, service, and about pages, plus computed CSS and crawled content. Auto-distills design tokens via Claude when done. Takes 30 to 90 seconds. Use this for first-time setup or after the client has redesigned their site.';
+      var TT_RECAPTURE = 'Throw out the existing capture and start over: agent re-runs Playwright on the live site for fresh screenshots, CSS, and content, then re-distills via Claude. Takes 30 to 90 seconds. Use when the client has updated their site.';
+      var TT_ANALYZE   = 'Distill the captured CSS and screenshots into design tokens (typography, color palette, voice DNA, summary) via Claude. Takes 10 to 25 seconds. Skips the agent capture step entirely.';
+      var TT_REANALYZE = 'Re-run Claude on the existing capture data without re-scraping the site. Refreshes typography, color palette, voice DNA, and summary. Takes 10 to 25 seconds. Use when the capture is fine but the distilled tokens look wrong.';
+      var TT_MANUAL    = 'Bypass the agent. Paste raw CSS, sample content, and screenshot URLs by hand. Use when the agent cannot reach the site (auth-walled, geo-blocked, or down) or when the captured data needs to be overridden.';
+
+      sHtml += '<div style="margin-top:.75rem;padding-top:.6rem;border-top:1px solid var(--color-border-tertiary);">';
+      sHtml += '<div style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);margin-bottom:.4rem;">Actions</div>';
+      sHtml += '<div style="display:flex;gap:.45rem;flex-wrap:wrap;">';
+
+      if (!spec || !spec.capture_status || spec.capture_status === 'pending' || spec.capture_status === 'error') {
+        // Nothing captured yet -> single primary CTA that does the whole flow.
+        sHtml += '<button class="btn btn-primary btn-sm" id="btnCaptureDesign" style="font-size:.78rem;" onclick="captureDesignAssets()" title="' + esc(TT_CAPTURE) + '">&#9881; Capture &amp; Analyze</button>';
+      } else if (spec.capture_status === 'complete' && !spec.summary_text) {
+        // Capture finished but analyze never ran (or failed) -> primary is Analyze.
+        sHtml += '<button class="btn btn-primary btn-sm" id="btnAnalyzeSpec" style="font-size:.78rem;" onclick="analyzeDesignSpec()" title="' + esc(TT_ANALYZE) + '">&#9889; Analyze Now</button>';
+        sHtml += '<button class="btn btn-ghost btn-sm" id="btnRecaptureDesign" style="font-size:.78rem;" onclick="captureDesignAssets()" title="' + esc(TT_RECAPTURE) + '">&#8635; Re-capture</button>';
+      } else if (spec.summary_text) {
+        // Both done -> two ghost re-do buttons, ordered by cost (cheap analyze first).
+        sHtml += '<button class="btn btn-ghost btn-sm" id="btnAnalyzeSpec" style="font-size:.78rem;" onclick="analyzeDesignSpec()" title="' + esc(TT_REANALYZE) + '">&#9889; Re-analyze</button>';
+        sHtml += '<button class="btn btn-ghost btn-sm" id="btnRecaptureDesign" style="font-size:.78rem;" onclick="captureDesignAssets()" title="' + esc(TT_RECAPTURE) + '">&#8635; Re-capture</button>';
       }
-      if (spec && spec.capture_status === 'complete' && !spec.summary_text) {
-        sHtml += '<button class="btn btn-primary btn-sm" id="btnAnalyzeSpec" style="font-size:.78rem;" onclick="analyzeDesignSpec()">&#9889; Run Analysis</button>';
-        sHtml += '<button class="btn btn-ghost btn-sm" id="btnRecaptureDesign" style="font-size:.78rem;" onclick="captureDesignAssets()">&#8635; Re-capture</button>';
-      }
-      if (spec && spec.summary_text) {
-        sHtml += '<button class="btn btn-ghost btn-sm" id="btnRecaptureDesign" style="font-size:.78rem;" onclick="captureDesignAssets()">&#8635; Re-capture Website</button>';
-        sHtml += '<button class="btn btn-ghost btn-sm" id="btnAnalyzeSpec" style="font-size:.78rem;" onclick="analyzeDesignSpec()">&#9889; Re-analyze</button>';
-      }
-      sHtml += '<button class="btn btn-ghost btn-sm" style="font-size:.75rem;" onclick="toggleSpecForm()">Manual Setup</button>';
-      sHtml += '</div>';
+      sHtml += '<button class="btn btn-ghost btn-sm" style="font-size:.78rem;" onclick="toggleSpecForm()" title="' + esc(TT_MANUAL) + '">&#9998; Manual Setup</button>';
+      sHtml += '</div></div>';
 
       // Manual fallback form (hidden by default)
       sHtml += '<div id="specFormArea" style="display:none;margin-top:.75rem;">';
