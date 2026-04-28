@@ -7425,6 +7425,14 @@
       // Show captured screenshots if available
       var hasScreenshots = spec && (spec.screenshot_homepage || spec.screenshot_service || spec.screenshot_about);
       if (hasScreenshots) {
+        // Cache-bust per capture: storage path is fixed (homepage.webp etc.)
+        // and Vercel sets Cache-Control: immutable + max-age=1y on /:slug/img/*,
+        // so without a query bump the browser keeps showing the previous capture
+        // forever. Re-derive on each render from updated_at so a fresh capture
+        // produces a fresh URL automatically.
+        var _shotV = spec.updated_at ? new Date(spec.updated_at).getTime() : Date.now();
+        var _bust = function(u) { return u + (u.indexOf('?') >= 0 ? '&' : '?') + 'v=' + _shotV; };
+
         sHtml += '<div style="margin-bottom:.75rem;"><div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-muted);margin-bottom:.4rem;">Captured Screenshots</div>';
         sHtml += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;">';
         var shots = [
@@ -7435,7 +7443,8 @@
         shots.forEach(function(s) {
           sHtml += '<div style="text-align:center;">';
           if (s.url) {
-            sHtml += '<a href="' + esc(s.url) + '" target="_blank" style="display:block;"><img src="' + esc(s.url) + '" alt="" style="width:100%;max-height:150px;object-fit:cover;object-position:top;border-radius:6px;border:1px solid var(--color-border);"></a>';
+            var _u = esc(_bust(s.url));
+            sHtml += '<a href="' + _u + '" target="_blank" style="display:block;"><img src="' + _u + '" alt="" style="width:100%;max-height:150px;object-fit:cover;object-position:top;border-radius:6px;border:1px solid var(--color-border);"></a>';
           } else {
             sHtml += '<div style="height:80px;border-radius:6px;border:1px dashed var(--color-border);display:flex;align-items:center;justify-content:center;font-size:.72rem;color:var(--color-muted);">Not captured</div>';
           }
