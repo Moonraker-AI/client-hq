@@ -224,7 +224,7 @@ Respond with ONLY valid JSON (no markdown, no backticks). The JSON must have the
 {
   "hero_headline": "Short, compelling headline about transforming their practice's digital presence (15 words max)",
   "hero_subtitle": "One sentence expanding on the headline, referencing their specific situation",
-  "exec_summary_paragraphs": "2-3 paragraphs in HTML (<p> tags) that show we understand their practice, goals, and challenges. Reference specific details from calls, emails, or website. Start with '<p class=\"lead\">' for the first paragraph.",
+  "exec_summary_paragraphs": "2-3 paragraphs in HTML that show we understand their practice, goals, and challenges. Reference specific details from calls, emails, or website. Wrap EVERY paragraph in <p class=\"lead\">...</p> so font sizing stays consistent across the section.",
   "scores": { "c": NUMBER, "o": NUMBER, "r": NUMBER, "e": NUMBER },
   "credibility_findings": "3-4 findings as HTML divs using this format: <div class=\"finding\"><span class=\"finding-icon\">ICON</span><div><p><span class=\"highlight\">HEADLINE.</span> DETAIL</p></div></div> where ICON is &#9989; for strengths, &#9888;&#65039; for warnings, &#128308; for critical gaps",
   "optimization_findings": "Same format as above, 3-4 findings",
@@ -604,6 +604,7 @@ async function createDriveFolder(name, parentId, headers) {
     return { error: 'Drive folder creation failed' };
   }
 }
+
 
 
 
