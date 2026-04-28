@@ -36,12 +36,42 @@ function parseBatch() {
   return Math.min(n, 10);
 }
 
+// Cutoff for "partial pre-fix re-pick": rows captured before this timestamp
+// that didn't get a full 3-page capture are eligible to re-run on the
+// updated agent code (page.url-based discovery for redirected hosts).
+// Set to the moment the discover_pages fix shipped to /opt/moonraker-agent.
+// Once a row's updated_at advances past this (i.e. it re-ran with the new
+// code), it's no longer eligible — single-page sites don't loop forever.
+var DISCOVERY_FIX_CUTOFF = process.env.DESIGN_BACKFILL_FIX_CUTOFF
+  || '2026-04-28T07:50:00Z';
+
 async function pickContacts(limit) {
-  // Two queries instead of an RPC: list contact_ids with any design_specs
-  // row, then ask for active/onboarding contacts NOT in that list. Cheap
-  // because both tables are small (hundreds of rows).
-  var specs = await sb.query('design_specs?select=contact_id&limit=10000');
-  var taken = (specs || []).map(function(r) { return r.contact_id; }).filter(Boolean);
+  // Treat a design_specs row as "good" (skip re-pick) when:
+  //   - it captured >= 3 pages (or pages_succeeded is null = legacy pre-honest-status row), AND
+  //   - it isn't in a failed/partial state
+  // OR
+  //   - it was captured/updated AFTER the discovery fix (regardless of result).
+  //
+  // Anything else (pre-fix partial, pre-fix failed, pre-fix complete-but-1-page)
+  // is eligible to be picked again. Contacts with no row at all are also picked.
+  var specs = await sb.query(
+    'design_specs?select=contact_id,pages_succeeded,capture_status,updated_at&limit=10000'
+  );
+  var taken = (specs || []).filter(function(s) {
+    if (!s.contact_id) return false;
+    var postFix = s.updated_at && s.updated_at >= DISCOVERY_FIX_CUTOFF;
+    if (postFix) return true;  // already retried under new code; don't loop
+    var failedish = s.capture_status === 'failed'
+      || s.capture_status === 'error'
+      || s.capture_status === 'partial';
+    if (failedish) return false;  // pre-fix partial/failed -> retry
+    // pages_succeeded is text[]; legacy rows are NULL — treat NULL as
+    // "we don't know, leave it alone" so we don't churn old completes.
+    var succ = s.pages_succeeded;
+    var succLen = Array.isArray(succ) ? succ.length : null;
+    if (succLen === null) return true;  // legacy row, no length info -> skip
+    return succLen >= 3;  // < 3 means SQ-redirect-style discovery miss
+  }).map(function(s) { return s.contact_id; });
 
   var path = 'contacts?select=id,slug,website_url'
     + '&status=in.(active,onboarding)'
