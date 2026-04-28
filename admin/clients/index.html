@@ -1167,7 +1167,7 @@
             <div id="clusterSynthesis" style="display:none;margin-bottom:.75rem;"></div>
             <div id="contentPhaseBar"></div>
             <div id="contentPageList"></div>
-            <div class="empty-state" id="contentPagesEmpty" style="display:none;"><p>No content pages yet. Seed pages from keywords above, or add a page manually.</p></div>
+            <div class="empty-state" id="contentPagesEmpty" style="display:none;"><p>No pages yet. Mark service, location, or bio pages as Update, New, or Drafting in the site map and they will appear here automatically.</p></div>
           </div>
         </div>
 
@@ -7547,72 +7547,10 @@
     if (!listEl) return;
 
     if (pages.length === 0) {
-      var kwCount = state.trackedKeywords ? state.trackedKeywords.length : 0;
-      var bioCount = state.bioMaterials ? state.bioMaterials.length : 0;
-      if (kwCount > 0 || bioCount > 0) {
-        var hasEntityAudit = state.entityAudit && (state.entityAudit.status === 'complete' || state.entityAudit.status === 'delivered');
-        var hpExists = pages.some(function(p) { return p.page_type === 'homepage'; });
-        var svcExists = pages.some(function(p) { return p.page_type === 'service'; });
-        var bioExists = pages.some(function(p) { return p.page_type === 'bio'; });
-
-        var seedHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem;padding:.5rem 0;">';
-
-        // Homepage card
-        seedHtml += '<div style="border:1px solid var(--color-border);border-radius:10px;padding:1rem;text-align:center;background:var(--color-surface);">';
-        seedHtml += '<div style="font-size:1.25rem;margin-bottom:.35rem;">&#127968;</div>';
-        seedHtml += '<div style="font-size:.82rem;font-weight:600;color:var(--color-heading);margin-bottom:.25rem;">Homepage</div>';
-        if (hpExists) {
-          seedHtml += '<span style="font-size:.72rem;color:var(--color-primary-hover);font-weight:500;">Seeded</span>';
-        } else if (hasEntityAudit) {
-          seedHtml += '<p style="font-size:.72rem;color:var(--color-muted);margin-bottom:.5rem;">From entity audit RTPBA</p>';
-          seedHtml += '<button class="btn btn-primary btn-sm" onclick="seedContentPages(\x27homepage\x27)" style="font-size:.75rem;padding:.35rem .75rem;">Seed Homepage</button>';
-        } else {
-          seedHtml += '<p style="font-size:.72rem;color:var(--color-muted);">Needs entity audit first</p>';
-        }
-        seedHtml += '</div>';
-
-        // Service Pages card
-        seedHtml += '<div style="border:1px solid var(--color-border);border-radius:10px;padding:1rem;text-align:center;background:var(--color-surface);">';
-        seedHtml += '<div style="font-size:1.25rem;margin-bottom:.35rem;">&#128196;</div>';
-        seedHtml += '<div style="font-size:.82rem;font-weight:600;color:var(--color-heading);margin-bottom:.25rem;">Service Pages</div>';
-        if (svcExists) {
-          var svcCount = pages.filter(function(p) { return p.page_type === 'service'; }).length;
-          seedHtml += '<span style="font-size:.72rem;color:var(--color-primary-hover);font-weight:500;">' + svcCount + ' seeded</span>';
-        } else if (kwCount > 0) {
-          seedHtml += '<p style="font-size:.72rem;color:var(--color-muted);margin-bottom:.5rem;">' + kwCount + ' keyword' + (kwCount !== 1 ? 's' : '') + ' + location + FAQ</p>';
-          seedHtml += '<button class="btn btn-primary btn-sm" onclick="seedContentPages(\x27service\x27)" style="font-size:.75rem;padding:.35rem .75rem;">Seed Service Pages</button>';
-        } else {
-          seedHtml += '<p style="font-size:.72rem;color:var(--color-muted);">Set keywords in Reporting tab</p>';
-        }
-        seedHtml += '</div>';
-
-        // Bio Pages card
-        seedHtml += '<div style="border:1px solid var(--color-border);border-radius:10px;padding:1rem;text-align:center;background:var(--color-surface);">';
-        seedHtml += '<div style="font-size:1.25rem;margin-bottom:.35rem;">&#129489;</div>';
-        seedHtml += '<div style="font-size:.82rem;font-weight:600;color:var(--color-heading);margin-bottom:.25rem;">Bio Pages</div>';
-        if (bioExists) {
-          var bpCount = pages.filter(function(p) { return p.page_type === 'bio'; }).length;
-          seedHtml += '<span style="font-size:.72rem;color:var(--color-primary-hover);font-weight:500;">' + bpCount + ' seeded</span>';
-        } else if (bioCount > 0) {
-          seedHtml += '<p style="font-size:.72rem;color:var(--color-muted);margin-bottom:.5rem;">' + bioCount + ' clinician' + (bioCount !== 1 ? 's' : '') + '</p>';
-          seedHtml += '<button class="btn btn-primary btn-sm" onclick="seedContentPages(\x27bio\x27)" style="font-size:.75rem;padding:.35rem .75rem;">Seed Bio Pages</button>';
-        } else {
-          seedHtml += '<p style="font-size:.72rem;color:var(--color-muted);">No bio materials yet</p>';
-        }
-        seedHtml += '</div>';
-
-        seedHtml += '</div>';
-
-        // Seed All button if nothing is seeded yet
-        if (!hpExists && !svcExists && !bioExists && (kwCount > 0 || bioCount > 0)) {
-          seedHtml += '<div style="text-align:center;margin-top:.5rem;"><button class="btn btn-ghost" onclick="seedContentPages(\x27all\x27)" style="font-size:.78rem;">Seed All Pages</button></div>';
-        }
-
-        listEl.innerHTML = seedHtml;
-        if (emptyEl) emptyEl.style.display = 'none';
-      } else {
-        listEl.innerHTML = '';
-        if (emptyEl) emptyEl.style.display = 'block';
+      listEl.innerHTML = '';
+      if (emptyEl) {
+        emptyEl.style.display = 'block';
+        emptyEl.innerHTML = '<p>No pages yet. Mark service, location, or bio pages as Update, New, or Drafting in the <a href="/admin/clients/' + esc(state.contact.slug) + '/site-map/" style="color:var(--color-primary);">site map</a> and they will appear here automatically. You can also use + Add Page to add a one-off manually.</p>';
       }
       renderContentAssets();
       return;
@@ -7650,7 +7588,7 @@
         h += '<div class="cp-expand-icon">&#9654;</div>';
         h += '<span class="cp-type-badge ' + cp.page_type + '">' + cp.page_type + '</span>';
         h += '<div class="cp-info"><div class="cp-title">' + esc(cp.page_name) + varianceBadge + (cp.stale ? ' <span style="font-size:.6rem;font-weight:600;padding:.1rem .35rem;border-radius:3px;background:rgba(245,158,11,.12);color:var(--color-amber-deep);vertical-align:middle;margin-left:.35rem;">STALE</span>' : '') + '</div>';
-        if (cp.target_keyword) h += '<div class="cp-keyword">' + esc(cp.target_keyword) + '</div>';
+        if (cp.target_keyword && cp.target_keyword !== cp.page_name) h += '<div class="cp-keyword">' + esc(cp.target_keyword) + '</div>';
         h += '</div>';
         h += '<select class="cp-status-select st-' + cp.status + '" onchange="setContentPageStatus(\'' + cp.id + '\', this.value)" onclick="event.stopPropagation()">';
         Object.keys(statusLabels).forEach(function(s) {
@@ -7751,8 +7689,11 @@
     var batches = state.contentBatches || [];
     var activeBatch = batches.find(function(b) { return b.status === 'queued' || b.status === 'agent_running' || b.status === 'extracting' || b.status === 'processing'; });
     var lastBatch = batches[0]; // most recent
-    var kws = state.trackedKeywords || [];
-    var p1Keywords = kws.filter(function(k) { return k.priority === 1 && k.active && k.target_page; });
+    // Service pages with a target_keyword are the batch-audit input.
+    // target_keyword is auto-populated from the sitemap title via the
+    // sync_smp_to_content_page trigger; manual pages get it via "+ Add Page".
+    var allPages = state.contentPages || [];
+    var servicePages = allPages.filter(function(p) { return p.page_type === 'service' && p.target_keyword; });
 
     if (activeBatch) {
       // Active batch in progress
@@ -7810,7 +7751,7 @@
       badge.textContent = 'Complete';
       badge.style.background = 'rgba(0,212,126,.1)';
       badge.style.color = '#00b86c';
-      if (triggerBtn) triggerBtn.style.display = p1Keywords.length > 0 ? 'inline-flex' : 'none';
+      if (triggerBtn) triggerBtn.style.display = servicePages.length > 0 ? 'inline-flex' : 'none';
       if (triggerBtn) triggerBtn.textContent = 'Re-run Batch Audit';
 
       var synthNote = lastBatch.synthesis_raw ? ' Synthesis captured.' : '';
@@ -7846,18 +7787,18 @@
 
     } else {
       // No batches yet
-      if (p1Keywords.length > 0) {
+      if (servicePages.length > 0) {
         badge.textContent = 'Ready';
         badge.style.background = 'rgba(245,158,11,.1)';
         badge.style.color = 'var(--color-amber-deep)';
         if (triggerBtn) { triggerBtn.style.display = 'inline-flex'; triggerBtn.textContent = 'Run Batch Audit'; }
-        contentEl.innerHTML = '<p style="font-size:.82rem;color:var(--color-muted);">' + p1Keywords.length + ' P1 keyword' + (p1Keywords.length !== 1 ? 's' : '') + ' with target pages ready for batch audit. This will run a multi-page Surge analysis and extract RTPBA content and schema for each page.</p>';
+        contentEl.innerHTML = '<p style="font-size:.82rem;color:var(--color-muted);">' + servicePages.length + ' service page' + (servicePages.length !== 1 ? 's' : '') + ' ready for batch audit. This runs a multi-page Surge analysis and extracts RTPBA content and schema for each page.</p>';
       } else {
-        badge.textContent = 'No Keywords';
+        badge.textContent = 'No Pages';
         badge.style.background = 'rgba(107,117,153,.1)';
         badge.style.color = 'var(--color-muted)';
         if (triggerBtn) triggerBtn.style.display = 'none';
-        contentEl.innerHTML = '<p style="font-size:.82rem;color:var(--color-muted);">Set up P1 keyword targets in the Keyword Targets section above. Each keyword needs a target page URL.</p>';
+        contentEl.innerHTML = '<p style="font-size:.82rem;color:var(--color-muted);">No service pages yet. Mark service pages as Update, New, or Drafting in the <a href="/admin/clients/' + esc(state.contact.slug) + '/site-map/" style="color:var(--color-primary);">site map</a> and they will appear here automatically.</p>';
       }
     }
   }
