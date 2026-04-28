@@ -355,6 +355,10 @@
     {
       "path": "/api/cron/backfill-design-captures",
       "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/backfill-cms-scouts",
+      "schedule": "15,45 * * * *"
     }
   ]
 }

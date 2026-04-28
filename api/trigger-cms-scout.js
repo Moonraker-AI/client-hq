@@ -16,7 +16,10 @@ var crypt = require('./_lib/crypto');
 
 module.exports = async function(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  var user = await auth.requireAdmin(req, res);
+  // requireAdminOrInternal so the backfill-cms-scouts cron can invoke this
+  // module in-process with a synthetic CRON_SECRET req. Same trust model as
+  // trigger-design-capture: payload is just contact_id, no destructive op.
+  var user = await auth.requireAdminOrInternal(req, res);
   if (!user) return;
 
   var AGENT_URL = process.env.AGENT_SERVICE_URL;
