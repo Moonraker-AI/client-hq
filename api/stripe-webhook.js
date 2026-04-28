@@ -163,6 +163,50 @@ module.exports = async function handler(req, res) {
 
     var results = { slug: slug, session_id: session.id };
 
+    // ── Persist Stripe customer + subscription IDs on contact ──
+    // Stripe attaches `customer` to every Checkout Session that collects
+    // payment, and `subscription` when mode=subscription. Capture both on
+    // the contact row so admins can deep-link from the Billing tab to the
+    // Stripe dashboard without manual lookup. Branches below (entity-audit,
+    // core-marketing-system, strategy-call) all benefit, so do it once
+    // before the routing.
+    //
+    // Idempotent: filter `*_id=is.null` so a manually-set value or an
+    // earlier delivery is never clobbered. Two separate PATCHes so a
+    // partial state (customer set, subscription null) still backfills.
+    // Errors are logged but never block the 200 — Stripe retries would
+    // duplicate downstream work (status flip, audit triggers, notifs).
+    try {
+      if (session.customer) {
+        await sb.mutate(
+          'contacts?id=eq.' + contact.id + '&stripe_customer_id=is.null',
+          'PATCH',
+          { stripe_customer_id: session.customer },
+          'return=minimal'
+        );
+      }
+      if (session.subscription) {
+        await sb.mutate(
+          'contacts?id=eq.' + contact.id + '&stripe_subscription_id=is.null',
+          'PATCH',
+          { stripe_subscription_id: session.subscription },
+          'return=minimal'
+        );
+      }
+    } catch (stripeIdErr) {
+      try {
+        await monitor.logError('stripe-webhook', stripeIdErr, {
+          client_slug: slug,
+          detail: {
+            stage: 'persist_stripe_ids',
+            session_id: session.id,
+            customer: session.customer || null,
+            subscription: session.subscription || null
+          }
+        });
+      } catch (_) { /* don't mask the 200 */ }
+    }
+
     // Entity Audit identified by metadata first (new inline Checkout flow)
     // then falls back to amount detection for legacy buy.stripe.com links
     // that don't carry metadata. Guard the amount fallback against
