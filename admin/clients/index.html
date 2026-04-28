@@ -1153,7 +1153,7 @@
           <div class="card-header collapsible-header" onclick="toggleContentSection('servicePages')" style="cursor:pointer;">
             <h3 style="display:flex;align-items:center;gap:.5rem;flex:1;">
               <span id="servicePagesIcon" style="transition:transform .2s;display:inline-block;font-size:.7rem;">&#9660;</span>
-              Service Pages
+              Pages
               <span id="batchAuditBadge" class="status-badge" style="font-size:.7rem;"></span>
             </h3>
             <div style="display:flex;gap:.5rem;" onclick="event.stopPropagation()">
@@ -7820,7 +7820,10 @@
         badge.style.background = 'rgba(107,117,153,.1)';
         badge.style.color = 'var(--color-muted)';
         if (triggerBtn) triggerBtn.style.display = 'none';
-        contentEl.innerHTML = '<p style="font-size:.82rem;color:var(--color-muted);">No service pages yet. Mark service pages as Update, New, or Drafting in the <a href="/admin/clients/' + esc(state.contact.slug) + '/site-map/" style="color:var(--color-primary);">site map</a> and they will appear here automatically.</p>';
+        // Outer #contentPagesEmpty (rendered by renderContent) carries the
+        // "Mark pages as Update/New/Drafting in the site map..." copy when
+        // there are no pages of any type. Suppress redundant copy here.
+        contentEl.innerHTML = '';
       }
     }
   }
