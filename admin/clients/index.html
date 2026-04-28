@@ -1119,7 +1119,7 @@
                 <span id="cmsPlatformLabel" style="font-weight:600;font-size:.85rem;color:var(--color-text-secondary);">No platform set</span>
                 <button class="btn btn-sm btn-ghost" id="btnRunScout" onclick="runCmsScout()" title="Scout this site" style="white-space:nowrap;display:none;margin-left:auto;">&#128269; Scout</button>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem .75rem;">
+              <div id="cmsCredsGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem .75rem;">
                 <div style="display:flex;align-items:center;gap:.35rem;">
                   <label style="font-size:.7rem;color:var(--color-text-tertiary);white-space:nowrap;min-width:55px;">Login URL</label>
                   <input type="text" id="cmsLoginUrl" placeholder="/wp-admin" style="flex:1;padding:.25rem .5rem;font-size:.8rem;border:1px solid var(--color-border-tertiary);border-radius:6px;background:var(--color-surface);color:var(--color-text-primary);" onchange="saveCmsField('cms_login_url', this.value)">
@@ -1139,6 +1139,7 @@
                   <button onclick="togglePasswordVisibility('cmsAppPassword', this)" style="background:none;border:none;cursor:pointer;font-size:.7rem;color:var(--color-text-tertiary);padding:2px;" title="Show/hide">&#128065;</button>
                 </div>
               </div>
+              <div id="cmsAccessNote" style="display:none;margin-top:.25rem;padding:.45rem .65rem;background:var(--color-bg);border-radius:6px;font-size:.78rem;color:var(--color-text-secondary);line-height:1.45;"></div>
               <div id="cmsScoutResult" style="display:none;margin-top:.5rem;padding:.4rem .6rem;background:var(--color-bg);border-radius:6px;font-size:.78rem;color:var(--color-text-secondary);"></div>
             </div>
             <!-- Design spec content (existing) -->
@@ -7340,6 +7341,35 @@
     // App Password only for WordPress
     var pwGroup = document.getElementById('cmsAppPasswordGroup');
     if (pwGroup) pwGroup.style.display = (plat === 'wordpress') ? 'flex' : 'none';
+    // Credentials grid + access note: WP needs creds in HQ; SQ/Wix go through
+    // Leadsie via support@; everything else (SimplePractice, TherapySites,
+    // Showit, Webflow, Other) doesn't use HQ-stored creds at all.
+    var credsGrid = document.getElementById('cmsCredsGrid');
+    var accessNote = document.getElementById('cmsAccessNote');
+    if (credsGrid && accessNote) {
+      if (plat === 'wordpress') {
+        credsGrid.style.display = 'grid';
+        accessNote.style.display = 'none';
+        accessNote.innerHTML = '';
+      } else if (plat === 'squarespace' || plat === 'wix') {
+        credsGrid.style.display = 'none';
+        accessNote.style.display = 'block';
+        accessNote.innerHTML = '<strong>Access via Leadsie.</strong> ' +
+          (plat.charAt(0).toUpperCase() + plat.slice(1)) +
+          ' sites are managed through the Moonraker <code>support@</code> account using Google OAuth via Leadsie. No credentials are stored here.';
+      } else if (plat) {
+        credsGrid.style.display = 'none';
+        accessNote.style.display = 'block';
+        accessNote.innerHTML = '<strong>No HQ credentials required.</strong> ' +
+          (plat.charAt(0).toUpperCase() + plat.slice(1)) +
+          ' sites are managed outside this CMS credentials flow.';
+      } else {
+        // Platform unset — show grid as a fallback so admin can fill creds while picking platform.
+        credsGrid.style.display = 'grid';
+        accessNote.style.display = 'none';
+        accessNote.innerHTML = '';
+      }
+    }
     // Scout button for WordPress, Squarespace, Wix
     var scoutBtn = document.getElementById('btnRunScout');
     var scoutPlatforms = ['wordpress', 'squarespace', 'wix'];
