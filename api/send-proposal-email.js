@@ -49,11 +49,33 @@ module.exports = async function handler(req, res) {
   var subject = body.subject || 'Your Growth Proposal from Moonraker is Ready';
   var bodyHtml = body.body_html || buildDefaultEmail(firstName, practiceName, proposalUrl);
 
+  // Build CC list: defaults + sanitized extras, deduped, capped, excluding the To address
+  var defaultCc = ['chris@moonraker.ai', 'scott@moonraker.ai'];
+  var toLower = String(contact.email || '').toLowerCase();
+  var extraRaw = Array.isArray(body.cc_extra) ? body.cc_extra : [];
+  var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  var extraCc = extraRaw
+    .map(function(e) { return String(e || '').trim(); })
+    .filter(function(e) { return e && emailRe.test(e); })
+    .filter(function(e) { return e.toLowerCase() !== toLower; })
+    .filter(function(e) { return defaultCc.indexOf(e.toLowerCase()) === -1; });
+  // Dedupe extras case-insensitively, preserve original casing
+  var seen = {};
+  extraCc = extraCc.filter(function(e) {
+    var k = e.toLowerCase();
+    if (seen[k]) return false;
+    seen[k] = true;
+    return true;
+  }).slice(0, 10);
+  var ccList = defaultCc.concat(extraCc);
+
   if (body.preview_only) {
     return res.status(200).json({
       ok: true, preview: true, to: contact.email,
       from: email.FROM.proposals, reply_to: 'scott@moonraker.ai',
-      cc: 'chris@moonraker.ai, scott@moonraker.ai',
+      cc: ccList.join(', '),
+      cc_list: ccList,
+      cc_extra_accepted: extraCc,
       subject: subject, body_html: bodyHtml
     });
   }
@@ -65,7 +87,7 @@ module.exports = async function handler(req, res) {
       headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from: email.FROM.proposals, to: [contact.email],
-        cc: ['chris@moonraker.ai', 'scott@moonraker.ai'],
+        cc: ccList,
         reply_to: 'scott@moonraker.ai', subject: subject, html: bodyHtml
       })
     });
@@ -100,3 +122,4 @@ function buildDefaultEmail(firstName, practiceName, proposalUrl) {
       email.pRaw('We are excited about the opportunity to help ' + email.esc(practiceName) + ' grow. Looking forward to hearing your thoughts.')
   });
 }
+
