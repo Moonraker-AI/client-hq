@@ -10004,6 +10004,10 @@
     } else if (st === 'generating') {
       h += '<span style="display:inline-flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--color-info);"><span class="dot-pulse"></span> Generating...</span>';
     } else if (st === 'ready') {
+      h += '<div style="margin-bottom:.6rem;">';
+      h += '<input type="text" id="propCcExtra" oninput="window._invalidateProposalEmailPreview&&window._invalidateProposalEmailPreview()" placeholder="Add CC (comma-separated emails)" style="width:100%;max-width:480px;padding:.42rem .65rem;font-size:.82rem;border:1px solid var(--color-border);border-radius:6px;background:var(--color-surface);color:var(--color-heading);">';
+      h += '<div style="font-size:.7rem;color:var(--color-muted);margin-top:.25rem;">chris@moonraker.ai and scott@moonraker.ai are always included.</div>';
+      h += '</div>';
       h += '<button class="btn-sm" onclick="window._sendProposal(\'' + proposal.id + '\',this)" style="padding:.45rem 1rem;font-size:.82rem;font-weight:600;border:none;background:var(--color-primary);color:#fff;border-radius:6px;cursor:pointer;">&#9993; Send Proposal</button>';
       h += '<button class="btn-sm" id="propPreviewToggle" onclick="window._toggleProposalEmailPreview(\'' + proposal.id + '\')" style="padding:.45rem 1rem;font-size:.82rem;font-weight:600;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-heading);border-radius:6px;cursor:pointer;">Preview Email &#9660;</button>';
     } else if (st === 'sent' || st === 'viewed') {
@@ -10295,14 +10299,30 @@
 
   // ── Send proposal ──
   window._sendProposal = async function(proposalId, btn) {
-    if (!confirm('Send the proposal email to the prospect?')) return;
+    var ccExtra = window._readProposalCcExtra ? window._readProposalCcExtra() : [];
+    var msg = 'Send the proposal email to the prospect?';
+    if (ccExtra.length) msg += '\n\nAdditional CCs: ' + ccExtra.join(', ');
+    if (!confirm(msg)) return;
     btn.disabled = true; btn.textContent = 'Sending...';
     try {
-      var resp = await fetch('/api/send-proposal-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proposal_id: proposalId }) });
+      var resp = await fetch('/api/send-proposal-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proposal_id: proposalId, cc_extra: ccExtra }) });
       var data = await resp.json();
       if (data.ok) { toast('Proposal sent'); loadDetailData(); }
       else { toast('Send failed: ' + (data.error || 'Unknown'), 'error'); btn.disabled = false; btn.innerHTML = '&#9993; Send Proposal'; }
     } catch(e) { toast('Send error: ' + e.message, 'error'); btn.disabled = false; btn.innerHTML = '&#9993; Send Proposal'; }
+  };
+
+  // Helper: parse CC input into a clean array
+  window._readProposalCcExtra = function() {
+    var el = document.getElementById('propCcExtra');
+    if (!el || !el.value) return [];
+    return el.value.split(/[\s,;]+/).map(function(s){return s.trim();}).filter(Boolean);
+  };
+
+  // Helper: invalidate cached preview when CC input changes so next toggle refetches
+  window._invalidateProposalEmailPreview = function() {
+    var panel = document.getElementById('propEmailPreview');
+    if (panel) panel.removeAttribute('data-loaded');
   };
 
   // ── Preview email (inline expandable) ──
@@ -10327,7 +10347,8 @@
     // Fetch preview if not already loaded
     if (!panel.getAttribute('data-loaded')) {
       try {
-        var resp = await fetch('/api/send-proposal-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proposal_id: proposalId, preview_only: true }) });
+        var ccExtra = window._readProposalCcExtra ? window._readProposalCcExtra() : [];
+        var resp = await fetch('/api/send-proposal-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proposal_id: proposalId, preview_only: true, cc_extra: ccExtra }) });
         var data = await resp.json();
         if (data.ok) {
           document.getElementById('propEmailMeta').innerHTML =
@@ -10366,7 +10387,8 @@
   window._previewEmail = async function(proposalId) {
     // Legacy: opens in new tab (fallback). Body rendered inside sandboxed iframe (scripts denied).
     try {
-      var resp = await fetch('/api/send-proposal-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proposal_id: proposalId, preview_only: true }) });
+      var ccExtra = window._readProposalCcExtra ? window._readProposalCcExtra() : [];
+      var resp = await fetch('/api/send-proposal-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proposal_id: proposalId, preview_only: true, cc_extra: ccExtra }) });
       var data = await resp.json();
       if (data.ok) {
         var w = window.open('', '_blank');
